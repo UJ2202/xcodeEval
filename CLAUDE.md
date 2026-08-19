@@ -279,15 +279,38 @@ Numbers are pass@5 × 100 (percentage).
 
 ---
 
-## Current Results — GPT-5.1 (gpt4o alias)
+## Results
+
+Pass@5 scores (×100). `—` = eval not yet run. Nemotron-550b rows are on the **baseline subset** (same idx/lang pairs as gpt4o), not the full problem set.
 
 ### Program Synthesis — pass@5
 
-| C++ | Go | Java | Javascript | Kotlin | PHP | Python | Avg |
-|---|---|---|---|---|---|---|---|
-| 62.83% | 44.53% | 24.87% | 59.42% | 49.44% | 58.68% | 49.04% | **49.8%** |
+| Model | C++ | Go | Java | Javascript | Kotlin | PHP | Python | Avg |
+|---|---|---|---|---|---|---|---|---|
+| GPT-5.1 (gpt4o) | 62.83 | 44.53 | 24.87 | 59.42 | 49.44 | 58.68 | 49.04 | **49.8** |
+| Qwen (qwen-nvfp4) | — | — | — | — | — | — | — | — |
+| Laguna (laguna-nvfp4) | — | — | — | — | — | — | — | — |
+| Nemotron-550b *(baseline subset)* | 100.0 | 100.0 | 11.11 | 100.0 | — | 95.45 | 100.0 | — |
 
-560 / 742 problems scored (182 had empty dataset fields).
+GPT-5.1: 560 / 742 problems scored (182 had empty dataset fields).
+
+### Code Translation — pass@5
+
+| Model | C++ | Go | Java | Javascript | Kotlin | PHP | Python | Avg |
+|---|---|---|---|---|---|---|---|---|
+| GPT-5.1 (gpt4o) | — | — | — | — | — | — | — | — |
+| Qwen (qwen-nvfp4) | — | — | — | — | — | — | — | — |
+| Laguna (laguna-nvfp4) | — | — | — | — | — | — | — | — |
+| Nemotron-550b *(baseline subset)* | 92.61 | 84.65 | 26.06 | 83.21 | 36.38 | 67.83 | 86.77 | — |
+
+### APR — pass@5
+
+| Model | C++ | Go | Java | Javascript | Kotlin | PHP | Python | Avg |
+|---|---|---|---|---|---|---|---|---|
+| GPT-5.1 (gpt4o) | — | — | — | — | — | — | — | — |
+| Qwen (qwen-nvfp4) | — | — | — | — | — | — | — | — |
+| Laguna (laguna-nvfp4) | — | — | — | — | — | — | — | — |
+| Nemotron-550b | — | — | — | — | — | — | — | — |
 
 ---
 
