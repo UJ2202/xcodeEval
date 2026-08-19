@@ -1,0 +1,142 @@
+{
+    "oai_response": {
+        "choices": [
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 0,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "'use strict';\n\nconst fs = require('fs');\nconst [n, m, pInput] = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nconst MOD = BigInt(pInput);\n\nfunction modPow(base, exp) {\n    let result = 1n;\n    base %= MOD;\n    while (exp > 0n) {\n        if (exp & 1n) result = result * base % MOD;\n        base = base * base % MOD;\n        exp >>= 1n;\n    }\n    return result;\n}\n\nconst fact = Array(m + 1).fill(1n);\nconst invFact = Array(m + 1).fill(1n);\nconst inv = Array(m + 1).fill(0n);\n\nfor (let i = 1; i <= m; i++) {\n    fact[i] = fact[i - 1] * BigInt(i) % MOD;\n}\n\ninvFact[m] = modPow(fact[m], MOD - 2n);\nfor (let i = m; i >= 1; i--) {\n    invFact[i - 1] = invFact[i] * BigInt(i) % MOD;\n}\nfor (let i = 1; i <= m; i++) {\n    inv[i] = fact[i - 1] * invFact[i] % MOD;\n}\n\nconst count = Array(m + 1).fill(0n);\nconst madness = Array(m + 1).fill(0n);\ncount[0] = 1n;\n\nfor (let k = 1; k <= m; k++) {\n    let countSum = 0n;\n    let madnessSum = 0n;\n\n    for (let left = 0; left < k; left++) {\n        const right = k - 1 - left;\n\n        let choose = fact[k - 1] * invFact[left] % MOD;\n        choose = choose * invFact[right] % MOD;\n\n        const pairCount = count[left] * count[right] % MOD;\n        countSum += choose * pairCount;\n\n        const previousMadness =\n            (madness[left] * count[right] +\n             count[left] * madness[right]) % MOD;\n\n        const lastMadness =\n            BigInt(\n                left * (left + 1) / 2 +\n                right * (right + 1) / 2\n            );\n\n        let term = BigInt(k + 1) * previousMadness;\n        term += pairCount * lastMadness;\n        madnessSum += choose * (term % MOD);\n    }\n\n    count[k] = BigInt(k + 1) * (countSum % MOD) % MOD;\n    madness[k] = madnessSum % MOD;\n}\n\nconst W = Array(m + 1).fill(0n);\nconst Q = Array(m + 1).fill(0n);\nconst A = Array(m + 1).fill(0n);\n\nA[0] = 1n;\nfor (let k = 1; k <= m; k++) {\n    W[k] = count[k] * invFact[k] % MOD;\n    Q[k] = madness[k] * invFact[k] % MOD;\n    A[k] = W[k];\n}\n\nconst empty = n - m;\nconst power = Array(m + 1).fill(0n);\npower[0] = 1n;\n\n// power(x) = A(x)^(n-m), truncated to degree m.\nfor (let k = 1; k <= m; k++) {\n    let sum = 0n;\n\n    for (let i = 1; i <= k; i++) {\n        const coefficient = (empty + 1) * i - k;\n        if (coefficient === 0) continue;\n\n        const product = A[i] * power[k - i] % MOD;\n        sum += product * BigInt(coefficient);\n    }\n\n    sum %= MOD;\n    if (sum < 0n) sum += MOD;\n    power[k] = sum * inv[k] % MOD;\n}\n\nlet normalizedAnswer = 0n;\nfor (let k = 1; k <= m; k++) {\n    normalizedAnswer += Q[k] * power[m - k];\n}\nnormalizedAnswer %= MOD;\n\nlet answer = normalizedAnswer * BigInt(empty + 1) % MOD;\nanswer = answer * fact[m] % MOD;\n\nconsole.log(answer.toString());",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 1,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "const fs = require('fs');\n\nconst [n, m, p] = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\n\nconst BASE = 32768;\n\nfunction mulMod(a, b) {\n    const high = Math.floor(b / BASE);\n    const low = b - high * BASE;\n    return (((a * high) % p) * BASE + a * low) % p;\n}\n\nconst inv = new Array(m + 1).fill(0);\nif (m >= 1) inv[1] = 1;\n\nfor (let i = 2; i <= m; i++) {\n    const q = Math.floor(p / i);\n    inv[i] = (p - mulMod(q, inv[p % i])) % p;\n}\n\nconst H = new Array(m + 1).fill(0);\nconst Q = new Array(m + 1).fill(0);\nH[0] = 1;\n\nfor (let k = 1; k <= m; k++) {\n    let sumH = 0;\n    let sumQ = 0;\n\n    for (let x = 0; x < k; x++) {\n        const y = k - 1 - x;\n        const productH = mulMod(H[x], H[y]);\n\n        sumH += productH;\n\n        const previousCost =\n            (mulMod(Q[x], H[y]) + mulMod(H[x], Q[y])) % p;\n\n        const triangular =\n            x * (x + 1) / 2 + y * (y + 1) / 2;\n\n        let term = mulMod(k + 1, previousCost);\n        term += mulMod(triangular % p, productH);\n        sumQ += term % p;\n    }\n\n    H[k] = mulMod(\n        mulMod(sumH % p, (k + 1) % p),\n        inv[k]\n    );\n\n    Q[k] = mulMod(sumQ % p, inv[k]);\n}\n\nconst componentsSlots = n - m + 1;\nconst exponent = componentsSlots - 1;\nconst P = new Array(m + 1).fill(0);\nP[0] = 1;\n\nfor (let k = 1; k <= m; k++) {\n    let sum = 0;\n\n    for (let i = 1; i <= k; i++) {\n        const coefficient = (exponent + 1) * i - k;\n        if (coefficient === 0) continue;\n\n        const product = mulMod(H[i], P[k - i]);\n        const coefficientMod =\n            ((coefficient % p) + p) % p;\n\n        sum += mulMod(product, coefficientMod);\n    }\n\n    P[k] = mulMod(sum % p, inv[k]);\n}\n\nlet totalCost = 0;\nfor (let k = 1; k <= m; k++) {\n    totalCost += mulMod(Q[k], P[m - k]);\n}\n\nlet factorial = 1;\nfor (let i = 2; i <= m; i++) {\n    factorial = mulMod(factorial, i);\n}\n\nlet answer = mulMod(totalCost % p, componentsSlots % p);\nanswer = mulMod(answer, factorial);\n\nconsole.log(answer);",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 2,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "'use strict';\n\nconst fs = require('fs');\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/);\n\nconst n = Number(input[0]);\nconst m = Number(input[1]);\nconst MOD = BigInt(input[2]);\n\nfunction modPow(base, exp) {\n    base %= MOD;\n    let result = 1n;\n    while (exp > 0n) {\n        if (exp & 1n) result = result * base % MOD;\n        base = base * base % MOD;\n        exp >>= 1n;\n    }\n    return result;\n}\n\nconst fact = Array(m + 1).fill(1n);\nconst invFact = Array(m + 1).fill(1n);\nconst inv = Array(m + 1).fill(0n);\nconst pow2 = Array(m + 1).fill(1n);\n\nfor (let i = 1; i <= m; i++) {\n    fact[i] = fact[i - 1] * BigInt(i) % MOD;\n    pow2[i] = pow2[i - 1] * 2n % MOD;\n}\n\ninvFact[m] = modPow(fact[m], MOD - 2n);\nfor (let i = m; i >= 1; i--) {\n    invFact[i - 1] = invFact[i] * BigInt(i) % MOD;\n}\nfor (let i = 1; i <= m; i++) {\n    inv[i] = fact[i - 1] * invFact[i] % MOD;\n}\n\nconst c = Array(m + 1).fill(0n);\nconst d = Array(m + 1).fill(0n);\nc[0] = 1n;\n\nfor (let k = 1; k <= m; k++) {\n    const trees = modPow(BigInt(k + 1), BigInt(k - 1));\n    c[k] = pow2[k] * trees % MOD * invFact[k] % MOD;\n}\n\nfor (let k = 1; k <= m; k++) {\n    let convolution = 0n;\n    let distance = 0n;\n\n    for (let l = 0; l < k; l++) {\n        const r = k - 1 - l;\n        convolution += d[l] * c[r];\n        distance += BigInt(l * (l + 1)) * c[l] * c[r];\n    }\n\n    convolution %= MOD;\n    distance %= MOD;\n\n    const value =\n        (2n * BigInt(k + 1) % MOD * convolution + distance) % MOD;\n\n    d[k] = value * inv[k] % MOD;\n}\n\nconst empty = n - m;\nconst yPower = Array(m + 1).fill(0n);\nyPower[0] = 1n;\n\nif (empty > 0) {\n    const q = BigInt(empty);\n    for (let k = 1; k <= m; k++) {\n        yPower[k] =\n            q *\n            pow2[k] % MOD *\n            modPow(BigInt(k + empty), BigInt(k - 1)) % MOD *\n            invFact[k] % MOD;\n    }\n}\n\nlet coefficient = 0n;\nfor (let i = 1; i <= m; i++) {\n    coefficient += d[i] * yPower[m - i];\n}\ncoefficient %= MOD;\n\nconst answer =\n    coefficient *\n    BigInt(empty + 1) % MOD *\n    fact[m] % MOD;\n\nconsole.log(answer.toString());",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 3,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "'use strict';\n\nconst fs = require('fs');\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nconst [n, m, MOD] = input;\n\nconst BASE = 32768;\n\nfunction mul(a, b) {\n    const high = Math.floor(b / BASE);\n    const low = b - high * BASE;\n    return ((a * low) % MOD + ((a * high) % MOD) * BASE) % MOD;\n}\n\nfunction add(a, b) {\n    const result = a + b;\n    return result >= MOD ? result - MOD : result;\n}\n\nconst inverse = new Array(m + 1).fill(0);\nif (m >= 1) inverse[1] = 1;\n\nfor (let i = 2; i <= m; i++) {\n    inverse[i] = MOD - mul(Math.floor(MOD / i), inverse[MOD % i]);\n    if (inverse[i] === MOD) inverse[i] = 0;\n}\n\nconst w = new Array(m + 1).fill(0);\nconst h = new Array(m + 1).fill(0);\nw[0] = 1;\n\nfor (let size = 1; size <= m; size++) {\n    let sumW = 0;\n    let sumH = 0;\n\n    for (let left = 0; left < size; left++) {\n        const right = size - 1 - left;\n\n        const productW = mul(w[left], w[right]);\n        sumW = add(sumW, productW);\n\n        const crossCost = add(\n            mul(h[left], w[right]),\n            mul(w[left], h[right])\n        );\n\n        const lastMadness =\n            left * (left + 1) / 2 +\n            right * (right + 1) / 2;\n\n        const term = add(\n            mul(crossCost, size + 1),\n            mul(productW, lastMadness)\n        );\n\n        sumH = add(sumH, term);\n    }\n\n    w[size] = mul(mul(sumW, size + 1), inverse[size]);\n    h[size] = mul(sumH, inverse[size]);\n}\n\nconst exponent = n - m;\nconst power = new Array(m + 1).fill(0);\npower[0] = 1;\n\nif (exponent > 0) {\n    for (let degree = 1; degree <= m; degree++) {\n        let sum = 0;\n\n        for (let i = 1; i <= degree; i++) {\n            let factor = (exponent + 1) * i - degree;\n            factor %= MOD;\n            if (factor < 0) factor += MOD;\n\n            const term = mul(mul(w[i], power[degree - i]), factor);\n            sum = add(sum, term);\n        }\n\n        power[degree] = mul(sum, inverse[degree]);\n    }\n}\n\nlet coefficient = 0;\nfor (let size = 1; size <= m; size++) {\n    coefficient = add(\n        coefficient,\n        mul(h[size], power[m - size])\n    );\n}\n\nlet factorial = 1;\nfor (let i = 2; i <= m; i++) {\n    factorial = mul(factorial, i);\n}\n\nconst componentSlots = n - m + 1;\nconst answer = mul(mul(coefficient, componentSlots), factorial);\n\nconsole.log(answer.toString());",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 4,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "'use strict';\n\nconst fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nconst [n, m, p] = input;\n\nconst BASE = 32768;\n\nfunction mulMod(a, b) {\n    const high = Math.floor(b / BASE);\n    const low = b - high * BASE;\n    return (((a * high) % p) * BASE + a * low) % p;\n}\n\nconst inv = new Array(m + 1).fill(0);\ninv[1] = 1;\n\nfor (let i = 2; i <= m; i++) {\n    const q = Math.floor(p / i);\n    const r = p % i;\n    const value = mulMod(q, inv[r]);\n    inv[i] = value === 0 ? 0 : p - value;\n}\n\nconst f = new Array(m + 1).fill(0);\nconst g = new Array(m + 1).fill(0);\nf[0] = 1;\n\nfor (let k = 1; k <= m; k++) {\n    let sumF = 0;\n    let sumG = 0;\n    let sumMadness = 0;\n\n    for (let x = 0; x < k; x++) {\n        const y = k - 1 - x;\n        const ff = mulMod(f[x], f[y]);\n\n        sumF += ff;\n        if (sumF >= p) sumF -= p;\n\n        let inherited = mulMod(g[x], f[y]) + mulMod(f[x], g[y]);\n        if (inherited >= p) inherited -= p;\n\n        sumG += inherited;\n        if (sumG >= p) sumG -= p;\n\n        const triangleX = x * (x + 1) / 2;\n        const triangleY = y * (y + 1) / 2;\n        const local = (ff * (triangleX + triangleY)) % p;\n\n        sumMadness += local;\n        if (sumMadness >= p) sumMadness -= p;\n    }\n\n    const weightedF = (sumF * (k + 1)) % p;\n    f[k] = mulMod(weightedF, inv[k]);\n\n    let weightedG = (sumG * (k + 1)) % p;\n    weightedG += sumMadness;\n    if (weightedG >= p) weightedG -= p;\n    g[k] = mulMod(weightedG, inv[k]);\n}\n\nconst empty = n - m;\nconst h = new Array(m + 1).fill(0);\nh[0] = 1;\n\n// h(x) = (1 + f[1]x + f[2]x^2 + ...)^empty\nfor (let k = 1; k <= m; k++) {\n    let sum = 0;\n\n    for (let i = 1; i <= k; i++) {\n        const coefficient = (empty + 1) * i - k;\n        if (coefficient === 0) continue;\n\n        const product = mulMod(f[i], h[k - i]);\n        const term = (product * Math.abs(coefficient)) % p;\n\n        if (coefficient > 0) {\n            sum += term;\n            if (sum >= p) sum -= p;\n        } else {\n            sum -= term;\n            if (sum < 0) sum += p;\n        }\n    }\n\n    h[k] = mulMod(sum, inv[k]);\n}\n\nlet coefficient = 0;\nfor (let k = 1; k <= m; k++) {\n    coefficient += mulMod(g[k], h[m - k]);\n    if (coefficient >= p) coefficient -= p;\n}\n\nlet factorial = 1;\nfor (let i = 2; i <= m; i++) {\n    factorial = (factorial * i) % p;\n}\n\ncoefficient = (coefficient * (empty + 1)) % p;\nconst answer = mulMod(coefficient, factorial);\n\nconsole.log(answer);",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            }
+        ],
+        "created": 1787152659,
+        "id": "chatcmpl-EEcKpu5GWkK6FrkVEN538kwSw2XV4",
+        "model": "gpt-5.6-sol-2026-07-09",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {}
+            }
+        ],
+        "service_tier": "default",
+        "system_fingerprint": null,
+        "usage": {
+            "completion_tokens": 25169,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 20956,
+                "rejected_prediction_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 4,
+                "engine_ttft_ms": 353,
+                "engine_ttlt_ms": 113357,
+                "pre_inference_ms": 127,
+                "service_tbt_ms": 4,
+                "service_ttft_ms": 770,
+                "service_ttlt_ms": 113766,
+                "total_duration_ms": 113652,
+                "user_visible_ttft_ms": 643
+            },
+            "prompt_tokens": 1119,
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "total_tokens": 26288
+        },
+        "prompt": "Write a program in Javascript to solve this programming problem:\nDescription: Today is the final contest of INOI (Iranian National Olympiad in Informatics). The contest room is a row with $$$n$$$ computers. All computers are numbered with integers from $$$1$$$ to $$$n$$$ from left to right. There are $$$m$$$ participants, numbered with integers from $$$1$$$ to $$$m$$$.We have an array $$$a$$$ of length $$$m$$$ where $$$a_{i}$$$ ($$$1 \\leq a_i \\leq n$$$) is the computer behind which the $$$i$$$-th participant wants to sit.Also, we have another array $$$b$$$ of length $$$m$$$ consisting of characters 'L' and 'R'. $$$b_i$$$ is the side from which the $$$i$$$-th participant enters the room. 'L' means the participant enters from the left of computer $$$1$$$ and goes from left to right, and 'R' means the participant enters from the right of computer $$$n$$$ and goes from right to left.The participants in the order from $$$1$$$ to $$$m$$$ enter the room one by one. The $$$i$$$-th of them enters the contest room in the direction $$$b_i$$$ and goes to sit behind the $$$a_i$$$-th computer. If it is occupied he keeps walking in his direction until he reaches the first unoccupied computer. After that, he sits behind it. If he doesn't find any computer he gets upset and gives up on the contest.The madness of the $$$i$$$-th participant is the distance between his assigned computer ($$$a_i$$$) and the computer he ends up sitting behind. The distance between computers $$$i$$$ and $$$j$$$ is equal to $$$|i - j|$$$.The values in the array $$$a$$$ can be equal. There exist $$$n^m \\cdot 2^m$$$ possible pairs of arrays $$$(a, b)$$$.Consider all pairs of arrays $$$(a, b)$$$ such that no person becomes upset. For each of them let's calculate the sum of participants madnesses. Find the sum of all these values.You will be given some prime modulo $$$p$$$. Find this sum by modulo $$$p$$$.\nInput Specification: The only line contains three integers $$$n$$$, $$$m$$$, $$$p$$$ ($$$1 \\leq m \\leq n \\leq 500, 10^8 \\leq p \\leq 10 ^ 9 + 9$$$). It is guaranteed, that the number $$$p$$$ is prime.\nOutput Specification: Print only one integer\u00a0\u2014 the required sum by modulo $$$p$$$.\n\nSample Input:\n3 1 1000000007\nSample Output:\n0\n\nSample Input:\n2 2 1000000009\nSample Output:\n4\n\nSample Input:\n3 2 998244353\nSample Output:\n8\n\nSample Input:\n20 10 1000000009\nSample Output:\n352081045\n\nNotes: NoteIn the first test, there are three possible arrays $$$a$$$: $$$\\{1\\}$$$, $$$\\{2\\}$$$, and $$$ \\{3\\}$$$ and two possible arrays $$$b$$$: $$$\\{\\mathtt{L}\\}$$$ and $$$\\{\\mathtt{R}\\}$$$. For all six pairs of arrays $$$(a, b)$$$, the only participant will sit behind the computer $$$a_1$$$, so his madness will be $$$0$$$. So the total sum of madnesses will be $$$0$$$.In the second test, all possible pairs of arrays $$$(a, b)$$$, such that no person becomes upset are:  $$$(\\{1, 1\\}, \\{\\mathtt{L}, \\mathtt{L}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{1, 1\\}, \\{\\mathtt{R}, \\mathtt{L}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{2, 2\\}, \\{\\mathtt{R}, \\mathtt{R}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{2, 2\\}, \\{\\mathtt{L}, \\mathtt{R}\\})$$$, the sum of madnesses is $$$1$$$;  all possible pairs of $$$a \\in \\{\\{1, 2\\}, \\{2, 1\\}\\}$$$ and $$$b \\in \\{\\{\\mathtt{L}, \\mathtt{L}\\}, \\{\\mathtt{R}, \\mathtt{L}\\}, \\{\\mathtt{L}, \\mathtt{R}\\}, \\{\\mathtt{R}, \\mathtt{R}\\}\\}$$$, the sum of madnesses is $$$0$$$. So, the answer is $$$1 + 1 + 1 + 1 + 0 \\ldots = 4$$$.\nTake input from standard input and output to standard output\nProvide the Javascript code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "9812de5f2d272511a63ead8765b23190",
+        "difficulty": 3100,
+        "prob_desc_sample_inputs": [
+            "3 1 1000000007",
+            "2 2 1000000009",
+            "3 2 998244353",
+            "20 10 1000000009"
+        ],
+        "prob_desc_time_limit": "3 seconds",
+        "tags": [
+            "fft",
+            "dp",
+            "combinatorics"
+        ],
+        "prob_desc_output_spec": "Print only one integer\u00a0\u2014 the required sum by modulo $$$p$$$.",
+        "prob_desc_input_spec": "The only line contains three integers $$$n$$$, $$$m$$$, $$$p$$$ ($$$1 \\leq m \\leq n \\leq 500, 10^8 \\leq p \\leq 10 ^ 9 + 9$$$). It is guaranteed, that the number $$$p$$$ is prime.",
+        "lang_cluster": "Javascript",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first test, there are three possible arrays $$$a$$$: $$$\\{1\\}$$$, $$$\\{2\\}$$$, and $$$ \\{3\\}$$$ and two possible arrays $$$b$$$: $$$\\{\\mathtt{L}\\}$$$ and $$$\\{\\mathtt{R}\\}$$$. For all six pairs of arrays $$$(a, b)$$$, the only participant will sit behind the computer $$$a_1$$$, so his madness will be $$$0$$$. So the total sum of madnesses will be $$$0$$$.In the second test, all possible pairs of arrays $$$(a, b)$$$, such that no person becomes upset are:  $$$(\\{1, 1\\}, \\{\\mathtt{L}, \\mathtt{L}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{1, 1\\}, \\{\\mathtt{R}, \\mathtt{L}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{2, 2\\}, \\{\\mathtt{R}, \\mathtt{R}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{2, 2\\}, \\{\\mathtt{L}, \\mathtt{R}\\})$$$, the sum of madnesses is $$$1$$$;  all possible pairs of $$$a \\in \\{\\{1, 2\\}, \\{2, 1\\}\\}$$$ and $$$b \\in \\{\\{\\mathtt{L}, \\mathtt{L}\\}, \\{\\mathtt{R}, \\mathtt{L}\\}, \\{\\mathtt{L}, \\mathtt{R}\\}, \\{\\mathtt{R}, \\mathtt{R}\\}\\}$$$, the sum of madnesses is $$$0$$$. So, the answer is $$$1 + 1 + 1 + 1 + 0 \\ldots = 4$$$.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Today is the final contest of INOI (Iranian National Olympiad in Informatics). The contest room is a row with $$$n$$$ computers. All computers are numbered with integers from $$$1$$$ to $$$n$$$ from left to right. There are $$$m$$$ participants, numbered with integers from $$$1$$$ to $$$m$$$.We have an array $$$a$$$ of length $$$m$$$ where $$$a_{i}$$$ ($$$1 \\leq a_i \\leq n$$$) is the computer behind which the $$$i$$$-th participant wants to sit.Also, we have another array $$$b$$$ of length $$$m$$$ consisting of characters 'L' and 'R'. $$$b_i$$$ is the side from which the $$$i$$$-th participant enters the room. 'L' means the participant enters from the left of computer $$$1$$$ and goes from left to right, and 'R' means the participant enters from the right of computer $$$n$$$ and goes from right to left.The participants in the order from $$$1$$$ to $$$m$$$ enter the room one by one. The $$$i$$$-th of them enters the contest room in the direction $$$b_i$$$ and goes to sit behind the $$$a_i$$$-th computer. If it is occupied he keeps walking in his direction until he reaches the first unoccupied computer. After that, he sits behind it. If he doesn't find any computer he gets upset and gives up on the contest.The madness of the $$$i$$$-th participant is the distance between his assigned computer ($$$a_i$$$) and the computer he ends up sitting behind. The distance between computers $$$i$$$ and $$$j$$$ is equal to $$$|i - j|$$$.The values in the array $$$a$$$ can be equal. There exist $$$n^m \\cdot 2^m$$$ possible pairs of arrays $$$(a, b)$$$.Consider all pairs of arrays $$$(a, b)$$$ such that no person becomes upset. For each of them let's calculate the sum of participants madnesses. Find the sum of all these values.You will be given some prime modulo $$$p$$$. Find this sum by modulo $$$p$$$.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1605623700",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "0",
+            "4",
+            "8",
+            "352081045"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"3 1 1000000007\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 2 1000000009\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"3 2 998244353\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"20 10 1000000009\\r\\n\", \"output\": [\"352081045\"]}, {\"input\": \"5 2 1000000007\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"500 498 1000000007\\r\\n\", \"output\": [\"497900737\"]}, {\"input\": \"10 9 1000000007\\r\\n\", \"output\": [\"904119416\"]}, {\"input\": \"7 4 1000000009\\r\\n\", \"output\": [\"31488\"]}, {\"input\": \"8 8 700001153\\r\\n\", \"output\": [\"247497204\"]}, {\"input\": \"6 3 999999487\\r\\n\", \"output\": [\"768\"]}, {\"input\": \"310 228 998244799\\r\\n\", \"output\": [\"861313351\"]}, {\"input\": \"385 76 998244353\\r\\n\", \"output\": [\"750286580\"]}, {\"input\": \"259 76 998244353\\r\\n\", \"output\": [\"41310904\"]}, {\"input\": \"459 14 200003077\\r\\n\", \"output\": [\"142997933\"]}, {\"input\": \"1 1 1000000007\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"498 155 998244799\\r\\n\", \"output\": [\"673213318\"]}, {\"input\": \"372 309 1000000009\\r\\n\", \"output\": [\"698627891\"]}, {\"input\": \"44 19 998244799\\r\\n\", \"output\": [\"81944049\"]}, {\"input\": \"70 39 700001153\\r\\n\", \"output\": [\"401935379\"]}, {\"input\": \"282 190 300001657\\r\\n\", \"output\": [\"210852530\"]}, {\"input\": \"370 100 1000000007\\r\\n\", \"output\": [\"112411341\"]}, {\"input\": \"234 21 200003077\\r\\n\", \"output\": [\"137641479\"]}, {\"input\": \"194 184 200003077\\r\\n\", \"output\": [\"76845836\"]}, {\"input\": \"499 497 998244799\\r\\n\", \"output\": [\"514945258\"]}, {\"input\": \"500 117 1000000007\\r\\n\", \"output\": [\"234794832\"]}, {\"input\": \"45 41 200003077\\r\\n\", \"output\": [\"176259818\"]}, {\"input\": \"2 1 1000000007\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 2 1000000007\\r\\n\", \"output\": [\"4\"]}]"
+    }
+}

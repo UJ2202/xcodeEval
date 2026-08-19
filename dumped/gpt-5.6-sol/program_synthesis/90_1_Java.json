@@ -1,0 +1,138 @@
+{
+    "oai_response": {
+        "choices": [
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 0,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static boolean isLucky(long x) {\n        if (x <= 0) return false;\n        while (x > 0) {\n            long digit = x % 10;\n            if (digit != 4 && digit != 7) return false;\n            x /= 10;\n        }\n        return true;\n    }\n\n    static int countLucky(long current, long limit) {\n        if (current > limit) return 0;\n        return 1\n                + countLucky(current * 10 + 4, limit)\n                + countLucky(current * 10 + 7, limit);\n    }\n\n    public static void main(String[] args) throws Exception {\n        FastScanner fs = new FastScanner(System.in);\n        long n = fs.nextLong();\n        long k = fs.nextLong();\n\n        int suffixSize = (int) Math.min(n, 13);\n\n        long[] factorial = new long[suffixSize + 1];\n        factorial[0] = 1;\n        for (int i = 1; i <= suffixSize; i++) {\n            factorial[i] = factorial[i - 1] * i;\n        }\n\n        if (factorial[suffixSize] < k) {\n            System.out.println(-1);\n            return;\n        }\n\n        long prefixSize = n - suffixSize;\n        long answer = countLucky(4, prefixSize) + countLucky(7, prefixSize);\n\n        List<Long> remaining = new ArrayList<>();\n        for (long value = prefixSize + 1; value <= n; value++) {\n            remaining.add(value);\n        }\n\n        long rank = k - 1;\n        for (int position = 0; position < suffixSize; position++) {\n            int remainingCount = suffixSize - position;\n            long blockSize = factorial[remainingCount - 1];\n            int selectedIndex = (int) (rank / blockSize);\n            rank %= blockSize;\n\n            long value = remaining.remove(selectedIndex);\n            long index = prefixSize + position + 1;\n\n            if (isLucky(index) && isLucky(value)) {\n                answer++;\n            }\n        }\n\n        System.out.println(answer);\n    }\n\n    static class FastScanner {\n        private final InputStream in;\n        private final byte[] buffer = new byte[1 << 16];\n        private int pointer = 0;\n        private int length = 0;\n\n        FastScanner(InputStream in) {\n            this.in = in;\n        }\n\n        private int read() throws IOException {\n            if (pointer >= length) {\n                length = in.read(buffer);\n                pointer = 0;\n                if (length <= 0) return -1;\n            }\n            return buffer[pointer++];\n        }\n\n        long nextLong() throws IOException {\n            int c;\n            do {\n                c = read();\n            } while (c <= ' ' && c != -1);\n\n            long value = 0;\n            while (c > ' ') {\n                value = value * 10 + (c - '0');\n                c = read();\n            }\n            return value;\n        }\n    }\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 1,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    private static int n;\n    private static final List<Integer> luckyNumbers = new ArrayList<>();\n\n    private static void generateLucky(long value) {\n        if (value > n) return;\n\n        if (value > 0) {\n            luckyNumbers.add((int) value);\n        }\n\n        generateLucky(value * 10 + 4);\n        generateLucky(value * 10 + 7);\n    }\n\n    public static void main(String[] args) throws Exception {\n        FastScanner fs = new FastScanner(System.in);\n        n = fs.nextInt();\n        long k = fs.nextLong();\n\n        int length = 1;\n        long factorial = 1;\n\n        while (factorial < k && length < n) {\n            length++;\n            factorial *= length;\n        }\n\n        if (factorial < k) {\n            System.out.println(-1);\n            return;\n        }\n\n        long[] fact = new long[length + 1];\n        fact[0] = 1;\n        for (int i = 1; i <= length; i++) {\n            fact[i] = fact[i - 1] * i;\n        }\n\n        int start = n - length + 1;\n        List<Integer> available = new ArrayList<>(length);\n        for (int value = start; value <= n; value++) {\n            available.add(value);\n        }\n\n        int[] permutationSuffix = new int[length];\n        long rank = k - 1;\n\n        for (int i = 0; i < length; i++) {\n            long blockSize = fact[length - i - 1];\n            int index = (int) (rank / blockSize);\n            rank %= blockSize;\n            permutationSuffix[i] = available.remove(index);\n        }\n\n        generateLucky(0);\n        Set<Integer> luckySet = new HashSet<>(luckyNumbers);\n\n        int answer = 0;\n        for (int position : luckyNumbers) {\n            int value;\n            if (position < start) {\n                value = position;\n            } else {\n                value = permutationSuffix[position - start];\n            }\n\n            if (luckySet.contains(value)) {\n                answer++;\n            }\n        }\n\n        System.out.println(answer);\n    }\n\n    private static class FastScanner {\n        private final InputStream in;\n        private final byte[] buffer = new byte[1 << 16];\n        private int pointer = 0;\n        private int length = 0;\n\n        FastScanner(InputStream in) {\n            this.in = in;\n        }\n\n        private int read() throws IOException {\n            if (pointer >= length) {\n                length = in.read(buffer);\n                pointer = 0;\n                if (length <= 0) return -1;\n            }\n            return buffer[pointer++];\n        }\n\n        long nextLong() throws IOException {\n            int c;\n            do {\n                c = read();\n            } while (c <= ' ' && c != -1);\n\n            long value = 0;\n            while (c > ' ') {\n                value = value * 10 + (c - '0');\n                c = read();\n            }\n            return value;\n        }\n\n        int nextInt() throws IOException {\n            return (int) nextLong();\n        }\n    }\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 2,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    private static int countLucky(long value, int limit) {\n        if (value > limit) {\n            return 0;\n        }\n        return 1\n                + countLucky(value * 10 + 4, limit)\n                + countLucky(value * 10 + 7, limit);\n    }\n\n    private static boolean isLucky(int value) {\n        if (value <= 0) {\n            return false;\n        }\n        while (value > 0) {\n            int digit = value % 10;\n            if (digit != 4 && digit != 7) {\n                return false;\n            }\n            value /= 10;\n        }\n        return true;\n    }\n\n    public static void main(String[] args) throws Exception {\n        FastScanner fs = new FastScanner(System.in);\n        int n = fs.nextInt();\n        long k = fs.nextLong();\n\n        int suffixLength = Math.min(n, 13);\n\n        long[] factorial = new long[suffixLength + 1];\n        factorial[0] = 1;\n        for (int i = 1; i <= suffixLength; i++) {\n            factorial[i] = factorial[i - 1] * i;\n        }\n\n        if (k > factorial[suffixLength]) {\n            System.out.println(-1);\n            return;\n        }\n\n        int prefixLength = n - suffixLength;\n        int answer = countLucky(4, prefixLength) + countLucky(7, prefixLength);\n\n        ArrayList<Integer> remaining = new ArrayList<>();\n        for (int value = prefixLength + 1; value <= n; value++) {\n            remaining.add(value);\n        }\n\n        long rank = k - 1;\n\n        for (int offset = 0; offset < suffixLength; offset++) {\n            int remainingCount = suffixLength - offset;\n            int selectedIndex = (int) (rank / factorial[remainingCount - 1]);\n            rank %= factorial[remainingCount - 1];\n\n            int value = remaining.remove(selectedIndex);\n            int position = prefixLength + offset + 1;\n\n            if (isLucky(position) && isLucky(value)) {\n                answer++;\n            }\n        }\n\n        System.out.println(answer);\n    }\n\n    private static class FastScanner {\n        private final InputStream in;\n        private final byte[] buffer = new byte[1 << 16];\n        private int pointer = 0;\n        private int length = 0;\n\n        FastScanner(InputStream in) {\n            this.in = in;\n        }\n\n        private int read() throws IOException {\n            if (pointer >= length) {\n                length = in.read(buffer);\n                pointer = 0;\n                if (length <= 0) {\n                    return -1;\n                }\n            }\n            return buffer[pointer++];\n        }\n\n        long nextLong() throws IOException {\n            int c;\n            do {\n                c = read();\n            } while (c <= ' ' && c != -1);\n\n            long value = 0;\n            while (c > ' ') {\n                value = value * 10 + (c - '0');\n                c = read();\n            }\n            return value;\n        }\n\n        int nextInt() throws IOException {\n            return (int) nextLong();\n        }\n    }\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 3,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static int n;\n    static int start;\n    static int[] permutation;\n\n    static boolean isLucky(int value) {\n        if (value <= 0) return false;\n        while (value > 0) {\n            int digit = value % 10;\n            if (digit != 4 && digit != 7) return false;\n            value /= 10;\n        }\n        return true;\n    }\n\n    static int countLucky(long position) {\n        if (position > n) return 0;\n\n        int pos = (int) position;\n        int value = pos < start ? pos : permutation[pos - start];\n        int count = isLucky(value) ? 1 : 0;\n\n        long next4 = position * 10 + 4;\n        long next7 = position * 10 + 7;\n\n        if (next4 <= n) count += countLucky(next4);\n        if (next7 <= n) count += countLucky(next7);\n\n        return count;\n    }\n\n    public static void main(String[] args) throws Exception {\n        FastScanner fs = new FastScanner(System.in);\n        n = fs.nextInt();\n        long k = fs.nextLong();\n\n        long[] factorial = new long[14];\n        factorial[0] = 1;\n        for (int i = 1; i <= 13; i++) {\n            factorial[i] = factorial[i - 1] * i;\n        }\n\n        int suffixLength = 1;\n        while (suffixLength <= 13 && factorial[suffixLength] < k) {\n            suffixLength++;\n        }\n\n        if (suffixLength > n) {\n            System.out.println(-1);\n            return;\n        }\n\n        start = n - suffixLength + 1;\n        permutation = new int[suffixLength];\n\n        List<Integer> remaining = new ArrayList<>();\n        for (int value = start; value <= n; value++) {\n            remaining.add(value);\n        }\n\n        long rank = k - 1;\n        for (int i = 0; i < suffixLength; i++) {\n            long blockSize = factorial[suffixLength - i - 1];\n            int index = (int) (rank / blockSize);\n            rank %= blockSize;\n            permutation[i] = remaining.remove(index);\n        }\n\n        int answer = 0;\n        if (4 <= n) answer += countLucky(4);\n        if (7 <= n) answer += countLucky(7);\n\n        System.out.println(answer);\n    }\n\n    static class FastScanner {\n        private final InputStream in;\n        private final byte[] buffer = new byte[1 << 16];\n        private int pointer = 0;\n        private int length = 0;\n\n        FastScanner(InputStream in) {\n            this.in = in;\n        }\n\n        private int read() throws IOException {\n            if (pointer >= length) {\n                length = in.read(buffer);\n                pointer = 0;\n                if (length <= 0) return -1;\n            }\n            return buffer[pointer++];\n        }\n\n        long nextLong() throws IOException {\n            int c;\n            do {\n                c = read();\n            } while (c <= ' ');\n\n            long value = 0;\n            while (c > ' ') {\n                value = value * 10 + (c - '0');\n                c = read();\n            }\n            return value;\n        }\n\n        int nextInt() throws IOException {\n            return (int) nextLong();\n        }\n    }\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 4,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static int n;\n    static int start;\n    static int[] permutation;\n\n    public static void main(String[] args) throws Exception {\n        FastScanner fs = new FastScanner(System.in);\n        n = fs.nextInt();\n        long k = fs.nextLong();\n\n        long[] factorial = new long[14];\n        factorial[0] = 1;\n        for (int i = 1; i <= 13; i++) {\n            factorial[i] = factorial[i - 1] * i;\n        }\n\n        if (n < 13 && factorial[n] < k) {\n            System.out.println(-1);\n            return;\n        }\n\n        int length = Math.min(n, 13);\n        start = n - length + 1;\n        permutation = new int[length];\n\n        List<Integer> available = new ArrayList<>();\n        for (int value = start; value <= n; value++) {\n            available.add(value);\n        }\n\n        for (int i = 0; i < length; i++) {\n            long blockSize = factorial[length - i - 1];\n            int index = (int) ((k - 1) / blockSize);\n            permutation[i] = available.remove(index);\n            k = (k - 1) % blockSize + 1;\n        }\n\n        System.out.println(countLuckyPositions(0));\n    }\n\n    static int countLuckyPositions(long value) {\n        int count = 0;\n\n        if (value > 0) {\n            if (value > n) {\n                return 0;\n            }\n\n            int position = (int) value;\n            int mappedValue = position < start\n                    ? position\n                    : permutation[position - start];\n\n            if (isLucky(mappedValue)) {\n                count++;\n            }\n        }\n\n        count += countLuckyPositions(value * 10 + 4);\n        count += countLuckyPositions(value * 10 + 7);\n        return count;\n    }\n\n    static boolean isLucky(int value) {\n        while (value > 0) {\n            int digit = value % 10;\n            if (digit != 4 && digit != 7) {\n                return false;\n            }\n            value /= 10;\n        }\n        return true;\n    }\n\n    static class FastScanner {\n        private final InputStream in;\n        private final byte[] buffer = new byte[1 << 16];\n        private int pointer = 0;\n        private int length = 0;\n\n        FastScanner(InputStream in) {\n            this.in = in;\n        }\n\n        private int read() throws IOException {\n            if (pointer >= length) {\n                length = in.read(buffer);\n                pointer = 0;\n                if (length <= 0) {\n                    return -1;\n                }\n            }\n            return buffer[pointer++];\n        }\n\n        long nextLong() throws IOException {\n            int c;\n            do {\n                c = read();\n            } while (c <= ' ');\n\n            long value = 0;\n            while (c > ' ') {\n                value = value * 10 + (c - '0');\n                c = read();\n            }\n            return value;\n        }\n\n        int nextInt() throws IOException {\n            return (int) nextLong();\n        }\n    }\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            }
+        ],
+        "created": 1787152431,
+        "id": "chatcmpl-EEcH9oTWnTO3XjmMKsygvF8IYXrdj",
+        "model": "gpt-5.6-sol-2026-07-09",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {}
+            }
+        ],
+        "service_tier": "default",
+        "system_fingerprint": null,
+        "usage": {
+            "completion_tokens": 7712,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 4227,
+                "rejected_prediction_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 3,
+                "engine_ttft_ms": 1208,
+                "engine_ttlt_ms": 26143,
+                "pre_inference_ms": 104,
+                "service_tbt_ms": 3,
+                "service_ttft_ms": 1650,
+                "service_ttlt_ms": 26578,
+                "total_duration_ms": 26488,
+                "user_visible_ttft_ms": 1547
+            },
+            "prompt_tokens": 467,
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "total_tokens": 8179
+        },
+        "prompt": "Write a program in Java to solve this programming problem:\nDescription: Petya loves lucky numbers. Everybody knows that lucky numbers are positive integers whose decimal representation contains only the lucky digits 4 and 7. For example, numbers 47, 744, 4 are lucky and 5, 17, 467 are not.One day Petya dreamt of a lexicographically k-th permutation of integers from 1 to n. Determine how many lucky numbers in the permutation are located on the positions whose indexes are also lucky numbers.\nInput Specification: The first line contains two integers n and k (1\u2009\u2264\u2009n,\u2009k\u2009\u2264\u2009109) \u2014 the number of elements in the permutation and the lexicographical number of the permutation.\nOutput Specification: If the k-th permutation of numbers from 1 to n does not exist, print the single number \"-1\" (without the quotes). Otherwise, print the answer to the problem: the number of such indexes i, that i and ai are both lucky numbers.\n\nSample Input:\n7 4\nSample Output:\n1\n\nSample Input:\n4 7\nSample Output:\n1\n\nNotes: NoteA permutation is an ordered set of n elements, where each integer from 1 to n occurs exactly once. The element of permutation in position with index i is denoted as ai (1\u2009\u2264\u2009i\u2009\u2264\u2009n). Permutation a is lexicographically smaller that permutation b if there is such a i (1\u2009\u2264\u2009i\u2009\u2264\u2009n), that ai\u2009&lt;\u2009bi, and for any j (1\u2009\u2264\u2009j\u2009&lt;\u2009i) aj\u2009=\u2009bj. Let's make a list of all possible permutations of n elements and sort it in the order of lexicographical increasing. Then the lexicographically k-th permutation is the k-th element of this list of permutations.In the first sample the permutation looks like that:1 2 3 4 6 7 5The only suitable position is 4.In the second sample the permutation looks like that:2 1 3 4The only suitable position is 4.\nTake input from standard input and output to standard output\nProvide the Java code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "cb2aa02772f95fefd1856960b6ceac4c",
+        "difficulty": 1900,
+        "prob_desc_sample_inputs": [
+            "7 4",
+            "4 7"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "brute force",
+            "combinatorics",
+            "number theory"
+        ],
+        "prob_desc_output_spec": "If the k-th permutation of numbers from 1 to n does not exist, print the single number \"-1\" (without the quotes). Otherwise, print the answer to the problem: the number of such indexes i, that i and ai are both lucky numbers.",
+        "prob_desc_input_spec": "The first line contains two integers n and k (1\u2009\u2264\u2009n,\u2009k\u2009\u2264\u2009109) \u2014 the number of elements in the permutation and the lexicographical number of the permutation.",
+        "lang_cluster": "Java",
+        "source_code": "",
+        "prob_desc_notes": "NoteA permutation is an ordered set of n elements, where each integer from 1 to n occurs exactly once. The element of permutation in position with index i is denoted as ai (1\u2009\u2264\u2009i\u2009\u2264\u2009n). Permutation a is lexicographically smaller that permutation b if there is such a i (1\u2009\u2264\u2009i\u2009\u2264\u2009n), that ai\u2009&lt;\u2009bi, and for any j (1\u2009\u2264\u2009j\u2009&lt;\u2009i) aj\u2009=\u2009bj. Let's make a list of all possible permutations of n elements and sort it in the order of lexicographical increasing. Then the lexicographically k-th permutation is the k-th element of this list of permutations.In the first sample the permutation looks like that:1 2 3 4 6 7 5The only suitable position is 4.In the second sample the permutation looks like that:2 1 3 4The only suitable position is 4.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Petya loves lucky numbers. Everybody knows that lucky numbers are positive integers whose decimal representation contains only the lucky digits 4 and 7. For example, numbers 47, 744, 4 are lucky and 5, 17, 467 are not.One day Petya dreamt of a lexicographically k-th permutation of integers from 1 to n. Determine how many lucky numbers in the permutation are located on the positions whose indexes are also lucky numbers.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1319727600",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "1",
+            "1"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"7 4\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"4 7\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"7 5040\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10 1023\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 7477\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"10 10000\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"3 7\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"27 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"40 8544\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"47 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"47 8547744\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"50 1000000000\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"64 87\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"98 854555\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"100 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"9985 5888454\\r\\n\", \"output\": [\"30\"]}, {\"input\": \"1 1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"1 2\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"2 1000000000\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"10 1000000000\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"20 1000000000\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"777777 1\\r\\n\", \"output\": [\"126\"]}, {\"input\": \"777777 2\\r\\n\", \"output\": [\"125\"]}, {\"input\": \"777474 10000\\r\\n\", \"output\": [\"120\"]}, {\"input\": \"1000000000 1\\r\\n\", \"output\": [\"1022\"]}, {\"input\": \"777777777 5\\r\\n\", \"output\": [\"1021\"]}, {\"input\": \"777777777 1\\r\\n\", \"output\": [\"1022\"]}, {\"input\": \"777477774 1\\r\\n\", \"output\": [\"989\"]}, {\"input\": \"444747744 1000000000\\r\\n\", \"output\": [\"554\"]}, {\"input\": \"475 88555458\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"12 855448\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"20 1000000000\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"47 99998544\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"49 1000000000\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"854459 95554455\\r\\n\", \"output\": [\"126\"]}, {\"input\": \"77777779 1000000000\\r\\n\", \"output\": [\"508\"]}, {\"input\": \"77 47\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"6999 85488877\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"7479 58884598\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"1000000000 1000000000\\r\\n\", \"output\": [\"1022\"]}, {\"input\": \"7 1000\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 124\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 2048\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 3001\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 127\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 980\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 5000\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 4095\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"7 3856\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 5032\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 4999\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 3\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"2 4\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"7 985\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"4 25\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"6 121\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"11 39916801\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"29 1000000000\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"10 4589\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10 100000\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10 98564\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"10 100000009\\r\\n\", \"output\": [\"-1\"]}]"
+    }
+}

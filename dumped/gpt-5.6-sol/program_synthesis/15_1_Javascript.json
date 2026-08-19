@@ -1,0 +1,143 @@
+{
+    "oai_response": {
+        "choices": [
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 0,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "'use strict';\n\nconst fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/);\nconst n = Number(input[0]);\nconst k = Number(input[1]);\nconst l = BigInt(input[2]);\n\nconst MOD = 998244353n;\nconst maxN = 2 * n + 1;\n\nfunction modPow(base, exp) {\n    let result = 1n;\n    base %= MOD;\n    while (exp > 0n) {\n        if (exp & 1n) result = result * base % MOD;\n        base = base * base % MOD;\n        exp >>= 1n;\n    }\n    return result;\n}\n\nconst fact = new Array(maxN + 1).fill(1n);\nconst invFact = new Array(maxN + 1).fill(1n);\n\nfor (let i = 1; i <= maxN; i++) {\n    fact[i] = fact[i - 1] * BigInt(i) % MOD;\n}\n\ninvFact[maxN] = modPow(fact[maxN], MOD - 2n);\nfor (let i = maxN; i >= 1; i--) {\n    invFact[i - 1] = invFact[i] * BigInt(i) % MOD;\n}\n\nfunction combination(a, b) {\n    if (b < 0 || b > a) return 0n;\n    return fact[a] * invFact[b] % MOD * invFact[a - b] % MOD;\n}\n\nlet answer = 0n;\nlet powerOfTwo = modPow(2n, BigInt(k));\n\nfor (let j = k; j <= n; j++) {\n    const coefficient =\n        combination(n, j) * combination(j - 1, k - 1) % MOD;\n\n    const integral =\n        powerOfTwo * fact[j] % MOD *\n        fact[j] % MOD *\n        invFact[2 * j + 1] % MOD;\n\n    const term = coefficient * integral % MOD;\n\n    if ((j - k) % 2 === 0) {\n        answer += term;\n    } else {\n        answer -= term;\n    }\n\n    answer %= MOD;\n    powerOfTwo = powerOfTwo * 2n % MOD;\n}\n\nanswer = (answer % MOD + MOD) % MOD;\nanswer = answer * (l % MOD) % MOD;\n\nconsole.log(answer.toString());",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 1,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "'use strict';\n\nconst fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nconst [n, k, l] = input;\n\nconst MOD = 998244353;\nconst BASE = 32768;\n\nfunction mulMod(a, b) {\n    const high = Math.floor(b / BASE);\n    const low = b - high * BASE;\n    return (a * low + (a * high % MOD) * BASE) % MOD;\n}\n\nfunction modPow(base, exponent) {\n    let result = 1;\n    while (exponent > 0) {\n        if (exponent % 2 === 1) result = mulMod(result, base);\n        base = mulMod(base, base);\n        exponent = Math.floor(exponent / 2);\n    }\n    return result;\n}\n\nconst limit = 2 * n + 1;\nconst fact = new Uint32Array(limit + 1);\nconst invFact = new Uint32Array(limit + 1);\n\nfact[0] = 1;\nfor (let i = 1; i <= limit; i++) {\n    fact[i] = (fact[i - 1] * i) % MOD;\n}\n\ninvFact[limit] = modPow(fact[limit], MOD - 2);\nfor (let i = limit; i >= 1; i--) {\n    invFact[i - 1] = (invFact[i] * i) % MOD;\n}\n\nconst factorialProducts = new Uint32Array(2 * n + 1);\nfor (let a = 0; a <= 2 * n; a++) {\n    factorialProducts[a] = mulMod(fact[a], fact[2 * n - a]);\n}\n\nconst chooseN = new Uint32Array(n + 1);\nfor (let j = 0; j <= n; j++) {\n    chooseN[j] = mulMod(\n        mulMod(fact[n], invFact[j]),\n        invFact[n - j]\n    );\n}\n\nconst powersOfTwo = new Uint32Array(n + 1);\npowersOfTwo[0] = 1;\nfor (let i = 1; i <= n; i++) {\n    let value = powersOfTwo[i - 1] * 2;\n    if (value >= MOD) value -= MOD;\n    powersOfTwo[i] = value;\n}\n\nconst row = new Uint32Array(n - k + 2);\nrow[0] = 1;\n\nlet answer = 0;\n\nfor (let j = n; j >= k; j--) {\n    const m = n - j;\n    let integralNumerator = 0;\n\n    for (let r = 0; r <= m; r++) {\n        const exponent = j + 2 * r;\n        integralNumerator += mulMod(row[r], factorialProducts[exponent]);\n        if (integralNumerator >= MOD) integralNumerator -= MOD;\n    }\n\n    const coefficient = mulMod(chooseN[j], powersOfTwo[j]);\n    answer += mulMod(coefficient, integralNumerator);\n    if (answer >= MOD) answer -= MOD;\n\n    if (j > k) {\n        for (let r = m + 1; r >= 1; r--) {\n            let value = row[r] + row[r - 1];\n            if (value >= MOD) value -= MOD;\n            row[r] = value;\n        }\n    }\n}\n\nanswer = mulMod(answer, invFact[2 * n + 1]);\nanswer = mulMod(answer, l % MOD);\n\nconsole.log(answer.toString());",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 2,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nconst [n, k, l] = input;\n\nconst MOD = 998244353;\nconst BASE = 32768;\n\nfunction mul(a, b) {\n    const high = Math.floor(a / BASE);\n    const low = a - high * BASE;\n    return ((high * b % MOD) * BASE + low * b) % MOD;\n}\n\nfunction modPow(base, exp) {\n    let result = 1;\n    while (exp > 0) {\n        if (exp % 2 === 1) result = mul(result, base);\n        base = mul(base, base);\n        exp = Math.floor(exp / 2);\n    }\n    return result;\n}\n\nconst max = 2 * n;\nconst fact = new Uint32Array(max + 1);\nconst invFact = new Uint32Array(max + 1);\n\nfact[0] = 1;\nfor (let i = 1; i <= max; i++) {\n    fact[i] = fact[i - 1] * i % MOD;\n}\n\ninvFact[max] = modPow(fact[max], MOD - 2);\nfor (let i = max; i >= 1; i--) {\n    invFact[i - 1] = invFact[i] * i % MOD;\n}\n\nconst invChoose = new Uint32Array(max + 1);\nfor (let s = 0; s <= max; s++) {\n    invChoose[s] = mul(mul(fact[s], fact[max - s]), invFact[max]);\n}\n\nconst chooseN = new Uint32Array(n + 1);\nfor (let c = 0; c <= n; c++) {\n    chooseN[c] = mul(mul(fact[n], invFact[c]), invFact[n - c]);\n}\n\nconst pow2 = new Uint32Array(n + 1);\npow2[0] = 1;\nfor (let i = 1; i <= n; i++) {\n    let value = pow2[i - 1] * 2;\n    if (value >= MOD) value -= MOD;\n    pow2[i] = value;\n}\n\nconst row = new Uint32Array(n + 1);\nrow[0] = 1;\n\nlet answer = 0;\n\nfor (let m = 0; m <= n - k; m++) {\n    const c = n - m;\n    let inner = 0;\n\n    for (let a = 0; a <= m; a++) {\n        inner += mul(row[a], invChoose[c + 2 * a]);\n        if (inner >= MOD) inner -= MOD;\n    }\n\n    const weight = mul(chooseN[c], pow2[c]);\n    answer += mul(weight, inner);\n    if (answer >= MOD) answer -= MOD;\n\n    for (let a = m + 1; a >= 1; a--) {\n        let value = row[a] + row[a - 1];\n        if (value >= MOD) value -= MOD;\n        row[a] = value;\n    }\n}\n\nanswer = mul(answer, modPow(2 * n + 1, MOD - 2));\nanswer = mul(answer, l % MOD);\n\nconsole.log(answer.toString());",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 3,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "const fs = require('fs');\n\nconst [n, k, l] = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\n\nconst MOD = 998244353;\nconst BASE = 32768;\nconst maxV = 2 * n + 1;\n\nfunction mulMod(a, b) {\n    const high = Math.floor(b / BASE);\n    const low = b - high * BASE;\n    return (((a * high) % MOD) * BASE + a * low) % MOD;\n}\n\nconst inv = new Array(maxV + 1).fill(0);\ninv[1] = 1;\n\nfor (let i = 2; i <= maxV; i++) {\n    const q = Math.floor(MOD / i);\n    const r = MOD % i;\n    inv[i] = (MOD - mulMod(q, inv[r])) % MOD;\n}\n\nconst invPair = new Array(maxV + 1).fill(0);\nfor (let i = 2; i <= maxV; i++) {\n    invPair[i] = mulMod(inv[i], inv[i - 1]);\n}\n\nlet firstTerm = inv[2 * n + 1];\nlet answer = 0;\n\nfor (let j = 0; j <= n; j++) {\n    if (j >= k) {\n        const m = n - j;\n        let term = firstTerm;\n        let exactProbability = term;\n\n        for (let r = 0; r < m; r++) {\n            const a = j + 2 * r + 1;\n            const d = 2 * n - j - 2 * r;\n\n            term = (term * (m - r)) % MOD;\n            term = (term * a) % MOD;\n            term = (term * (a + 1)) % MOD;\n\n            const denominatorInverse = mulMod(inv[r + 1], invPair[d]);\n            term = mulMod(term, denominatorInverse);\n\n            exactProbability += term;\n            if (exactProbability >= MOD) exactProbability -= MOD;\n        }\n\n        answer += exactProbability;\n        if (answer >= MOD) answer -= MOD;\n    }\n\n    if (j < n) {\n        firstTerm = (firstTerm * (2 * (n - j))) % MOD;\n        firstTerm = mulMod(firstTerm, inv[2 * n - j]);\n    }\n}\n\nanswer = mulMod(answer, l % MOD);\nconsole.log(answer);",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 4,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "'use strict';\n\nconst fs = require('fs');\nconst [n, k, l] = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\n\nconst MOD = 998244353;\nconst BASE = 1024;\n\nfunction mulMod(a, b) {\n    const ah = Math.floor(a / BASE);\n    const al = a - ah * BASE;\n    const bh = Math.floor(b / BASE);\n    const bl = b - bh * BASE;\n\n    let result = (ah * bh) % MOD;\n    result = (result * BASE) % MOD;\n    result = (result * BASE) % MOD;\n    result += (ah * bl + al * bh) * BASE + al * bl;\n    return result % MOD;\n}\n\nfunction powMod(base, exponent) {\n    let result = 1;\n    while (exponent > 0) {\n        if (exponent % 2 === 1) result = mulMod(result, base);\n        base = mulMod(base, base);\n        exponent = Math.floor(exponent / 2);\n    }\n    return result;\n}\n\nconst limit = 2 * n + 1;\nconst fact = new Float64Array(limit + 1);\nconst invFact = new Float64Array(limit + 1);\n\nfact[0] = 1;\nfor (let i = 1; i <= limit; i++) {\n    fact[i] = (fact[i - 1] * i) % MOD;\n}\n\ninvFact[limit] = powMod(fact[limit], MOD - 2);\nfor (let i = limit; i >= 1; i--) {\n    invFact[i - 1] = (invFact[i] * i) % MOD;\n}\n\nfunction binomial(a, b) {\n    if (b < 0 || b > a) return 0;\n    return mulMod(mulMod(fact[a], invFact[b]), invFact[a - b]);\n}\n\nconst inverses = new Float64Array(n + 2);\ninverses[1] = 1;\nfor (let i = 2; i <= n + 1; i++) {\n    inverses[i] = MOD - mulMod(Math.floor(MOD / i), inverses[MOD % i]);\n}\n\nconst factorialPair = new Float64Array(2 * n + 1);\nfor (let x = 0; x <= 2 * n; x++) {\n    factorialPair[x] = mulMod(fact[x], fact[2 * n - x]);\n}\n\nlet m = n - k;\nconst row = new Float64Array(m + 1);\nrow[0] = 1;\nfor (let a = 1; a <= m; a++) {\n    row[a] = mulMod(mulMod(row[a - 1], m - a + 1), inverses[a]);\n}\n\nlet coefficient = mulMod(binomial(n, k), powMod(2, k));\nlet total = 0;\n\nfor (let j = k; j <= n; j++) {\n    let sum = 0;\n\n    for (let a = 0; a <= m; a++) {\n        sum += mulMod(row[a], factorialPair[j + 2 * a]);\n        if (sum >= MOD) sum -= MOD;\n    }\n\n    total += mulMod(coefficient, sum);\n    if (total >= MOD) total -= MOD;\n\n    if (j < n) {\n        for (let a = 1; a < m; a++) {\n            let value = row[a] - row[a - 1];\n            if (value < 0) value += MOD;\n            row[a] = value;\n        }\n\n        m--;\n\n        coefficient = mulMod(coefficient, 2 * (n - j));\n        coefficient = mulMod(coefficient, inverses[j + 1]);\n    }\n}\n\nlet answer = mulMod(total, invFact[2 * n + 1]);\nanswer = mulMod(answer, l % MOD);\n\nconsole.log(answer.toString());",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            }
+        ],
+        "created": 1787152733,
+        "id": "chatcmpl-EEcM1Ipwz6QGdmrdXMe6ArtcRi6oA",
+        "model": "gpt-5.6-sol-2026-07-09",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {}
+            }
+        ],
+        "service_tier": "default",
+        "system_fingerprint": null,
+        "usage": {
+            "completion_tokens": 17808,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 14290,
+                "rejected_prediction_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 5,
+                "engine_ttft_ms": 348,
+                "engine_ttlt_ms": 93935,
+                "pre_inference_ms": 124,
+                "service_tbt_ms": 5,
+                "service_ttft_ms": 712,
+                "service_ttlt_ms": 94293,
+                "total_duration_ms": 94176,
+                "user_visible_ttft_ms": 588
+            },
+            "prompt_tokens": 639,
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "total_tokens": 18447
+        },
+        "prompt": "Write a program in Javascript to solve this programming problem:\nDescription: Getting closer and closer to a mathematician, Serval becomes a university student on math major in Japari University. On the Calculus class, his teacher taught him how to calculate the expected length of a random subsegment of a given segment. Then he left a bonus problem as homework, with the award of a garage kit from IOI. The bonus is to extend this problem to the general case as follows.You are given a segment with length $$$l$$$. We randomly choose $$$n$$$ segments by choosing two points (maybe with non-integer coordinates) from the given segment equiprobably and the interval between the two points forms a segment. You are given the number of random segments $$$n$$$, and another integer $$$k$$$. The $$$2n$$$ endpoints of the chosen segments split the segment into $$$(2n+1)$$$ intervals. Your task is to calculate the expected total length of those intervals that are covered by at least $$$k$$$ segments of the $$$n$$$ random segments.You should find the answer modulo $$$998244353$$$.\nInput Specification: First line contains three space-separated positive integers $$$n$$$, $$$k$$$ and $$$l$$$ ($$$1\\leq k \\leq n \\leq 2000$$$, $$$1\\leq l\\leq 10^9$$$).\nOutput Specification: Output one integer\u00a0\u2014 the expected total length of all the intervals covered by at least $$$k$$$ segments of the $$$n$$$ random segments modulo $$$998244353$$$. Formally, let $$$M = 998244353$$$. It can be shown that the answer can be expressed as an irreducible fraction $$$\\frac{p}{q}$$$, where $$$p$$$ and $$$q$$$ are integers and $$$q \\not \\equiv 0 \\pmod{M}$$$. Output the integer equal to $$$p \\cdot q^{-1} \\bmod M$$$. In other words, output such an integer $$$x$$$ that $$$0 \\le x &lt; M$$$ and $$$x \\cdot q \\equiv p \\pmod{M}$$$.\n\nSample Input:\n1 1 1\nSample Output:\n332748118\n\nSample Input:\n6 2 1\nSample Output:\n760234711\n\nSample Input:\n7 5 3\nSample Output:\n223383352\n\nSample Input:\n97 31 9984524\nSample Output:\n267137618\n\nNotes: NoteIn the first example, the expected total length is $$$\\int_0^1 \\int_0^1 |x-y| \\,\\mathrm{d}x\\,\\mathrm{d}y = {1\\over 3}$$$, and $$$3^{-1}$$$ modulo $$$998244353$$$ is $$$332748118$$$.\nTake input from standard input and output to standard output\nProvide the Javascript code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "c9e79e83928d5d034123ebc3b2f5e064",
+        "difficulty": 2600,
+        "prob_desc_sample_inputs": [
+            "1 1 1",
+            "6 2 1",
+            "7 5 3",
+            "97 31 9984524"
+        ],
+        "prob_desc_time_limit": "1 second",
+        "tags": [
+            "math",
+            "probabilities",
+            "combinatorics",
+            "dp"
+        ],
+        "prob_desc_output_spec": "Output one integer\u00a0\u2014 the expected total length of all the intervals covered by at least $$$k$$$ segments of the $$$n$$$ random segments modulo $$$998244353$$$. Formally, let $$$M = 998244353$$$. It can be shown that the answer can be expressed as an irreducible fraction $$$\\frac{p}{q}$$$, where $$$p$$$ and $$$q$$$ are integers and $$$q \\not \\equiv 0 \\pmod{M}$$$. Output the integer equal to $$$p \\cdot q^{-1} \\bmod M$$$. In other words, output such an integer $$$x$$$ that $$$0 \\le x &lt; M$$$ and $$$x \\cdot q \\equiv p \\pmod{M}$$$.",
+        "prob_desc_input_spec": "First line contains three space-separated positive integers $$$n$$$, $$$k$$$ and $$$l$$$ ($$$1\\leq k \\leq n \\leq 2000$$$, $$$1\\leq l\\leq 10^9$$$).",
+        "lang_cluster": "Javascript",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first example, the expected total length is $$$\\int_0^1 \\int_0^1 |x-y| \\,\\mathrm{d}x\\,\\mathrm{d}y = {1\\over 3}$$$, and $$$3^{-1}$$$ modulo $$$998244353$$$ is $$$332748118$$$.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Getting closer and closer to a mathematician, Serval becomes a university student on math major in Japari University. On the Calculus class, his teacher taught him how to calculate the expected length of a random subsegment of a given segment. Then he left a bonus problem as homework, with the award of a garage kit from IOI. The bonus is to extend this problem to the general case as follows.You are given a segment with length $$$l$$$. We randomly choose $$$n$$$ segments by choosing two points (maybe with non-integer coordinates) from the given segment equiprobably and the interval between the two points forms a segment. You are given the number of random segments $$$n$$$, and another integer $$$k$$$. The $$$2n$$$ endpoints of the chosen segments split the segment into $$$(2n+1)$$$ intervals. Your task is to calculate the expected total length of those intervals that are covered by at least $$$k$$$ segments of the $$$n$$$ random segments.You should find the answer modulo $$$998244353$$$.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1555164300",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "332748118",
+            "760234711",
+            "223383352",
+            "267137618"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"1 1 1\\r\\n\", \"output\": [\"332748118\"]}, {\"input\": \"6 2 1\\r\\n\", \"output\": [\"760234711\"]}, {\"input\": \"7 5 3\\r\\n\", \"output\": [\"223383352\"]}, {\"input\": \"97 31 9984524\\r\\n\", \"output\": [\"267137618\"]}, {\"input\": \"2000 1 772197283\\r\\n\", \"output\": [\"905584809\"]}, {\"input\": \"2000 2 76039754\\r\\n\", \"output\": [\"855496918\"]}, {\"input\": \"2000 3 40337285\\r\\n\", \"output\": [\"782495326\"]}, {\"input\": \"2000 2000 773356966\\r\\n\", \"output\": [\"104351589\"]}, {\"input\": \"2000 1999 239479112\\r\\n\", \"output\": [\"620815507\"]}, {\"input\": \"2000 1998 334042678\\r\\n\", \"output\": [\"322694394\"]}, {\"input\": \"2000 976 671942688\\r\\n\", \"output\": [\"767696001\"]}, {\"input\": \"2000 1415 40371690\\r\\n\", \"output\": [\"171032298\"]}, {\"input\": \"2000 1000 1000000000\\r\\n\", \"output\": [\"491672258\"]}, {\"input\": \"1998 1001 998244353\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2000 4 136878315\\r\\n\", \"output\": [\"880870575\"]}, {\"input\": \"2000 5 558837462\\r\\n\", \"output\": [\"18859862\"]}, {\"input\": \"2000 1997 525997660\\r\\n\", \"output\": [\"843278067\"]}, {\"input\": \"2000 1996 45458693\\r\\n\", \"output\": [\"772786701\"]}, {\"input\": \"2000 1947 62604662\\r\\n\", \"output\": [\"540795249\"]}, {\"input\": \"2000 1728 63723796\\r\\n\", \"output\": [\"421421553\"]}, {\"input\": \"1961 206 931072038\\r\\n\", \"output\": [\"794464980\"]}, {\"input\": \"1948 978 501529426\\r\\n\", \"output\": [\"50139353\"]}, {\"input\": \"1878 1529 66841298\\r\\n\", \"output\": [\"880727658\"]}, {\"input\": \"1900 1 495084177\\r\\n\", \"output\": [\"338668438\"]}, {\"input\": \"1885 2 286102770\\r\\n\", \"output\": [\"443099162\"]}, {\"input\": \"1928 3 200575371\\r\\n\", \"output\": [\"291241927\"]}, {\"input\": \"1978 4 436588015\\r\\n\", \"output\": [\"282947523\"]}, {\"input\": \"1987 1987 191667504\\r\\n\", \"output\": [\"627381301\"]}, {\"input\": \"1821 1820 866603455\\r\\n\", \"output\": [\"318623064\"]}, {\"input\": \"1824 1822 151884700\\r\\n\", \"output\": [\"462069981\"]}, {\"input\": \"1486 1 170331068\\r\\n\", \"output\": [\"692176218\"]}, {\"input\": \"1424 1 217388653\\r\\n\", \"output\": [\"56808622\"]}, {\"input\": \"1703 1 803103605\\r\\n\", \"output\": [\"660333930\"]}, {\"input\": \"1555 1 700556118\\r\\n\", \"output\": [\"615656029\"]}, {\"input\": \"1224 1 71403225\\r\\n\", \"output\": [\"128242924\"]}, {\"input\": \"1492 1 599215694\\r\\n\", \"output\": [\"195441337\"]}, {\"input\": \"1281 1 415457117\\r\\n\", \"output\": [\"111407914\"]}, {\"input\": \"1664 1 517151944\\r\\n\", \"output\": [\"126430274\"]}, {\"input\": \"1771 1 555450393\\r\\n\", \"output\": [\"280416119\"]}, {\"input\": \"1045 1 375567139\\r\\n\", \"output\": [\"983012429\"]}, {\"input\": \"1025 1025 871316577\\r\\n\", \"output\": [\"266993477\"]}, {\"input\": \"1243 1243 296556443\\r\\n\", \"output\": [\"209836419\"]}, {\"input\": \"1240 1240 846679367\\r\\n\", \"output\": [\"744376915\"]}, {\"input\": \"1946 1946 432053608\\r\\n\", \"output\": [\"329055332\"]}, {\"input\": \"1806 1806 174417450\\r\\n\", \"output\": [\"287857698\"]}, {\"input\": \"1321 1321 774237640\\r\\n\", \"output\": [\"573916469\"]}, {\"input\": \"1205 1205 972407779\\r\\n\", \"output\": [\"970505824\"]}, {\"input\": \"1063 1063 497812546\\r\\n\", \"output\": [\"203394740\"]}, {\"input\": \"1443 1443 784034214\\r\\n\", \"output\": [\"489871338\"]}, {\"input\": \"1099 1099 548018740\\r\\n\", \"output\": [\"530449224\"]}, {\"input\": \"1334 667 998244356\\r\\n\", \"output\": [\"123570327\"]}, {\"input\": \"1621 810 998244355\\r\\n\", \"output\": [\"334476739\"]}, {\"input\": \"1253 626 998244353\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"1217 608 998244355\\r\\n\", \"output\": [\"465345479\"]}, {\"input\": \"1966 983 998244357\\r\\n\", \"output\": [\"81898103\"]}, {\"input\": \"1471 735 998244354\\r\\n\", \"output\": [\"399941190\"]}, {\"input\": \"1496 748 998244357\\r\\n\", \"output\": [\"419593982\"]}, {\"input\": \"1307 653 998244355\\r\\n\", \"output\": [\"823060783\"]}, {\"input\": \"1706 853 998244357\\r\\n\", \"output\": [\"627644358\"]}, {\"input\": \"1025 512 998244357\\r\\n\", \"output\": [\"120622427\"]}]"
+    }
+}

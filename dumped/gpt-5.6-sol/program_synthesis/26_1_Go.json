@@ -1,0 +1,141 @@
+{
+    "oai_response": {
+        "choices": [
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 0,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst mod int64 = 998244353\n\nfunc modPow(a, e int64) int64 {\n\tres := int64(1)\n\tfor e > 0 {\n\t\tif e&1 == 1 {\n\t\t\tres = res * a % mod\n\t\t}\n\t\ta = a * a % mod\n\t\te >>= 1\n\t}\n\treturn res\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\n\tvar p, s, r int\n\tfmt.Fscan(in, &p, &s, &r)\n\n\tn := s + p + 5\n\tfact := make([]int64, n)\n\tinvFact := make([]int64, n)\n\n\tfact[0] = 1\n\tfor i := 1; i < n; i++ {\n\t\tfact[i] = fact[i-1] * int64(i) % mod\n\t}\n\n\tinvFact[n-1] = modPow(fact[n-1], mod-2)\n\tfor i := n - 1; i > 0; i-- {\n\t\tinvFact[i-1] = invFact[i] * int64(i) % mod\n\t}\n\n\tcomb := func(a, b int) int64 {\n\t\tif b < 0 || b > a || a < 0 {\n\t\t\treturn 0\n\t\t}\n\t\treturn fact[a] * invFact[b] % mod * invFact[a-b] % mod\n\t}\n\n\ttotal := comb(s+p-1, p-1)\n\n\tvar bounded int64\n\tif r > 0 {\n\t\tfor j := 0; j <= p && j*r <= s; j++ {\n\t\t\tterm := comb(p, j) * comb(s-j*r+p-1, p-1) % mod\n\t\t\tif j%2 == 0 {\n\t\t\t\tbounded = (bounded + term) % mod\n\t\t\t} else {\n\t\t\t\tbounded = (bounded - term + mod) % mod\n\t\t\t}\n\t\t}\n\t}\n\n\tnumerator := (total - bounded + mod) % mod\n\tdenominator := comb(s-r+p-1, p-1)\n\n\tanswer := numerator * modPow(int64(p), mod-2) % mod\n\tanswer = answer * modPow(denominator, mod-2) % mod\n\n\tout := bufio.NewWriter(os.Stdout)\n\tdefer out.Flush()\n\tfmt.Fprintln(out, answer)\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 1,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst mod int64 = 998244353\n\nvar fact, invFact []int64\n\nfunc modPow(a, e int64) int64 {\n\tres := int64(1)\n\tfor e > 0 {\n\t\tif e&1 == 1 {\n\t\t\tres = res * a % mod\n\t\t}\n\t\ta = a * a % mod\n\t\te >>= 1\n\t}\n\treturn res\n}\n\nfunc comb(n, k int) int64 {\n\tif n < 0 || k < 0 || k > n {\n\t\treturn 0\n\t}\n\treturn fact[n] * invFact[k] % mod * invFact[n-k] % mod\n}\n\n// Number of ordered m-tuples with entries in [0, x-1] and sum q.\nfunc boundedCompositions(m, x, q int) int64 {\n\tif q < 0 || q > m*(x-1) {\n\t\treturn 0\n\t}\n\tif m == 0 {\n\t\tif q == 0 {\n\t\t\treturn 1\n\t\t}\n\t\treturn 0\n\t}\n\n\tlimit := q / x\n\tif limit > m {\n\t\tlimit = m\n\t}\n\n\tvar res int64\n\tfor j := 0; j <= limit; j++ {\n\t\tterm := comb(m, j) * comb(q-j*x+m-1, m-1) % mod\n\t\tif j&1 == 0 {\n\t\t\tres += term\n\t\t\tif res >= mod {\n\t\t\t\tres -= mod\n\t\t\t}\n\t\t} else {\n\t\t\tres -= term\n\t\t\tif res < 0 {\n\t\t\t\tres += mod\n\t\t\t}\n\t\t}\n\t}\n\treturn res\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\n\tvar p, s, r int\n\tfmt.Fscan(in, &p, &s, &r)\n\n\tif s == 0 {\n\t\tfmt.Println(modPow(int64(p), mod-2))\n\t\treturn\n\t}\n\n\tmaxN := s + p + 5\n\tfact = make([]int64, maxN)\n\tinvFact = make([]int64, maxN)\n\n\tfact[0] = 1\n\tfor i := 1; i < maxN; i++ {\n\t\tfact[i] = fact[i-1] * int64(i) % mod\n\t}\n\tinvFact[maxN-1] = modPow(fact[maxN-1], mod-2)\n\tfor i := maxN - 1; i > 0; i-- {\n\t\tinvFact[i-1] = invFact[i] * int64(i) % mod\n\t}\n\n\ttotalStates := comb(s-r+p-1, p-1)\n\topponents := p - 1\n\n\tstart := r\n\tminPossibleMaximum := (s + p - 1) / p\n\tif start < minPossibleMaximum {\n\t\tstart = minPossibleMaximum\n\t}\n\n\tinverses := make([]int64, p+1)\n\tfor i := 1; i <= p; i++ {\n\t\tinverses[i] = modPow(int64(i), mod-2)\n\t}\n\n\tvar winningSum int64\n\n\tfor x := start; x <= s; x++ {\n\t\tmaxTiedOpponents := s/x - 1\n\t\tif maxTiedOpponents > opponents {\n\t\t\tmaxTiedOpponents = opponents\n\t\t}\n\n\t\tfor k := 0; k <= maxTiedOpponents; k++ {\n\t\t\tremainingPlayers := opponents - k\n\t\t\tremainingScore := s - (k+1)*x\n\n\t\t\tcount := boundedCompositions(remainingPlayers, x, remainingScore)\n\t\t\tif count == 0 {\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\tcount = count * comb(opponents, k) % mod\n\t\t\tcount = count * inverses[k+1] % mod\n\n\t\t\twinningSum += count\n\t\t\tif winningSum >= mod {\n\t\t\t\twinningSum -= mod\n\t\t\t}\n\t\t}\n\t}\n\n\tanswer := winningSum * modPow(totalStates, mod-2) % mod\n\tfmt.Println(answer)\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 2,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst mod int64 = 998244353\n\nfunc modPow(a, e int64) int64 {\n\tres := int64(1)\n\tfor e > 0 {\n\t\tif e&1 == 1 {\n\t\t\tres = res * a % mod\n\t\t}\n\t\ta = a * a % mod\n\t\te >>= 1\n\t}\n\treturn res\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar p, s, r int\n\tfmt.Fscan(in, &p, &s, &r)\n\n\tout := bufio.NewWriter(os.Stdout)\n\tdefer out.Flush()\n\n\tif p == 1 || r > s/2 {\n\t\tfmt.Fprintln(out, 1)\n\t\treturn\n\t}\n\tif r == 0 {\n\t\tfmt.Fprintln(out, modPow(int64(p), mod-2))\n\t\treturn\n\t}\n\n\tmaxN := s + p + 5\n\tfact := make([]int64, maxN)\n\tinvFact := make([]int64, maxN)\n\tfact[0] = 1\n\tfor i := 1; i < maxN; i++ {\n\t\tfact[i] = fact[i-1] * int64(i) % mod\n\t}\n\tinvFact[maxN-1] = modPow(fact[maxN-1], mod-2)\n\tfor i := maxN - 1; i > 0; i-- {\n\t\tinvFact[i-1] = invFact[i] * int64(i) % mod\n\t}\n\n\tcomb := func(n, k int) int64 {\n\t\tif n < 0 || k < 0 || k > n {\n\t\t\treturn 0\n\t\t}\n\t\treturn fact[n] * invFact[k] % mod * invFact[n-k] % mod\n\t}\n\n\tinv := make([]int64, p+1)\n\tinv[1] = 1\n\tfor i := 2; i <= p; i++ {\n\t\tinv[i] = (mod - (mod/int64(i))*inv[mod%int64(i)]%mod) % mod\n\t}\n\n\tm := p - 1\n\tnumerator := int64(0)\n\n\tfor x := r; x <= s; x++ {\n\t\tn := s - x\n\n\t\tif x > n {\n\t\t\tnumerator += comb(n+m-1, m-1)\n\t\t\tif numerator >= mod {\n\t\t\t\tnumerator -= mod\n\t\t\t}\n\t\t\tcontinue\n\t\t}\n\n\t\tmaxK := n / x\n\t\tif maxK > m-1 {\n\t\t\tmaxK = m - 1\n\t\t}\n\n\t\tfor k := 0; k <= maxK; k++ {\n\t\t\tl := m - k\n\t\t\tjMax := n/x - k\n\t\t\tif jMax > l {\n\t\t\t\tjMax = l\n\t\t\t}\n\n\t\t\tcoefficient := int64(0)\n\t\t\tfor j := 0; j <= jMax; j++ {\n\t\t\t\tt := n - (k+j)*x\n\t\t\t\tterm := comb(l, j) * comb(t+l-1, l-1) % mod\n\t\t\t\tif j&1 == 0 {\n\t\t\t\t\tcoefficient += term\n\t\t\t\t\tif coefficient >= mod {\n\t\t\t\t\t\tcoefficient -= mod\n\t\t\t\t\t}\n\t\t\t\t} else {\n\t\t\t\t\tcoefficient -= term\n\t\t\t\t\tif coefficient < 0 {\n\t\t\t\t\t\tcoefficient += mod\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\twaysToChooseTies := comb(m, k)\n\t\t\tcontribution := waysToChooseTies * inv[k+1] % mod\n\t\t\tcontribution = contribution * coefficient % mod\n\t\t\tnumerator += contribution\n\t\t\tif numerator >= mod {\n\t\t\t\tnumerator -= mod\n\t\t\t}\n\t\t}\n\n\t\tif n == m*x {\n\t\t\tnumerator += inv[p]\n\t\t\tif numerator >= mod {\n\t\t\t\tnumerator -= mod\n\t\t\t}\n\t\t}\n\t}\n\n\tdenominator := comb(s-r+p-1, p-1)\n\tanswer := numerator * modPow(denominator, mod-2) % mod\n\tfmt.Fprintln(out, answer)\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 3,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst mod int64 = 998244353\n\nfunc modPow(a, e int64) int64 {\n\tres := int64(1)\n\tfor e > 0 {\n\t\tif e&1 == 1 {\n\t\t\tres = res * a % mod\n\t\t}\n\t\ta = a * a % mod\n\t\te >>= 1\n\t}\n\treturn res\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\n\tvar p, s, r int\n\tfmt.Fscan(in, &p, &s, &r)\n\n\tn := s + p + 5\n\tfact := make([]int64, n)\n\tinvFact := make([]int64, n)\n\n\tfact[0] = 1\n\tfor i := 1; i < n; i++ {\n\t\tfact[i] = fact[i-1] * int64(i) % mod\n\t}\n\n\tinvFact[n-1] = modPow(fact[n-1], mod-2)\n\tfor i := n - 1; i > 0; i-- {\n\t\tinvFact[i-1] = invFact[i] * int64(i) % mod\n\t}\n\n\tcomb := func(n, k int) int64 {\n\t\tif k < 0 || k > n || n < 0 {\n\t\t\treturn 0\n\t\t}\n\t\treturn fact[n] * invFact[k] % mod * invFact[n-k] % mod\n\t}\n\n\ttotal := comb(s+p-1, p-1)\n\tbounded := int64(0)\n\n\tif r > 0 {\n\t\tlimit := p\n\t\tif s/r < limit {\n\t\t\tlimit = s / r\n\t\t}\n\n\t\tfor k := 0; k <= limit; k++ {\n\t\t\tterm := comb(p, k) * comb(s-k*r+p-1, p-1) % mod\n\t\t\tif k%2 == 0 {\n\t\t\t\tbounded = (bounded + term) % mod\n\t\t\t} else {\n\t\t\t\tbounded = (bounded - term + mod) % mod\n\t\t\t}\n\t\t}\n\t}\n\n\tmaxAtLeastR := (total - bounded + mod) % mod\n\tvalidStates := comb(s-r+p-1, p-1)\n\tdenominator := int64(p) * validStates % mod\n\n\tanswer := maxAtLeastR * modPow(denominator, mod-2) % mod\n\n\tout := bufio.NewWriter(os.Stdout)\n\tdefer out.Flush()\n\tfmt.Fprintln(out, answer)\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 4,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst mod int64 = 998244353\n\nfunc modPow(a, e int64) int64 {\n\tres := int64(1)\n\tfor e > 0 {\n\t\tif e&1 == 1 {\n\t\t\tres = res * a % mod\n\t\t}\n\t\ta = a * a % mod\n\t\te >>= 1\n\t}\n\treturn res\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\n\tvar p, s, r int\n\tfmt.Fscan(in, &p, &s, &r)\n\n\tmaxN := s + p\n\tfact := make([]int64, maxN+1)\n\tinvFact := make([]int64, maxN+1)\n\n\tfact[0] = 1\n\tfor i := 1; i <= maxN; i++ {\n\t\tfact[i] = fact[i-1] * int64(i) % mod\n\t}\n\n\tinvFact[maxN] = modPow(fact[maxN], mod-2)\n\tfor i := maxN; i > 0; i-- {\n\t\tinvFact[i-1] = invFact[i] * int64(i) % mod\n\t}\n\n\tcomb := func(n, k int) int64 {\n\t\tif n < 0 || k < 0 || k > n {\n\t\t\treturn 0\n\t\t}\n\t\treturn fact[n] * invFact[k] % mod * invFact[n-k] % mod\n\t}\n\n\ttotal := comb(s+p-1, p-1)\n\tbounded := int64(0)\n\n\tif r > 0 {\n\t\tlimit := s / r\n\t\tif limit > p {\n\t\t\tlimit = p\n\t\t}\n\t\tfor j := 0; j <= limit; j++ {\n\t\t\tterm := comb(p, j) * comb(s-j*r+p-1, p-1) % mod\n\t\t\tif j%2 == 0 {\n\t\t\t\tbounded = (bounded + term) % mod\n\t\t\t} else {\n\t\t\t\tbounded = (bounded - term + mod) % mod\n\t\t\t}\n\t\t}\n\t}\n\n\tweighted := (total - bounded + mod) % mod\n\tstates := comb(s-r+p-1, p-1)\n\n\tanswer := weighted * modPow(int64(p), mod-2) % mod\n\tanswer = answer * modPow(states, mod-2) % mod\n\n\tout := bufio.NewWriter(os.Stdout)\n\tdefer out.Flush()\n\tfmt.Fprintln(out, answer)\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            }
+        ],
+        "created": 1787151466,
+        "id": "chatcmpl-EEc1agtURsF499Mz0FZWF5WPeaee3",
+        "model": "gpt-5.6-sol-2026-07-09",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {}
+            }
+        ],
+        "service_tier": "default",
+        "system_fingerprint": null,
+        "usage": {
+            "completion_tokens": 12252,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 8769,
+                "rejected_prediction_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 6,
+                "engine_ttft_ms": 687,
+                "engine_ttlt_ms": 69408,
+                "pre_inference_ms": 118,
+                "service_tbt_ms": 6,
+                "service_ttft_ms": 1150,
+                "service_ttlt_ms": 69855,
+                "total_duration_ms": 69760,
+                "user_visible_ttft_ms": 1032
+            },
+            "prompt_tokens": 786,
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "total_tokens": 13038
+        },
+        "prompt": "Write a program in Go to solve this programming problem:\nDescription: Hasan loves playing games and has recently discovered a game called TopScore. In this soccer-like game there are $$$p$$$ players doing penalty shoot-outs. Winner is the one who scores the most. In case of ties, one of the top-scorers will be declared as the winner randomly with equal probability.They have just finished the game and now are waiting for the result. But there's a tiny problem! The judges have lost the paper of scores! Fortunately they have calculated sum of the scores before they get lost and also for some of the players they have remembered a lower bound on how much they scored. However, the information about the bounds is private, so Hasan only got to know his bound.According to the available data, he knows that his score is at least $$$r$$$ and sum of the scores is $$$s$$$.Thus the final state of the game can be represented in form of sequence of $$$p$$$ integers $$$a_1, a_2, \\dots, a_p$$$ ($$$0 \\le a_i$$$) \u2014 player's scores. Hasan is player number $$$1$$$, so $$$a_1 \\ge r$$$. Also $$$a_1 + a_2 + \\dots + a_p = s$$$. Two states are considered different if there exists some position $$$i$$$ such that the value of $$$a_i$$$ differs in these states. Once again, Hasan doesn't know the exact scores (he doesn't know his exact score as well). So he considers each of the final states to be equally probable to achieve.Help Hasan find the probability of him winning.It can be shown that it is in the form of $$$\\frac{P}{Q}$$$ where $$$P$$$ and $$$Q$$$ are non-negative integers and $$$Q \\ne 0$$$, $$$P \\le Q$$$. Report the value of $$$P \\cdot Q^{-1} \\pmod {998244353}$$$.\nInput Specification: The only line contains three integers $$$p$$$, $$$s$$$ and $$$r$$$ ($$$1 \\le p \\le 100$$$, $$$0 \\le r \\le s \\le 5000$$$) \u2014 the number of players, the sum of scores of all players and Hasan's score, respectively.\nOutput Specification: Print a single integer \u2014 the probability of Hasan winning. It can be shown that it is in the form of $$$\\frac{P}{Q}$$$ where $$$P$$$ and $$$Q$$$ are non-negative integers and $$$Q \\ne 0$$$, $$$P \\le Q$$$. Report the value of $$$P \\cdot Q^{-1} \\pmod {998244353}$$$.\n\nSample Input:\n2 6 3\nSample Output:\n124780545\n\nSample Input:\n5 20 11\nSample Output:\n1\n\nSample Input:\n10 30 10\nSample Output:\n85932500\n\nNotes: NoteIn the first example Hasan can score $$$3$$$, $$$4$$$, $$$5$$$ or $$$6$$$ goals. If he scores $$$4$$$ goals or more than he scores strictly more than his only opponent. If he scores $$$3$$$ then his opponent also scores $$$3$$$ and Hasan has a probability of $$$\\frac 1 2$$$ to win the game. Thus, overall he has the probability of $$$\\frac 7 8$$$ to win.In the second example even Hasan's lower bound on goal implies him scoring more than any of his opponents. Thus, the resulting probability is $$$1$$$.\nTake input from standard input and output to standard output\nProvide the Go code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "609195ef4a970c62a8210dafe118580e",
+        "difficulty": 2500,
+        "prob_desc_sample_inputs": [
+            "2 6 3",
+            "5 20 11",
+            "10 30 10"
+        ],
+        "prob_desc_time_limit": "3 seconds",
+        "tags": [
+            "math",
+            "probabilities",
+            "combinatorics",
+            "dp"
+        ],
+        "prob_desc_output_spec": "Print a single integer \u2014 the probability of Hasan winning. It can be shown that it is in the form of $$$\\frac{P}{Q}$$$ where $$$P$$$ and $$$Q$$$ are non-negative integers and $$$Q \\ne 0$$$, $$$P \\le Q$$$. Report the value of $$$P \\cdot Q^{-1} \\pmod {998244353}$$$.",
+        "prob_desc_input_spec": "The only line contains three integers $$$p$$$, $$$s$$$ and $$$r$$$ ($$$1 \\le p \\le 100$$$, $$$0 \\le r \\le s \\le 5000$$$) \u2014 the number of players, the sum of scores of all players and Hasan's score, respectively.",
+        "lang_cluster": "Go",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first example Hasan can score $$$3$$$, $$$4$$$, $$$5$$$ or $$$6$$$ goals. If he scores $$$4$$$ goals or more than he scores strictly more than his only opponent. If he scores $$$3$$$ then his opponent also scores $$$3$$$ and Hasan has a probability of $$$\\frac 1 2$$$ to win the game. Thus, overall he has the probability of $$$\\frac 7 8$$$ to win.In the second example even Hasan's lower bound on goal implies him scoring more than any of his opponents. Thus, the resulting probability is $$$1$$$.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Hasan loves playing games and has recently discovered a game called TopScore. In this soccer-like game there are $$$p$$$ players doing penalty shoot-outs. Winner is the one who scores the most. In case of ties, one of the top-scorers will be declared as the winner randomly with equal probability.They have just finished the game and now are waiting for the result. But there's a tiny problem! The judges have lost the paper of scores! Fortunately they have calculated sum of the scores before they get lost and also for some of the players they have remembered a lower bound on how much they scored. However, the information about the bounds is private, so Hasan only got to know his bound.According to the available data, he knows that his score is at least $$$r$$$ and sum of the scores is $$$s$$$.Thus the final state of the game can be represented in form of sequence of $$$p$$$ integers $$$a_1, a_2, \\dots, a_p$$$ ($$$0 \\le a_i$$$) \u2014 player's scores. Hasan is player number $$$1$$$, so $$$a_1 \\ge r$$$. Also $$$a_1 + a_2 + \\dots + a_p = s$$$. Two states are considered different if there exists some position $$$i$$$ such that the value of $$$a_i$$$ differs in these states. Once again, Hasan doesn't know the exact scores (he doesn't know his exact score as well). So he considers each of the final states to be equally probable to achieve.Help Hasan find the probability of him winning.It can be shown that it is in the form of $$$\\frac{P}{Q}$$$ where $$$P$$$ and $$$Q$$$ are non-negative integers and $$$Q \\ne 0$$$, $$$P \\le Q$$$. Report the value of $$$P \\cdot Q^{-1} \\pmod {998244353}$$$.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1546007700",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "124780545",
+            "1",
+            "85932500"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"2 6 3\\r\\n\", \"output\": [\"124780545\"]}, {\"input\": \"5 20 11\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10 30 10\\r\\n\", \"output\": [\"85932500\"]}, {\"input\": \"100 0 0\\r\\n\", \"output\": [\"828542813\"]}, {\"input\": \"100 1 0\\r\\n\", \"output\": [\"828542813\"]}, {\"input\": \"1 5000 0\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"1 5000 4999\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"2 4999 0\\r\\n\", \"output\": [\"499122177\"]}, {\"input\": \"83 2813 123\\r\\n\", \"output\": [\"758958584\"]}, {\"input\": \"100 5000 5000\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"100 5000 30\\r\\n\", \"output\": [\"860412292\"]}, {\"input\": \"100 5000 0\\r\\n\", \"output\": [\"828542813\"]}, {\"input\": \"1 0 0\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"1 1 0\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"2 1 0\\r\\n\", \"output\": [\"499122177\"]}, {\"input\": \"45 2315 860\\r\\n\", \"output\": [\"256332294\"]}, {\"input\": \"69 813 191\\r\\n\", \"output\": [\"367363860\"]}, {\"input\": \"93 2364 1182\\r\\n\", \"output\": [\"952630216\"]}, {\"input\": \"21 862 387\\r\\n\", \"output\": [\"910580465\"]}, {\"input\": \"45 886 245\\r\\n\", \"output\": [\"23345522\"]}, {\"input\": \"45 2315 2018\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"69 813 598\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"93 2364 2364\\r\\n\", \"output\": [\"1\"]}]"
+    }
+}

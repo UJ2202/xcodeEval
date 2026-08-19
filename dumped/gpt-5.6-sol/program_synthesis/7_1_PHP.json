@@ -1,0 +1,143 @@
+{
+    "oai_response": {
+        "choices": [
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 0,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\n[$n, $m, $p] = array_map('intval', preg_split('/\\s+/', trim(stream_get_contents(STDIN))));\n\n$inv = array_fill(0, $m + 1, 0);\n$inv[1] = 1;\nfor ($i = 2; $i <= $m; ++$i) {\n    $inv[$i] = ($p - (intdiv($p, $i) * $inv[$p % $i]) % $p) % $p;\n}\n\n$c = array_fill(0, $m + 1, 0);\n$d = array_fill(0, $m + 1, 0);\n$c[0] = 1;\n\nfor ($k = 1; $k <= $m; ++$k) {\n    $sumC = 0;\n    $sumD = 0;\n\n    for ($i = 0; $i < $k; ++$i) {\n        $j = $k - 1 - $i;\n\n        $cc = ($c[$i] * $c[$j]) % $p;\n        $sumC += $cc;\n        if ($sumC >= $p) {\n            $sumC -= $p;\n        }\n\n        $existing = (($d[$i] * $c[$j]) % $p + ($c[$i] * $d[$j]) % $p) % $p;\n        $q = intdiv($i * ($i + 1), 2) + intdiv($j * ($j + 1), 2);\n\n        $term = (($existing * ($k + 1)) % $p + ($cc * $q) % $p) % $p;\n        $sumD += $term;\n        if ($sumD >= $p) {\n            $sumD -= $p;\n        }\n    }\n\n    $c[$k] = (($sumC * ($k + 1)) % $p * $inv[$k]) % $p;\n    $d[$k] = ($sumD * $inv[$k]) % $p;\n}\n\n$empty = $n - $m;\n$power = array_fill(0, $m + 1, 0);\n$power[0] = 1;\n\nfor ($k = 1; $k <= $m; ++$k) {\n    $sum = 0;\n\n    for ($i = 1; $i <= $k; ++$i) {\n        $factor = (($empty + 1) * $i - $k) % $p;\n        if ($factor < 0) {\n            $factor += $p;\n        }\n\n        $term = (($factor * $c[$i]) % $p * $power[$k - $i]) % $p;\n        $sum += $term;\n        if ($sum >= $p) {\n            $sum -= $p;\n        }\n    }\n\n    $power[$k] = ($sum * $inv[$k]) % $p;\n}\n\n$coefficient = 0;\nfor ($k = 1; $k <= $m; ++$k) {\n    $coefficient += ($d[$k] * $power[$m - $k]) % $p;\n    if ($coefficient >= $p) {\n        $coefficient -= $p;\n    }\n}\n\n$factorial = 1;\nfor ($i = 2; $i <= $m; ++$i) {\n    $factorial = ($factorial * $i) % $p;\n}\n\n$answer = (($coefficient * ($empty + 1)) % $p * $factorial) % $p;\necho $answer, PHP_EOL;",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 1,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\n[$n, $m, $p] = array_map('intval', preg_split('/\\s+/', trim(stream_get_contents(STDIN))));\n\n$inv = array_fill(0, $m + 1, 0);\n$inv[1] = 1;\nfor ($i = 2; $i <= $m; ++$i) {\n    $value = (intdiv($p, $i) * $inv[$p % $i]) % $p;\n    $inv[$i] = ($p - $value) % $p;\n}\n\n$A = array_fill(0, $m + 1, 0);\n$B = array_fill(0, $m + 1, 0);\n$A[0] = 1;\n\nfor ($k = 1; $k <= $m; ++$k) {\n    $sumA = 0;\n    $sumB = 0;\n\n    for ($i = 0; $i < $k; ++$i) {\n        $j = $k - 1 - $i;\n\n        $product = ($A[$i] * $A[$j]) % $p;\n        $sumA += $product;\n        if ($sumA >= $p) {\n            $sumA -= $p;\n        }\n\n        $cross = (($B[$i] * $A[$j]) % $p + ($A[$i] * $B[$j]) % $p) % $p;\n        $distanceSum = intdiv($i * ($i + 1), 2) + intdiv($j * ($j + 1), 2);\n\n        $term = ((($k + 1) * $cross) % $p + ($distanceSum * $product) % $p) % $p;\n        $sumB += $term;\n        if ($sumB >= $p) {\n            $sumB -= $p;\n        }\n    }\n\n    $A[$k] = (((($k + 1) * $sumA) % $p) * $inv[$k]) % $p;\n    $B[$k] = ($sumB * $inv[$k]) % $p;\n}\n\n$componentSlots = $n - $m + 1;\n$exponent = $componentSlots - 1;\n\n$q = array_fill(0, $m + 1, 0);\n$q[0] = 1;\n\nfor ($k = 1; $k <= $m; ++$k) {\n    $sum = 0;\n\n    for ($i = 1; $i <= $k; ++$i) {\n        $coefficient = ($exponent + 1) * $i - $k;\n        $coefficient %= $p;\n        if ($coefficient < 0) {\n            $coefficient += $p;\n        }\n\n        $term = ($A[$i] * $q[$k - $i]) % $p;\n        $term = ($term * $coefficient) % $p;\n\n        $sum += $term;\n        if ($sum >= $p) {\n            $sum -= $p;\n        }\n    }\n\n    $q[$k] = ($sum * $inv[$k]) % $p;\n}\n\n$normalizedAnswer = 0;\nfor ($i = 1; $i <= $m; ++$i) {\n    $term = ($B[$i] * $q[$m - $i]) % $p;\n    $normalizedAnswer += $term;\n    if ($normalizedAnswer >= $p) {\n        $normalizedAnswer -= $p;\n    }\n}\n\n$answer = ($normalizedAnswer * $componentSlots) % $p;\n\nfor ($i = 2; $i <= $m; ++$i) {\n    $answer = ($answer * $i) % $p;\n}\n\necho $answer, PHP_EOL;",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 2,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\nfunction multiplyPolynomials(array $a, array $b, int $limit, int $mod): array\n{\n    $sizeA = count($a);\n    $sizeB = count($b);\n    $maxDegree = min($limit, $sizeA + $sizeB - 2);\n    $result = array_fill(0, $maxDegree + 1, 0);\n\n    for ($i = 0; $i < $sizeA && $i <= $limit; ++$i) {\n        if ($a[$i] === 0) {\n            continue;\n        }\n\n        $maxJ = min($sizeB - 1, $limit - $i);\n        for ($j = 0; $j <= $maxJ; ++$j) {\n            if ($b[$j] === 0) {\n                continue;\n            }\n\n            $value = ($a[$i] * $b[$j]) % $mod;\n            $result[$i + $j] = ($result[$i + $j] + $value) % $mod;\n        }\n    }\n\n    return $result;\n}\n\n[$n, $m, $p] = array_map('intval', preg_split('/\\s+/', trim(file_get_contents(\"php://stdin\"))));\n\n$inverse = array_fill(0, $m + 1, 0);\n$inverse[1] = 1;\n\nfor ($i = 2; $i <= $m; ++$i) {\n    $inverse[$i] = ($p - (intdiv($p, $i) * $inverse[$p % $i]) % $p) % $p;\n}\n\n$h = array_fill(0, $m + 1, 0);\n$j = array_fill(0, $m + 1, 0);\n$h[0] = 1;\n\nfor ($d = 1; $d <= $m; ++$d) {\n    $sumH = 0;\n    $sumJ = 0;\n\n    for ($left = 0; $left < $d; ++$left) {\n        $right = $d - 1 - $left;\n\n        $productH = ($h[$left] * $h[$right]) % $p;\n        $sumH = ($sumH + $productH) % $p;\n\n        $childMadness = (\n            ($j[$left] * $h[$right]) % $p\n            + ($h[$left] * $j[$right]) % $p\n        ) % $p;\n\n        $rootMadness =\n            intdiv($left * ($left + 1), 2)\n            + intdiv($right * ($right + 1), 2);\n        $rootMadness %= $p;\n\n        $term = (\n            (($d + 1) * $childMadness) % $p\n            + ($rootMadness * $productH) % $p\n        ) % $p;\n\n        $sumJ = ($sumJ + $term) % $p;\n    }\n\n    $h[$d] = ((($d + 1) * $sumH) % $p * $inverse[$d]) % $p;\n    $j[$d] = ($sumJ * $inverse[$d]) % $p;\n}\n\n$remainingComputers = $n - $m;\n$power = $remainingComputers;\n\n$resultPolynomial = [1];\n$basePolynomial = $h;\n\nwhile ($power > 0) {\n    if ($power % 2 === 1) {\n        $resultPolynomial = multiplyPolynomials(\n            $resultPolynomial,\n            $basePolynomial,\n            $m,\n            $p\n        );\n    }\n\n    $power = intdiv($power, 2);\n    if ($power > 0) {\n        $basePolynomial = multiplyPolynomials(\n            $basePolynomial,\n            $basePolynomial,\n            $m,\n            $p\n        );\n    }\n}\n\n$coefficient = 0;\n$resultSize = count($resultPolynomial);\n\nfor ($i = 0; $i <= $m; ++$i) {\n    $degree = $m - $i;\n    if ($degree < $resultSize) {\n        $coefficient = (\n            $coefficient\n            + ($j[$i] * $resultPolynomial[$degree]) % $p\n        ) % $p;\n    }\n}\n\n$factorial = 1;\nfor ($i = 2; $i <= $m; ++$i) {\n    $factorial = ($factorial * $i) % $p;\n}\n\n$numberOfGaps = $remainingComputers + 1;\n$answer = ($coefficient * ($numberOfGaps % $p)) % $p;\n$answer = ($answer * $factorial) % $p;\n\necho $answer . PHP_EOL;",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 3,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\nfunction seriesPower(array $f, int $exp, int $m, int $mod, array $inv): array\n{\n    $g = array_fill(0, $m + 1, 0);\n    $g[0] = 1;\n\n    for ($k = 1; $k <= $m; $k++) {\n        $sum = 0;\n\n        for ($i = 1; $i <= $k; $i++) {\n            $coefficient = ($exp + 1) * $i - $k;\n            $term = ($f[$i] * $g[$k - $i]) % $mod;\n            $sum = ($sum + $term * $coefficient) % $mod;\n        }\n\n        if ($sum < 0) {\n            $sum += $mod;\n        }\n\n        $g[$k] = ($sum * $inv[$k]) % $mod;\n    }\n\n    return $g;\n}\n\n$input = preg_split('/\\s+/', trim(stream_get_contents(STDIN)));\n$n = (int)$input[0];\n$m = (int)$input[1];\n$p = (int)$input[2];\n\n$inv = array_fill(0, $m + 1, 0);\n$inv[1] = 1;\n\nfor ($i = 2; $i <= $m; $i++) {\n    $inv[$i] = ($p - (intdiv($p, $i) * $inv[$p % $i]) % $p) % $p;\n}\n\n$c = array_fill(0, $m + 1, 0);\n$d = array_fill(0, $m + 1, 0);\n$c[0] = 1;\n\nfor ($k = 1; $k <= $m; $k++) {\n    $sumCount = 0;\n    $sumPreviousCost = 0;\n    $sumNewCost = 0;\n\n    for ($left = 0; $left < $k; $left++) {\n        $right = $k - 1 - $left;\n\n        $product = ($c[$left] * $c[$right]) % $p;\n        $sumCount = ($sumCount + $product) % $p;\n\n        $previousCost = (\n            ($d[$left] * $c[$right]) % $p\n            + ($c[$left] * $d[$right]) % $p\n        ) % $p;\n        $sumPreviousCost = ($sumPreviousCost + $previousCost) % $p;\n\n        $distanceSum = (\n            intdiv($left * ($left + 1), 2)\n            + intdiv($right * ($right + 1), 2)\n        ) % $p;\n\n        $sumNewCost = ($sumNewCost + $product * $distanceSum) % $p;\n    }\n\n    $c[$k] = ((($k + 1) * $sumCount) % $p * $inv[$k]) % $p;\n\n    $totalCost = ((($k + 1) * $sumPreviousCost) % $p + $sumNewCost) % $p;\n    $d[$k] = ($totalCost * $inv[$k]) % $p;\n}\n\n$f = $c;\n$componentSlots = $n - $m + 1;\n$power = seriesPower($f, $componentSlots - 1, $m, $p, $inv);\n\n$answer = 0;\nfor ($k = 1; $k <= $m; $k++) {\n    $answer = ($answer + ($d[$k] * $power[$m - $k]) % $p) % $p;\n}\n\n$answer = ($answer * ($componentSlots % $p)) % $p;\n\nfor ($i = 2; $i <= $m; $i++) {\n    $answer = ($answer * $i) % $p;\n}\n\necho $answer . PHP_EOL;",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 4,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\n[$n, $m, $p] = array_map('intval', preg_split('/\\s+/', trim(fgets(STDIN))));\n\nfunction modPow(int $base, int $exp, int $mod): int\n{\n    $result = 1;\n    while ($exp > 0) {\n        if ($exp & 1) {\n            $result = ($result * $base) % $mod;\n        }\n        $base = ($base * $base) % $mod;\n        $exp = intdiv($exp, 2);\n    }\n    return $result;\n}\n\nfunction convolution(array $a, array $b, int $limit, int $mod): array\n{\n    $degreeA = count($a) - 1;\n    $degreeB = count($b) - 1;\n    $degreeResult = min($limit, $degreeA + $degreeB);\n    $result = array_fill(0, $degreeResult + 1, 0);\n\n    $maxI = min($degreeA, $limit);\n    for ($i = 0; $i <= $maxI; ++$i) {\n        if ($a[$i] === 0) {\n            continue;\n        }\n\n        $maxJ = min($degreeB, $limit - $i);\n        for ($j = 0; $j <= $maxJ; ++$j) {\n            if ($b[$j] === 0) {\n                continue;\n            }\n\n            $index = $i + $j;\n            $value = ($a[$i] * $b[$j]) % $mod;\n            $result[$index] = ($result[$index] + $value) % $mod;\n        }\n    }\n\n    return $result;\n}\n\n$factorial = array_fill(0, $m + 1, 1);\nfor ($i = 1; $i <= $m; ++$i) {\n    $factorial[$i] = ($factorial[$i - 1] * $i) % $p;\n}\n\n$inverseFactorial = array_fill(0, $m + 1, 1);\n$inverseFactorial[$m] = modPow($factorial[$m], $p - 2, $p);\nfor ($i = $m; $i >= 1; --$i) {\n    $inverseFactorial[$i - 1] = ($inverseFactorial[$i] * $i) % $p;\n}\n\n$F = array_fill(0, $m + 1, 0);\n$G = array_fill(0, $m + 1, 0);\n$F[0] = 1;\n\nfor ($size = 1; $size <= $m; ++$size) {\n    $sumF = 0;\n    $sumG = 0;\n\n    for ($left = 0; $left < $size; ++$left) {\n        $right = $size - 1 - $left;\n\n        $choose = $factorial[$size - 1];\n        $choose = ($choose * $inverseFactorial[$left]) % $p;\n        $choose = ($choose * $inverseFactorial[$right]) % $p;\n\n        $product = ($F[$left] * $F[$right]) % $p;\n\n        $termF = ($choose * $product) % $p;\n        $termF = ($termF * ($size + 1)) % $p;\n        $sumF = ($sumF + $termF) % $p;\n\n        $previousMadness = (\n            (($G[$left] * $F[$right]) % $p) +\n            (($F[$left] * $G[$right]) % $p)\n        ) % $p;\n\n        $termG = ($previousMadness * ($size + 1)) % $p;\n\n        $transitionMadness =\n            intdiv($left * ($left + 1), 2) +\n            intdiv($right * ($right + 1), 2);\n\n        $termG = (\n            $termG +\n            (($product * ($transitionMadness % $p)) % $p)\n        ) % $p;\n\n        $termG = ($choose * $termG) % $p;\n        $sumG = ($sumG + $termG) % $p;\n    }\n\n    $F[$size] = $sumF;\n    $G[$size] = $sumG;\n}\n\n$base = array_fill(0, $m + 1, 0);\n$madnessPolynomial = array_fill(0, $m + 1, 0);\n$base[0] = 1;\n\nfor ($i = 1; $i <= $m; ++$i) {\n    $base[$i] = ($F[$i] * $inverseFactorial[$i]) % $p;\n    $madnessPolynomial[$i] = ($G[$i] * $inverseFactorial[$i]) % $p;\n}\n\n$availableGaps = $n - $m + 1;\n$exponent = $availableGaps - 1;\n$power = [1];\n\nwhile ($exponent > 0) {\n    if ($exponent & 1) {\n        $power = convolution($power, $base, $m, $p);\n    }\n\n    $exponent = intdiv($exponent, 2);\n    if ($exponent > 0) {\n        $base = convolution($base, $base, $m, $p);\n    }\n}\n\n$coefficient = 0;\n$powerDegree = count($power) - 1;\n\nfor ($i = 1; $i <= $m; ++$i) {\n    $needed = $m - $i;\n    if ($needed <= $powerDegree) {\n        $coefficient = (\n            $coefficient +\n            (($madnessPolynomial[$i] * $power[$needed]) % $p)\n        ) % $p;\n    }\n}\n\n$answer = ($coefficient * ($availableGaps % $p)) % $p;\n$answer = ($answer * $factorial[$m]) % $p;\n\necho $answer . PHP_EOL;",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            }
+        ],
+        "created": 1787153379,
+        "id": "chatcmpl-EEcWR8hCdGPZpPVo6KJoUPw1gFUtk",
+        "model": "gpt-5.6-sol-2026-07-09",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {}
+            }
+        ],
+        "service_tier": "default",
+        "system_fingerprint": null,
+        "usage": {
+            "completion_tokens": 22097,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 17088,
+                "rejected_prediction_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 4,
+                "engine_ttft_ms": 232,
+                "engine_ttlt_ms": 91257,
+                "pre_inference_ms": 182,
+                "service_tbt_ms": 4,
+                "service_ttft_ms": 537,
+                "service_ttlt_ms": 91554,
+                "total_duration_ms": 91382,
+                "user_visible_ttft_ms": 355
+            },
+            "prompt_tokens": 1119,
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cache_write_tokens": 1116,
+                "cached_tokens": 0
+            },
+            "total_tokens": 23216
+        },
+        "prompt": "Write a program in PHP to solve this programming problem:\nDescription: Today is the final contest of INOI (Iranian National Olympiad in Informatics). The contest room is a row with $$$n$$$ computers. All computers are numbered with integers from $$$1$$$ to $$$n$$$ from left to right. There are $$$m$$$ participants, numbered with integers from $$$1$$$ to $$$m$$$.We have an array $$$a$$$ of length $$$m$$$ where $$$a_{i}$$$ ($$$1 \\leq a_i \\leq n$$$) is the computer behind which the $$$i$$$-th participant wants to sit.Also, we have another array $$$b$$$ of length $$$m$$$ consisting of characters 'L' and 'R'. $$$b_i$$$ is the side from which the $$$i$$$-th participant enters the room. 'L' means the participant enters from the left of computer $$$1$$$ and goes from left to right, and 'R' means the participant enters from the right of computer $$$n$$$ and goes from right to left.The participants in the order from $$$1$$$ to $$$m$$$ enter the room one by one. The $$$i$$$-th of them enters the contest room in the direction $$$b_i$$$ and goes to sit behind the $$$a_i$$$-th computer. If it is occupied he keeps walking in his direction until he reaches the first unoccupied computer. After that, he sits behind it. If he doesn't find any computer he gets upset and gives up on the contest.The madness of the $$$i$$$-th participant is the distance between his assigned computer ($$$a_i$$$) and the computer he ends up sitting behind. The distance between computers $$$i$$$ and $$$j$$$ is equal to $$$|i - j|$$$.The values in the array $$$a$$$ can be equal. There exist $$$n^m \\cdot 2^m$$$ possible pairs of arrays $$$(a, b)$$$.Consider all pairs of arrays $$$(a, b)$$$ such that no person becomes upset. For each of them let's calculate the sum of participants madnesses. Find the sum of all these values.You will be given some prime modulo $$$p$$$. Find this sum by modulo $$$p$$$.\nInput Specification: The only line contains three integers $$$n$$$, $$$m$$$, $$$p$$$ ($$$1 \\leq m \\leq n \\leq 500, 10^8 \\leq p \\leq 10 ^ 9 + 9$$$). It is guaranteed, that the number $$$p$$$ is prime.\nOutput Specification: Print only one integer\u00a0\u2014 the required sum by modulo $$$p$$$.\n\nSample Input:\n3 1 1000000007\nSample Output:\n0\n\nSample Input:\n2 2 1000000009\nSample Output:\n4\n\nSample Input:\n3 2 998244353\nSample Output:\n8\n\nSample Input:\n20 10 1000000009\nSample Output:\n352081045\n\nNotes: NoteIn the first test, there are three possible arrays $$$a$$$: $$$\\{1\\}$$$, $$$\\{2\\}$$$, and $$$ \\{3\\}$$$ and two possible arrays $$$b$$$: $$$\\{\\mathtt{L}\\}$$$ and $$$\\{\\mathtt{R}\\}$$$. For all six pairs of arrays $$$(a, b)$$$, the only participant will sit behind the computer $$$a_1$$$, so his madness will be $$$0$$$. So the total sum of madnesses will be $$$0$$$.In the second test, all possible pairs of arrays $$$(a, b)$$$, such that no person becomes upset are:  $$$(\\{1, 1\\}, \\{\\mathtt{L}, \\mathtt{L}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{1, 1\\}, \\{\\mathtt{R}, \\mathtt{L}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{2, 2\\}, \\{\\mathtt{R}, \\mathtt{R}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{2, 2\\}, \\{\\mathtt{L}, \\mathtt{R}\\})$$$, the sum of madnesses is $$$1$$$;  all possible pairs of $$$a \\in \\{\\{1, 2\\}, \\{2, 1\\}\\}$$$ and $$$b \\in \\{\\{\\mathtt{L}, \\mathtt{L}\\}, \\{\\mathtt{R}, \\mathtt{L}\\}, \\{\\mathtt{L}, \\mathtt{R}\\}, \\{\\mathtt{R}, \\mathtt{R}\\}\\}$$$, the sum of madnesses is $$$0$$$. So, the answer is $$$1 + 1 + 1 + 1 + 0 \\ldots = 4$$$.\nTake input from standard input and output to standard output\nProvide the PHP code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "9812de5f2d272511a63ead8765b23190",
+        "difficulty": 3100,
+        "prob_desc_sample_inputs": [
+            "3 1 1000000007",
+            "2 2 1000000009",
+            "3 2 998244353",
+            "20 10 1000000009"
+        ],
+        "prob_desc_time_limit": "3 seconds",
+        "tags": [
+            "fft",
+            "dp",
+            "combinatorics"
+        ],
+        "prob_desc_output_spec": "Print only one integer\u00a0\u2014 the required sum by modulo $$$p$$$.",
+        "prob_desc_input_spec": "The only line contains three integers $$$n$$$, $$$m$$$, $$$p$$$ ($$$1 \\leq m \\leq n \\leq 500, 10^8 \\leq p \\leq 10 ^ 9 + 9$$$). It is guaranteed, that the number $$$p$$$ is prime.",
+        "lang_cluster": "PHP",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first test, there are three possible arrays $$$a$$$: $$$\\{1\\}$$$, $$$\\{2\\}$$$, and $$$ \\{3\\}$$$ and two possible arrays $$$b$$$: $$$\\{\\mathtt{L}\\}$$$ and $$$\\{\\mathtt{R}\\}$$$. For all six pairs of arrays $$$(a, b)$$$, the only participant will sit behind the computer $$$a_1$$$, so his madness will be $$$0$$$. So the total sum of madnesses will be $$$0$$$.In the second test, all possible pairs of arrays $$$(a, b)$$$, such that no person becomes upset are:  $$$(\\{1, 1\\}, \\{\\mathtt{L}, \\mathtt{L}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{1, 1\\}, \\{\\mathtt{R}, \\mathtt{L}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{2, 2\\}, \\{\\mathtt{R}, \\mathtt{R}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{2, 2\\}, \\{\\mathtt{L}, \\mathtt{R}\\})$$$, the sum of madnesses is $$$1$$$;  all possible pairs of $$$a \\in \\{\\{1, 2\\}, \\{2, 1\\}\\}$$$ and $$$b \\in \\{\\{\\mathtt{L}, \\mathtt{L}\\}, \\{\\mathtt{R}, \\mathtt{L}\\}, \\{\\mathtt{L}, \\mathtt{R}\\}, \\{\\mathtt{R}, \\mathtt{R}\\}\\}$$$, the sum of madnesses is $$$0$$$. So, the answer is $$$1 + 1 + 1 + 1 + 0 \\ldots = 4$$$.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Today is the final contest of INOI (Iranian National Olympiad in Informatics). The contest room is a row with $$$n$$$ computers. All computers are numbered with integers from $$$1$$$ to $$$n$$$ from left to right. There are $$$m$$$ participants, numbered with integers from $$$1$$$ to $$$m$$$.We have an array $$$a$$$ of length $$$m$$$ where $$$a_{i}$$$ ($$$1 \\leq a_i \\leq n$$$) is the computer behind which the $$$i$$$-th participant wants to sit.Also, we have another array $$$b$$$ of length $$$m$$$ consisting of characters 'L' and 'R'. $$$b_i$$$ is the side from which the $$$i$$$-th participant enters the room. 'L' means the participant enters from the left of computer $$$1$$$ and goes from left to right, and 'R' means the participant enters from the right of computer $$$n$$$ and goes from right to left.The participants in the order from $$$1$$$ to $$$m$$$ enter the room one by one. The $$$i$$$-th of them enters the contest room in the direction $$$b_i$$$ and goes to sit behind the $$$a_i$$$-th computer. If it is occupied he keeps walking in his direction until he reaches the first unoccupied computer. After that, he sits behind it. If he doesn't find any computer he gets upset and gives up on the contest.The madness of the $$$i$$$-th participant is the distance between his assigned computer ($$$a_i$$$) and the computer he ends up sitting behind. The distance between computers $$$i$$$ and $$$j$$$ is equal to $$$|i - j|$$$.The values in the array $$$a$$$ can be equal. There exist $$$n^m \\cdot 2^m$$$ possible pairs of arrays $$$(a, b)$$$.Consider all pairs of arrays $$$(a, b)$$$ such that no person becomes upset. For each of them let's calculate the sum of participants madnesses. Find the sum of all these values.You will be given some prime modulo $$$p$$$. Find this sum by modulo $$$p$$$.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1605623700",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "0",
+            "4",
+            "8",
+            "352081045"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"3 1 1000000007\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 2 1000000009\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"3 2 998244353\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"20 10 1000000009\\r\\n\", \"output\": [\"352081045\"]}, {\"input\": \"5 2 1000000007\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"500 498 1000000007\\r\\n\", \"output\": [\"497900737\"]}, {\"input\": \"10 9 1000000007\\r\\n\", \"output\": [\"904119416\"]}, {\"input\": \"7 4 1000000009\\r\\n\", \"output\": [\"31488\"]}, {\"input\": \"8 8 700001153\\r\\n\", \"output\": [\"247497204\"]}, {\"input\": \"6 3 999999487\\r\\n\", \"output\": [\"768\"]}, {\"input\": \"310 228 998244799\\r\\n\", \"output\": [\"861313351\"]}, {\"input\": \"385 76 998244353\\r\\n\", \"output\": [\"750286580\"]}, {\"input\": \"259 76 998244353\\r\\n\", \"output\": [\"41310904\"]}, {\"input\": \"459 14 200003077\\r\\n\", \"output\": [\"142997933\"]}, {\"input\": \"1 1 1000000007\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"498 155 998244799\\r\\n\", \"output\": [\"673213318\"]}, {\"input\": \"372 309 1000000009\\r\\n\", \"output\": [\"698627891\"]}, {\"input\": \"44 19 998244799\\r\\n\", \"output\": [\"81944049\"]}, {\"input\": \"70 39 700001153\\r\\n\", \"output\": [\"401935379\"]}, {\"input\": \"282 190 300001657\\r\\n\", \"output\": [\"210852530\"]}, {\"input\": \"370 100 1000000007\\r\\n\", \"output\": [\"112411341\"]}, {\"input\": \"234 21 200003077\\r\\n\", \"output\": [\"137641479\"]}, {\"input\": \"194 184 200003077\\r\\n\", \"output\": [\"76845836\"]}, {\"input\": \"499 497 998244799\\r\\n\", \"output\": [\"514945258\"]}, {\"input\": \"500 117 1000000007\\r\\n\", \"output\": [\"234794832\"]}, {\"input\": \"45 41 200003077\\r\\n\", \"output\": [\"176259818\"]}, {\"input\": \"2 1 1000000007\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 2 1000000007\\r\\n\", \"output\": [\"4\"]}]"
+    }
+}

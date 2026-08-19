@@ -1,0 +1,142 @@
+{
+    "oai_response": {
+        "choices": [
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 0,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\n$data = array_map('intval', preg_split('/\\s+/', trim(stream_get_contents(STDIN))));\n$pos = 0;\n\n$n = $data[$pos++];\n$m = $data[$pos++];\n\n$edges = [];\nfor ($i = 0; $i < $m; $i++) {\n    $u = $data[$pos++] - 1;\n    $v = $data[$pos++] - 1;\n    $edges[] = [$u, $v];\n}\n\nif ($m === 0) {\n    echo \"0\\n\";\n    exit;\n}\n\n$total = 1;\nfor ($i = 1; $i < $n; $i++) {\n    $total *= 6;\n}\n\n$labels = array_fill(0, $n, 0);\n$answer = 0;\n\nfor ($state = 0; $state < $total; $state++) {\n    $value = $state;\n\n    for ($i = 1; $i < $n; $i++) {\n        $labels[$i] = $value % 6;\n        $value = intdiv($value, 6);\n    }\n\n    $used = 0;\n    $count = 0;\n\n    foreach ($edges as [$u, $v]) {\n        $a = $labels[$u];\n        $b = $labels[$v];\n\n        if ($a > $b) {\n            [$a, $b] = [$b, $a];\n        }\n\n        $bit = 1 << ($a * 6 + $b);\n\n        if (($used & $bit) === 0) {\n            $used |= $bit;\n            $count++;\n        }\n    }\n\n    if ($count > $answer) {\n        $answer = $count;\n    }\n}\n\necho $answer . \"\\n\";",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 1,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\n$data = array_map('intval', preg_split('/\\s+/', trim(stream_get_contents(STDIN))));\n$pos = 0;\n\n$n = $data[$pos++];\n$m = $data[$pos++];\n\n$edges = [];\nfor ($i = 0; $i < $m; $i++) {\n    $u = $data[$pos++] - 1;\n    $v = $data[$pos++] - 1;\n    $edges[] = [$u, $v];\n}\n\nif ($m === 0) {\n    echo \"0\\n\";\n    exit;\n}\n\n$pairId = array_fill(0, 6, array_fill(0, 6, 0));\n$id = 0;\nfor ($a = 0; $a < 6; $a++) {\n    for ($b = $a; $b < 6; $b++) {\n        $pairId[$a][$b] = $id;\n        $pairId[$b][$a] = $id;\n        $id++;\n    }\n}\n\n$totalAssignments = 6 ** $n;\n$labels = array_fill(0, $n, 0);\n$seen = array_fill(0, 21, 0);\n$answer = 0;\n$target = min($m, 21);\n\nfor ($mask = 0; $mask < $totalAssignments; $mask++) {\n    $value = $mask;\n    for ($i = 0; $i < $n; $i++) {\n        $labels[$i] = $value % 6;\n        $value = intdiv($value, 6);\n    }\n\n    $stamp = $mask + 1;\n    $count = 0;\n\n    foreach ($edges as [$u, $v]) {\n        $type = $pairId[$labels[$u]][$labels[$v]];\n        if ($seen[$type] !== $stamp) {\n            $seen[$type] = $stamp;\n            $count++;\n        }\n    }\n\n    if ($count > $answer) {\n        $answer = $count;\n        if ($answer === $target) {\n            break;\n        }\n    }\n}\n\necho $answer . \"\\n\";",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 2,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\n$data = array_map('intval', preg_split('/\\s+/', trim(stream_get_contents(STDIN))));\n$pos = 0;\n\n$n = $data[$pos++];\n$m = $data[$pos++];\n\n$edges = [];\nfor ($i = 0; $i < $m; $i++) {\n    $u = $data[$pos++] - 1;\n    $v = $data[$pos++] - 1;\n    $edges[] = [$u, $v];\n}\n\nif ($m === 0) {\n    echo \"0\\n\";\n    exit;\n}\n\n$typeMask = array_fill(0, 6, array_fill(0, 6, 0));\n$index = 0;\n\nfor ($a = 0; $a < 6; $a++) {\n    for ($b = $a; $b < 6; $b++) {\n        $mask = 1 << $index++;\n        $typeMask[$a][$b] = $mask;\n        $typeMask[$b][$a] = $mask;\n    }\n}\n\n$totalAssignments = 1;\nfor ($i = 0; $i < $n; $i++) {\n    $totalAssignments *= 6;\n}\n\n$colors = array_fill(0, $n, 0);\n$answer = 0;\n\nfor ($assignment = 0; $assignment < $totalAssignments; $assignment++) {\n    $value = $assignment;\n\n    for ($i = 0; $i < $n; $i++) {\n        $colors[$i] = $value % 6;\n        $value = intdiv($value, 6);\n    }\n\n    $used = 0;\n    foreach ($edges as [$u, $v]) {\n        $used |= $typeMask[$colors[$u]][$colors[$v]];\n    }\n\n    $count = 0;\n    $mask = $used;\n    while ($mask !== 0) {\n        $mask &= ($mask - 1);\n        $count++;\n    }\n\n    if ($count > $answer) {\n        $answer = $count;\n        if ($answer === $m) {\n            break;\n        }\n    }\n}\n\necho $answer . PHP_EOL;",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 3,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\n$data = array_map('intval', preg_split('/\\s+/', trim(stream_get_contents(STDIN))));\n$pos = 0;\n\n$n = $data[$pos++];\n$m = $data[$pos++];\n\n$edges = [];\nfor ($i = 0; $i < $m; $i++) {\n    $u = $data[$pos++] - 1;\n    $v = $data[$pos++] - 1;\n    $edges[] = [$u, $v];\n}\n\nif ($m === 0) {\n    echo \"0\\n\";\n    exit;\n}\n\n$type = array_fill(0, 6, array_fill(0, 6, 0));\n$id = 0;\nfor ($a = 0; $a < 6; $a++) {\n    for ($b = $a; $b < 6; $b++) {\n        $type[$a][$b] = $id;\n        $type[$b][$a] = $id;\n        $id++;\n    }\n}\n\n$totalColorings = 1;\nfor ($i = 0; $i < $n; $i++) {\n    $totalColorings *= 6;\n}\n\n$answer = 0;\n$upperBound = min($m, 21);\n$colors = array_fill(0, $n, 0);\n\nfor ($state = 0; $state < $totalColorings; $state++) {\n    $value = $state;\n    for ($i = 0; $i < $n; $i++) {\n        $colors[$i] = $value % 6;\n        $value = intdiv($value, 6);\n    }\n\n    $mask = 0;\n    $count = 0;\n\n    foreach ($edges as [$u, $v]) {\n        $bit = 1 << $type[$colors[$u]][$colors[$v]];\n        if (($mask & $bit) === 0) {\n            $mask |= $bit;\n            $count++;\n        }\n    }\n\n    if ($count > $answer) {\n        $answer = $count;\n        if ($answer === $upperBound) {\n            break;\n        }\n    }\n}\n\necho $answer . \"\\n\";",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 4,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\n$input = trim(stream_get_contents(STDIN));\nif ($input === '') {\n    exit;\n}\n\n$data = array_map('intval', preg_split('/\\s+/', $input));\n$pos = 0;\n\n$n = $data[$pos++];\n$m = $data[$pos++];\n\n$edges = [];\nfor ($i = 0; $i < $m; $i++) {\n    $u = $data[$pos++] - 1;\n    $v = $data[$pos++] - 1;\n    $edges[] = [$u, $v];\n}\n\n$type = array_fill(0, 6, array_fill(0, 6, 0));\n$index = 0;\n\nfor ($i = 0; $i < 6; $i++) {\n    for ($j = $i; $j < 6; $j++) {\n        $type[$i][$j] = $index;\n        $type[$j][$i] = $index;\n        $index++;\n    }\n}\n\n$totalAssignments = 1;\nfor ($i = 0; $i < $n; $i++) {\n    $totalAssignments *= 6;\n}\n\n$answer = 0;\n$upperBound = min($m, 21);\n\nfor ($assignment = 0; $assignment < $totalAssignments; $assignment++) {\n    $value = $assignment;\n    $colors = [];\n\n    for ($i = 0; $i < $n; $i++) {\n        $colors[$i] = $value % 6;\n        $value = intdiv($value, 6);\n    }\n\n    $mask = 0;\n\n    foreach ($edges as [$u, $v]) {\n        $mask |= 1 << $type[$colors[$u]][$colors[$v]];\n    }\n\n    $count = 0;\n    while ($mask !== 0) {\n        $mask &= $mask - 1;\n        $count++;\n    }\n\n    if ($count > $answer) {\n        $answer = $count;\n        if ($answer === $upperBound) {\n            break;\n        }\n    }\n}\n\necho $answer . PHP_EOL;\n?>",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            }
+        ],
+        "created": 1787153394,
+        "id": "chatcmpl-EEcWguYH1qU35HWIZrCf98fY1pN2W",
+        "model": "gpt-5.6-sol-2026-07-09",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {}
+            }
+        ],
+        "service_tier": "default",
+        "system_fingerprint": null,
+        "usage": {
+            "completion_tokens": 4923,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 2652,
+                "rejected_prediction_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 3,
+                "engine_ttft_ms": 308,
+                "engine_ttlt_ms": 15518,
+                "pre_inference_ms": 161,
+                "service_tbt_ms": 3,
+                "service_ttft_ms": 1336,
+                "service_ttlt_ms": 16541,
+                "total_duration_ms": 16389,
+                "user_visible_ttft_ms": 1176
+            },
+            "prompt_tokens": 736,
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+            },
+            "total_tokens": 5659
+        },
+        "prompt": "Write a program in PHP to solve this programming problem:\nDescription: Anadi has a set of dominoes. Every domino has two parts, and each part contains some dots. For every $$$a$$$ and $$$b$$$ such that $$$1 \\leq a \\leq b \\leq 6$$$, there is exactly one domino with $$$a$$$ dots on one half and $$$b$$$ dots on the other half. The set contains exactly $$$21$$$ dominoes. Here is an exact illustration of his set:  Also, Anadi has an undirected graph without self-loops and multiple edges. He wants to choose some dominoes and place them on the edges of this graph. He can use at most one domino of each type. Each edge can fit at most one domino. It's not necessary to place a domino on each edge of the graph.When placing a domino on an edge, he also chooses its direction. In other words, one half of any placed domino must be directed toward one of the endpoints of the edge and the other half must be directed toward the other endpoint. There's a catch: if there are multiple halves of dominoes directed toward the same vertex, each of these halves must contain the same number of dots.How many dominoes at most can Anadi place on the edges of his graph?\nInput Specification: The first line contains two integers $$$n$$$ and $$$m$$$ ($$$1 \\leq n \\leq 7$$$, $$$0 \\leq m \\leq \\frac{n\\cdot(n-1)}{2}$$$) \u2014 the number of vertices and the number of edges in the graph. The next $$$m$$$ lines contain two integers each. Integers in the $$$i$$$-th line are $$$a_i$$$ and $$$b_i$$$ ($$$1 \\leq a, b \\leq n$$$, $$$a \\neq b$$$) and denote that there is an edge which connects vertices $$$a_i$$$ and $$$b_i$$$. The graph might be disconnected. It's however guaranteed that the graph doesn't contain any self-loops, and that there is at most one edge between any pair of vertices.\nOutput Specification: Output one integer which denotes the maximum number of dominoes which Anadi can place on the edges of the graph.\n\nSample Input:\n4 4\n1 2\n2 3\n3 4\n4 1\nSample Output:\n4\n\nSample Input:\n7 0\nSample Output:\n0\n\nSample Input:\n3 1\n1 3\nSample Output:\n1\n\nSample Input:\n7 21\n1 2\n1 3\n1 4\n1 5\n1 6\n1 7\n2 3\n2 4\n2 5\n2 6\n2 7\n3 4\n3 5\n3 6\n3 7\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7\nSample Output:\n16\n\nNotes: NoteHere is an illustration of Anadi's graph from the first sample test:  And here is one of the ways to place a domino on each of its edges:  Note that each vertex is faced by the halves of dominoes with the same number of dots. For instance, all halves directed toward vertex $$$1$$$ have three dots.\nTake input from standard input and output to standard output\nProvide the PHP code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "11e6559cfb71b8f6ca88242094b17a2b",
+        "difficulty": 1700,
+        "prob_desc_sample_inputs": [
+            "4 4\n1 2\n2 3\n3 4\n4 1",
+            "7 0",
+            "3 1\n1 3",
+            "7 21\n1 2\n1 3\n1 4\n1 5\n1 6\n1 7\n2 3\n2 4\n2 5\n2 6\n2 7\n3 4\n3 5\n3 6\n3 7\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "brute force",
+            "graphs"
+        ],
+        "prob_desc_output_spec": "Output one integer which denotes the maximum number of dominoes which Anadi can place on the edges of the graph.",
+        "prob_desc_input_spec": "The first line contains two integers $$$n$$$ and $$$m$$$ ($$$1 \\leq n \\leq 7$$$, $$$0 \\leq m \\leq \\frac{n\\cdot(n-1)}{2}$$$) \u2014 the number of vertices and the number of edges in the graph. The next $$$m$$$ lines contain two integers each. Integers in the $$$i$$$-th line are $$$a_i$$$ and $$$b_i$$$ ($$$1 \\leq a, b \\leq n$$$, $$$a \\neq b$$$) and denote that there is an edge which connects vertices $$$a_i$$$ and $$$b_i$$$. The graph might be disconnected. It's however guaranteed that the graph doesn't contain any self-loops, and that there is at most one edge between any pair of vertices.",
+        "lang_cluster": "PHP",
+        "source_code": "",
+        "prob_desc_notes": "NoteHere is an illustration of Anadi's graph from the first sample test:  And here is one of the ways to place a domino on each of its edges:  Note that each vertex is faced by the halves of dominoes with the same number of dots. For instance, all halves directed toward vertex $$$1$$$ have three dots.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Anadi has a set of dominoes. Every domino has two parts, and each part contains some dots. For every $$$a$$$ and $$$b$$$ such that $$$1 \\leq a \\leq b \\leq 6$$$, there is exactly one domino with $$$a$$$ dots on one half and $$$b$$$ dots on the other half. The set contains exactly $$$21$$$ dominoes. Here is an exact illustration of his set:  Also, Anadi has an undirected graph without self-loops and multiple edges. He wants to choose some dominoes and place them on the edges of this graph. He can use at most one domino of each type. Each edge can fit at most one domino. It's not necessary to place a domino on each edge of the graph.When placing a domino on an edge, he also chooses its direction. In other words, one half of any placed domino must be directed toward one of the endpoints of the edge and the other half must be directed toward the other endpoint. There's a catch: if there are multiple halves of dominoes directed toward the same vertex, each of these halves must contain the same number of dots.How many dominoes at most can Anadi place on the edges of his graph?",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1569143100",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "4",
+            "0",
+            "1",
+            "16"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"4 4\\r\\n1 2\\r\\n2 3\\r\\n3 4\\r\\n4 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 1\\r\\n1 3\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 21\\r\\n1 2\\r\\n1 3\\r\\n1 4\\r\\n1 5\\r\\n1 6\\r\\n1 7\\r\\n2 3\\r\\n2 4\\r\\n2 5\\r\\n2 6\\r\\n2 7\\r\\n3 4\\r\\n3 5\\r\\n3 6\\r\\n3 7\\r\\n4 5\\r\\n4 6\\r\\n4 7\\r\\n5 6\\r\\n5 7\\r\\n6 7\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"4 4\\r\\n4 2\\r\\n2 3\\r\\n3 4\\r\\n2 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"5 7\\r\\n4 3\\r\\n3 2\\r\\n1 4\\r\\n5 3\\r\\n5 2\\r\\n4 5\\r\\n1 5\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"6 9\\r\\n2 5\\r\\n3 6\\r\\n1 2\\r\\n1 4\\r\\n2 6\\r\\n6 1\\r\\n3 4\\r\\n1 3\\r\\n5 3\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"7 5\\r\\n5 6\\r\\n3 7\\r\\n7 2\\r\\n4 2\\r\\n1 4\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"7 14\\r\\n7 3\\r\\n2 4\\r\\n2 1\\r\\n2 5\\r\\n5 3\\r\\n6 7\\r\\n4 7\\r\\n5 4\\r\\n7 5\\r\\n4 3\\r\\n4 1\\r\\n6 1\\r\\n6 3\\r\\n3 1\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 15\\r\\n4 6\\r\\n7 3\\r\\n3 1\\r\\n6 5\\r\\n2 7\\r\\n3 6\\r\\n7 6\\r\\n2 6\\r\\n7 5\\r\\n3 5\\r\\n5 4\\r\\n4 7\\r\\n2 1\\r\\n2 4\\r\\n2 3\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"7 18\\r\\n1 5\\r\\n5 7\\r\\n1 3\\r\\n1 6\\r\\n4 5\\r\\n3 7\\r\\n6 7\\r\\n4 7\\r\\n2 7\\r\\n1 2\\r\\n7 1\\r\\n5 6\\r\\n6 2\\r\\n4 2\\r\\n5 3\\r\\n3 6\\r\\n4 6\\r\\n4 3\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 14\\r\\n2 7\\r\\n5 7\\r\\n3 4\\r\\n4 2\\r\\n2 3\\r\\n4 1\\r\\n6 5\\r\\n4 7\\r\\n6 2\\r\\n6 1\\r\\n5 3\\r\\n5 1\\r\\n7 6\\r\\n3 1\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 11\\r\\n4 7\\r\\n6 4\\r\\n5 1\\r\\n1 4\\r\\n5 4\\r\\n1 2\\r\\n3 4\\r\\n4 2\\r\\n6 1\\r\\n3 1\\r\\n7 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"7 18\\r\\n3 2\\r\\n5 3\\r\\n6 7\\r\\n7 3\\r\\n5 4\\r\\n4 6\\r\\n2 4\\r\\n7 1\\r\\n5 6\\r\\n5 2\\r\\n5 1\\r\\n3 4\\r\\n7 4\\r\\n6 1\\r\\n3 6\\r\\n7 2\\r\\n1 3\\r\\n1 2\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 17\\r\\n1 7\\r\\n5 6\\r\\n6 3\\r\\n1 2\\r\\n1 6\\r\\n3 4\\r\\n6 7\\r\\n4 5\\r\\n1 3\\r\\n1 5\\r\\n4 1\\r\\n5 2\\r\\n3 5\\r\\n4 6\\r\\n7 5\\r\\n7 2\\r\\n6 2\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"7 10\\r\\n3 6\\r\\n6 1\\r\\n4 6\\r\\n1 7\\r\\n7 4\\r\\n5 3\\r\\n5 6\\r\\n6 7\\r\\n7 5\\r\\n5 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"1 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 1\\r\\n2 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"3 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 2\\r\\n2 3\\r\\n1 3\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"3 3\\r\\n1 2\\r\\n2 3\\r\\n1 3\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"4 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"4 2\\r\\n2 4\\r\\n1 3\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"4 6\\r\\n2 1\\r\\n1 4\\r\\n2 4\\r\\n3 1\\r\\n3 2\\r\\n3 4\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"5 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 3\\r\\n5 1\\r\\n1 4\\r\\n5 4\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"5 10\\r\\n1 2\\r\\n3 4\\r\\n1 3\\r\\n2 3\\r\\n5 4\\r\\n5 1\\r\\n4 1\\r\\n5 3\\r\\n5 2\\r\\n2 4\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"6 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6 3\\r\\n4 2\\r\\n5 4\\r\\n4 3\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"6 6\\r\\n4 3\\r\\n4 6\\r\\n1 2\\r\\n4 5\\r\\n6 3\\r\\n3 2\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"6 15\\r\\n4 3\\r\\n2 1\\r\\n3 6\\r\\n1 3\\r\\n4 1\\r\\n2 3\\r\\n3 5\\r\\n4 5\\r\\n6 1\\r\\n2 5\\r\\n1 5\\r\\n2 6\\r\\n6 4\\r\\n5 6\\r\\n4 2\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"6 12\\r\\n2 1\\r\\n4 3\\r\\n1 5\\r\\n6 4\\r\\n6 2\\r\\n3 6\\r\\n1 6\\r\\n2 4\\r\\n1 4\\r\\n2 5\\r\\n5 4\\r\\n1 3\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 1\\r\\n5 3\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 2\\r\\n5 1\\r\\n3 5\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"7 3\\r\\n1 5\\r\\n5 7\\r\\n2 7\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"7 4\\r\\n3 7\\r\\n7 5\\r\\n1 3\\r\\n1 6\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7 6\\r\\n3 5\\r\\n7 1\\r\\n3 7\\r\\n5 4\\r\\n7 4\\r\\n3 6\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"7 7\\r\\n2 5\\r\\n6 1\\r\\n5 4\\r\\n7 2\\r\\n3 2\\r\\n4 1\\r\\n7 3\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"7 8\\r\\n4 1\\r\\n5 7\\r\\n6 4\\r\\n7 1\\r\\n6 3\\r\\n3 4\\r\\n3 1\\r\\n6 7\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"7 9\\r\\n2 6\\r\\n7 4\\r\\n2 5\\r\\n2 7\\r\\n4 2\\r\\n3 5\\r\\n5 6\\r\\n6 7\\r\\n7 3\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"7 11\\r\\n2 4\\r\\n1 3\\r\\n5 2\\r\\n2 7\\r\\n1 4\\r\\n4 3\\r\\n2 1\\r\\n7 6\\r\\n3 2\\r\\n7 4\\r\\n4 5\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"7 12\\r\\n6 3\\r\\n3 5\\r\\n7 5\\r\\n1 5\\r\\n1 7\\r\\n7 6\\r\\n4 1\\r\\n2 1\\r\\n1 6\\r\\n5 6\\r\\n3 4\\r\\n4 2\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 13\\r\\n6 5\\r\\n5 7\\r\\n4 2\\r\\n7 2\\r\\n4 1\\r\\n6 7\\r\\n4 3\\r\\n1 6\\r\\n2 5\\r\\n5 4\\r\\n2 1\\r\\n6 4\\r\\n6 2\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 16\\r\\n3 5\\r\\n1 3\\r\\n3 7\\r\\n4 2\\r\\n1 4\\r\\n1 6\\r\\n7 6\\r\\n5 1\\r\\n7 2\\r\\n4 3\\r\\n3 6\\r\\n2 3\\r\\n2 5\\r\\n4 5\\r\\n2 6\\r\\n5 7\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 17\\r\\n4 6\\r\\n1 7\\r\\n7 5\\r\\n3 7\\r\\n7 2\\r\\n2 5\\r\\n6 7\\r\\n1 3\\r\\n5 1\\r\\n6 2\\r\\n4 2\\r\\n3 2\\r\\n1 2\\r\\n5 3\\r\\n4 5\\r\\n3 4\\r\\n1 6\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 19\\r\\n6 1\\r\\n6 4\\r\\n6 5\\r\\n1 7\\r\\n2 7\\r\\n3 5\\r\\n7 6\\r\\n2 4\\r\\n5 7\\r\\n3 4\\r\\n6 2\\r\\n4 1\\r\\n5 1\\r\\n4 7\\r\\n3 2\\r\\n4 5\\r\\n3 1\\r\\n2 5\\r\\n6 3\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 20\\r\\n4 7\\r\\n1 4\\r\\n2 3\\r\\n4 3\\r\\n3 7\\r\\n7 5\\r\\n4 5\\r\\n1 2\\r\\n6 7\\r\\n3 1\\r\\n3 5\\r\\n1 5\\r\\n1 7\\r\\n2 6\\r\\n6 4\\r\\n5 2\\r\\n5 6\\r\\n6 3\\r\\n1 6\\r\\n2 7\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 21\\r\\n3 5\\r\\n7 2\\r\\n2 3\\r\\n6 5\\r\\n5 2\\r\\n4 7\\r\\n2 6\\r\\n2 4\\r\\n6 7\\r\\n5 1\\r\\n1 4\\r\\n4 5\\r\\n5 7\\r\\n4 6\\r\\n3 1\\r\\n1 2\\r\\n3 4\\r\\n7 1\\r\\n3 7\\r\\n6 1\\r\\n3 6\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 12\\r\\n3 4\\r\\n5 4\\r\\n1 7\\r\\n7 3\\r\\n2 5\\r\\n3 2\\r\\n1 4\\r\\n5 6\\r\\n6 1\\r\\n6 3\\r\\n2 1\\r\\n5 7\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 7\\r\\n7 6\\r\\n4 2\\r\\n3 1\\r\\n4 7\\r\\n6 3\\r\\n2 5\\r\\n1 5\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"7 6\\r\\n7 5\\r\\n5 2\\r\\n1 5\\r\\n5 4\\r\\n3 5\\r\\n6 5\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"7 15\\r\\n5 1\\r\\n3 2\\r\\n2 5\\r\\n3 5\\r\\n6 1\\r\\n4 3\\r\\n6 2\\r\\n4 5\\r\\n7 5\\r\\n3 6\\r\\n3 1\\r\\n7 3\\r\\n4 6\\r\\n6 5\\r\\n6 7\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 18\\r\\n3 7\\r\\n3 2\\r\\n2 1\\r\\n1 7\\r\\n5 1\\r\\n3 4\\r\\n5 6\\r\\n4 2\\r\\n6 2\\r\\n1 4\\r\\n2 5\\r\\n6 3\\r\\n3 1\\r\\n6 7\\r\\n6 1\\r\\n7 2\\r\\n6 4\\r\\n3 5\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 19\\r\\n1 2\\r\\n7 3\\r\\n3 4\\r\\n4 7\\r\\n3 6\\r\\n7 5\\r\\n6 2\\r\\n4 6\\r\\n6 7\\r\\n5 2\\r\\n3 2\\r\\n6 5\\r\\n4 1\\r\\n2 4\\r\\n4 5\\r\\n6 1\\r\\n3 1\\r\\n1 7\\r\\n5 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 16\\r\\n3 2\\r\\n6 3\\r\\n6 1\\r\\n5 6\\r\\n7 5\\r\\n5 2\\r\\n6 2\\r\\n2 1\\r\\n5 4\\r\\n4 1\\r\\n7 2\\r\\n1 5\\r\\n2 4\\r\\n7 3\\r\\n1 7\\r\\n6 7\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 12\\r\\n4 1\\r\\n6 4\\r\\n3 4\\r\\n3 1\\r\\n2 4\\r\\n7 5\\r\\n5 4\\r\\n2 1\\r\\n6 7\\r\\n2 3\\r\\n7 4\\r\\n6 5\\r\\n\", \"output\": [\"11\"]}]"
+    }
+}

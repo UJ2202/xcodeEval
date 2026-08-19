@@ -1,0 +1,137 @@
+{
+    "oai_response": {
+        "choices": [
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 0,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\n$data = array_map('intval', preg_split('/\\s+/', trim(stream_get_contents(STDIN))));\n$idx = 0;\n\n$n = $data[$idx++];\n$m = $data[$idx++];\n\n$a = [];\n$b = [];\n\nfor ($i = 0; $i < $n; $i++) {\n    $a[$i] = $data[$idx++];\n}\nfor ($i = 0; $i < $n; $i++) {\n    $b[$i] = $data[$idx++];\n}\n\nfunction popcount(int $x): int\n{\n    $count = 0;\n    while ($x !== 0) {\n        $x &= $x - 1;\n        $count++;\n    }\n    return $count;\n}\n\nfunction catalanRank(int $mask, int $n, int $m): int\n{\n    $length = $n * $m;\n    $k = intdiv($length, 2);\n    $selectedResidues = popcount($mask);\n\n    $g = ($n % 2 === 0) ? 2 : 1;\n    $period = intdiv($n, $g);\n    $slope = intdiv(2 * $selectedResidues - $n, $g);\n\n    $minimum = 0;\n\n    for ($r = 1; $r <= $period && $r <= $k; $r++) {\n        $j = $r;\n\n        if ($slope < 0) {\n            $j += intdiv($k - $r, $period) * $period;\n        }\n\n        $prefixLength = 2 * $j - 1;\n        $fullPeriods = intdiv($prefixLength, $n);\n        $remainder = $prefixLength % $n;\n\n        $count = $fullPeriods * $selectedResidues;\n        if ($remainder > 0) {\n            $count += popcount($mask & ((1 << $remainder) - 1));\n        }\n\n        $value = $count - $j;\n        if ($value < $minimum) {\n            $minimum = $value;\n        }\n    }\n\n    return $k + $minimum;\n}\n\n$answer = 0;\n$deltas = [];\n\nfor ($i = 0; $i < $n; $i++) {\n    $answer += $m * $b[$i];\n    $deltas[$i] = $a[$i] - $b[$i];\n}\n\n$mask = 0;\n$previousRank = 0;\n\nfor ($weight = -9; $weight <= 9; $weight++) {\n    for ($i = 0; $i < $n; $i++) {\n        if ($deltas[$i] === $weight) {\n            $mask |= 1 << $i;\n        }\n    }\n\n    $currentRank = catalanRank($mask, $n, $m);\n    $answer += ($currentRank - $previousRank) * $weight;\n    $previousRank = $currentRank;\n}\n\necho $answer, PHP_EOL;",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 1,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\n$data = preg_split('/\\s+/', trim(stream_get_contents(STDIN)));\n$idx = 0;\n\n$n = (int)$data[$idx++];\n$m = (int)$data[$idx++];\n\n$a = [];\n$b = [];\n$delta = [];\n\nfor ($i = 0; $i < $n; $i++) {\n    $a[$i] = (int)$data[$idx++];\n}\n\n$sumB = 0;\nfor ($i = 0; $i < $n; $i++) {\n    $b[$i] = (int)$data[$idx++];\n    $sumB += $b[$i];\n    $delta[$i] = $a[$i] - $b[$i];\n}\n\nif (($n & 1) === 0) {\n    $period = intdiv($n, 2);\n    $cycles = $m;\n} else {\n    $period = $n;\n    $cycles = intdiv($m, 2);\n}\n\n$totalSelected = intdiv($n * $m, 2);\n$previousCumulative = 0;\n$selectedCost = 0;\n\nfor ($threshold = -9; $threshold <= 9; $threshold++) {\n    $shift = 0;\n    $minimum = null;\n\n    for ($k = 0; $k < $period; $k++) {\n        $rightResidue = ($n - 1 - (2 * $k) % $n + $n) % $n;\n        $leftResidue = ($n - 2 - (2 * $k) % $n + 2 * $n) % $n;\n\n        $rightGreater = ($delta[$rightResidue] > $threshold) ? 1 : 0;\n        $leftGreater = ($delta[$leftResidue] > $threshold) ? 1 : 0;\n\n        $stepShift = $rightGreater + $leftGreater - 1;\n        $stepMinimum = $leftGreater;\n\n        if ($minimum === null) {\n            $minimum = $stepMinimum;\n        } else {\n            $minimum = max($stepMinimum, $minimum + $stepShift);\n        }\n\n        $shift += $stepShift;\n    }\n\n    if ($shift > 0) {\n        $deficit = max(\n            $minimum + ($cycles - 1) * $shift,\n            $cycles * $shift\n        );\n    } else {\n        $deficit = $minimum;\n    }\n\n    $cumulative = $totalSelected - $deficit;\n    $countAtThreshold = $cumulative - $previousCumulative;\n    $selectedCost += $countAtThreshold * $threshold;\n    $previousCumulative = $cumulative;\n}\n\n$answer = $m * $sumB + $selectedCost;\necho $answer, PHP_EOL;",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 2,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\n$data = array_map('intval', preg_split('/\\s+/', trim(stream_get_contents(STDIN))));\n$pos = 0;\n\n$n = $data[$pos++];\n$m = $data[$pos++];\n\n$a = [];\n$sumA = 0;\nfor ($i = 0; $i < $n; $i++) {\n    $a[$i] = $data[$pos++];\n    $sumA += $a[$i];\n}\n\n$weight = [];\nfor ($i = 0; $i < $n; $i++) {\n    $b = $data[$pos++];\n    $weight[$i] = $a[$i] - $b;\n}\n\n$periodPairs = ($n % 2 === 0) ? intdiv($n, 2) : $n;\n$cycles = ($n % 2 === 0) ? $m : intdiv($m, 2);\n\n$pairX = [];\n$pairY = [];\nfor ($i = 0; $i < $periodPairs; $i++) {\n    $pairX[$i] = $weight[(2 * $i) % $n] + 9;\n    $pairY[$i] = $weight[(2 * $i + 1) % $n] + 9;\n}\n\n$counts = array_fill(0, 19, 0);\n$remaining = $cycles;\n\nwhile ($remaining > 0) {\n    $start = $counts;\n    $events = [];\n\n    for ($i = 0; $i < $periodPairs; $i++) {\n        $counts[$pairX[$i]]++;\n\n        $minimum = 0;\n        while ($counts[$minimum] === 0) {\n            $minimum++;\n        }\n\n        $events[] = [$minimum, $counts[$minimum]];\n        $counts[$minimum]--;\n\n        $counts[$pairY[$i]]++;\n    }\n\n    $delta = [];\n    for ($i = 0; $i < 19; $i++) {\n        $delta[$i] = $counts[$i] - $start[$i];\n    }\n\n    $repeat = $remaining;\n\n    foreach ($events as [$category, $available]) {\n        for ($lower = 0; $lower < $category; $lower++) {\n            if ($delta[$lower] !== 0) {\n                $repeat = 1;\n                break 2;\n            }\n        }\n\n        if ($delta[$category] < 0) {\n            $limit = intdiv($available - 1, -$delta[$category]) + 1;\n            if ($limit < $repeat) {\n                $repeat = $limit;\n            }\n        }\n    }\n\n    if ($repeat < 1) {\n        $repeat = 1;\n    }\n\n    if ($repeat > 1) {\n        for ($i = 0; $i < 19; $i++) {\n            $counts[$i] = $start[$i] + $repeat * $delta[$i];\n        }\n    }\n\n    $remaining -= $repeat;\n}\n\n$saved = 0;\nfor ($i = 0; $i < 19; $i++) {\n    $saved += $counts[$i] * ($i - 9);\n}\n\n$answer = $m * $sumA - $saved;\necho $answer, PHP_EOL;",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 3,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\n$data = array_map('intval', preg_split('/\\s+/', trim(stream_get_contents(STDIN))));\n$idx = 0;\n\n$n = $data[$idx++];\n$m = $data[$idx++];\n\n$a = [];\n$b = [];\n$delta = [];\n\nfor ($i = 0; $i < $n; $i++) {\n    $a[$i] = $data[$idx++];\n}\n\n$baseCost = 0;\nfor ($i = 0; $i < $n; $i++) {\n    $b[$i] = $data[$idx++];\n    $baseCost += $b[$i] * $m;\n    $delta[$i] = $a[$i] - $b[$i];\n}\n\n$gcd = ($n % 2 === 0) ? 2 : 1;\n$period = intdiv($n, $gcd);\n$repetitions = intdiv($n * $m, 2 * $period);\n$totalSlots = intdiv($n * $m, 2);\n\n$rankForThreshold = function (int $threshold) use (\n    $n, $delta, $period, $repetitions\n): int {\n    $allowed = [];\n    for ($i = 0; $i < $n; $i++) {\n        $allowed[$i] = ($delta[$i] <= $threshold) ? 1 : 0;\n    }\n\n    $cycle = [];\n    $totalArrivals = 0;\n\n    for ($t = 0; $t < $period; $t++) {\n        $left = (2 * $t - 1) % $n;\n        if ($left < 0) {\n            $left += $n;\n        }\n        $right = (2 * $t) % $n;\n        $cycle[$t] = $allowed[$left] + $allowed[$right];\n        $totalArrivals += $cycle[$t];\n    }\n\n    $queue = 0;\n    $matched = 0;\n\n    for ($t = 0; $t < $period; $t++) {\n        $arrivals = ($t === 0) ? $allowed[0] : $cycle[$t];\n\n        if ($queue + $arrivals > 0) {\n            $queue += $arrivals - 1;\n            $matched++;\n        }\n    }\n\n    $remaining = $repetitions - 1;\n\n    while ($remaining > 0) {\n        $before = $queue;\n        $cycleMatched = 0;\n\n        for ($t = 0; $t < $period; $t++) {\n            $arrivals = $cycle[$t];\n\n            if ($queue + $arrivals > 0) {\n                $queue += $arrivals - 1;\n                $cycleMatched++;\n            }\n        }\n\n        $matched += $cycleMatched;\n        $remaining--;\n\n        if ($remaining === 0) {\n            break;\n        }\n\n        if ($cycleMatched === $period && $totalArrivals >= $period) {\n            $matched += $remaining * $period;\n            break;\n        }\n\n        if ($queue === $before) {\n            $matched += $remaining * $cycleMatched;\n            break;\n        }\n    }\n\n    return $matched;\n};\n\n$previousRank = 0;\n$openAdjustment = 0;\n\nfor ($weight = -9; $weight <= 9; $weight++) {\n    $rank = $rankForThreshold($weight);\n    $openAdjustment += ($rank - $previousRank) * $weight;\n    $previousRank = $rank;\n\n    if ($rank === $totalSlots) {\n        break;\n    }\n}\n\necho ($baseCost + $openAdjustment), PHP_EOL;",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 4,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\n$data = array_map('intval', preg_split('/\\s+/', trim(stream_get_contents(STDIN))));\n$p = 0;\n\n$n = $data[$p++];\n$m = $data[$p++];\n\n$a = [];\n$b = [];\n$baseCost = 0;\n\nfor ($i = 0; $i < $n; $i++) {\n    $a[$i] = $data[$p++];\n    $baseCost += $m * $a[$i];\n}\n\nfor ($i = 0; $i < $n; $i++) {\n    $b[$i] = $data[$p++];\n}\n\n$diff = [];\nfor ($i = 0; $i < $n; $i++) {\n    $diff[$i] = $b[$i] - $a[$i];\n}\n\n$blocks = intdiv($m, 2);\n$previousRank = 0;\n$extraCost = 0;\n\nfor ($cost = -9; $cost <= 9; $cost++) {\n    $selectedPerPeriod = 0;\n    for ($i = 0; $i < $n; $i++) {\n        if ($diff[$i] <= $cost) {\n            $selectedPerPeriod++;\n        }\n    }\n\n    $selected = 0;\n    $maxExcess = 0;\n\n    for ($length = 1; $length <= 2 * $n; $length++) {\n        $residue = ($length - 1) % $n;\n        if ($diff[$residue] <= $cost) {\n            $selected++;\n        }\n\n        $excess = $selected - intdiv($length, 2);\n        if ($excess > $maxExcess) {\n            $maxExcess = $excess;\n        }\n    }\n\n    $drift = 2 * $selectedPerPeriod - $n;\n    if ($drift > 0) {\n        $maxExcess += ($blocks - 1) * $drift;\n    }\n\n    $totalSelected = $m * $selectedPerPeriod;\n    $rank = $totalSelected - $maxExcess;\n\n    $extraCost += $cost * ($rank - $previousRank);\n    $previousRank = $rank;\n}\n\necho ($baseCost + $extraCost) . PHP_EOL;",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            }
+        ],
+        "created": 1787153740,
+        "id": "chatcmpl-EEccGVYtRAWy0eCVhSPbV7O3MJHql",
+        "model": "gpt-5.6-sol-2026-07-09",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {}
+            }
+        ],
+        "service_tier": "default",
+        "system_fingerprint": null,
+        "usage": {
+            "completion_tokens": 25016,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 21539,
+                "rejected_prediction_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 5,
+                "engine_ttft_ms": 216,
+                "engine_ttlt_ms": 114571,
+                "pre_inference_ms": 157,
+                "service_tbt_ms": 5,
+                "service_ttft_ms": 936,
+                "service_ttlt_ms": 115284,
+                "total_duration_ms": 115136,
+                "user_visible_ttft_ms": 779
+            },
+            "prompt_tokens": 372,
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "total_tokens": 25388
+        },
+        "prompt": "Write a program in PHP to solve this programming problem:\nDescription: Jeff loves regular bracket sequences.Today Jeff is going to take a piece of paper and write out the regular bracket sequence, consisting of nm brackets. Let's number all brackets of this sequence from 0 to nm - 1 from left to right. Jeff knows that he is going to spend ai mod n liters of ink on the i-th bracket of the sequence if he paints it opened and bi mod n liters if he paints it closed.You've got sequences a, b and numbers n, m. What minimum amount of ink will Jeff need to paint a regular bracket sequence of length nm?Operation x mod y means taking the remainder after dividing number x by number y.\nInput Specification: The first line contains two integers n and m (1\u2009\u2264\u2009n\u2009\u2264\u200920;\u00a01\u2009\u2264\u2009m\u2009\u2264\u2009107; m is even). The next line contains n integers: a0, a1, ..., an\u2009-\u20091 (1\u2009\u2264\u2009ai\u2009\u2264\u200910). The next line contains n integers: b0, b1, ..., bn\u2009-\u20091 (1\u2009\u2264\u2009bi\u2009\u2264\u200910). The numbers are separated by spaces.\nOutput Specification: In a single line print the answer to the problem \u2014 the minimum required amount of ink in liters.\n\nSample Input:\n2 6\n1 2\n2 1\nSample Output:\n12\n\nSample Input:\n1 10000000\n2\n3\nSample Output:\n25000000\n\nNotes: NoteIn the first test the optimal sequence is: ()()()()()(), the required number of ink liters is 12.\nTake input from standard input and output to standard output\nProvide the PHP code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "f40900973f4ebeb6fdafd75ebe4e9601",
+        "difficulty": 2500,
+        "prob_desc_sample_inputs": [
+            "2 6\n1 2\n2 1",
+            "1 10000000\n2\n3"
+        ],
+        "prob_desc_time_limit": "1 second",
+        "tags": [
+            "dp",
+            "matrices"
+        ],
+        "prob_desc_output_spec": "In a single line print the answer to the problem \u2014 the minimum required amount of ink in liters.",
+        "prob_desc_input_spec": "The first line contains two integers n and m (1\u2009\u2264\u2009n\u2009\u2264\u200920;\u00a01\u2009\u2264\u2009m\u2009\u2264\u2009107; m is even). The next line contains n integers: a0, a1, ..., an\u2009-\u20091 (1\u2009\u2264\u2009ai\u2009\u2264\u200910). The next line contains n integers: b0, b1, ..., bn\u2009-\u20091 (1\u2009\u2264\u2009bi\u2009\u2264\u200910). The numbers are separated by spaces.",
+        "lang_cluster": "PHP",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first test the optimal sequence is: ()()()()()(), the required number of ink liters is 12.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Jeff loves regular bracket sequences.Today Jeff is going to take a piece of paper and write out the regular bracket sequence, consisting of nm brackets. Let's number all brackets of this sequence from 0 to nm - 1 from left to right. Jeff knows that he is going to spend ai mod n liters of ink on the i-th bracket of the sequence if he paints it opened and bi mod n liters if he paints it closed.You've got sequences a, b and numbers n, m. What minimum amount of ink will Jeff need to paint a regular bracket sequence of length nm?Operation x mod y means taking the remainder after dividing number x by number y.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1380900600",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "12",
+            "25000000"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"2 6\\r\\n1 2\\r\\n2 1\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1 10000000\\r\\n2\\r\\n3\\r\\n\", \"output\": [\"25000000\"]}, {\"input\": \"3 184\\r\\n3 2 8\\r\\n3 9 2\\r\\n\", \"output\": [\"1288\"]}, {\"input\": \"4 26\\r\\n10 2 5 9\\r\\n5 4 2 5\\r\\n\", \"output\": [\"444\"]}, {\"input\": \"3 76\\r\\n4 7 9\\r\\n10 1 1\\r\\n\", \"output\": [\"684\"]}, {\"input\": \"3 98\\r\\n6 1 9\\r\\n10 2 4\\r\\n\", \"output\": [\"1127\"]}, {\"input\": \"5 114\\r\\n7 5 8 10 10\\r\\n2 7 9 4 5\\r\\n\", \"output\": [\"3021\"]}, {\"input\": \"1 14\\r\\n7\\r\\n6\\r\\n\", \"output\": [\"91\"]}, {\"input\": \"5 142\\r\\n8 7 6 2 2\\r\\n8 2 6 1 7\\r\\n\", \"output\": [\"2703\"]}, {\"input\": \"1 184\\r\\n8\\r\\n8\\r\\n\", \"output\": [\"1472\"]}, {\"input\": \"2 1900670\\r\\n10 3\\r\\n9 6\\r\\n\", \"output\": [\"22808044\"]}, {\"input\": \"6 17656\\r\\n2 7 4 7 7 3\\r\\n3 5 3 6 9 10\\r\\n\", \"output\": [\"459064\"]}, {\"input\": \"16 3273408\\r\\n3 2 8 8 10 1 1 7 1 4 5 7 5 8 10 10\\r\\n4 4 3 4 7 9 5 1 7 10 7 2 7 9 4 5\\r\\n\", \"output\": [\"186584261\"]}, {\"input\": \"11 4532614\\r\\n7 3 4 1 8 3 5 2 8 10 9\\r\\n6 10 3 7 5 1 1 8 4 9 7\\r\\n\", \"output\": [\"201701323\"]}, {\"input\": \"7 3952828\\r\\n1 1 9 3 5 9 2\\r\\n3 5 6 2 7 9 4\\r\\n\", \"output\": [\"106726356\"]}, {\"input\": \"20 807878\\r\\n9 4 2 5 2 7 9 3 4 4 9 2 8 3 8 9 5 7 4 7\\r\\n8 4 8 7 10 4 10 6 8 1 7 9 3 10 2 2 6 7 3 9\\r\\n\", \"output\": [\"67053877\"]}, {\"input\": \"3 3684044\\r\\n8 6 4\\r\\n3 1 2\\r\\n\", \"output\": [\"38682465\"]}, {\"input\": \"9 7683580\\r\\n4 6 8 5 10 6 3 4 7\\r\\n6 7 3 10 3 10 1 4 10\\r\\n\", \"output\": [\"303501412\"]}, {\"input\": \"10 6007734\\r\\n4 7 6 7 4 3 4 7 7 6\\r\\n8 9 5 7 6 3 2 2 10 4\\r\\n\", \"output\": [\"270348030\"]}, {\"input\": \"7 859320\\r\\n10 1 4 9 2 5 5\\r\\n5 10 3 6 6 5 10\\r\\n\", \"output\": [\"23201650\"]}, {\"input\": \"20 10000000\\r\\n10 3 2 6 2 3 9 2 8 4 4 4 3 4 7 9 5 1 7 10\\r\\n9 6 2 8 3 2 8 10 6 3 2 8 8 10 1 1 7 1 4 5\\r\\n\", \"output\": [\"730000001\"]}, {\"input\": \"20 10000000\\r\\n7 10 9 2 9 7 6 10 3 7 5 1 1 8 4 9 7 9 6 8\\r\\n9 4 3 6 1 7 3 4 1 8 3 5 2 8 10 9 1 2 10 4\\r\\n\", \"output\": [\"780000008\"]}, {\"input\": \"20 10000000\\r\\n2 7 9 4 1 9 8 4 6 10 5 10 4 5 9 9 10 9 1 6\\r\\n5 9 2 9 8 9 1 10 1 9 5 6 4 9 1 10 3 9 9 7\\r\\n\", \"output\": [\"890000001\"]}, {\"input\": \"20 10000000\\r\\n6 7 3 9 10 10 1 9 4 6 8 5 10 6 3 4 7 8 6 6\\r\\n7 4 7 2 7 3 10 10 6 7 3 10 3 10 1 4 10 10 7 3\\r\\n\", \"output\": [\"920000004\"]}, {\"input\": \"20 10000000\\r\\n7 4 3 4 7 7 6 5 4 6 5 8 3 5 3 8 4 3 4 8\\r\\n7 6 3 2 2 10 4 3 5 7 9 9 8 5 4 9 4 3 3 4\\r\\n\", \"output\": [\"880000001\"]}, {\"input\": \"1 2\\r\\n1\\r\\n1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"20 10000000\\r\\n1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1\\r\\n1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1\\r\\n\", \"output\": [\"200000000\"]}, {\"input\": \"20 10000000\\r\\n10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10\\r\\n10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10\\r\\n\", \"output\": [\"2000000000\"]}]"
+    }
+}

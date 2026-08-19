@@ -1,0 +1,138 @@
+{
+    "oai_response": {
+        "choices": [
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 0,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\n$n = trim(fgets(STDIN));\n$digits = array_map('intval', str_split($n));\n$length = count($digits);\n\n$bitCount = array_fill(0, 1024, 0);\nfor ($i = 1; $i < 1024; $i++) {\n    $bitCount[$i] = $bitCount[$i >> 1] + ($i & 1);\n}\n\n$memo = [];\n\n$dfs = function (int $pos, bool $tight, bool $started, int $mask) use (\n    &$dfs,\n    &$memo,\n    $digits,\n    $length,\n    $bitCount\n): int {\n    if ($pos === $length) {\n        return $started ? 1 : 0;\n    }\n\n    $key = $pos . ':' . (int)$tight . ':' . (int)$started . ':' . $mask;\n    if (isset($memo[$key])) {\n        return $memo[$key];\n    }\n\n    $limit = $tight ? $digits[$pos] : 9;\n    $result = 0;\n\n    for ($digit = 0; $digit <= $limit; $digit++) {\n        $nextTight = $tight && ($digit === $limit);\n\n        if (!$started && $digit === 0) {\n            $result += $dfs($pos + 1, $nextTight, false, 0);\n        } else {\n            $nextMask = $mask | (1 << $digit);\n            if ($bitCount[$nextMask] <= 2) {\n                $result += $dfs($pos + 1, $nextTight, true, $nextMask);\n            }\n        }\n    }\n\n    return $memo[$key] = $result;\n};\n\necho $dfs(0, true, false, 0), PHP_EOL;",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 1,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\n$n = trim(fgets(STDIN));\n$digits = array_map('intval', str_split($n));\n$valid = array_fill(0, 1024, false);\n\nfor ($mask = 0; $mask < 1024; $mask++) {\n    $valid[$mask] = substr_count(decbin($mask), '1') <= 2;\n}\n\n$dp = [[], [0 => 1]];\n\nforeach ($digits as $digit) {\n    $next = [[], []];\n\n    for ($tight = 0; $tight <= 1; $tight++) {\n        foreach ($dp[$tight] as $mask => $count) {\n            $limit = $tight ? $digit : 9;\n\n            for ($d = 0; $d <= $limit; $d++) {\n                $newTight = ($tight && $d === $digit) ? 1 : 0;\n                $newMask = ($mask === 0 && $d === 0)\n                    ? 0\n                    : ($mask | (1 << $d));\n\n                if ($valid[$newMask]) {\n                    $next[$newTight][$newMask] =\n                        ($next[$newTight][$newMask] ?? 0) + $count;\n                }\n            }\n        }\n    }\n\n    $dp = $next;\n}\n\n$answer = 0;\n\nfor ($tight = 0; $tight <= 1; $tight++) {\n    foreach ($dp[$tight] as $mask => $count) {\n        if ($mask !== 0) {\n            $answer += $count;\n        }\n    }\n}\n\necho $answer . PHP_EOL;",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 2,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\n$n = trim(fgets(STDIN));\n$digits = array_map('intval', str_split($n));\n\n$popcount = array_fill(0, 1024, 0);\nfor ($i = 1; $i < 1024; $i++) {\n    $popcount[$i] = $popcount[$i >> 1] + ($i & 1);\n}\n\n$dp = [[], [0 => 1]];\n\nforeach ($digits as $currentDigit) {\n    $next = [[], []];\n\n    for ($tight = 0; $tight <= 1; $tight++) {\n        foreach ($dp[$tight] as $mask => $count) {\n            $limit = $tight ? $currentDigit : 9;\n\n            for ($digit = 0; $digit <= $limit; $digit++) {\n                $newTight = ($tight && $digit === $currentDigit) ? 1 : 0;\n\n                if ($mask === 0 && $digit === 0) {\n                    $newMask = 0;\n                } else {\n                    $newMask = $mask | (1 << $digit);\n                    if ($popcount[$newMask] > 2) {\n                        continue;\n                    }\n                }\n\n                $next[$newTight][$newMask] =\n                    ($next[$newTight][$newMask] ?? 0) + $count;\n            }\n        }\n    }\n\n    $dp = $next;\n}\n\n$result = 0;\nfor ($tight = 0; $tight <= 1; $tight++) {\n    foreach ($dp[$tight] as $mask => $count) {\n        if ($mask !== 0) {\n            $result += $count;\n        }\n    }\n}\n\necho $result . PHP_EOL;",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 3,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\n$n = trim(fgets(STDIN));\n$length = strlen($n);\n\n$bitCount = array_fill(0, 1024, 0);\nfor ($mask = 1; $mask < 1024; $mask++) {\n    $bitCount[$mask] = $bitCount[$mask >> 1] + ($mask & 1);\n}\n\n$dp = [1024 => 1]; // state = tight * 1024 + used-digit mask\n\nfor ($i = 0; $i < $length; $i++) {\n    $currentDigit = (int)$n[$i];\n    $next = [];\n\n    foreach ($dp as $state => $count) {\n        $tight = intdiv($state, 1024);\n        $mask = $state % 1024;\n        $limit = $tight ? $currentDigit : 9;\n\n        for ($digit = 0; $digit <= $limit; $digit++) {\n            $newTight = ($tight && $digit === $limit) ? 1 : 0;\n\n            if ($mask === 0 && $digit === 0) {\n                $newMask = 0;\n            } else {\n                $newMask = $mask | (1 << $digit);\n                if ($bitCount[$newMask] > 2) {\n                    continue;\n                }\n            }\n\n            $newState = $newTight * 1024 + $newMask;\n            $next[$newState] = ($next[$newState] ?? 0) + $count;\n        }\n    }\n\n    $dp = $next;\n}\n\n$answer = 0;\nforeach ($dp as $state => $count) {\n    if ($state % 1024 !== 0) {\n        $answer += $count;\n    }\n}\n\necho $answer . PHP_EOL;",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 4,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\n$n = trim(fgets(STDIN));\n$digits = str_split($n);\n\n$bitCount = array_fill(0, 1024, 0);\nfor ($mask = 1; $mask < 1024; $mask++) {\n    $bitCount[$mask] = $bitCount[$mask >> 1] + ($mask & 1);\n}\n\n$dp = [[], [0 => 1]];\n\nforeach ($digits as $digitChar) {\n    $limitDigit = (int)$digitChar;\n    $next = [[], []];\n\n    for ($tight = 0; $tight <= 1; $tight++) {\n        foreach ($dp[$tight] as $mask => $count) {\n            $limit = $tight ? $limitDigit : 9;\n\n            for ($digit = 0; $digit <= $limit; $digit++) {\n                $newTight = ($tight && $digit === $limitDigit) ? 1 : 0;\n\n                if ($mask === 0 && $digit === 0) {\n                    $newMask = 0;\n                } else {\n                    $newMask = $mask | (1 << $digit);\n                }\n\n                if ($bitCount[$newMask] <= 2) {\n                    $next[$newTight][$newMask] =\n                        ($next[$newTight][$newMask] ?? 0) + $count;\n                }\n            }\n        }\n    }\n\n    $dp = $next;\n}\n\n$answer = 0;\nfor ($tight = 0; $tight <= 1; $tight++) {\n    foreach ($dp[$tight] as $mask => $count) {\n        if ($mask !== 0) {\n            $answer += $count;\n        }\n    }\n}\n\necho $answer . PHP_EOL;",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            }
+        ],
+        "created": 1787153883,
+        "id": "chatcmpl-EEceZt7Pa5P6zk1eevOYFlndxFjvI",
+        "model": "gpt-5.6-sol-2026-07-09",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {}
+            }
+        ],
+        "service_tier": "default",
+        "system_fingerprint": null,
+        "usage": {
+            "completion_tokens": 4401,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 2478,
+                "rejected_prediction_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 5,
+                "engine_ttft_ms": 344,
+                "engine_ttlt_ms": 20260,
+                "pre_inference_ms": 104,
+                "service_tbt_ms": 5,
+                "service_ttft_ms": 831,
+                "service_ttlt_ms": 20739,
+                "total_duration_ms": 20645,
+                "user_visible_ttft_ms": 727
+            },
+            "prompt_tokens": 322,
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "total_tokens": 4723
+        },
+        "prompt": "Write a program in PHP to solve this programming problem:\nDescription: Polycarpus loves lucky numbers. Everybody knows that lucky numbers are positive integers, whose decimal representation (without leading zeroes) contain only the lucky digits x and y. For example, if x\u2009=\u20094, and y\u2009=\u20097, then numbers 47, 744, 4 are lucky.Let's call a positive integer a undoubtedly lucky, if there are such digits x and y (0\u2009\u2264\u2009x,\u2009y\u2009\u2264\u20099), that the decimal representation of number a (without leading zeroes) contains only digits x and y.Polycarpus has integer n. He wants to know how many positive integers that do not exceed n, are undoubtedly lucky. Help him, count this number.\nInput Specification: The first line contains a single integer n (1\u2009\u2264\u2009n\u2009\u2264\u2009109) \u2014 Polycarpus's number.\nOutput Specification: Print a single integer that says, how many positive integers that do not exceed n are undoubtedly lucky.\n\nSample Input:\n10\nSample Output:\n10\n\nSample Input:\n123\nSample Output:\n113\n\nNotes: NoteIn the first test sample all numbers that do not exceed 10 are undoubtedly lucky.In the second sample numbers 102, 103, 104, 105, 106, 107, 108, 109, 120, 123 are not undoubtedly lucky.\nTake input from standard input and output to standard output\nProvide the PHP code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "0f7f10557602c8c2f2eb80762709ffc4",
+        "difficulty": 1600,
+        "prob_desc_sample_inputs": [
+            "10",
+            "123"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "brute force",
+            "bitmasks",
+            "dfs and similar"
+        ],
+        "prob_desc_output_spec": "Print a single integer that says, how many positive integers that do not exceed n are undoubtedly lucky.",
+        "prob_desc_input_spec": "The first line contains a single integer n (1\u2009\u2264\u2009n\u2009\u2264\u2009109) \u2014 Polycarpus's number.",
+        "lang_cluster": "PHP",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first test sample all numbers that do not exceed 10 are undoubtedly lucky.In the second sample numbers 102, 103, 104, 105, 106, 107, 108, 109, 120, 123 are not undoubtedly lucky.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Polycarpus loves lucky numbers. Everybody knows that lucky numbers are positive integers, whose decimal representation (without leading zeroes) contain only the lucky digits x and y. For example, if x\u2009=\u20094, and y\u2009=\u20097, then numbers 47, 744, 4 are lucky.Let's call a positive integer a undoubtedly lucky, if there are such digits x and y (0\u2009\u2264\u2009x,\u2009y\u2009\u2264\u20099), that the decimal representation of number a (without leading zeroes) contains only digits x and y.Polycarpus has integer n. He wants to know how many positive integers that do not exceed n, are undoubtedly lucky. Help him, count this number.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1353079800",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "10",
+            "113"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"10\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"123\\r\\n\", \"output\": [\"113\"]}, {\"input\": \"1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"2\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"1000\\r\\n\", \"output\": [\"352\"]}, {\"input\": \"1000000000\\r\\n\", \"output\": [\"40744\"]}, {\"input\": \"999999999\\r\\n\", \"output\": [\"40743\"]}, {\"input\": \"999999998\\r\\n\", \"output\": [\"40742\"]}, {\"input\": \"999999997\\r\\n\", \"output\": [\"40741\"]}, {\"input\": \"909090901\\r\\n\", \"output\": [\"38532\"]}, {\"input\": \"142498040\\r\\n\", \"output\": [\"21671\"]}, {\"input\": \"603356456\\r\\n\", \"output\": [\"31623\"]}, {\"input\": \"64214872\\r\\n\", \"output\": [\"15759\"]}, {\"input\": \"820040584\\r\\n\", \"output\": [\"36407\"]}, {\"input\": \"442198\\r\\n\", \"output\": [\"3071\"]}, {\"input\": \"784262\\r\\n\", \"output\": [\"4079\"]}, {\"input\": \"642678\\r\\n\", \"output\": [\"3615\"]}, {\"input\": \"468390\\r\\n\", \"output\": [\"3223\"]}, {\"input\": \"326806\\r\\n\", \"output\": [\"2759\"]}, {\"input\": \"940\\r\\n\", \"output\": [\"331\"]}, {\"input\": \"356\\r\\n\", \"output\": [\"175\"]}, {\"input\": \"68\\r\\n\", \"output\": [\"68\"]}, {\"input\": \"132\\r\\n\", \"output\": [\"114\"]}, {\"input\": \"72\\r\\n\", \"output\": [\"72\"]}, {\"input\": \"89\\r\\n\", \"output\": [\"89\"]}, {\"input\": \"3\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"4\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"5\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"6\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"7\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"8\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"9\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"101\\r\\n\", \"output\": [\"101\"]}, {\"input\": \"102\\r\\n\", \"output\": [\"101\"]}]"
+    }
+}

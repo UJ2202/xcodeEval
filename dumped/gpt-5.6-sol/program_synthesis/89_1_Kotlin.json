@@ -1,0 +1,138 @@
+{
+    "oai_response": {
+        "choices": [
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 0,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport kotlin.math.min\nimport kotlin.math.max\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toInt()\n    val m = st.nextToken().toInt()\n\n    val width = min(n, m)\n    val height = max(n, m)\n    val size = 1 shl width\n    val full = size - 1\n    val inf = 1_000_000\n\n    val horizontal = IntArray(size)\n    val bits = IntArray(size)\n    for (mask in 0 until size) {\n        horizontal[mask] = mask or ((mask shl 1) and full) or (mask shr 1)\n        bits[mask] = Integer.bitCount(mask)\n    }\n\n    var dp = IntArray(size * size) { inf }\n    for (first in 0 until size) {\n        dp[first] = bits[first]\n    }\n\n    for (row in 1 until height) {\n        val next = IntArray(size * size) { inf }\n\n        for (previousPrevious in 0 until size) {\n            for (previous in 0 until size) {\n                val value = dp[previousPrevious * size + previous]\n                if (value == inf) continue\n\n                val alreadyDominated = horizontal[previous] or previousPrevious\n                val required = full xor (alreadyDominated and full)\n\n                for (current in 0 until size) {\n                    if ((current and required) != required) continue\n\n                    val index = previous * size + current\n                    val candidate = value + bits[current]\n                    if (candidate < next[index]) {\n                        next[index] = candidate\n                    }\n                }\n            }\n        }\n\n        dp = next\n    }\n\n    var minimumOccupied = inf\n    for (previousPrevious in 0 until size) {\n        for (last in 0 until size) {\n            val value = dp[previousPrevious * size + last]\n            if (value == inf) continue\n\n            if ((horizontal[last] or previousPrevious) == full) {\n                minimumOccupied = min(minimumOccupied, value)\n            }\n        }\n    }\n\n    println(n * m - minimumOccupied)\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 1,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport kotlin.math.min\nimport kotlin.math.max\n\nfun main() {\n    val reader = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(reader.readLine())\n    val n = st.nextToken().toInt()\n    val m = st.nextToken().toInt()\n\n    val width = min(n, m)\n    val height = max(n, m)\n    val maskCount = 1 shl width\n    val fullMask = maskCount - 1\n    val inf = 1_000_000\n\n    val horizontal = IntArray(maskCount)\n    val bitCount = IntArray(maskCount)\n\n    for (mask in 0 until maskCount) {\n        horizontal[mask] = (mask or (mask shl 1) or (mask shr 1)) and fullMask\n        bitCount[mask] = Integer.bitCount(mask)\n    }\n\n    var dp = IntArray(maskCount * maskCount) { inf }\n    for (current in 0 until maskCount) {\n        dp[current] = bitCount[current] // State: previous mask = 0, current mask\n    }\n\n    for (row in 1 until height) {\n        val next = IntArray(maskCount * maskCount) { inf }\n\n        for (previous in 0 until maskCount) {\n            for (current in 0 until maskCount) {\n                val value = dp[previous * maskCount + current]\n                if (value == inf) continue\n\n                val missing = fullMask and (horizontal[current] or previous).inv()\n                var remaining = fullMask xor missing\n\n                var subset = remaining\n                while (true) {\n                    val nextMask = missing or subset\n                    val index = current * maskCount + nextMask\n                    val newValue = value + bitCount[nextMask]\n                    if (newValue < next[index]) next[index] = newValue\n\n                    if (subset == 0) break\n                    subset = (subset - 1) and remaining\n                }\n            }\n        }\n\n        dp = next\n    }\n\n    var minimumOccupied = inf\n    for (previous in 0 until maskCount) {\n        for (current in 0 until maskCount) {\n            if ((horizontal[current] or previous) == fullMask) {\n                minimumOccupied = min(\n                    minimumOccupied,\n                    dp[previous * maskCount + current]\n                )\n            }\n        }\n    }\n\n    println(n * m - minimumOccupied)\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 2,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "import java.io.BufferedInputStream\n\nprivate class FastScanner {\n    private val input = BufferedInputStream(System.`in`)\n    private val buffer = ByteArray(1 shl 16)\n    private var length = 0\n    private var pointer = 0\n\n    private fun readByte(): Int {\n        if (pointer >= length) {\n            length = input.read(buffer)\n            pointer = 0\n            if (length <= 0) return -1\n        }\n        return buffer[pointer++].toInt()\n    }\n\n    fun nextInt(): Int {\n        var c: Int\n        do {\n            c = readByte()\n        } while (c <= 32)\n\n        var result = 0\n        while (c > 32) {\n            result = result * 10 + (c - '0'.code)\n            c = readByte()\n        }\n        return result\n    }\n}\n\nfun main() {\n    val fs = FastScanner()\n    val n = fs.nextInt()\n    val m = fs.nextInt()\n\n    val width = minOf(n, m)\n    val height = maxOf(n, m)\n    val maskCount = 1 shl width\n    val fullMask = maskCount - 1\n    val inf = 1_000_000_000\n\n    val horizontalCover = IntArray(maskCount)\n    val bitCount = IntArray(maskCount)\n\n    for (mask in 0 until maskCount) {\n        horizontalCover[mask] =\n            (mask or (mask shl 1) or (mask shr 1)) and fullMask\n        bitCount[mask] = Integer.bitCount(mask)\n    }\n\n    var dp = IntArray(maskCount * maskCount) { inf }\n\n    for (firstRow in 0 until maskCount) {\n        dp[firstRow] = bitCount[firstRow]\n    }\n\n    for (row in 1 until height) {\n        val next = IntArray(maskCount * maskCount) { inf }\n\n        for (upper in 0 until maskCount) {\n            for (current in 0 until maskCount) {\n                val value = dp[upper * maskCount + current]\n                if (value == inf) continue\n\n                val alreadyCovered = horizontalCover[current] or upper\n                val required = fullMask and alreadyCovered.inv()\n\n                for (below in 0 until maskCount) {\n                    if ((below and required) != required) continue\n\n                    val index = current * maskCount + below\n                    val candidate = value + bitCount[below]\n                    if (candidate < next[index]) {\n                        next[index] = candidate\n                    }\n                }\n            }\n        }\n\n        dp = next\n    }\n\n    var minimumOccupied = inf\n\n    for (upper in 0 until maskCount) {\n        for (last in 0 until maskCount) {\n            val value = dp[upper * maskCount + last]\n            if (value == inf) continue\n            if ((horizontalCover[last] or upper) == fullMask) {\n                minimumOccupied = minOf(minimumOccupied, value)\n            }\n        }\n    }\n\n    println(n * m - minimumOccupied)\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 3,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport java.util.Arrays\n\nfun main() {\n    val reader = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(reader.readLine())\n    val n = st.nextToken().toInt()\n    val m = st.nextToken().toInt()\n\n    val rows = maxOf(n, m)\n    val width = minOf(n, m)\n    val maskCount = 1 shl width\n    val allMask = maskCount - 1\n    val inf = 1_000_000\n\n    val horizontalCoverage = IntArray(maskCount)\n    val bitCount = IntArray(maskCount)\n    for (mask in 0 until maskCount) {\n        horizontalCoverage[mask] =\n            mask or ((mask shl 1) and allMask) or (mask shr 1)\n        bitCount[mask] = Integer.bitCount(mask)\n    }\n\n    var dp = IntArray(maskCount * maskCount) { inf }\n    for (firstRow in 0 until maskCount) {\n        dp[firstRow] = bitCount[firstRow]\n    }\n\n    for (row in 1 until rows) {\n        val next = IntArray(maskCount * maskCount) { inf }\n\n        for (above in 0 until maskCount) {\n            for (previous in 0 until maskCount) {\n                val currentCost = dp[above * maskCount + previous]\n                if (currentCost == inf) continue\n\n                val coveredWithoutBelow = above or horizontalCoverage[previous]\n                for (current in 0 until maskCount) {\n                    if ((coveredWithoutBelow or current) == allMask) {\n                        val index = previous * maskCount + current\n                        val newCost = currentCost + bitCount[current]\n                        if (newCost < next[index]) {\n                            next[index] = newCost\n                        }\n                    }\n                }\n            }\n        }\n\n        dp = next\n    }\n\n    var minimumOccupied = inf\n    for (above in 0 until maskCount) {\n        for (last in 0 until maskCount) {\n            val cost = dp[above * maskCount + last]\n            if (cost != inf && (above or horizontalCoverage[last]) == allMask) {\n                minimumOccupied = minOf(minimumOccupied, cost)\n            }\n        }\n    }\n\n    println(n * m - minimumOccupied)\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 4,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "import java.io.BufferedInputStream\n\nprivate class FastScanner {\n    private val input = BufferedInputStream(System.`in`)\n    private val buffer = ByteArray(1 shl 16)\n    private var length = 0\n    private var pointer = 0\n\n    private fun readByte(): Int {\n        if (pointer >= length) {\n            length = input.read(buffer)\n            pointer = 0\n            if (length <= 0) return -1\n        }\n        return buffer[pointer++].toInt()\n    }\n\n    fun nextInt(): Int {\n        var c: Int\n        do {\n            c = readByte()\n        } while (c <= 32)\n\n        var result = 0\n        while (c > 32) {\n            result = result * 10 + (c - '0'.code)\n            c = readByte()\n        }\n        return result\n    }\n}\n\nfun main() {\n    val fs = FastScanner()\n    val n = fs.nextInt()\n    val m = fs.nextInt()\n\n    val width = minOf(n, m)\n    val height = maxOf(n, m)\n    val maskCount = 1 shl width\n    val fullMask = maskCount - 1\n    val stateCount = maskCount * maskCount\n    val inf = 1_000_000\n\n    val expanded = IntArray(maskCount)\n    val bits = IntArray(maskCount)\n    for (mask in 0 until maskCount) {\n        expanded[mask] = (mask or (mask shl 1) or (mask shr 1)) and fullMask\n        bits[mask] = Integer.bitCount(mask)\n    }\n\n    var dp = IntArray(stateCount) { inf }\n    dp[fullMask] = 0\n\n    repeat(height) {\n        val next = IntArray(stateCount) { inf }\n\n        for (previousSelected in 0 until maskCount) {\n            val base = previousSelected * maskCount\n            for (previousDominated in 0 until maskCount) {\n                val currentCost = dp[base + previousDominated]\n                if (currentCost == inf) continue\n\n                for (currentSelected in 0 until maskCount) {\n                    if ((previousDominated or currentSelected) != fullMask) continue\n\n                    val currentDominated =\n                        expanded[currentSelected] or previousSelected\n                    val index = currentSelected * maskCount + currentDominated\n                    val newCost = currentCost + bits[currentSelected]\n\n                    if (newCost < next[index]) {\n                        next[index] = newCost\n                    }\n                }\n            }\n        }\n\n        dp = next\n    }\n\n    var minimumOccupied = inf\n    for (selected in 0 until maskCount) {\n        minimumOccupied = minOf(\n            minimumOccupied,\n            dp[selected * maskCount + fullMask]\n        )\n    }\n\n    print(n * m - minimumOccupied)\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            }
+        ],
+        "created": 1787155129,
+        "id": "chatcmpl-EEcyfZ3IayHX4XXcilZZaY1zXtGql",
+        "model": "gpt-5.6-sol-2026-07-09",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {}
+            }
+        ],
+        "service_tier": "default",
+        "system_fingerprint": null,
+        "usage": {
+            "completion_tokens": 7487,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 4622,
+                "rejected_prediction_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 4,
+                "engine_ttft_ms": 277,
+                "engine_ttlt_ms": 30728,
+                "pre_inference_ms": 67,
+                "service_tbt_ms": 4,
+                "service_ttft_ms": 681,
+                "service_ttlt_ms": 31125,
+                "total_duration_ms": 31067,
+                "user_visible_ttft_ms": 614
+            },
+            "prompt_tokens": 348,
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "total_tokens": 7835
+        },
+        "prompt": "Write a program in Kotlin to solve this programming problem:\nDescription: Little Petya loves training spiders. Petya has a board n\u2009\u00d7\u2009m in size. Each cell of the board initially has a spider sitting on it. After one second Petya chooses a certain action for each spider, and all of them humbly perform its commands. There are 5 possible commands: to stay idle or to move from current cell to some of the four side-neighboring cells (that is, one command for each of the four possible directions). Petya gives the commands so that no spider leaves the field. It is allowed for spiders to pass through each other when they crawl towards each other in opposite directions. All spiders crawl simultaneously and several spiders may end up in one cell. Petya wants to know the maximum possible number of spider-free cells after one second.\nInput Specification: The first line contains two space-separated integers n and m (1\u2009\u2264\u2009n,\u2009m\u2009\u2264\u200940,\u2009n\u00b7m\u2009\u2264\u200940) \u2014 the board sizes.\nOutput Specification: In the first line print the maximum number of cells without spiders.\n\nSample Input:\n1 1\nSample Output:\n0\n\nSample Input:\n2 3\nSample Output:\n4\n\nNotes: NoteIn the first sample the only possible answer is:sIn the second sample one of the possible solutions is: rdlruls denotes command \"stay idle\", l, r, d, u denote commands \"crawl left\", \"crawl right\", \"crawl down\", \"crawl up\", correspondingly.\nTake input from standard input and output to standard output\nProvide the Kotlin code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "097674b4dd696b30e102938f71dd39b9",
+        "difficulty": 2100,
+        "prob_desc_sample_inputs": [
+            "1 1",
+            "2 3"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "bitmasks",
+            "dp",
+            "dsu"
+        ],
+        "prob_desc_output_spec": "In the first line print the maximum number of cells without spiders.",
+        "prob_desc_input_spec": "The first line contains two space-separated integers n and m (1\u2009\u2264\u2009n,\u2009m\u2009\u2264\u200940,\u2009n\u00b7m\u2009\u2264\u200940) \u2014 the board sizes.",
+        "lang_cluster": "Kotlin",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first sample the only possible answer is:sIn the second sample one of the possible solutions is: rdlruls denotes command \"stay idle\", l, r, d, u denote commands \"crawl left\", \"crawl right\", \"crawl down\", \"crawl up\", correspondingly.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Little Petya loves training spiders. Petya has a board n\u2009\u00d7\u2009m in size. Each cell of the board initially has a spider sitting on it. After one second Petya chooses a certain action for each spider, and all of them humbly perform its commands. There are 5 possible commands: to stay idle or to move from current cell to some of the four side-neighboring cells (that is, one command for each of the four possible directions). Petya gives the commands so that no spider leaves the field. It is allowed for spiders to pass through each other when they crawl towards each other in opposite directions. All spiders crawl simultaneously and several spiders may end up in one cell. Petya wants to know the maximum possible number of spider-free cells after one second.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1315051200",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "0",
+            "4"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"1 1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 3\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"4 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"4 2\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"4 3\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"4 4\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1 40\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"1 2\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"1 3\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"1 4\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"1 5\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"1 6\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"1 7\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"1 8\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"1 9\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"1 10\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"1 11\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"1 12\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"1 13\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"1 14\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"1 15\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"1 16\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"1 17\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"1 18\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1 19\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1 20\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"1 21\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"1 22\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"1 23\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"1 24\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"1 25\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"1 26\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"1 27\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"1 28\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"1 29\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"1 30\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"1 31\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"1 32\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"1 33\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"1 34\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"1 35\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"1 36\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"1 37\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"1 38\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"1 39\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"2 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"2 2\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"2 4\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"2 5\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"2 6\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"2 7\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"2 8\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"2 9\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"2 10\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"2 11\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"2 12\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"2 13\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"2 14\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"2 15\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"2 16\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"2 17\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"2 18\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"2 19\\r\\n\", \"output\": [\"28\"]}, {\"input\": \"2 20\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"3 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"3 2\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"3 3\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"3 4\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"3 5\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"3 6\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"3 7\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"3 8\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"3 9\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"3 10\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"3 11\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"3 12\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"3 13\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"4 5\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"4 6\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"4 7\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"4 8\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"4 9\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"4 10\\r\\n\", \"output\": [\"30\"]}, {\"input\": \"5 1\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"5 2\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"5 3\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"5 4\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"5 5\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"5 6\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"5 7\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"5 8\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"6 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"6 2\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"6 3\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"6 4\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"6 5\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"6 6\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"7 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7 2\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"7 3\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 4\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"7 5\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"8 1\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"8 2\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"8 3\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"8 4\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"8 5\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"9 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"9 2\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"9 3\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"9 4\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"10 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"10 2\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"10 3\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"10 4\\r\\n\", \"output\": [\"30\"]}, {\"input\": \"11 1\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"11 2\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"11 3\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"12 1\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"12 2\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"12 3\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"13 1\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"13 2\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"13 3\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"14 1\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"14 2\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"15 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"15 2\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"16 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"16 2\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"17 1\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"17 2\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"18 1\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"18 2\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"19 1\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"19 2\\r\\n\", \"output\": [\"28\"]}, {\"input\": \"20 1\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"20 2\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"21 1\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"22 1\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"23 1\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"24 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"25 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"26 1\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"27 1\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"28 1\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"29 1\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"30 1\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"31 1\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"32 1\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"33 1\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"34 1\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"35 1\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"36 1\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"37 1\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"38 1\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"39 1\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"40 1\\r\\n\", \"output\": [\"26\"]}]"
+    }
+}

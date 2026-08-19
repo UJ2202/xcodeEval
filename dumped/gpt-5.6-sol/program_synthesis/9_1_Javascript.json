@@ -1,0 +1,141 @@
+{
+    "oai_response": {
+        "choices": [
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 0,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "'use strict';\n\nconst fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/);\nlet n = Number(input[0]);\nconst k = Number(input[1]);\n\nconst MOD = 1000000007n;\nconst factors = [];\n\nfunction addFactor(p) {\n    let exponent = 0;\n    while (n % p === 0) {\n        n /= p;\n        exponent++;\n    }\n    if (exponent > 0) factors.push([p, exponent]);\n}\n\naddFactor(2);\naddFactor(3);\n\nfor (let p = 5, step = 2; p <= n / p; p += step, step = 6 - step) {\n    addFactor(p);\n}\n\nif (n > 1) factors.push([n, 1]);\n\nlet maxExponent = 0;\nfor (const [, exponent] of factors) {\n    maxExponent = Math.max(maxExponent, exponent);\n}\n\nconst inverse = Array(maxExponent + 2).fill(0n);\nif (maxExponent >= 0) inverse[1] = 1n;\n\nfor (let i = 2; i <= maxExponent + 1; i++) {\n    const bi = BigInt(i);\n    inverse[i] =\n        (MOD - ((MOD / bi) * inverse[Number(MOD % bi)]) % MOD) % MOD;\n}\n\nlet answer = 1n;\n\nfor (const [prime, exponent] of factors) {\n    let probability = Array(exponent + 1).fill(0n);\n    probability[exponent] = 1n;\n\n    for (let step = 0; step < k; step++) {\n        const next = Array(exponent + 1).fill(0n);\n        let suffix = 0n;\n\n        for (let e = exponent; e >= 0; e--) {\n            suffix =\n                (suffix + probability[e] * inverse[e + 1]) % MOD;\n            next[e] = suffix;\n        }\n\n        probability = next;\n    }\n\n    const p = BigInt(prime) % MOD;\n    let power = 1n;\n    let expected = 0n;\n\n    for (let e = 0; e <= exponent; e++) {\n        expected = (expected + probability[e] * power) % MOD;\n        power = (power * p) % MOD;\n    }\n\n    answer = (answer * expected) % MOD;\n}\n\nconsole.log(answer.toString());",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 1,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "'use strict';\n\nconst fs = require('fs');\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/);\n\nconst n = BigInt(input[0]);\nconst k = Number(input[1]);\nconst MOD = 1000000007n;\n\nfunction gcd(a, b) {\n    while (b !== 0n) {\n        const t = a % b;\n        a = b;\n        b = t;\n    }\n    return a;\n}\n\nfunction modPow(base, exp, mod) {\n    base %= mod;\n    let result = 1n;\n    while (exp > 0n) {\n        if (exp & 1n) result = result * base % mod;\n        base = base * base % mod;\n        exp >>= 1n;\n    }\n    return result;\n}\n\nfunction isPrime(x) {\n    if (x < 2n) return false;\n\n    const smallPrimes = [\n        2n, 3n, 5n, 7n, 11n, 13n, 17n, 19n,\n        23n, 29n, 31n, 37n\n    ];\n\n    for (const p of smallPrimes) {\n        if (x % p === 0n) return x === p;\n    }\n\n    let d = x - 1n;\n    let s = 0;\n    while ((d & 1n) === 0n) {\n        d >>= 1n;\n        s++;\n    }\n\n    const witnesses = [\n        2n, 325n, 9375n, 28178n,\n        450775n, 9780504n, 1795265022n\n    ];\n\n    for (let a of witnesses) {\n        a %= x;\n        if (a === 0n) continue;\n\n        let y = modPow(a, d, x);\n        if (y === 1n || y === x - 1n) continue;\n\n        let composite = true;\n        for (let r = 1; r < s; r++) {\n            y = y * y % x;\n            if (y === x - 1n) {\n                composite = false;\n                break;\n            }\n        }\n        if (composite) return false;\n    }\n\n    return true;\n}\n\nfunction pollardRho(x) {\n    if (x % 2n === 0n) return 2n;\n    if (x % 3n === 0n) return 3n;\n\n    let c = 1n;\n\n    while (true) {\n        let a = 2n;\n        let b = 2n;\n        let d = 1n;\n\n        const f = v => (v * v + c) % x;\n\n        while (d === 1n) {\n            a = f(a);\n            b = f(f(b));\n            d = gcd(a >= b ? a - b : b - a, x);\n        }\n\n        if (d !== x) return d;\n        c++;\n    }\n}\n\nconst factors = [];\n\nfunction factorize(x) {\n    if (x === 1n) return;\n    if (isPrime(x)) {\n        factors.push(x);\n        return;\n    }\n\n    const divisor = pollardRho(x);\n    factorize(divisor);\n    factorize(x / divisor);\n}\n\nfactorize(n);\nfactors.sort((a, b) => a < b ? -1 : a > b ? 1 : 0);\n\nconst primePowers = [];\nfor (const prime of factors) {\n    const last = primePowers[primePowers.length - 1];\n    if (last && last[0] === prime) {\n        last[1]++;\n    } else {\n        primePowers.push([prime, 1]);\n    }\n}\n\nlet maxExponent = 0;\nfor (const [, exponent] of primePowers) {\n    maxExponent = Math.max(maxExponent, exponent);\n}\n\nconst inverse = Array(maxExponent + 2).fill(0n);\ninverse[1] = 1n;\n\nfor (let i = 2; i <= maxExponent + 1; i++) {\n    const bi = BigInt(i);\n    inverse[i] =\n        (MOD - (MOD / bi) * inverse[Number(MOD % bi)] % MOD) % MOD;\n}\n\nlet answer = 1n;\n\nfor (const [prime, exponent] of primePowers) {\n    let dp = Array(exponent + 1).fill(0n);\n    dp[exponent] = 1n;\n\n    for (let step = 0; step < k; step++) {\n        const next = Array(exponent + 1).fill(0n);\n        let suffix = 0n;\n\n        for (let e = exponent; e >= 0; e--) {\n            suffix = (suffix + dp[e] * inverse[e + 1]) % MOD;\n            next[e] = suffix;\n        }\n\n        dp = next;\n    }\n\n    let expected = 0n;\n    let power = 1n;\n    const base = prime % MOD;\n\n    for (let e = 0; e <= exponent; e++) {\n        expected = (expected + dp[e] * power) % MOD;\n        power = power * base % MOD;\n    }\n\n    answer = answer * expected % MOD;\n}\n\nconsole.log(answer.toString());",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 2,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "'use strict';\n\nconst fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/);\nlet n = Number(input[0]);\nconst k = Number(input[1]);\n\nconst MOD = 1000000007n;\nconst factors = [];\n\nfunction addFactor(p) {\n    let exponent = 0;\n    while (n % p === 0) {\n        n /= p;\n        exponent++;\n    }\n    if (exponent > 0) factors.push([p, exponent]);\n}\n\naddFactor(2);\naddFactor(3);\n\nfor (let p = 5, step = 2; p * p <= n; p += step, step = 6 - step) {\n    if (n % p === 0) addFactor(p);\n}\n\nif (n > 1) factors.push([n, 1]);\n\nlet maxExponent = 0;\nfor (const [, exponent] of factors) {\n    maxExponent = Math.max(maxExponent, exponent);\n}\n\nconst inverse = Array(maxExponent + 2).fill(0n);\nif (maxExponent >= 0) inverse[1] = 1n;\n\nfor (let i = 2; i <= maxExponent + 1; i++) {\n    const x = BigInt(i);\n    inverse[i] = (MOD - ((MOD / x) * inverse[Number(MOD % x)]) % MOD) % MOD;\n}\n\nlet answer = 1n;\n\nfor (const [prime, exponent] of factors) {\n    let dp = Array(exponent + 1).fill(0n);\n    dp[exponent] = 1n;\n\n    for (let step = 0; step < k; step++) {\n        const next = Array(exponent + 1).fill(0n);\n        let suffix = 0n;\n\n        for (let current = exponent; current >= 0; current--) {\n            suffix += (dp[current] * inverse[current + 1]) % MOD;\n            if (suffix >= MOD) suffix -= MOD;\n            next[current] = suffix;\n        }\n\n        dp = next;\n    }\n\n    const p = BigInt(prime) % MOD;\n    let power = 1n;\n    let expected = 0n;\n\n    for (let exponentValue = 0; exponentValue <= exponent; exponentValue++) {\n        expected = (expected + dp[exponentValue] * power) % MOD;\n        power = (power * p) % MOD;\n    }\n\n    answer = (answer * expected) % MOD;\n}\n\nconsole.log(answer.toString());",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 3,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "'use strict';\n\nconst fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/);\nconst n = Number(input[0]);\nconst k = Number(input[1]);\n\nconst MOD = 1000000007n;\nconst factors = [];\n\nlet remaining = n;\n\nfunction extractFactor(p) {\n    let exponent = 0;\n    while (remaining % p === 0) {\n        remaining /= p;\n        exponent++;\n    }\n    if (exponent > 0) factors.push([p, exponent]);\n}\n\nextractFactor(2);\nextractFactor(3);\nextractFactor(5);\n\nconst increments = [4, 2, 4, 2, 4, 6, 2, 6];\nlet divisor = 7;\nlet incrementIndex = 0;\n\nwhile (divisor * divisor <= remaining) {\n    extractFactor(divisor);\n    divisor += increments[incrementIndex];\n    incrementIndex = (incrementIndex + 1) % increments.length;\n}\n\nif (remaining > 1) factors.push([remaining, 1]);\n\nlet maxExponent = 0;\nfor (const [, exponent] of factors) {\n    maxExponent = Math.max(maxExponent, exponent);\n}\n\nconst inverse = Array(maxExponent + 2).fill(0n);\nif (maxExponent >= 0) inverse[1] = 1n;\n\nfor (let i = 2; i <= maxExponent + 1; i++) {\n    const bi = BigInt(i);\n    const remainder = Number(MOD % bi);\n    inverse[i] = (MOD - ((MOD / bi) * inverse[remainder]) % MOD) % MOD;\n}\n\nlet answer = 1n;\n\nfor (const [prime, exponent] of factors) {\n    let probability = Array(exponent + 1).fill(0n);\n    probability[exponent] = 1n;\n\n    for (let step = 0; step < k; step++) {\n        const next = Array(exponent + 1);\n        let suffix = 0n;\n\n        for (let i = exponent; i >= 0; i--) {\n            suffix = (suffix + probability[i] * inverse[i + 1]) % MOD;\n            next[i] = suffix;\n        }\n\n        probability = next;\n    }\n\n    const primeMod = BigInt(prime) % MOD;\n    let power = 1n;\n    let expected = 0n;\n\n    for (let i = 0; i <= exponent; i++) {\n        expected = (expected + probability[i] * power) % MOD;\n        power = (power * primeMod) % MOD;\n    }\n\n    answer = (answer * expected) % MOD;\n}\n\nconsole.log(answer.toString());",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 4,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/);\nlet x = Number(input[0]);\nconst k = Number(input[1]);\n\nconst MOD = 1000000007n;\nconst factors = [];\n\nfunction extractFactor(p) {\n    if (x % p !== 0) return;\n    let exponent = 0;\n    while (x % p === 0) {\n        x /= p;\n        exponent++;\n    }\n    factors.push([p, exponent]);\n}\n\nextractFactor(2);\nextractFactor(3);\nextractFactor(5);\n\nconst increments = [4, 2, 4, 2, 4, 6, 2, 6];\nlet d = 7;\nlet index = 0;\n\nwhile (d * d <= x) {\n    extractFactor(d);\n    d += increments[index];\n    index = (index + 1) & 7;\n}\n\nif (x > 1) factors.push([x, 1]);\n\nlet maxExponent = 1;\nfor (const [, exponent] of factors) {\n    maxExponent = Math.max(maxExponent, exponent + 1);\n}\n\nconst inverse = Array(maxExponent + 1).fill(0n);\ninverse[1] = 1n;\n\nfor (let i = 2; i <= maxExponent; i++) {\n    const bi = BigInt(i);\n    inverse[i] =\n        (MOD - ((MOD / bi) * inverse[Number(MOD % bi)]) % MOD) % MOD;\n}\n\nlet answer = 1n;\n\nfor (const [prime, exponent] of factors) {\n    let probability = Array(exponent + 1).fill(0n);\n    probability[exponent] = 1n;\n\n    for (let step = 0; step < k; step++) {\n        const next = Array(exponent + 1).fill(0n);\n        let suffixSum = 0n;\n\n        for (let j = exponent; j >= 0; j--) {\n            suffixSum =\n                (suffixSum + probability[j] * inverse[j + 1]) % MOD;\n            next[j] = suffixSum;\n        }\n\n        probability = next;\n    }\n\n    const primeMod = BigInt(prime) % MOD;\n    let power = 1n;\n    let expected = 0n;\n\n    for (let j = 0; j <= exponent; j++) {\n        expected = (expected + probability[j] * power) % MOD;\n        power = (power * primeMod) % MOD;\n    }\n\n    answer = (answer * expected) % MOD;\n}\n\nconsole.log(answer.toString());",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            }
+        ],
+        "created": 1787152668,
+        "id": "chatcmpl-EEcKy18HDcIYsx7S7tKH6VLi94rX1",
+        "model": "gpt-5.6-sol-2026-07-09",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {}
+            }
+        ],
+        "service_tier": "default",
+        "system_fingerprint": null,
+        "usage": {
+            "completion_tokens": 11508,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 8043,
+                "rejected_prediction_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 5,
+                "engine_ttft_ms": 2185,
+                "engine_ttlt_ms": 62184,
+                "pre_inference_ms": 130,
+                "service_tbt_ms": 5,
+                "service_ttft_ms": 2751,
+                "service_ttlt_ms": 62737,
+                "total_duration_ms": 62617,
+                "user_visible_ttft_ms": 2622
+            },
+            "prompt_tokens": 552,
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "total_tokens": 12060
+        },
+        "prompt": "Write a program in Javascript to solve this programming problem:\nDescription: Makoto has a big blackboard with a positive integer $$$n$$$ written on it. He will perform the following action exactly $$$k$$$ times:Suppose the number currently written on the blackboard is $$$v$$$. He will randomly pick one of the divisors of $$$v$$$ (possibly $$$1$$$ and $$$v$$$) and replace $$$v$$$ with this divisor. As Makoto uses his famous random number generator (RNG) and as he always uses $$$58$$$ as his generator seed, each divisor is guaranteed to be chosen with equal probability.He now wonders what is the expected value of the number written on the blackboard after $$$k$$$ steps.It can be shown that this value can be represented as $$$\\frac{P}{Q}$$$ where $$$P$$$ and $$$Q$$$ are coprime integers and $$$Q \\not\\equiv 0 \\pmod{10^9+7}$$$. Print the value of $$$P \\cdot Q^{-1}$$$ modulo $$$10^9+7$$$.\nInput Specification: The only line of the input contains two integers $$$n$$$ and $$$k$$$ ($$$1 \\leq n \\leq 10^{15}$$$, $$$1 \\leq k \\leq 10^4$$$).\nOutput Specification: Print a single integer \u2014 the expected value of the number on the blackboard after $$$k$$$ steps as $$$P \\cdot Q^{-1} \\pmod{10^9+7}$$$ for $$$P$$$, $$$Q$$$ defined above.\n\nSample Input:\n6 1\nSample Output:\n3\n\nSample Input:\n6 2\nSample Output:\n875000008\n\nSample Input:\n60 5\nSample Output:\n237178099\n\nNotes: NoteIn the first example, after one step, the number written on the blackboard is $$$1$$$, $$$2$$$, $$$3$$$ or $$$6$$$ \u2014 each occurring with equal probability. Hence, the answer is $$$\\frac{1+2+3+6}{4}=3$$$.In the second example, the answer is equal to $$$1 \\cdot \\frac{9}{16}+2 \\cdot \\frac{3}{16}+3 \\cdot \\frac{3}{16}+6 \\cdot \\frac{1}{16}=\\frac{15}{8}$$$.\nTake input from standard input and output to standard output\nProvide the Javascript code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "dc466d9c24b7dcb37c0e99337b4124d2",
+        "difficulty": 2200,
+        "prob_desc_sample_inputs": [
+            "6 1",
+            "6 2",
+            "60 5"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "math",
+            "number theory",
+            "probabilities",
+            "dp"
+        ],
+        "prob_desc_output_spec": "Print a single integer \u2014 the expected value of the number on the blackboard after $$$k$$$ steps as $$$P \\cdot Q^{-1} \\pmod{10^9+7}$$$ for $$$P$$$, $$$Q$$$ defined above.",
+        "prob_desc_input_spec": "The only line of the input contains two integers $$$n$$$ and $$$k$$$ ($$$1 \\leq n \\leq 10^{15}$$$, $$$1 \\leq k \\leq 10^4$$$).",
+        "lang_cluster": "Javascript",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first example, after one step, the number written on the blackboard is $$$1$$$, $$$2$$$, $$$3$$$ or $$$6$$$ \u2014 each occurring with equal probability. Hence, the answer is $$$\\frac{1+2+3+6}{4}=3$$$.In the second example, the answer is equal to $$$1 \\cdot \\frac{9}{16}+2 \\cdot \\frac{3}{16}+3 \\cdot \\frac{3}{16}+6 \\cdot \\frac{1}{16}=\\frac{15}{8}$$$.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Makoto has a big blackboard with a positive integer $$$n$$$ written on it. He will perform the following action exactly $$$k$$$ times:Suppose the number currently written on the blackboard is $$$v$$$. He will randomly pick one of the divisors of $$$v$$$ (possibly $$$1$$$ and $$$v$$$) and replace $$$v$$$ with this divisor. As Makoto uses his famous random number generator (RNG) and as he always uses $$$58$$$ as his generator seed, each divisor is guaranteed to be chosen with equal probability.He now wonders what is the expected value of the number written on the blackboard after $$$k$$$ steps.It can be shown that this value can be represented as $$$\\frac{P}{Q}$$$ where $$$P$$$ and $$$Q$$$ are coprime integers and $$$Q \\not\\equiv 0 \\pmod{10^9+7}$$$. Print the value of $$$P \\cdot Q^{-1}$$$ modulo $$$10^9+7$$$.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1546613100",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "3",
+            "875000008",
+            "237178099"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"6 1\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"6 2\\r\\n\", \"output\": [\"875000008\"]}, {\"input\": \"60 5\\r\\n\", \"output\": [\"237178099\"]}, {\"input\": \"2 4\\r\\n\", \"output\": [\"562500005\"]}, {\"input\": \"12 3\\r\\n\", \"output\": [\"775462970\"]}, {\"input\": \"55 5\\r\\n\", \"output\": [\"789062507\"]}, {\"input\": \"935 9\\r\\n\", \"output\": [\"658825880\"]}, {\"input\": \"1 10000\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"120 1\\r\\n\", \"output\": [\"500000026\"]}, {\"input\": \"1000000000000000 10000\\r\\n\", \"output\": [\"215514159\"]}, {\"input\": \"671058194037157 8673\\r\\n\", \"output\": [\"298638658\"]}, {\"input\": \"900018062553298 4801\\r\\n\", \"output\": [\"345432320\"]}, {\"input\": \"128973636102142 5521\\r\\n\", \"output\": [\"99152648\"]}, {\"input\": \"999999999999993 8123\\r\\n\", \"output\": [\"868053217\"]}, {\"input\": \"260858031033600 9696\\r\\n\", \"output\": [\"692221824\"]}, {\"input\": \"562949953421312 9779\\r\\n\", \"output\": [\"98057767\"]}, {\"input\": \"357933504618282 1649\\r\\n\", \"output\": [\"197730476\"]}, {\"input\": \"586884783199831 5073\\r\\n\", \"output\": [\"883678085\"]}, {\"input\": \"187877211524483 8497\\r\\n\", \"output\": [\"562808746\"]}, {\"input\": \"866421317361600 10000\\r\\n\", \"output\": [\"82212846\"]}, {\"input\": \"782574093100800 9999\\r\\n\", \"output\": [\"293217028\"]}, {\"input\": \"577614211574400 9998\\r\\n\", \"output\": [\"681915605\"]}, {\"input\": \"65214507758400 9997\\r\\n\", \"output\": [\"677959603\"]}, {\"input\": \"963761198400 9996\\r\\n\", \"output\": [\"669401143\"]}, {\"input\": \"5587021440 9995\\r\\n\", \"output\": [\"360750834\"]}, {\"input\": \"17297280 9994\\r\\n\", \"output\": [\"94383698\"]}, {\"input\": \"7560 9993\\r\\n\", \"output\": [\"412712546\"]}, {\"input\": \"120 9992\\r\\n\", \"output\": [\"167656619\"]}, {\"input\": \"1 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"609359740010496 1337\\r\\n\", \"output\": [\"263703037\"]}, {\"input\": \"912750790581630 9876\\r\\n\", \"output\": [\"291557094\"]}, {\"input\": \"617673396283947 7777\\r\\n\", \"output\": [\"488769014\"]}, {\"input\": \"890604418498560 9119\\r\\n\", \"output\": [\"185509970\"]}, {\"input\": \"524288004718592 8888\\r\\n\", \"output\": [\"851726115\"]}, {\"input\": \"999999999999989 8998\\r\\n\", \"output\": [\"391873310\"]}, {\"input\": \"999999999999999 8123\\r\\n\", \"output\": [\"41003922\"]}, {\"input\": \"817237005720659 4233\\r\\n\", \"output\": [\"533017938\"]}, {\"input\": \"1000000007 1\\r\\n\", \"output\": [\"500000004\"]}, {\"input\": \"1000000007 2\\r\\n\", \"output\": [\"750000006\"]}, {\"input\": \"999999999999970 8998\\r\\n\", \"output\": [\"939941657\"]}, {\"input\": \"900000060000001 8123\\r\\n\", \"output\": [\"865356488\"]}, {\"input\": \"999011322032079 4233\\r\\n\", \"output\": [\"546309400\"]}, {\"input\": \"999005327998113 9119\\r\\n\", \"output\": [\"106270540\"]}, {\"input\": \"900000720000023 9876\\r\\n\", \"output\": [\"511266473\"]}]"
+    }
+}

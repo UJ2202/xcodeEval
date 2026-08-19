@@ -1,0 +1,145 @@
+{
+    "oai_response": {
+        "choices": [
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 0,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nstatic constexpr long long MOD = 998244353;\n\ntemplate<int N>\nstruct Matrix {\n    long long a[N][N]{};\n\n    static Matrix identity() {\n        Matrix r;\n        for (int i = 0; i < N; ++i) r.a[i][i] = 1;\n        return r;\n    }\n\n    Matrix operator*(const Matrix& other) const {\n        Matrix r;\n        for (int i = 0; i < N; ++i) {\n            for (int k = 0; k < N; ++k) {\n                if (a[i][k] == 0) continue;\n                for (int j = 0; j < N; ++j) {\n                    if (other.a[k][j] == 0) continue;\n                    r.a[i][j] = (r.a[i][j] +\n                        a[i][k] * other.a[k][j]) % MOD;\n                }\n            }\n        }\n        return r;\n    }\n};\n\ntemplate<int N>\nMatrix<N> matrixPower(Matrix<N> base, long long exponent) {\n    Matrix<N> result = Matrix<N>::identity();\n    while (exponent > 0) {\n        if (exponent & 1) result = result * base;\n        base = base * base;\n        exponent >>= 1;\n    }\n    return result;\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n;\n    cin >> n;\n\n    Matrix<16> transition;\n\n    auto addNonMonomerTransitions = [&](int occupancy, int markers,\n                                        int nextOccupancy) {\n        int from = occupancy * 4 + markers;\n        for (int nextMarkers = 0; nextMarkers < 4; ++nextMarkers) {\n            if ((nextMarkers | markers) == nextMarkers) {\n                int to = nextOccupancy * 4 + nextMarkers;\n                transition.a[from][to]++;\n                if (transition.a[from][to] == MOD)\n                    transition.a[from][to] = 0;\n            }\n        }\n    };\n\n    for (int occupancy = 0; occupancy < 4; ++occupancy) {\n        for (int markers = 0; markers < 4; ++markers) {\n            if (occupancy & 1) {\n                addNonMonomerTransitions(\n                    occupancy, markers, occupancy >> 1\n                );\n            } else {\n                if (markers == 3) {\n                    int from = occupancy * 4 + markers;\n                    int nextOccupancy = occupancy >> 1;\n                    int to = nextOccupancy * 4;\n                    transition.a[from][to]++;\n                }\n\n                if ((occupancy & 2) == 0) {\n                    int nextOccupancy = (occupancy | 2) >> 1;\n                    addNonMonomerTransitions(\n                        occupancy, markers, nextOccupancy\n                    );\n                }\n\n                int nextOccupancy = (occupancy >> 1) | 2;\n                addNonMonomerTransitions(\n                    occupancy, markers, nextOccupancy\n                );\n            }\n        }\n    }\n\n    Matrix<4> noDiameterTransition;\n\n    for (int occupancy = 0; occupancy < 4; ++occupancy) {\n        if (occupancy & 1) {\n            noDiameterTransition.a[occupancy][occupancy >> 1]++;\n        } else {\n            if ((occupancy & 2) == 0) {\n                int nextOccupancy = (occupancy | 2) >> 1;\n                noDiameterTransition.a[occupancy][nextOccupancy]++;\n            }\n\n            int nextOccupancy = (occupancy >> 1) | 2;\n            noDiameterTransition.a[occupancy][nextOccupancy]++;\n        }\n    }\n\n    auto totalMatrix = matrixPower(transition, n);\n    auto noDiameterMatrix = matrixPower(noDiameterTransition, n);\n\n    long long total = 0;\n    for (int i = 0; i < 16; ++i) {\n        total = (total + totalMatrix.a[i][i]) % MOD;\n    }\n\n    long long noDiameter = 0;\n    for (int i = 0; i < 4; ++i) {\n        noDiameter = (noDiameter + noDiameterMatrix.a[i][i]) % MOD;\n    }\n\n    total = (total - 4 * noDiameter) % MOD;\n    if (total < 0) total += MOD;\n\n    cout << total << '\\n';\n    return 0;\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 1,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nusing int64 = long long;\nconst int64 MOD = 998244353;\n\nusing Poly = vector<int64>;\n\nvoid trim(Poly& a) {\n    while (a.size() > 1 && a.back() == 0) a.pop_back();\n}\n\nPoly addPoly(const Poly& a, const Poly& b) {\n    Poly c(max(a.size(), b.size()), 0);\n    for (size_t i = 0; i < a.size(); ++i) c[i] = a[i];\n    for (size_t i = 0; i < b.size(); ++i) {\n        c[i] += b[i];\n        if (c[i] >= MOD) c[i] -= MOD;\n    }\n    trim(c);\n    return c;\n}\n\nPoly subPoly(const Poly& a, const Poly& b) {\n    Poly c(max(a.size(), b.size()), 0);\n    for (size_t i = 0; i < a.size(); ++i) c[i] = a[i];\n    for (size_t i = 0; i < b.size(); ++i) {\n        c[i] -= b[i];\n        if (c[i] < 0) c[i] += MOD;\n    }\n    trim(c);\n    return c;\n}\n\nPoly mulPoly(const Poly& a, const Poly& b) {\n    Poly c(a.size() + b.size() - 1, 0);\n    for (size_t i = 0; i < a.size(); ++i) {\n        for (size_t j = 0; j < b.size(); ++j) {\n            c[i + j] = (c[i + j] + a[i] * b[j]) % MOD;\n        }\n    }\n    trim(c);\n    return c;\n}\n\nPoly scalePoly(Poly a, int64 k) {\n    k %= MOD;\n    if (k < 0) k += MOD;\n    for (auto& x : a) x = x * k % MOD;\n    trim(a);\n    return a;\n}\n\nPoly shiftPoly(const Poly& a, int k) {\n    Poly b(k, 0);\n    b.insert(b.end(), a.begin(), a.end());\n    trim(b);\n    return b;\n}\n\nPoly derivative(const Poly& a) {\n    if (a.size() <= 1) return {0};\n    Poly b(a.size() - 1);\n    for (size_t i = 1; i < a.size(); ++i) {\n        b[i - 1] = a[i] * static_cast<int64>(i) % MOD;\n    }\n    trim(b);\n    return b;\n}\n\nint64 logDerivativeCoefficient(const Poly& p, int k) {\n    vector<int64> r(k + 1, 0);\n    int d = static_cast<int>(p.size()) - 1;\n\n    for (int j = 0; j <= k; ++j) {\n        int64 value = 0;\n        if (j + 1 <= d) {\n            value = static_cast<int64>(j + 1) * p[j + 1] % MOD;\n        }\n\n        for (int i = 1; i <= min(j, d); ++i) {\n            value = (value - p[i] * r[j - i]) % MOD;\n        }\n\n        if (value < 0) value += MOD;\n        r[j] = value;\n    }\n\n    return r[k];\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n;\n    cin >> n;\n\n    Poly H = {1, 0, MOD - 1, 0, MOD - 1};\n    Poly Hp = derivative(H);\n    Poly Hpp = derivative(Hp);\n\n    Poly NF = mulPoly(H, H);\n    Poly NDF = scalePoly(shiftPoly(mulPoly(Hp, H), 1), -1);\n\n    Poly inside = addPoly(Hp, shiftPoly(Hpp, 1));\n    Poly term1 = scalePoly(shiftPoly(mulPoly(inside, H), 1), -1);\n    Poly term2 = scalePoly(shiftPoly(mulPoly(Hp, Hp), 2), 2);\n    Poly ND2 = addPoly(term1, term2);\n\n    Poly N0 = ND2;\n    Poly N1 = shiftPoly(\n        addPoly(addPoly(ND2, scalePoly(NDF, 2)), NF), 1\n    );\n    Poly N2 = shiftPoly(\n        addPoly(addPoly(ND2, scalePoly(NDF, 4)), scalePoly(NF, 4)), 2\n    );\n\n    Poly H2 = mulPoly(H, H);\n    Poly H3 = mulPoly(H2, H);\n\n    Poly B0 = subPoly(H3, shiftPoly(N0, 1));\n    Poly B2 = subPoly(H3, shiftPoly(N2, 1));\n\n    Poly numerator = subPoly(\n        mulPoly(B0, B2),\n        shiftPoly(mulPoly(N1, N1), 2)\n    );\n\n    int64 rH = logDerivativeCoefficient(H, n - 1);\n    int64 rNum = logDerivativeCoefficient(numerator, n - 1);\n\n    int64 answer = (6 * rH - rNum) % MOD;\n    if (answer < 0) answer += MOD;\n\n    cout << answer << '\\n';\n    return 0;\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 2,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nstatic constexpr long long MOD = 998244353;\n\nstruct Matrix {\n    int n;\n    vector<vector<long long>> a;\n\n    Matrix(int n = 0, bool identity = false) : n(n), a(n, vector<long long>(n, 0)) {\n        if (identity) {\n            for (int i = 0; i < n; ++i) a[i][i] = 1;\n        }\n    }\n\n    Matrix operator*(const Matrix& other) const {\n        Matrix result(n);\n        for (int i = 0; i < n; ++i) {\n            for (int k = 0; k < n; ++k) {\n                if (a[i][k] == 0) continue;\n                for (int j = 0; j < n; ++j) {\n                    result.a[i][j] = (result.a[i][j] + a[i][k] * other.a[k][j]) % MOD;\n                }\n            }\n        }\n        return result;\n    }\n};\n\nMatrix power(Matrix base, int exponent) {\n    Matrix result(base.n, true);\n    while (exponent > 0) {\n        if (exponent & 1) result = result * base;\n        base = base * base;\n        exponent >>= 1;\n    }\n    return result;\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n;\n    cin >> n;\n\n    long long A[3][3] = {\n        {1, 0, 0},\n        {1, 1, 0},\n        {1, 2, 1}\n    };\n\n    long long B[3][3] = {\n        {0, 0, 1},\n        {0, 0, 0},\n        {0, 0, 0}\n    };\n\n    Matrix weighted(12);\n    Matrix unweighted(4);\n\n    auto addWeighted = [&](int from, int to, long long label[3][3]) {\n        for (int i = 0; i < 3; ++i) {\n            for (int j = 0; j < 3; ++j) {\n                int x = from * 3 + i;\n                int y = to * 3 + j;\n                weighted.a[x][y] += label[i][j];\n                if (weighted.a[x][y] >= MOD) weighted.a[x][y] -= MOD;\n            }\n        }\n    };\n\n    auto addUnweighted = [&](int from, int to) {\n        unweighted.a[from][to]++;\n        if (unweighted.a[from][to] >= MOD) unweighted.a[from][to] -= MOD;\n    };\n\n    for (int state = 0; state < 4; ++state) {\n        if (state & 1) {\n            int nextState = state >> 1;\n            addWeighted(state, nextState, A);\n            addUnweighted(state, nextState);\n        } else {\n            int nextState = state >> 1;\n            addWeighted(state, nextState, B);\n\n            if ((state & 2) == 0) {\n                int dimerOne = (state >> 1) | 1;\n                addWeighted(state, dimerOne, A);\n                addUnweighted(state, dimerOne);\n            }\n\n            int dimerTwo = (state >> 1) | 2;\n            addWeighted(state, dimerTwo, A);\n            addUnweighted(state, dimerTwo);\n        }\n    }\n\n    Matrix weightedPower = power(weighted, n);\n    Matrix unweightedPower = power(unweighted, n);\n\n    long long answer = 0;\n    for (int i = 0; i < 12; ++i) {\n        answer += weightedPower.a[i][i];\n        if (answer >= MOD) answer -= MOD;\n    }\n\n    long long noDiameter = 0;\n    for (int i = 0; i < 4; ++i) {\n        noDiameter += unweightedPower.a[i][i];\n        if (noDiameter >= MOD) noDiameter -= MOD;\n    }\n\n    answer = (answer - 3 * noDiameter) % MOD;\n    if (answer < 0) answer += MOD;\n\n    cout << answer << '\\n';\n    return 0;\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 3,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nstatic constexpr long long MOD = 998244353;\n\nstruct Matrix {\n    int n;\n    vector<vector<long long>> a;\n\n    Matrix(int n = 0, bool identity = false) : n(n), a(n, vector<long long>(n, 0)) {\n        if (identity) {\n            for (int i = 0; i < n; ++i) a[i][i] = 1;\n        }\n    }\n};\n\nMatrix operator*(const Matrix& x, const Matrix& y) {\n    Matrix z(x.n);\n    for (int i = 0; i < x.n; ++i) {\n        for (int k = 0; k < x.n; ++k) {\n            if (x.a[i][k] == 0) continue;\n            for (int j = 0; j < x.n; ++j) {\n                if (y.a[k][j] == 0) continue;\n                z.a[i][j] = (z.a[i][j] + x.a[i][k] * y.a[k][j]) % MOD;\n            }\n        }\n    }\n    return z;\n}\n\nMatrix power(Matrix base, int exp) {\n    Matrix result(base.n, true);\n    while (exp > 0) {\n        if (exp & 1) result = result * base;\n        base = base * base;\n        exp >>= 1;\n    }\n    return result;\n}\n\nlong long trace(const Matrix& m) {\n    long long result = 0;\n    for (int i = 0; i < m.n; ++i) {\n        result += m.a[i][i];\n        if (result >= MOD) result -= MOD;\n    }\n    return result;\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n;\n    cin >> n;\n\n    Matrix nonMonomer(3), diameter(3);\n\n    nonMonomer.a = {\n        {1, 1, 0},\n        {0, 1, 1},\n        {0, 0, 1}\n    };\n\n    diameter.a = {\n        {0, 0, 0},\n        {1, 0, 0},\n        {2, 0, 0}\n    };\n\n    Matrix transfer(12);\n    Matrix noDiameterTransfer(4);\n\n    auto addTransition = [&](int from, int to, const Matrix& decoration, bool isNonDiameter) {\n        for (int x = 0; x < 3; ++x) {\n            for (int y = 0; y < 3; ++y) {\n                int u = from * 3 + x;\n                int v = to * 3 + y;\n                transfer.a[u][v] =\n                    (transfer.a[u][v] + decoration.a[x][y]) % MOD;\n            }\n        }\n        if (isNonDiameter) {\n            noDiameterTransfer.a[from][to]++;\n            if (noDiameterTransfer.a[from][to] == MOD)\n                noDiameterTransfer.a[from][to] = 0;\n        }\n    };\n\n    for (int state = 0; state < 4; ++state) {\n        if (state & 1) {\n            int nextState = state >> 1;\n            addTransition(state, nextState, nonMonomer, true);\n        } else {\n            int nextState = state >> 1;\n\n            addTransition(state, nextState, diameter, false);\n\n            if ((state & 2) == 0) {\n                addTransition(state, nextState | 1, nonMonomer, true);\n            }\n\n            addTransition(state, nextState | 2, nonMonomer, true);\n        }\n    }\n\n    long long all = trace(power(transfer, n));\n    long long withoutDiameters = trace(power(noDiameterTransfer, n));\n    long long decorationWithoutDiameters = trace(power(nonMonomer, n));\n\n    long long answer =\n        (all - withoutDiameters * decorationWithoutDiameters) % MOD;\n    if (answer < 0) answer += MOD;\n\n    cout << answer << '\\n';\n    return 0;\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 4,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nstatic const long long MOD = 998244353;\n\nstruct Matrix {\n    int n;\n    vector<vector<long long>> a;\n\n    Matrix(int n = 0, bool identity = false) : n(n), a(n, vector<long long>(n, 0)) {\n        if (identity) {\n            for (int i = 0; i < n; ++i) a[i][i] = 1;\n        }\n    }\n\n    Matrix operator*(const Matrix& other) const {\n        Matrix result(n);\n        for (int i = 0; i < n; ++i) {\n            for (int k = 0; k < n; ++k) {\n                if (a[i][k] == 0) continue;\n                for (int j = 0; j < n; ++j) {\n                    result.a[i][j] =\n                        (result.a[i][j] + a[i][k] * other.a[k][j]) % MOD;\n                }\n            }\n        }\n        return result;\n    }\n};\n\nMatrix power(Matrix base, int exponent) {\n    Matrix result(base.n, true);\n    while (exponent > 0) {\n        if (exponent & 1) result = result * base;\n        base = base * base;\n        exponent >>= 1;\n    }\n    return result;\n}\n\nlong long trace(const Matrix& matrix) {\n    long long result = 0;\n    for (int i = 0; i < matrix.n; ++i) {\n        result += matrix.a[i][i];\n        if (result >= MOD) result -= MOD;\n    }\n    return result;\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n;\n    cin >> n;\n\n    Matrix T0(4), T1(4);\n\n    for (int mask = 0; mask < 4; ++mask) {\n        if (mask & 1) {\n            int nextMask = mask >> 1;\n            T0.a[mask][nextMask]++;\n        } else {\n            int shifted = mask >> 1;\n\n            T1.a[mask][shifted]++;\n\n            if ((mask & 2) == 0) {\n                T0.a[mask][shifted | 1]++;\n            }\n\n            T0.a[mask][shifted | 2]++;\n        }\n    }\n\n    Matrix zeroAutomaton(3);\n    zeroAutomaton.a[0][0] = 1;\n    zeroAutomaton.a[0][1] = 2;\n    zeroAutomaton.a[0][2] = 1;\n    zeroAutomaton.a[1][1] = 1;\n    zeroAutomaton.a[1][2] = 1;\n    zeroAutomaton.a[2][2] = 1;\n\n    Matrix oneAutomaton(3);\n    oneAutomaton.a[2][0] = 1;\n\n    Matrix combined(12);\n\n    for (int s = 0; s < 4; ++s) {\n        for (int t = 0; t < 4; ++t) {\n            for (int x = 0; x < 3; ++x) {\n                for (int y = 0; y < 3; ++y) {\n                    long long value =\n                        T0.a[s][t] * zeroAutomaton.a[x][y] +\n                        T1.a[s][t] * oneAutomaton.a[x][y];\n                    combined.a[s * 3 + x][t * 3 + y] = value % MOD;\n                }\n            }\n        }\n    }\n\n    long long allWeighted = trace(power(combined, n));\n    long long noOpposite = trace(power(T0, n));\n\n    long long answer = (allWeighted - 3LL * noOpposite) % MOD;\n    if (answer < 0) answer += MOD;\n\n    cout << answer << '\\n';\n    return 0;\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            }
+        ],
+        "created": 1787150840,
+        "id": "chatcmpl-EEbrUftlyLCMKTJhHBTCpd37hmNSy",
+        "model": "gpt-5.6-sol-2026-07-09",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {}
+            }
+        ],
+        "service_tier": "default",
+        "system_fingerprint": null,
+        "usage": {
+            "completion_tokens": 31968,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 26876,
+                "rejected_prediction_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 4,
+                "engine_ttft_ms": 1422,
+                "engine_ttlt_ms": 137457,
+                "pre_inference_ms": 170,
+                "service_tbt_ms": 4,
+                "service_ttft_ms": 1788,
+                "service_ttlt_ms": 137817,
+                "total_duration_ms": 137654,
+                "user_visible_ttft_ms": 1618
+            },
+            "prompt_tokens": 646,
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+            },
+            "total_tokens": 32614
+        },
+        "prompt": "Write a program in C++ to solve this programming problem:\nDescription: The Floral Clock has been standing by the side of Mirror Lake for years. Though unable to keep time, it reminds people of the passage of time and the good old days.On the rim of the Floral Clock are 2n flowers, numbered from 1 to 2n clockwise, each of which has a colour among all n possible ones. For each colour, there are exactly two flowers with it, the distance between which either is less than or equal to 2, or equals n. Additionally, if flowers u and v are of the same colour, then flowers opposite to u and opposite to v should be of the same colour as well \u2014 symmetry is beautiful!Formally, the distance between two flowers is 1 plus the number of flowers on the minor arc (or semicircle) between them. Below is a possible arrangement with n\u2009=\u20096 that cover all possibilities.  The beauty of an arrangement is defined to be the product of the lengths of flower segments separated by all opposite flowers of the same colour. In other words, in order to compute the beauty, we remove from the circle all flowers that have the same colour as flowers opposite to them. Then, the beauty is the product of lengths of all remaining segments. Note that we include segments of length 0 in this product. If there are no flowers that have the same colour as flower opposite to them, the beauty equals 0. For instance, the beauty of the above arrangement equals 1\u2009\u00d7\u20093\u2009\u00d7\u20091\u2009\u00d7\u20093\u2009=\u20099 \u2014 the segments are {2}, {4,\u20095,\u20096}, {8} and {10,\u200911,\u200912}.While keeping the constraints satisfied, there may be lots of different arrangements. Find out the sum of beauty over all possible arrangements, modulo 998\u2009244\u2009353. Two arrangements are considered different, if a pair (u,\u2009v) (1\u2009\u2264\u2009u,\u2009v\u2009\u2264\u20092n) exists such that flowers u and v are of the same colour in one of them, but not in the other.\nInput Specification: The first and only line of input contains a lonely positive integer n (3\u2009\u2264\u2009n\u2009\u2264\u200950\u2009000)\u00a0\u2014 the number of colours present on the Floral Clock.\nOutput Specification: Output one integer \u2014 the sum of beauty over all possible arrangements of flowers, modulo 998\u2009244\u2009353.\n\nSample Input:\n3\nSample Output:\n24\n\nSample Input:\n4\nSample Output:\n4\n\nSample Input:\n7\nSample Output:\n1316\n\nSample Input:\n15\nSample Output:\n3436404\n\nNotes: NoteWith n\u2009=\u20093, the following six arrangements each have a beauty of 2\u2009\u00d7\u20092\u2009=\u20094.  While many others, such as the left one in the figure below, have a beauty of 0. The right one is invalid, since it's asymmetric.  \nTake input from standard input and output to standard output\nProvide the C++ code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "24fd5cd218f65d4ffb7c5b97b725293e",
+        "difficulty": 3400,
+        "prob_desc_sample_inputs": [
+            "3",
+            "4",
+            "7",
+            "15"
+        ],
+        "prob_desc_time_limit": "7 seconds",
+        "tags": [
+            "divide and conquer",
+            "combinatorics",
+            "fft",
+            "dp",
+            "math"
+        ],
+        "prob_desc_output_spec": "Output one integer \u2014 the sum of beauty over all possible arrangements of flowers, modulo 998\u2009244\u2009353.",
+        "prob_desc_input_spec": "The first and only line of input contains a lonely positive integer n (3\u2009\u2264\u2009n\u2009\u2264\u200950\u2009000)\u00a0\u2014 the number of colours present on the Floral Clock.",
+        "lang_cluster": "C++",
+        "source_code": "",
+        "prob_desc_notes": "NoteWith n\u2009=\u20093, the following six arrangements each have a beauty of 2\u2009\u00d7\u20092\u2009=\u20094.  While many others, such as the left one in the figure below, have a beauty of 0. The right one is invalid, since it's asymmetric.  ",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "The Floral Clock has been standing by the side of Mirror Lake for years. Though unable to keep time, it reminds people of the passage of time and the good old days.On the rim of the Floral Clock are 2n flowers, numbered from 1 to 2n clockwise, each of which has a colour among all n possible ones. For each colour, there are exactly two flowers with it, the distance between which either is less than or equal to 2, or equals n. Additionally, if flowers u and v are of the same colour, then flowers opposite to u and opposite to v should be of the same colour as well \u2014 symmetry is beautiful!Formally, the distance between two flowers is 1 plus the number of flowers on the minor arc (or semicircle) between them. Below is a possible arrangement with n\u2009=\u20096 that cover all possibilities.  The beauty of an arrangement is defined to be the product of the lengths of flower segments separated by all opposite flowers of the same colour. In other words, in order to compute the beauty, we remove from the circle all flowers that have the same colour as flowers opposite to them. Then, the beauty is the product of lengths of all remaining segments. Note that we include segments of length 0 in this product. If there are no flowers that have the same colour as flower opposite to them, the beauty equals 0. For instance, the beauty of the above arrangement equals 1\u2009\u00d7\u20093\u2009\u00d7\u20091\u2009\u00d7\u20093\u2009=\u20099 \u2014 the segments are {2}, {4,\u20095,\u20096}, {8} and {10,\u200911,\u200912}.While keeping the constraints satisfied, there may be lots of different arrangements. Find out the sum of beauty over all possible arrangements, modulo 998\u2009244\u2009353. Two arrangements are considered different, if a pair (u,\u2009v) (1\u2009\u2264\u2009u,\u2009v\u2009\u2264\u20092n) exists such that flowers u and v are of the same colour in one of them, but not in the other.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1504272900",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "24",
+            "4",
+            "1316",
+            "3436404"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"3\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"4\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7\\r\\n\", \"output\": [\"1316\"]}, {\"input\": \"15\\r\\n\", \"output\": [\"3436404\"]}, {\"input\": \"10\\r\\n\", \"output\": [\"26200\"]}, {\"input\": \"99\\r\\n\", \"output\": [\"620067986\"]}, {\"input\": \"1317\\r\\n\", \"output\": [\"414025\"]}, {\"input\": \"50000\\r\\n\", \"output\": [\"475800099\"]}, {\"input\": \"5\\r\\n\", \"output\": [\"240\"]}, {\"input\": \"6\\r\\n\", \"output\": [\"204\"]}, {\"input\": \"8\\r\\n\", \"output\": [\"2988\"]}, {\"input\": \"9\\r\\n\", \"output\": [\"6720\"]}, {\"input\": \"11\\r\\n\", \"output\": [\"50248\"]}, {\"input\": \"12\\r\\n\", \"output\": [\"174280\"]}, {\"input\": \"13\\r\\n\", \"output\": [\"436904\"]}, {\"input\": \"14\\r\\n\", \"output\": [\"1140888\"]}, {\"input\": \"16\\r\\n\", \"output\": [\"8348748\"]}, {\"input\": \"17\\r\\n\", \"output\": [\"24631232\"]}, {\"input\": \"18\\r\\n\", \"output\": [\"64575924\"]}, {\"input\": \"19\\r\\n\", \"output\": [\"174658944\"]}, {\"input\": \"20\\r\\n\", \"output\": [\"488230244\"]}, {\"input\": \"33\\r\\n\", \"output\": [\"823529776\"]}, {\"input\": \"39\\r\\n\", \"output\": [\"302870971\"]}, {\"input\": \"89\\r\\n\", \"output\": [\"530141864\"]}, {\"input\": \"144\\r\\n\", \"output\": [\"395837543\"]}, {\"input\": \"233\\r\\n\", \"output\": [\"422271260\"]}, {\"input\": \"396\\r\\n\", \"output\": [\"994574954\"]}, {\"input\": \"418\\r\\n\", \"output\": [\"57956054\"]}, {\"input\": \"431\\r\\n\", \"output\": [\"767293469\"]}, {\"input\": \"831\\r\\n\", \"output\": [\"418821250\"]}, {\"input\": \"985\\r\\n\", \"output\": [\"574051668\"]}, {\"input\": \"998\\r\\n\", \"output\": [\"452930999\"]}, {\"input\": \"1000\\r\\n\", \"output\": [\"945359814\"]}, {\"input\": \"2017\\r\\n\", \"output\": [\"222633425\"]}, {\"input\": \"3939\\r\\n\", \"output\": [\"582943734\"]}, {\"input\": \"5000\\r\\n\", \"output\": [\"148029988\"]}, {\"input\": \"8081\\r\\n\", \"output\": [\"473740780\"]}, {\"input\": \"10000\\r\\n\", \"output\": [\"938538566\"]}, {\"input\": \"10001\\r\\n\", \"output\": [\"552705744\"]}, {\"input\": \"10492\\r\\n\", \"output\": [\"914991759\"]}, {\"input\": \"20178\\r\\n\", \"output\": [\"207394683\"]}, {\"input\": \"23333\\r\\n\", \"output\": [\"259575428\"]}, {\"input\": \"25252\\r\\n\", \"output\": [\"306102706\"]}, {\"input\": \"30000\\r\\n\", \"output\": [\"583465411\"]}, {\"input\": \"35000\\r\\n\", \"output\": [\"520751787\"]}, {\"input\": \"39393\\r\\n\", \"output\": [\"929692433\"]}, {\"input\": \"40404\\r\\n\", \"output\": [\"618777849\"]}, {\"input\": \"45000\\r\\n\", \"output\": [\"672059275\"]}, {\"input\": \"49997\\r\\n\", \"output\": [\"645043850\"]}, {\"input\": \"49999\\r\\n\", \"output\": [\"791828238\"]}]"
+    }
+}

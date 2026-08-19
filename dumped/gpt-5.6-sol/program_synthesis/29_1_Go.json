@@ -1,0 +1,144 @@
+{
+    "oai_response": {
+        "choices": [
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 0,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst MOD int64 = 998244353\n\ntype Matrix [][]int64\n\nfunc newMatrix(n int) Matrix {\n\tm := make(Matrix, n)\n\tfor i := range m {\n\t\tm[i] = make([]int64, n)\n\t}\n\treturn m\n}\n\nfunc multiply(a, b Matrix) Matrix {\n\tn := len(a)\n\tc := newMatrix(n)\n\tfor i := 0; i < n; i++ {\n\t\tfor k := 0; k < n; k++ {\n\t\t\tif a[i][k] == 0 {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tfor j := 0; j < n; j++ {\n\t\t\t\tif b[k][j] == 0 {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tc[i][j] += a[i][k] * b[k][j] % MOD\n\t\t\t\tif c[i][j] >= MOD {\n\t\t\t\t\tc[i][j] -= MOD\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\treturn c\n}\n\nfunc power(a Matrix, e int64) Matrix {\n\tn := len(a)\n\tres := newMatrix(n)\n\tfor i := 0; i < n; i++ {\n\t\tres[i][i] = 1\n\t}\n\tfor e > 0 {\n\t\tif e&1 == 1 {\n\t\t\tres = multiply(res, a)\n\t\t}\n\t\ta = multiply(a, a)\n\t\te >>= 1\n\t}\n\treturn res\n}\n\nfunc trace(a Matrix) int64 {\n\tvar res int64\n\tfor i := range a {\n\t\tres += a[i][i]\n\t\tif res >= MOD {\n\t\t\tres -= MOD\n\t\t}\n\t}\n\treturn res\n}\n\nfunc addTransition(m Matrix, from, to int) {\n\tm[from][to]++\n\tif m[from][to] == MOD {\n\t\tm[from][to] = 0\n\t}\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n int64\n\tfmt.Fscan(in, &n)\n\n\tconst states = 16\n\tt := newMatrix(states)\n\n\tfor occ := 0; occ < 4; occ++ {\n\t\tb0 := occ & 1\n\t\tb1 := (occ >> 1) & 1\n\n\t\tfor flags := 0; flags < 4; flags++ {\n\t\t\tfrom := occ*4 + flags\n\n\t\t\tif b0 != 0 {\n\t\t\t\tfor decoration := 0; decoration < 4; decoration++ {\n\t\t\t\t\tif decoration&flags != 0 {\n\t\t\t\t\t\tcontinue\n\t\t\t\t\t}\n\t\t\t\t\tnextFlags := flags | decoration\n\t\t\t\t\tnextOcc := b1\n\t\t\t\t\tto := nextOcc*4 + nextFlags\n\t\t\t\t\taddTransition(t, from, to)\n\t\t\t\t}\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\tif flags == 3 {\n\t\t\t\tnextOcc := b1\n\t\t\t\tto := nextOcc * 4\n\t\t\t\taddTransition(t, from, to)\n\t\t\t}\n\n\t\t\tfor decoration := 0; decoration < 4; decoration++ {\n\t\t\t\tif decoration&flags != 0 {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tnextFlags := flags | decoration\n\n\t\t\t\tif b1 == 0 {\n\t\t\t\t\tnextOcc := 1\n\t\t\t\t\tto := nextOcc*4 + nextFlags\n\t\t\t\t\taddTransition(t, from, to)\n\t\t\t\t}\n\n\t\t\t\tnextOcc := b1 | 2\n\t\t\t\tto := nextOcc*4 + nextFlags\n\t\t\t\taddTransition(t, from, to)\n\t\t\t}\n\t\t}\n\t}\n\n\tp := newMatrix(4)\n\tfor occ := 0; occ < 4; occ++ {\n\t\tb0 := occ & 1\n\t\tb1 := (occ >> 1) & 1\n\n\t\tif b0 != 0 {\n\t\t\taddTransition(p, occ, b1)\n\t\t} else {\n\t\t\tif b1 == 0 {\n\t\t\t\taddTransition(p, occ, 1)\n\t\t\t}\n\t\t\taddTransition(p, occ, b1|2)\n\t\t}\n\t}\n\n\ttotal := trace(power(t, n))\n\twithoutOpposite := trace(power(p, n))\n\tanswer := (total - 4*withoutOpposite%MOD + MOD) % MOD\n\n\tout := bufio.NewWriter(os.Stdout)\n\tfmt.Fprintln(out, answer)\n\tout.Flush()\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 1,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst MOD int64 = 998244353\n\nfunc trim(a []int64) []int64 {\n\tfor len(a) > 1 && a[len(a)-1] == 0 {\n\t\ta = a[:len(a)-1]\n\t}\n\treturn a\n}\n\nfunc mul(a, b []int64) []int64 {\n\tres := make([]int64, len(a)+len(b)-1)\n\tfor i, x := range a {\n\t\tif x == 0 {\n\t\t\tcontinue\n\t\t}\n\t\tfor j, y := range b {\n\t\t\tres[i+j] = (res[i+j] + x*y) % MOD\n\t\t}\n\t}\n\treturn trim(res)\n}\n\nfunc sub(a, b []int64) []int64 {\n\tn := len(a)\n\tif len(b) > n {\n\t\tn = len(b)\n\t}\n\tres := make([]int64, n)\n\tfor i := 0; i < n; i++ {\n\t\tif i < len(a) {\n\t\t\tres[i] = a[i]\n\t\t}\n\t\tif i < len(b) {\n\t\t\tres[i] -= b[i]\n\t\t\tif res[i] < 0 {\n\t\t\t\tres[i] += MOD\n\t\t\t}\n\t\t}\n\t}\n\treturn trim(res)\n}\n\nfunc truncate(a []int64, n int) []int64 {\n\tif len(a) > n {\n\t\ta = a[:n]\n\t}\n\tres := make([]int64, len(a))\n\tcopy(res, a)\n\treturn trim(res)\n}\n\nfunc logDerivativeCoefficient(h []int64, index int) int64 {\n\tg := make([]int64, index+1)\n\tfor k := 0; k <= index; k++ {\n\t\tvar value int64\n\t\tif k+1 < len(h) {\n\t\t\tvalue = int64(k+1) * h[k+1] % MOD\n\t\t}\n\t\tlimit := k\n\t\tif len(h)-1 < limit {\n\t\t\tlimit = len(h) - 1\n\t\t}\n\t\tfor i := 1; i <= limit; i++ {\n\t\t\tvalue = (value - h[i]*g[k-i]) % MOD\n\t\t}\n\t\tif value < 0 {\n\t\t\tvalue += MOD\n\t\t}\n\t\tg[k] = value\n\t}\n\treturn g[index]\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(in, &n)\n\n\tr := []int64{1, 0, MOD - 1, 0, MOD - 1}\n\tq := mul(mul(r, r), r)\n\n\tconst capDegree = 12\n\tp := make([]int64, capDegree+1)\n\tp[0] = 1\n\tp[2] = 1\n\tfor i := 4; i <= capDegree; i += 2 {\n\t\tp[i] = (p[i-2] + p[i-4]) % MOD\n\t}\n\n\taSeries := make([]int64, capDegree+1)\n\tbSeries := make([]int64, capDegree+1)\n\tcSeries := make([]int64, capDegree+1)\n\n\tfor l := 1; l+1 <= capDegree; l++ {\n\t\tidx := l + 1\n\t\tl2 := int64(l*l) % MOD\n\t\taSeries[idx] = l2 * p[l] % MOD\n\t\tbSeries[idx] = l2 * p[l-1] % MOD\n\t\tif l >= 2 {\n\t\t\tcSeries[idx] = l2 * p[l-2] % MOD\n\t\t}\n\t}\n\n\ta := truncate(mul(q, aSeries), capDegree+1)\n\tb := truncate(mul(q, bSeries), capDegree+1)\n\tc := truncate(mul(q, cSeries), capDegree+1)\n\n\tqa := sub(q, a)\n\tqc := sub(q, c)\n\n\tnumerator := sub(mul(qa, qc), mul(b, b))\n\tdenominator := mul(q, q)\n\n\tgDen := logDerivativeCoefficient(denominator, n-1)\n\tgNum := logDerivativeCoefficient(numerator, n-1)\n\n\tanswer := gDen - gNum\n\tif answer < 0 {\n\t\tanswer += MOD\n\t}\n\n\tout := bufio.NewWriter(os.Stdout)\n\tfmt.Fprintln(out, answer)\n\tout.Flush()\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 2,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst MOD int64 = 998244353\nconst SZ = 12\n\ntype Matrix12 [SZ][SZ]int64\ntype Matrix4 [4][4]int64\n\nfunc mul12(a, b Matrix12) Matrix12 {\n\tvar c Matrix12\n\tfor i := 0; i < SZ; i++ {\n\t\tfor k := 0; k < SZ; k++ {\n\t\t\tif a[i][k] == 0 {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tfor j := 0; j < SZ; j++ {\n\t\t\t\tif b[k][j] != 0 {\n\t\t\t\t\tc[i][j] = (c[i][j] + a[i][k]*b[k][j]) % MOD\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\treturn c\n}\n\nfunc pow12(a Matrix12, n int) Matrix12 {\n\tvar r Matrix12\n\tfor i := 0; i < SZ; i++ {\n\t\tr[i][i] = 1\n\t}\n\tfor n > 0 {\n\t\tif n&1 == 1 {\n\t\t\tr = mul12(r, a)\n\t\t}\n\t\ta = mul12(a, a)\n\t\tn >>= 1\n\t}\n\treturn r\n}\n\nfunc mul4(a, b Matrix4) Matrix4 {\n\tvar c Matrix4\n\tfor i := 0; i < 4; i++ {\n\t\tfor k := 0; k < 4; k++ {\n\t\t\tif a[i][k] == 0 {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tfor j := 0; j < 4; j++ {\n\t\t\t\tif b[k][j] != 0 {\n\t\t\t\t\tc[i][j] = (c[i][j] + a[i][k]*b[k][j]) % MOD\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\treturn c\n}\n\nfunc pow4(a Matrix4, n int) Matrix4 {\n\tvar r Matrix4\n\tfor i := 0; i < 4; i++ {\n\t\tr[i][i] = 1\n\t}\n\tfor n > 0 {\n\t\tif n&1 == 1 {\n\t\t\tr = mul4(r, a)\n\t\t}\n\t\ta = mul4(a, a)\n\t\tn >>= 1\n\t}\n\treturn r\n}\n\nfunc addTensorTransition(a *Matrix12, fromMask, toMask int, g [3][3]int64) {\n\tfor i := 0; i < 3; i++ {\n\t\tfor j := 0; j < 3; j++ {\n\t\t\tif g[i][j] != 0 {\n\t\t\t\tx := fromMask*3 + i\n\t\t\t\ty := toMask*3 + j\n\t\t\t\ta[x][y] = (a[x][y] + g[i][j]) % MOD\n\t\t\t}\n\t\t}\n\t}\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(in, &n)\n\n\tnonMonomer := [3][3]int64{\n\t\t{1, 0, 0},\n\t\t{1, 1, 0},\n\t\t{1, 2, 1},\n\t}\n\tmonomer := [3][3]int64{\n\t\t{0, 0, 1},\n\t\t{0, 0, 0},\n\t\t{0, 0, 0},\n\t}\n\n\tvar a Matrix12\n\tvar b Matrix4\n\n\tfor mask := 0; mask < 4; mask++ {\n\t\tif mask&1 != 0 {\n\t\t\tto := mask >> 1\n\t\t\taddTensorTransition(&a, mask, to, nonMonomer)\n\t\t\tb[mask][to]++\n\t\t\tcontinue\n\t\t}\n\n\t\ttoMonomer := mask >> 1\n\t\taddTensorTransition(&a, mask, toMonomer, monomer)\n\n\t\tif mask&2 == 0 {\n\t\t\tto := (mask >> 1) | 1\n\t\t\taddTensorTransition(&a, mask, to, nonMonomer)\n\t\t\tb[mask][to]++\n\t\t}\n\n\t\tto := (mask >> 1) | 2\n\t\taddTensorTransition(&a, mask, to, nonMonomer)\n\t\tb[mask][to]++\n\t}\n\n\tan := pow12(a, n)\n\tvar total int64\n\tfor i := 0; i < SZ; i++ {\n\t\ttotal = (total + an[i][i]) % MOD\n\t}\n\n\tbn := pow4(b, n)\n\tvar noMonomer int64\n\tfor i := 0; i < 4; i++ {\n\t\tnoMonomer = (noMonomer + bn[i][i]) % MOD\n\t}\n\n\tanswer := (total - 3*noMonomer) % MOD\n\tif answer < 0 {\n\t\tanswer += MOD\n\t}\n\n\tout := bufio.NewWriter(os.Stdout)\n\tfmt.Fprintln(out, answer)\n\tout.Flush()\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 3,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst mod int64 = 998244353\n\ntype Matrix [][]int64\n\nfunc newMatrix(n int) Matrix {\n\tm := make(Matrix, n)\n\tfor i := range m {\n\t\tm[i] = make([]int64, n)\n\t}\n\treturn m\n}\n\nfunc multiply(a, b Matrix) Matrix {\n\tn := len(a)\n\tc := newMatrix(n)\n\tfor i := 0; i < n; i++ {\n\t\tfor k := 0; k < n; k++ {\n\t\t\tif a[i][k] == 0 {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tfor j := 0; j < n; j++ {\n\t\t\t\tif b[k][j] == 0 {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tc[i][j] = (c[i][j] + a[i][k]*b[k][j]) % mod\n\t\t\t}\n\t\t}\n\t}\n\treturn c\n}\n\nfunc power(a Matrix, exponent int) Matrix {\n\tn := len(a)\n\tresult := newMatrix(n)\n\tfor i := 0; i < n; i++ {\n\t\tresult[i][i] = 1\n\t}\n\n\tfor exponent > 0 {\n\t\tif exponent&1 == 1 {\n\t\t\tresult = multiply(result, a)\n\t\t}\n\t\ta = multiply(a, a)\n\t\texponent >>= 1\n\t}\n\treturn result\n}\n\nfunc trace(a Matrix) int64 {\n\tvar result int64\n\tfor i := range a {\n\t\tresult += a[i][i]\n\t\tif result >= mod {\n\t\t\tresult -= mod\n\t\t}\n\t}\n\treturn result\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(in, &n)\n\n\tnonDiameter := Matrix{\n\t\t{1, 1, 0},\n\t\t{0, 1, 1},\n\t\t{0, 0, 1},\n\t}\n\tdiameter := Matrix{\n\t\t{0, 0, 0},\n\t\t{1, 0, 0},\n\t\t{2, 0, 0},\n\t}\n\n\tfull := newMatrix(12)\n\tnoDiameter := newMatrix(4)\n\n\taddTransition := func(from, to int, symbol Matrix, includeNoDiameter bool) {\n\t\tfor i := 0; i < 3; i++ {\n\t\t\tfor j := 0; j < 3; j++ {\n\t\t\t\tr := from*3 + i\n\t\t\t\tc := to*3 + j\n\t\t\t\tfull[r][c] = (full[r][c] + symbol[i][j]) % mod\n\t\t\t}\n\t\t}\n\t\tif includeNoDiameter {\n\t\t\tnoDiameter[from][to]++\n\t\t}\n\t}\n\n\tfor state := 0; state < 4; state++ {\n\t\tcurrentOccupied := state & 1\n\t\tnextOccupied := (state >> 1) & 1\n\n\t\tif currentOccupied == 1 {\n\t\t\tnextState := nextOccupied\n\t\t\taddTransition(state, nextState, nonDiameter, true)\n\t\t\tcontinue\n\t\t}\n\n\t\t// Place a diameter at the current position.\n\t\taddTransition(state, nextOccupied, diameter, false)\n\n\t\t// Pair with the next position.\n\t\tif nextOccupied == 0 {\n\t\t\taddTransition(state, 1, nonDiameter, true)\n\t\t}\n\n\t\t// Pair with the position two steps ahead.\n\t\taddTransition(state, nextOccupied|2, nonDiameter, true)\n\t}\n\n\ttotal := trace(power(full, n))\n\twithoutDiameters := trace(power(noDiameter, n))\n\n\tanswer := (total - 3*withoutDiameters) % mod\n\tif answer < 0 {\n\t\tanswer += mod\n\t}\n\n\tout := bufio.NewWriter(os.Stdout)\n\tdefer out.Flush()\n\tfmt.Fprintln(out, answer)\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 4,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst mod int64 = 998244353\n\ntype Matrix struct {\n\tn int\n\ta []int64\n}\n\nfunc newMatrix(n int) Matrix {\n\treturn Matrix{n: n, a: make([]int64, n*n)}\n}\n\nfunc identityMatrix(n int) Matrix {\n\tm := newMatrix(n)\n\tfor i := 0; i < n; i++ {\n\t\tm.a[i*n+i] = 1\n\t}\n\treturn m\n}\n\nfunc multiply(x, y Matrix) Matrix {\n\tn := x.n\n\tz := newMatrix(n)\n\tfor i := 0; i < n; i++ {\n\t\tfor k := 0; k < n; k++ {\n\t\t\txv := x.a[i*n+k]\n\t\t\tif xv == 0 {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tfor j := 0; j < n; j++ {\n\t\t\t\tyv := y.a[k*n+j]\n\t\t\t\tif yv == 0 {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tidx := i*n + j\n\t\t\t\tz.a[idx] = (z.a[idx] + xv*yv) % mod\n\t\t\t}\n\t\t}\n\t}\n\treturn z\n}\n\nfunc power(base Matrix, exp int) Matrix {\n\tres := identityMatrix(base.n)\n\tfor exp > 0 {\n\t\tif exp&1 == 1 {\n\t\t\tres = multiply(res, base)\n\t\t}\n\t\tbase = multiply(base, base)\n\t\texp >>= 1\n\t}\n\treturn res\n}\n\nfunc trace(m Matrix) int64 {\n\tvar res int64\n\tfor i := 0; i < m.n; i++ {\n\t\tres += m.a[i*m.n+i]\n\t\tif res >= mod {\n\t\t\tres -= mod\n\t\t}\n\t}\n\treturn res\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(in, &n)\n\n\tA := [3][3]int64{\n\t\t{1, 0, 0},\n\t\t{1, 1, 0},\n\t\t{1, 2, 1},\n\t}\n\tB := [3][3]int64{}\n\tB[0][2] = 1\n\n\tT := newMatrix(12)\n\tP := newMatrix(4)\n\n\taddTensorTransition := func(from, to int, w [3][3]int64) {\n\t\tfor i := 0; i < 3; i++ {\n\t\t\tfor j := 0; j < 3; j++ {\n\t\t\t\tif w[i][j] == 0 {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tr := from*3 + i\n\t\t\t\tc := to*3 + j\n\t\t\t\tT.a[r*12+c] += w[i][j]\n\t\t\t\tT.a[r*12+c] %= mod\n\t\t\t}\n\t\t}\n\t}\n\n\taddNonMonomer := func(from, to int) {\n\t\tP.a[from*4+to]++\n\t\tif P.a[from*4+to] >= mod {\n\t\t\tP.a[from*4+to] -= mod\n\t\t}\n\t\taddTensorTransition(from, to, A)\n\t}\n\n\tfor s := 0; s < 4; s++ {\n\t\tif s&1 != 0 {\n\t\t\taddNonMonomer(s, s>>1)\n\t\t\tcontinue\n\t\t}\n\n\t\t// A diameter pair (a removed/opposite flower pair).\n\t\taddTensorTransition(s, s>>1, B)\n\n\t\t// Pair the current position with the next one.\n\t\tif s&2 == 0 {\n\t\t\taddNonMonomer(s, 1)\n\t\t}\n\n\t\t// Pair the current position with the position two steps ahead.\n\t\taddNonMonomer(s, (s>>1)|2)\n\t}\n\n\ttotal := trace(power(T, n))\n\twithoutDiameters := trace(power(P, n))\n\tanswer := (total - 3*withoutDiameters) % mod\n\tif answer < 0 {\n\t\tanswer += mod\n\t}\n\n\tout := bufio.NewWriter(os.Stdout)\n\tfmt.Fprintln(out, answer)\n\tout.Flush()\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            }
+        ],
+        "created": 1787151500,
+        "id": "chatcmpl-EEc28TR572qJ8wkh9j3cjZbioO77e",
+        "model": "gpt-5.6-sol-2026-07-09",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {}
+            }
+        ],
+        "service_tier": "default",
+        "system_fingerprint": null,
+        "usage": {
+            "completion_tokens": 30158,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 25297,
+                "rejected_prediction_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 4,
+                "engine_ttft_ms": 356,
+                "engine_ttlt_ms": 133200,
+                "pre_inference_ms": 64,
+                "service_tbt_ms": 4,
+                "service_ttft_ms": 779,
+                "service_ttlt_ms": 133578,
+                "total_duration_ms": 133559,
+                "user_visible_ttft_ms": 714
+            },
+            "prompt_tokens": 644,
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "total_tokens": 30802
+        },
+        "prompt": "Write a program in Go to solve this programming problem:\nDescription: The Floral Clock has been standing by the side of Mirror Lake for years. Though unable to keep time, it reminds people of the passage of time and the good old days.On the rim of the Floral Clock are 2n flowers, numbered from 1 to 2n clockwise, each of which has a colour among all n possible ones. For each colour, there are exactly two flowers with it, the distance between which either is less than or equal to 2, or equals n. Additionally, if flowers u and v are of the same colour, then flowers opposite to u and opposite to v should be of the same colour as well \u2014 symmetry is beautiful!Formally, the distance between two flowers is 1 plus the number of flowers on the minor arc (or semicircle) between them. Below is a possible arrangement with n\u2009=\u20096 that cover all possibilities.  The beauty of an arrangement is defined to be the product of the lengths of flower segments separated by all opposite flowers of the same colour. In other words, in order to compute the beauty, we remove from the circle all flowers that have the same colour as flowers opposite to them. Then, the beauty is the product of lengths of all remaining segments. Note that we include segments of length 0 in this product. If there are no flowers that have the same colour as flower opposite to them, the beauty equals 0. For instance, the beauty of the above arrangement equals 1\u2009\u00d7\u20093\u2009\u00d7\u20091\u2009\u00d7\u20093\u2009=\u20099 \u2014 the segments are {2}, {4,\u20095,\u20096}, {8} and {10,\u200911,\u200912}.While keeping the constraints satisfied, there may be lots of different arrangements. Find out the sum of beauty over all possible arrangements, modulo 998\u2009244\u2009353. Two arrangements are considered different, if a pair (u,\u2009v) (1\u2009\u2264\u2009u,\u2009v\u2009\u2264\u20092n) exists such that flowers u and v are of the same colour in one of them, but not in the other.\nInput Specification: The first and only line of input contains a lonely positive integer n (3\u2009\u2264\u2009n\u2009\u2264\u200950\u2009000)\u00a0\u2014 the number of colours present on the Floral Clock.\nOutput Specification: Output one integer \u2014 the sum of beauty over all possible arrangements of flowers, modulo 998\u2009244\u2009353.\n\nSample Input:\n3\nSample Output:\n24\n\nSample Input:\n4\nSample Output:\n4\n\nSample Input:\n7\nSample Output:\n1316\n\nSample Input:\n15\nSample Output:\n3436404\n\nNotes: NoteWith n\u2009=\u20093, the following six arrangements each have a beauty of 2\u2009\u00d7\u20092\u2009=\u20094.  While many others, such as the left one in the figure below, have a beauty of 0. The right one is invalid, since it's asymmetric.  \nTake input from standard input and output to standard output\nProvide the Go code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "24fd5cd218f65d4ffb7c5b97b725293e",
+        "difficulty": 3400,
+        "prob_desc_sample_inputs": [
+            "3",
+            "4",
+            "7",
+            "15"
+        ],
+        "prob_desc_time_limit": "7 seconds",
+        "tags": [
+            "divide and conquer",
+            "combinatorics",
+            "fft",
+            "dp",
+            "math"
+        ],
+        "prob_desc_output_spec": "Output one integer \u2014 the sum of beauty over all possible arrangements of flowers, modulo 998\u2009244\u2009353.",
+        "prob_desc_input_spec": "The first and only line of input contains a lonely positive integer n (3\u2009\u2264\u2009n\u2009\u2264\u200950\u2009000)\u00a0\u2014 the number of colours present on the Floral Clock.",
+        "lang_cluster": "Go",
+        "source_code": "",
+        "prob_desc_notes": "NoteWith n\u2009=\u20093, the following six arrangements each have a beauty of 2\u2009\u00d7\u20092\u2009=\u20094.  While many others, such as the left one in the figure below, have a beauty of 0. The right one is invalid, since it's asymmetric.  ",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "The Floral Clock has been standing by the side of Mirror Lake for years. Though unable to keep time, it reminds people of the passage of time and the good old days.On the rim of the Floral Clock are 2n flowers, numbered from 1 to 2n clockwise, each of which has a colour among all n possible ones. For each colour, there are exactly two flowers with it, the distance between which either is less than or equal to 2, or equals n. Additionally, if flowers u and v are of the same colour, then flowers opposite to u and opposite to v should be of the same colour as well \u2014 symmetry is beautiful!Formally, the distance between two flowers is 1 plus the number of flowers on the minor arc (or semicircle) between them. Below is a possible arrangement with n\u2009=\u20096 that cover all possibilities.  The beauty of an arrangement is defined to be the product of the lengths of flower segments separated by all opposite flowers of the same colour. In other words, in order to compute the beauty, we remove from the circle all flowers that have the same colour as flowers opposite to them. Then, the beauty is the product of lengths of all remaining segments. Note that we include segments of length 0 in this product. If there are no flowers that have the same colour as flower opposite to them, the beauty equals 0. For instance, the beauty of the above arrangement equals 1\u2009\u00d7\u20093\u2009\u00d7\u20091\u2009\u00d7\u20093\u2009=\u20099 \u2014 the segments are {2}, {4,\u20095,\u20096}, {8} and {10,\u200911,\u200912}.While keeping the constraints satisfied, there may be lots of different arrangements. Find out the sum of beauty over all possible arrangements, modulo 998\u2009244\u2009353. Two arrangements are considered different, if a pair (u,\u2009v) (1\u2009\u2264\u2009u,\u2009v\u2009\u2264\u20092n) exists such that flowers u and v are of the same colour in one of them, but not in the other.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1504272900",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "24",
+            "4",
+            "1316",
+            "3436404"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"3\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"4\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7\\r\\n\", \"output\": [\"1316\"]}, {\"input\": \"15\\r\\n\", \"output\": [\"3436404\"]}, {\"input\": \"10\\r\\n\", \"output\": [\"26200\"]}, {\"input\": \"99\\r\\n\", \"output\": [\"620067986\"]}, {\"input\": \"1317\\r\\n\", \"output\": [\"414025\"]}, {\"input\": \"50000\\r\\n\", \"output\": [\"475800099\"]}, {\"input\": \"5\\r\\n\", \"output\": [\"240\"]}, {\"input\": \"6\\r\\n\", \"output\": [\"204\"]}, {\"input\": \"8\\r\\n\", \"output\": [\"2988\"]}, {\"input\": \"9\\r\\n\", \"output\": [\"6720\"]}, {\"input\": \"11\\r\\n\", \"output\": [\"50248\"]}, {\"input\": \"12\\r\\n\", \"output\": [\"174280\"]}, {\"input\": \"13\\r\\n\", \"output\": [\"436904\"]}, {\"input\": \"14\\r\\n\", \"output\": [\"1140888\"]}, {\"input\": \"16\\r\\n\", \"output\": [\"8348748\"]}, {\"input\": \"17\\r\\n\", \"output\": [\"24631232\"]}, {\"input\": \"18\\r\\n\", \"output\": [\"64575924\"]}, {\"input\": \"19\\r\\n\", \"output\": [\"174658944\"]}, {\"input\": \"20\\r\\n\", \"output\": [\"488230244\"]}, {\"input\": \"33\\r\\n\", \"output\": [\"823529776\"]}, {\"input\": \"39\\r\\n\", \"output\": [\"302870971\"]}, {\"input\": \"89\\r\\n\", \"output\": [\"530141864\"]}, {\"input\": \"144\\r\\n\", \"output\": [\"395837543\"]}, {\"input\": \"233\\r\\n\", \"output\": [\"422271260\"]}, {\"input\": \"396\\r\\n\", \"output\": [\"994574954\"]}, {\"input\": \"418\\r\\n\", \"output\": [\"57956054\"]}, {\"input\": \"431\\r\\n\", \"output\": [\"767293469\"]}, {\"input\": \"831\\r\\n\", \"output\": [\"418821250\"]}, {\"input\": \"985\\r\\n\", \"output\": [\"574051668\"]}, {\"input\": \"998\\r\\n\", \"output\": [\"452930999\"]}, {\"input\": \"1000\\r\\n\", \"output\": [\"945359814\"]}, {\"input\": \"2017\\r\\n\", \"output\": [\"222633425\"]}, {\"input\": \"3939\\r\\n\", \"output\": [\"582943734\"]}, {\"input\": \"5000\\r\\n\", \"output\": [\"148029988\"]}, {\"input\": \"8081\\r\\n\", \"output\": [\"473740780\"]}, {\"input\": \"10000\\r\\n\", \"output\": [\"938538566\"]}, {\"input\": \"10001\\r\\n\", \"output\": [\"552705744\"]}, {\"input\": \"10492\\r\\n\", \"output\": [\"914991759\"]}, {\"input\": \"20178\\r\\n\", \"output\": [\"207394683\"]}, {\"input\": \"23333\\r\\n\", \"output\": [\"259575428\"]}, {\"input\": \"25252\\r\\n\", \"output\": [\"306102706\"]}, {\"input\": \"30000\\r\\n\", \"output\": [\"583465411\"]}, {\"input\": \"35000\\r\\n\", \"output\": [\"520751787\"]}, {\"input\": \"39393\\r\\n\", \"output\": [\"929692433\"]}, {\"input\": \"40404\\r\\n\", \"output\": [\"618777849\"]}, {\"input\": \"45000\\r\\n\", \"output\": [\"672059275\"]}, {\"input\": \"49997\\r\\n\", \"output\": [\"645043850\"]}, {\"input\": \"49999\\r\\n\", \"output\": [\"791828238\"]}]"
+    }
+}

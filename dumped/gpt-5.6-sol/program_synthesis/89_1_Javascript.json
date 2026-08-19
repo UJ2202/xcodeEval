@@ -1,0 +1,138 @@
+{
+    "oai_response": {
+        "choices": [
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 0,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "const fs = require('fs');\n\nconst [n, m] = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nconst width = Math.min(n, m);\nconst height = Math.max(n, m);\n\nconst size = 1 << width;\nconst full = size - 1;\nconst INF = 1e9;\n\nconst popcount = new Int32Array(size);\nconst cover = new Int32Array(size);\n\nfor (let mask = 0; mask < size; mask++) {\n    popcount[mask] = popcount[mask >> 1] + (mask & 1);\n    cover[mask] = (mask | (mask << 1) | (mask >> 1)) & full;\n}\n\nlet dp = new Int32Array(size * size);\ndp.fill(INF);\n\nfor (let mask = 0; mask < size; mask++) {\n    dp[mask] = popcount[mask];\n}\n\nfor (let row = 1; row < height; row++) {\n    const next = new Int32Array(size * size);\n    next.fill(INF);\n\n    for (let a = 0; a < size; a++) {\n        for (let b = 0; b < size; b++) {\n            const value = dp[a * size + b];\n            if (value === INF) continue;\n\n            for (let c = 0; c < size; c++) {\n                if ((a | cover[b] | c) !== full) continue;\n\n                const index = b * size + c;\n                const candidate = value + popcount[c];\n                if (candidate < next[index]) next[index] = candidate;\n            }\n        }\n    }\n\n    dp = next;\n}\n\nlet minimumOccupied = INF;\n\nfor (let a = 0; a < size; a++) {\n    for (let b = 0; b < size; b++) {\n        if ((a | cover[b]) === full) {\n            minimumOccupied = Math.min(minimumOccupied, dp[a * size + b]);\n        }\n    }\n}\n\nconsole.log(n * m - minimumOccupied);",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 1,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nconst n = input[0];\nconst m = input[1];\n\nconst width = Math.min(n, m);\nconst height = Math.max(n, m);\nconst maskCount = 1 << width;\nconst fullMask = maskCount - 1;\n\nconst popcount = new Int8Array(maskCount);\nconst cover = new Int8Array(maskCount);\n\nfor (let mask = 0; mask < maskCount; mask++) {\n    popcount[mask] = popcount[mask >> 1] + (mask & 1);\n    cover[mask] = mask | ((mask << 1) & fullMask) | (mask >> 1);\n}\n\nif (height === 1) {\n    let minimum = width;\n    for (let mask = 0; mask < maskCount; mask++) {\n        if (cover[mask] === fullMask) {\n            minimum = Math.min(minimum, popcount[mask]);\n        }\n    }\n    console.log(n * m - minimum);\n    process.exit(0);\n}\n\nconst stateCount = maskCount * maskCount;\nlet dp = new Float64Array(stateCount);\ndp.fill(Infinity);\n\nfor (let first = 0; first < maskCount; first++) {\n    for (let second = 0; second < maskCount; second++) {\n        if ((cover[first] | second) === fullMask) {\n            dp[first * maskCount + second] =\n                popcount[first] + popcount[second];\n        }\n    }\n}\n\nfor (let row = 2; row < height; row++) {\n    const next = new Float64Array(stateCount);\n    next.fill(Infinity);\n\n    for (let previous = 0; previous < maskCount; previous++) {\n        for (let current = 0; current < maskCount; current++) {\n            const value = dp[previous * maskCount + current];\n            if (value === Infinity) continue;\n\n            const required = fullMask & ~(previous | cover[current]);\n            const remaining = fullMask ^ required;\n\n            let extra = remaining;\n            while (true) {\n                const nextMask = required | extra;\n                const index = current * maskCount + nextMask;\n                const candidate = value + popcount[nextMask];\n\n                if (candidate < next[index]) {\n                    next[index] = candidate;\n                }\n\n                if (extra === 0) break;\n                extra = (extra - 1) & remaining;\n            }\n        }\n    }\n\n    dp = next;\n}\n\nlet minimumOccupied = Infinity;\n\nfor (let previous = 0; previous < maskCount; previous++) {\n    for (let current = 0; current < maskCount; current++) {\n        if ((previous | cover[current]) === fullMask) {\n            minimumOccupied = Math.min(\n                minimumOccupied,\n                dp[previous * maskCount + current]\n            );\n        }\n    }\n}\n\nconsole.log(n * m - minimumOccupied);",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 2,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "const fs = require('fs');\n\nconst [n, m] = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\n\nconst width = Math.min(n, m);\nconst height = Math.max(n, m);\nconst size = 1 << width;\nconst full = size - 1;\nconst INF = 1e9;\n\nconst popcount = new Array(size).fill(0);\nconst horizontal = new Array(size);\n\nfor (let mask = 0; mask < size; mask++) {\n    popcount[mask] = popcount[mask >> 1] + (mask & 1);\n    horizontal[mask] =\n        (mask | ((mask << 1) & full) | (mask >> 1)) & full;\n}\n\nlet dp = new Array(size * size).fill(INF);\n\nfor (let current = 0; current < size; current++) {\n    dp[current] = popcount[current]; // previous row mask is 0\n}\n\nfor (let row = 0; row < height - 1; row++) {\n    const nextDp = new Array(size * size).fill(INF);\n\n    for (let previous = 0; previous < size; previous++) {\n        for (let current = 0; current < size; current++) {\n            const cost = dp[previous * size + current];\n            if (cost === INF) continue;\n\n            const covered = previous | horizontal[current];\n\n            for (let next = 0; next < size; next++) {\n                if ((covered | next) !== full) continue;\n\n                const index = current * size + next;\n                const newCost = cost + popcount[next];\n                if (newCost < nextDp[index]) {\n                    nextDp[index] = newCost;\n                }\n            }\n        }\n    }\n\n    dp = nextDp;\n}\n\nlet minimumOccupied = INF;\n\nfor (let previous = 0; previous < size; previous++) {\n    for (let current = 0; current < size; current++) {\n        const cost = dp[previous * size + current];\n        if ((previous | horizontal[current]) === full) {\n            minimumOccupied = Math.min(minimumOccupied, cost);\n        }\n    }\n}\n\nconsole.log(n * m - minimumOccupied);",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 3,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "const fs = require('fs');\n\nconst [n, m] = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\n\nconst width = Math.min(n, m);\nconst height = Math.max(n, m);\nconst states = 1 << width;\nconst full = states - 1;\nconst INF = 1e9;\n\nconst popcount = new Int32Array(states);\nconst horizontal = new Int32Array(states);\n\nfor (let mask = 0; mask < states; mask++) {\n    popcount[mask] = popcount[mask >> 1] + (mask & 1);\n    horizontal[mask] = mask | ((mask << 1) & full) | (mask >> 1);\n}\n\nlet dp = new Int32Array(states * states);\ndp.fill(INF);\n\nfor (let mask = 0; mask < states; mask++) {\n    dp[mask] = popcount[mask];\n}\n\nfor (let row = 1; row < height; row++) {\n    const next = new Int32Array(states * states);\n    next.fill(INF);\n\n    for (let previousPrevious = 0; previousPrevious < states; previousPrevious++) {\n        for (let previous = 0; previous < states; previous++) {\n            const cost = dp[previousPrevious * states + previous];\n            if (cost === INF) continue;\n\n            const missing = full & ~(previousPrevious | horizontal[previous]);\n\n            for (let current = missing; current < states; current = (current + 1) | missing) {\n                const index = previous * states + current;\n                const newCost = cost + popcount[current];\n                if (newCost < next[index]) next[index] = newCost;\n                if (current === full) break;\n            }\n        }\n    }\n\n    dp = next;\n}\n\nlet minimumOccupied = INF;\n\nfor (let previousPrevious = 0; previousPrevious < states; previousPrevious++) {\n    for (let previous = 0; previous < states; previous++) {\n        if ((previousPrevious | horizontal[previous]) === full) {\n            minimumOccupied = Math.min(\n                minimumOccupied,\n                dp[previousPrevious * states + previous]\n            );\n        }\n    }\n}\n\nconsole.log(n * m - minimumOccupied);",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 4,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "const fs = require('fs');\n\nconst [n, m] = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\n\nconst width = Math.min(n, m);\nconst height = Math.max(n, m);\nconst states = 1 << width;\nconst full = states - 1;\nconst INF = 1e9;\n\nconst popcount = new Int32Array(states);\nconst horizontal = new Int32Array(states);\n\nfor (let mask = 0; mask < states; mask++) {\n    popcount[mask] = popcount[mask >> 1] + (mask & 1);\n    horizontal[mask] = mask | ((mask << 1) & full) | (mask >> 1);\n}\n\nlet dp = new Int32Array(states * states);\ndp.fill(INF);\n\nfor (let mask = 0; mask < states; mask++) {\n    dp[mask] = popcount[mask];\n}\n\nfor (let row = 1; row < height; row++) {\n    const next = new Int32Array(states * states);\n    next.fill(INF);\n\n    for (let previousPrevious = 0; previousPrevious < states; previousPrevious++) {\n        for (let previous = 0; previous < states; previous++) {\n            const value = dp[previousPrevious * states + previous];\n            if (value === INF) continue;\n\n            const covered = horizontal[previous] | previousPrevious;\n\n            for (let current = 0; current < states; current++) {\n                if ((covered | current) !== full) continue;\n\n                const index = previous * states + current;\n                const candidate = value + popcount[current];\n                if (candidate < next[index]) next[index] = candidate;\n            }\n        }\n    }\n\n    dp = next;\n}\n\nlet minimumOccupied = INF;\n\nfor (let previous = 0; previous < states; previous++) {\n    for (let last = 0; last < states; last++) {\n        const value = dp[previous * states + last];\n        if (value === INF) continue;\n\n        if ((previous | horizontal[last]) === full) {\n            minimumOccupied = Math.min(minimumOccupied, value);\n        }\n    }\n}\n\nconsole.log(n * m - minimumOccupied);",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            }
+        ],
+        "created": 1787153141,
+        "id": "chatcmpl-EEcSbuVnizjP4C6FAuzYPozMDAf4b",
+        "model": "gpt-5.6-sol-2026-07-09",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {}
+            }
+        ],
+        "service_tier": "default",
+        "system_fingerprint": null,
+        "usage": {
+            "completion_tokens": 7366,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 4779,
+                "rejected_prediction_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 4,
+                "engine_ttft_ms": 343,
+                "engine_ttlt_ms": 29920,
+                "pre_inference_ms": 136,
+                "service_tbt_ms": 4,
+                "service_ttft_ms": 647,
+                "service_ttlt_ms": 30201,
+                "total_duration_ms": 30079,
+                "user_visible_ttft_ms": 512
+            },
+            "prompt_tokens": 348,
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "total_tokens": 7714
+        },
+        "prompt": "Write a program in Javascript to solve this programming problem:\nDescription: Little Petya loves training spiders. Petya has a board n\u2009\u00d7\u2009m in size. Each cell of the board initially has a spider sitting on it. After one second Petya chooses a certain action for each spider, and all of them humbly perform its commands. There are 5 possible commands: to stay idle or to move from current cell to some of the four side-neighboring cells (that is, one command for each of the four possible directions). Petya gives the commands so that no spider leaves the field. It is allowed for spiders to pass through each other when they crawl towards each other in opposite directions. All spiders crawl simultaneously and several spiders may end up in one cell. Petya wants to know the maximum possible number of spider-free cells after one second.\nInput Specification: The first line contains two space-separated integers n and m (1\u2009\u2264\u2009n,\u2009m\u2009\u2264\u200940,\u2009n\u00b7m\u2009\u2264\u200940) \u2014 the board sizes.\nOutput Specification: In the first line print the maximum number of cells without spiders.\n\nSample Input:\n1 1\nSample Output:\n0\n\nSample Input:\n2 3\nSample Output:\n4\n\nNotes: NoteIn the first sample the only possible answer is:sIn the second sample one of the possible solutions is: rdlruls denotes command \"stay idle\", l, r, d, u denote commands \"crawl left\", \"crawl right\", \"crawl down\", \"crawl up\", correspondingly.\nTake input from standard input and output to standard output\nProvide the Javascript code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "097674b4dd696b30e102938f71dd39b9",
+        "difficulty": 2100,
+        "prob_desc_sample_inputs": [
+            "1 1",
+            "2 3"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "bitmasks",
+            "dp",
+            "dsu"
+        ],
+        "prob_desc_output_spec": "In the first line print the maximum number of cells without spiders.",
+        "prob_desc_input_spec": "The first line contains two space-separated integers n and m (1\u2009\u2264\u2009n,\u2009m\u2009\u2264\u200940,\u2009n\u00b7m\u2009\u2264\u200940) \u2014 the board sizes.",
+        "lang_cluster": "Javascript",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first sample the only possible answer is:sIn the second sample one of the possible solutions is: rdlruls denotes command \"stay idle\", l, r, d, u denote commands \"crawl left\", \"crawl right\", \"crawl down\", \"crawl up\", correspondingly.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Little Petya loves training spiders. Petya has a board n\u2009\u00d7\u2009m in size. Each cell of the board initially has a spider sitting on it. After one second Petya chooses a certain action for each spider, and all of them humbly perform its commands. There are 5 possible commands: to stay idle or to move from current cell to some of the four side-neighboring cells (that is, one command for each of the four possible directions). Petya gives the commands so that no spider leaves the field. It is allowed for spiders to pass through each other when they crawl towards each other in opposite directions. All spiders crawl simultaneously and several spiders may end up in one cell. Petya wants to know the maximum possible number of spider-free cells after one second.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1315051200",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "0",
+            "4"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"1 1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 3\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"4 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"4 2\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"4 3\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"4 4\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1 40\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"1 2\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"1 3\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"1 4\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"1 5\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"1 6\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"1 7\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"1 8\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"1 9\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"1 10\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"1 11\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"1 12\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"1 13\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"1 14\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"1 15\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"1 16\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"1 17\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"1 18\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1 19\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1 20\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"1 21\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"1 22\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"1 23\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"1 24\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"1 25\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"1 26\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"1 27\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"1 28\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"1 29\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"1 30\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"1 31\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"1 32\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"1 33\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"1 34\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"1 35\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"1 36\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"1 37\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"1 38\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"1 39\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"2 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"2 2\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"2 4\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"2 5\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"2 6\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"2 7\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"2 8\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"2 9\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"2 10\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"2 11\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"2 12\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"2 13\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"2 14\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"2 15\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"2 16\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"2 17\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"2 18\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"2 19\\r\\n\", \"output\": [\"28\"]}, {\"input\": \"2 20\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"3 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"3 2\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"3 3\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"3 4\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"3 5\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"3 6\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"3 7\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"3 8\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"3 9\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"3 10\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"3 11\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"3 12\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"3 13\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"4 5\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"4 6\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"4 7\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"4 8\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"4 9\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"4 10\\r\\n\", \"output\": [\"30\"]}, {\"input\": \"5 1\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"5 2\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"5 3\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"5 4\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"5 5\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"5 6\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"5 7\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"5 8\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"6 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"6 2\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"6 3\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"6 4\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"6 5\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"6 6\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"7 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7 2\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"7 3\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 4\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"7 5\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"8 1\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"8 2\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"8 3\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"8 4\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"8 5\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"9 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"9 2\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"9 3\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"9 4\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"10 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"10 2\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"10 3\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"10 4\\r\\n\", \"output\": [\"30\"]}, {\"input\": \"11 1\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"11 2\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"11 3\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"12 1\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"12 2\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"12 3\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"13 1\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"13 2\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"13 3\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"14 1\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"14 2\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"15 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"15 2\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"16 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"16 2\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"17 1\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"17 2\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"18 1\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"18 2\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"19 1\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"19 2\\r\\n\", \"output\": [\"28\"]}, {\"input\": \"20 1\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"20 2\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"21 1\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"22 1\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"23 1\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"24 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"25 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"26 1\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"27 1\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"28 1\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"29 1\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"30 1\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"31 1\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"32 1\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"33 1\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"34 1\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"35 1\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"36 1\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"37 1\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"38 1\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"39 1\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"40 1\\r\\n\", \"output\": [\"26\"]}]"
+    }
+}

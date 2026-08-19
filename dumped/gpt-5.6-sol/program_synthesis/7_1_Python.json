@@ -1,0 +1,142 @@
+{
+    "oai_response": {
+        "choices": [
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 0,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "import sys\n\ndef main():\n    n, m, p = map(int, sys.stdin.readline().split())\n\n    inv = [0] * (m + 1)\n    if m >= 1:\n        inv[1] = 1\n        for i in range(2, m + 1):\n            inv[i] = (p - (p // i) * inv[p % i] % p) % p\n\n    f = [0] * (m + 1)\n    g = [0] * (m + 1)\n    f[0] = 1\n\n    for k in range(1, m + 1):\n        sum_f = 0\n        sum_g = 0\n        sum_cost = 0\n\n        for left in range(k):\n            right = k - 1 - left\n            fl = f[left]\n            fr = f[right]\n\n            sum_f += fl * fr\n            sum_g += g[left] * fr + fl * g[right]\n\n            cost = (left * (left + 1) + right * (right + 1)) // 2\n            sum_cost += cost * fl * fr\n\n        sum_f %= p\n        sum_g %= p\n        sum_cost %= p\n\n        f[k] = (k + 1) * sum_f % p * inv[k] % p\n        g[k] = ((k + 1) * sum_g + sum_cost) % p * inv[k] % p\n\n    empty = n - m\n\n    # q(x) = (1 + f[1]x + f[2]x^2 + ...)^empty\n    q = [0] * (m + 1)\n    q[0] = 1\n\n    for k in range(1, m + 1):\n        total = 0\n        for i in range(1, k + 1):\n            factor = (empty + 1) * i - k\n            total += factor * f[i] * q[k - i]\n        q[k] = (total % p) * inv[k] % p\n\n    coefficient = 0\n    for k in range(1, m + 1):\n        coefficient += g[k] * q[m - k]\n    coefficient %= p\n\n    factorial = 1\n    for i in range(2, m + 1):\n        factorial = factorial * i % p\n\n    answer = factorial * (empty + 1) % p\n    answer = answer * coefficient % p\n    print(answer)\n\nif __name__ == \"__main__\":\n    main()\n",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 1,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "import sys\n\nn, m, p = map(int, sys.stdin.readline().split())\n\nfact = [1] * (m + 1)\ninvfact = [1] * (m + 1)\ninv = [1] * (m + 1)\npow2 = [1] * (m + 1)\n\nfor i in range(1, m + 1):\n    fact[i] = fact[i - 1] * i % p\n    pow2[i] = pow2[i - 1] * 2 % p\n\ninvfact[m] = pow(fact[m], p - 2, p)\nfor i in range(m, 0, -1):\n    invfact[i - 1] = invfact[i] * i % p\n\nfor i in range(1, m + 1):\n    inv[i] = fact[i - 1] * invfact[i] % p\n\nf = [0] * (m + 1)\nh = [0] * (m + 1)\nf[0] = 1\n\nfor k in range(1, m + 1):\n    f[k] = pow2[k] * pow(k + 1, k - 1, p) % p\n    f[k] = f[k] * invfact[k] % p\n\nfor k in range(1, m + 1):\n    total = 0\n    for left in range(k):\n        right = k - 1 - left\n        previous = (h[left] * f[right] + f[left] * h[right]) % p\n        displacement = (\n            left * (left + 1) // 2 +\n            right * (right + 1) // 2\n        ) % p\n        term = (k + 1) * previous\n        term += displacement * f[left] % p * f[right]\n        total = (total + term) % p\n    h[k] = total * inv[k] % p\n\ncomponents_space = n - m + 1\npower = components_space - 1\n\ncoeff = [0] * (m + 1)\ncoeff[0] = 1\nif power > 0:\n    for j in range(1, m + 1):\n        coeff[j] = power * pow2[j] % p\n        coeff[j] = coeff[j] * pow(power + j, j - 1, p) % p\n        coeff[j] = coeff[j] * invfact[j] % p\n\nresult = 0\nfor k in range(1, m + 1):\n    result = (result + h[k] * coeff[m - k]) % p\n\nresult = result * components_space % p\nresult = result * fact[m] % p\n\nprint(result)",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 2,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "import sys\n\ndef main():\n    n, m, p = map(int, sys.stdin.readline().split())\n\n    inv = [0] * (m + 1)\n    if m >= 1:\n        inv[1] = 1\n    for i in range(2, m + 1):\n        inv[i] = (p - (p // i) * inv[p % i] % p) % p\n\n    c = [0] * (m + 1)\n    d = [0] * (m + 1)\n    c[0] = 1\n\n    tri = [i * (i + 1) // 2 % p for i in range(m + 1)]\n\n    for s in range(1, m + 1):\n        sum_c = 0\n        sum_d = 0\n        sum_t = 0\n\n        for left in range(s):\n            right = s - 1 - left\n            product = c[left] * c[right] % p\n            sum_c += product\n            sum_d += d[left] * c[right]\n            sum_t += tri[left] * product\n\n        sum_c %= p\n        sum_d %= p\n        sum_t %= p\n\n        c[s] = (s + 1) * sum_c % p * inv[s] % p\n        d[s] = 2 * ((s + 1) * sum_d + sum_t) % p * inv[s] % p\n\n    exponent = n - m\n    power = [0] * (m + 1)\n    power[0] = 1\n\n    for k in range(1, m + 1):\n        total = 0\n        for i in range(1, k + 1):\n            coefficient = (exponent + 1) * i - k\n            total += coefficient * c[i] * power[k - i]\n        power[k] = total % p * inv[k] % p\n\n    coefficient = 0\n    for s in range(1, m + 1):\n        coefficient += d[s] * power[m - s]\n    coefficient %= p\n\n    factorial = 1\n    for i in range(2, m + 1):\n        factorial = factorial * i % p\n\n    answer = factorial * (n - m + 1) % p * coefficient % p\n    print(answer)\n\nif __name__ == \"__main__\":\n    main()\n",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 3,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "import sys\n\nn, m, p = map(int, sys.stdin.readline().split())\n\nif m == 1:\n    print(0)\n    sys.exit()\n\nd = m - 1\nc = n - m + 1\nK = 2 * (n + 1) % p\n\nfact = [1] * (m + 1)\nfor i in range(1, m + 1):\n    fact[i] = fact[i - 1] * i % p\n\ninv_fact = [1] * (m + 1)\ninv_fact[m] = pow(fact[m], p - 2, p)\nfor i in range(m, 0, -1):\n    inv_fact[i - 1] = inv_fact[i] * i % p\n\nexp_coef = [0] * (d + 1)\npower = 1\nfor i in range(d + 1):\n    exp_coef[i] = power * inv_fact[i] % p\n    power = power * K % p\n\ndef convolution_coefficient(h, r):\n    if h < 0:\n        return 0\n    result = 0\n    pow2 = 1\n    for k in range(h + 1):\n        if r == 2:\n            qcoef = (k + 1) * pow2\n        else:\n            qcoef = ((k + 1) * (k + 2) // 2) * pow2\n        result = (result + qcoef * exp_coef[h - k]) % p\n        pow2 = pow2 * 2 % p\n    return result\n\ncoef = 0\ncoef += 2 * convolution_coefficient(d - 1, 2)\ncoef += 2 * c * convolution_coefficient(d - 2, 2)\ncoef += 4 * convolution_coefficient(d - 2, 3)\ncoef %= p\n\nanswer = 2 * c % p\nanswer = answer * fact[m - 1] % p\nanswer = answer * coef % p\n\nprint(answer)",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 4,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "import sys\n\nn, m, p = map(int, sys.stdin.readline().split())\n\nfac = [1] * (n + 2)\nfor i in range(1, n + 2):\n    fac[i] = fac[i - 1] * i % p\n\nifac = [1] * (n + 2)\nifac[n + 1] = pow(fac[n + 1], p - 2, p)\nfor i in range(n + 1, 0, -1):\n    ifac[i - 1] = ifac[i] * i % p\n\ndef comb(a, b):\n    if b < 0 or b > a:\n        return 0\n    return fac[a] * ifac[b] % p * ifac[a - b] % p\n\nh = [0] * m\nfactor = pow(2, m - 1, p) * pow(m, p - 2, p) % p\nN = m - 1\n\nfor t in range(m):\n    s = t + 1\n    lam = (m + s) % p\n    power = 1\n    total = 0\n    for v in range(N + 1):\n        k = N - v\n        if k == 0:\n            r = 0\n        elif k == 1:\n            r = 2\n        else:\n            r = (2 * k + (k - 1) * (s + k)) % p\n        total = (total + power * ifac[v] % p * r) % p\n        power = power * lam % p\n    h[t] = factor * total % p\n\nlimit = min(m, n - m + 1)\nanswer = 0\n\nfor runs in range(1, limit + 1):\n    value = 0\n    for t in range(runs):\n        term = comb(runs - 1, t) * h[t] % p\n        if (runs - 1 - t) & 1:\n            value -= term\n        else:\n            value += term\n    value %= p\n    value = value * runs % p\n    value = value * comb(n - m + 1, runs) % p\n    answer = (answer + value) % p\n\nanswer = answer * fac[m] % p\nprint(answer)",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            }
+        ],
+        "created": 1787154044,
+        "id": "chatcmpl-EEchAGpIUfuo53afWND0CJRE6JsHx",
+        "model": "gpt-5.6-sol-2026-07-09",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {}
+            }
+        ],
+        "service_tier": "default",
+        "system_fingerprint": null,
+        "usage": {
+            "completion_tokens": 24717,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 21849,
+                "rejected_prediction_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 5,
+                "engine_ttft_ms": 443,
+                "engine_ttlt_ms": 119148,
+                "pre_inference_ms": 142,
+                "service_tbt_ms": 5,
+                "service_ttft_ms": 835,
+                "service_ttlt_ms": 119536,
+                "total_duration_ms": 119401,
+                "user_visible_ttft_ms": 693
+            },
+            "prompt_tokens": 1119,
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "total_tokens": 25836
+        },
+        "prompt": "Write a program in Python to solve this programming problem:\nDescription: Today is the final contest of INOI (Iranian National Olympiad in Informatics). The contest room is a row with $$$n$$$ computers. All computers are numbered with integers from $$$1$$$ to $$$n$$$ from left to right. There are $$$m$$$ participants, numbered with integers from $$$1$$$ to $$$m$$$.We have an array $$$a$$$ of length $$$m$$$ where $$$a_{i}$$$ ($$$1 \\leq a_i \\leq n$$$) is the computer behind which the $$$i$$$-th participant wants to sit.Also, we have another array $$$b$$$ of length $$$m$$$ consisting of characters 'L' and 'R'. $$$b_i$$$ is the side from which the $$$i$$$-th participant enters the room. 'L' means the participant enters from the left of computer $$$1$$$ and goes from left to right, and 'R' means the participant enters from the right of computer $$$n$$$ and goes from right to left.The participants in the order from $$$1$$$ to $$$m$$$ enter the room one by one. The $$$i$$$-th of them enters the contest room in the direction $$$b_i$$$ and goes to sit behind the $$$a_i$$$-th computer. If it is occupied he keeps walking in his direction until he reaches the first unoccupied computer. After that, he sits behind it. If he doesn't find any computer he gets upset and gives up on the contest.The madness of the $$$i$$$-th participant is the distance between his assigned computer ($$$a_i$$$) and the computer he ends up sitting behind. The distance between computers $$$i$$$ and $$$j$$$ is equal to $$$|i - j|$$$.The values in the array $$$a$$$ can be equal. There exist $$$n^m \\cdot 2^m$$$ possible pairs of arrays $$$(a, b)$$$.Consider all pairs of arrays $$$(a, b)$$$ such that no person becomes upset. For each of them let's calculate the sum of participants madnesses. Find the sum of all these values.You will be given some prime modulo $$$p$$$. Find this sum by modulo $$$p$$$.\nInput Specification: The only line contains three integers $$$n$$$, $$$m$$$, $$$p$$$ ($$$1 \\leq m \\leq n \\leq 500, 10^8 \\leq p \\leq 10 ^ 9 + 9$$$). It is guaranteed, that the number $$$p$$$ is prime.\nOutput Specification: Print only one integer\u00a0\u2014 the required sum by modulo $$$p$$$.\n\nSample Input:\n3 1 1000000007\nSample Output:\n0\n\nSample Input:\n2 2 1000000009\nSample Output:\n4\n\nSample Input:\n3 2 998244353\nSample Output:\n8\n\nSample Input:\n20 10 1000000009\nSample Output:\n352081045\n\nNotes: NoteIn the first test, there are three possible arrays $$$a$$$: $$$\\{1\\}$$$, $$$\\{2\\}$$$, and $$$ \\{3\\}$$$ and two possible arrays $$$b$$$: $$$\\{\\mathtt{L}\\}$$$ and $$$\\{\\mathtt{R}\\}$$$. For all six pairs of arrays $$$(a, b)$$$, the only participant will sit behind the computer $$$a_1$$$, so his madness will be $$$0$$$. So the total sum of madnesses will be $$$0$$$.In the second test, all possible pairs of arrays $$$(a, b)$$$, such that no person becomes upset are:  $$$(\\{1, 1\\}, \\{\\mathtt{L}, \\mathtt{L}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{1, 1\\}, \\{\\mathtt{R}, \\mathtt{L}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{2, 2\\}, \\{\\mathtt{R}, \\mathtt{R}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{2, 2\\}, \\{\\mathtt{L}, \\mathtt{R}\\})$$$, the sum of madnesses is $$$1$$$;  all possible pairs of $$$a \\in \\{\\{1, 2\\}, \\{2, 1\\}\\}$$$ and $$$b \\in \\{\\{\\mathtt{L}, \\mathtt{L}\\}, \\{\\mathtt{R}, \\mathtt{L}\\}, \\{\\mathtt{L}, \\mathtt{R}\\}, \\{\\mathtt{R}, \\mathtt{R}\\}\\}$$$, the sum of madnesses is $$$0$$$. So, the answer is $$$1 + 1 + 1 + 1 + 0 \\ldots = 4$$$.\nTake input from standard input and output to standard output\nProvide the Python code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "9812de5f2d272511a63ead8765b23190",
+        "difficulty": 3100,
+        "prob_desc_sample_inputs": [
+            "3 1 1000000007",
+            "2 2 1000000009",
+            "3 2 998244353",
+            "20 10 1000000009"
+        ],
+        "prob_desc_time_limit": "3 seconds",
+        "tags": [
+            "fft",
+            "dp",
+            "combinatorics"
+        ],
+        "prob_desc_output_spec": "Print only one integer\u00a0\u2014 the required sum by modulo $$$p$$$.",
+        "prob_desc_input_spec": "The only line contains three integers $$$n$$$, $$$m$$$, $$$p$$$ ($$$1 \\leq m \\leq n \\leq 500, 10^8 \\leq p \\leq 10 ^ 9 + 9$$$). It is guaranteed, that the number $$$p$$$ is prime.",
+        "lang_cluster": "Python",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first test, there are three possible arrays $$$a$$$: $$$\\{1\\}$$$, $$$\\{2\\}$$$, and $$$ \\{3\\}$$$ and two possible arrays $$$b$$$: $$$\\{\\mathtt{L}\\}$$$ and $$$\\{\\mathtt{R}\\}$$$. For all six pairs of arrays $$$(a, b)$$$, the only participant will sit behind the computer $$$a_1$$$, so his madness will be $$$0$$$. So the total sum of madnesses will be $$$0$$$.In the second test, all possible pairs of arrays $$$(a, b)$$$, such that no person becomes upset are:  $$$(\\{1, 1\\}, \\{\\mathtt{L}, \\mathtt{L}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{1, 1\\}, \\{\\mathtt{R}, \\mathtt{L}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{2, 2\\}, \\{\\mathtt{R}, \\mathtt{R}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{2, 2\\}, \\{\\mathtt{L}, \\mathtt{R}\\})$$$, the sum of madnesses is $$$1$$$;  all possible pairs of $$$a \\in \\{\\{1, 2\\}, \\{2, 1\\}\\}$$$ and $$$b \\in \\{\\{\\mathtt{L}, \\mathtt{L}\\}, \\{\\mathtt{R}, \\mathtt{L}\\}, \\{\\mathtt{L}, \\mathtt{R}\\}, \\{\\mathtt{R}, \\mathtt{R}\\}\\}$$$, the sum of madnesses is $$$0$$$. So, the answer is $$$1 + 1 + 1 + 1 + 0 \\ldots = 4$$$.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Today is the final contest of INOI (Iranian National Olympiad in Informatics). The contest room is a row with $$$n$$$ computers. All computers are numbered with integers from $$$1$$$ to $$$n$$$ from left to right. There are $$$m$$$ participants, numbered with integers from $$$1$$$ to $$$m$$$.We have an array $$$a$$$ of length $$$m$$$ where $$$a_{i}$$$ ($$$1 \\leq a_i \\leq n$$$) is the computer behind which the $$$i$$$-th participant wants to sit.Also, we have another array $$$b$$$ of length $$$m$$$ consisting of characters 'L' and 'R'. $$$b_i$$$ is the side from which the $$$i$$$-th participant enters the room. 'L' means the participant enters from the left of computer $$$1$$$ and goes from left to right, and 'R' means the participant enters from the right of computer $$$n$$$ and goes from right to left.The participants in the order from $$$1$$$ to $$$m$$$ enter the room one by one. The $$$i$$$-th of them enters the contest room in the direction $$$b_i$$$ and goes to sit behind the $$$a_i$$$-th computer. If it is occupied he keeps walking in his direction until he reaches the first unoccupied computer. After that, he sits behind it. If he doesn't find any computer he gets upset and gives up on the contest.The madness of the $$$i$$$-th participant is the distance between his assigned computer ($$$a_i$$$) and the computer he ends up sitting behind. The distance between computers $$$i$$$ and $$$j$$$ is equal to $$$|i - j|$$$.The values in the array $$$a$$$ can be equal. There exist $$$n^m \\cdot 2^m$$$ possible pairs of arrays $$$(a, b)$$$.Consider all pairs of arrays $$$(a, b)$$$ such that no person becomes upset. For each of them let's calculate the sum of participants madnesses. Find the sum of all these values.You will be given some prime modulo $$$p$$$. Find this sum by modulo $$$p$$$.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1605623700",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "0",
+            "4",
+            "8",
+            "352081045"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"3 1 1000000007\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 2 1000000009\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"3 2 998244353\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"20 10 1000000009\\r\\n\", \"output\": [\"352081045\"]}, {\"input\": \"5 2 1000000007\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"500 498 1000000007\\r\\n\", \"output\": [\"497900737\"]}, {\"input\": \"10 9 1000000007\\r\\n\", \"output\": [\"904119416\"]}, {\"input\": \"7 4 1000000009\\r\\n\", \"output\": [\"31488\"]}, {\"input\": \"8 8 700001153\\r\\n\", \"output\": [\"247497204\"]}, {\"input\": \"6 3 999999487\\r\\n\", \"output\": [\"768\"]}, {\"input\": \"310 228 998244799\\r\\n\", \"output\": [\"861313351\"]}, {\"input\": \"385 76 998244353\\r\\n\", \"output\": [\"750286580\"]}, {\"input\": \"259 76 998244353\\r\\n\", \"output\": [\"41310904\"]}, {\"input\": \"459 14 200003077\\r\\n\", \"output\": [\"142997933\"]}, {\"input\": \"1 1 1000000007\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"498 155 998244799\\r\\n\", \"output\": [\"673213318\"]}, {\"input\": \"372 309 1000000009\\r\\n\", \"output\": [\"698627891\"]}, {\"input\": \"44 19 998244799\\r\\n\", \"output\": [\"81944049\"]}, {\"input\": \"70 39 700001153\\r\\n\", \"output\": [\"401935379\"]}, {\"input\": \"282 190 300001657\\r\\n\", \"output\": [\"210852530\"]}, {\"input\": \"370 100 1000000007\\r\\n\", \"output\": [\"112411341\"]}, {\"input\": \"234 21 200003077\\r\\n\", \"output\": [\"137641479\"]}, {\"input\": \"194 184 200003077\\r\\n\", \"output\": [\"76845836\"]}, {\"input\": \"499 497 998244799\\r\\n\", \"output\": [\"514945258\"]}, {\"input\": \"500 117 1000000007\\r\\n\", \"output\": [\"234794832\"]}, {\"input\": \"45 41 200003077\\r\\n\", \"output\": [\"176259818\"]}, {\"input\": \"2 1 1000000007\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 2 1000000007\\r\\n\", \"output\": [\"4\"]}]"
+    }
+}

@@ -1,0 +1,138 @@
+{
+    "oai_response": {
+        "choices": [
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 0,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\n[$n, $m] = array_map('intval', preg_split('/\\s+/', trim(stream_get_contents(STDIN))));\n\n$width = min($n, $m);\n$height = max($n, $m);\n\n$states = 1 << $width;\n$full = $states - 1;\n$inf = PHP_INT_MAX;\n\n$popcount = array_fill(0, $states, 0);\n$horizontal = array_fill(0, $states, 0);\n\nfor ($mask = 0; $mask < $states; $mask++) {\n    $popcount[$mask] = $popcount[$mask >> 1] + ($mask & 1);\n    $horizontal[$mask] = $mask | (($mask << 1) & $full) | ($mask >> 1);\n}\n\n$totalStates = $states * $states;\n$dp = array_fill(0, $totalStates, $inf);\n\nfor ($mask = 0; $mask < $states; $mask++) {\n    $dp[$mask] = $popcount[$mask];\n}\n\nfor ($row = 1; $row < $height; $row++) {\n    $next = array_fill(0, $totalStates, $inf);\n\n    for ($index = 0; $index < $totalStates; $index++) {\n        if ($dp[$index] === $inf) {\n            continue;\n        }\n\n        $previous = intdiv($index, $states);\n        $current = $index % $states;\n        $needed = $full & ~($previous | $horizontal[$current]);\n\n        for ($newMask = 0; $newMask < $states; $newMask++) {\n            if (($newMask & $needed) !== $needed) {\n                continue;\n            }\n\n            $newIndex = $current * $states + $newMask;\n            $cost = $dp[$index] + $popcount[$newMask];\n\n            if ($cost < $next[$newIndex]) {\n                $next[$newIndex] = $cost;\n            }\n        }\n    }\n\n    $dp = $next;\n}\n\n$minimumOccupied = $inf;\n\nfor ($index = 0; $index < $totalStates; $index++) {\n    if ($dp[$index] === $inf) {\n        continue;\n    }\n\n    $previous = intdiv($index, $states);\n    $current = $index % $states;\n\n    if (($previous | $horizontal[$current]) === $full) {\n        $minimumOccupied = min($minimumOccupied, $dp[$index]);\n    }\n}\n\necho ($n * $m - $minimumOccupied) . PHP_EOL;",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 1,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\n[$n, $m] = array_map('intval', preg_split('/\\s+/', trim(stream_get_contents(STDIN))));\n\n$width = min($n, $m);\n$height = max($n, $m);\n$size = 1 << $width;\n$full = $size - 1;\n$inf = 1_000_000_000;\n\n$popcount = array_fill(0, $size, 0);\n$cover = array_fill(0, $size, 0);\n\nfor ($mask = 0; $mask < $size; $mask++) {\n    $popcount[$mask] = substr_count(decbin($mask), '1');\n    $cover[$mask] = $mask\n        | (($mask << 1) & $full)\n        | ($mask >> 1);\n}\n\nif ($height === 1) {\n    $minimumOccupied = $inf;\n    for ($mask = 0; $mask < $size; $mask++) {\n        if ($cover[$mask] === $full) {\n            $minimumOccupied = min($minimumOccupied, $popcount[$mask]);\n        }\n    }\n    echo ($n * $m - $minimumOccupied), PHP_EOL;\n    exit;\n}\n\n$stateCount = $size * $size;\n$dp = array_fill(0, $stateCount, $inf);\n\nfor ($first = 0; $first < $size; $first++) {\n    $missing = $full & (~$cover[$first]);\n    $free = $full ^ $missing;\n    $subset = $free;\n\n    while (true) {\n        $second = $missing | $subset;\n        $dp[$first * $size + $second] =\n            $popcount[$first] + $popcount[$second];\n\n        if ($subset === 0) {\n            break;\n        }\n        $subset = ($subset - 1) & $free;\n    }\n}\n\nfor ($row = 2; $row < $height; $row++) {\n    $next = array_fill(0, $stateCount, $inf);\n\n    for ($above = 0; $above < $size; $above++) {\n        $baseIndex = $above * $size;\n\n        for ($current = 0; $current < $size; $current++) {\n            $value = $dp[$baseIndex + $current];\n            if ($value === $inf) {\n                continue;\n            }\n\n            $missing = $full & (~($above | $cover[$current]));\n            $free = $full ^ $missing;\n            $subset = $free;\n\n            while (true) {\n                $below = $missing | $subset;\n                $index = $current * $size + $below;\n                $candidate = $value + $popcount[$below];\n\n                if ($candidate < $next[$index]) {\n                    $next[$index] = $candidate;\n                }\n\n                if ($subset === 0) {\n                    break;\n                }\n                $subset = ($subset - 1) & $free;\n            }\n        }\n    }\n\n    $dp = $next;\n}\n\n$minimumOccupied = $inf;\n\nfor ($above = 0; $above < $size; $above++) {\n    for ($last = 0; $last < $size; $last++) {\n        $value = $dp[$above * $size + $last];\n\n        if (\n            $value < $minimumOccupied &&\n            (($above | $cover[$last]) === $full)\n        ) {\n            $minimumOccupied = $value;\n        }\n    }\n}\n\necho ($n * $m - $minimumOccupied), PHP_EOL;",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 2,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\n[$n, $m] = array_map('intval', explode(' ', trim(fgets(STDIN))));\n\n$width = min($n, $m);\n$height = max($n, $m);\n\n$maskCount = 1 << $width;\n$fullMask = $maskCount - 1;\n$stateCount = $maskCount * $maskCount;\n$inf = PHP_INT_MAX >> 4;\n\n$popcount = array_fill(0, $maskCount, 0);\nfor ($mask = 1; $mask < $maskCount; $mask++) {\n    $popcount[$mask] = $popcount[$mask >> 1] + ($mask & 1);\n}\n\n$dp = array_fill(0, $stateCount, $inf);\nfor ($mask = 0; $mask < $maskCount; $mask++) {\n    $dp[$mask] = $popcount[$mask];\n}\n\nfor ($row = 1; $row < $height; $row++) {\n    $next = array_fill(0, $stateCount, $inf);\n\n    for ($state = 0; $state < $stateCount; $state++) {\n        if ($dp[$state] === $inf) {\n            continue;\n        }\n\n        $previousPrevious = intdiv($state, $maskCount);\n        $previous = $state % $maskCount;\n\n        $covered = $previousPrevious\n            | $previous\n            | (($previous << 1) & $fullMask)\n            | ($previous >> 1);\n\n        $needed = $fullMask & (~$covered);\n\n        for ($current = 0; $current < $maskCount; $current++) {\n            if (($current & $needed) !== $needed) {\n                continue;\n            }\n\n            $newState = $previous * $maskCount + $current;\n            $cost = $dp[$state] + $popcount[$current];\n\n            if ($cost < $next[$newState]) {\n                $next[$newState] = $cost;\n            }\n        }\n    }\n\n    $dp = $next;\n}\n\n$minimumOccupied = $inf;\n\nfor ($state = 0; $state < $stateCount; $state++) {\n    if ($dp[$state] === $inf) {\n        continue;\n    }\n\n    $previousPrevious = intdiv($state, $maskCount);\n    $previous = $state % $maskCount;\n\n    $covered = $previousPrevious\n        | $previous\n        | (($previous << 1) & $fullMask)\n        | ($previous >> 1);\n\n    if (($covered & $fullMask) === $fullMask) {\n        $minimumOccupied = min($minimumOccupied, $dp[$state]);\n    }\n}\n\necho ($n * $m - $minimumOccupied), PHP_EOL;",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 3,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\n[$n, $m] = array_map('intval', preg_split('/\\s+/', trim(fgets(STDIN))));\n\n$width = min($n, $m);\n$height = max($n, $m);\n\n$size = 1 << $width;\n$full = $size - 1;\n$inf = PHP_INT_MAX;\n\n$popcount = array_fill(0, $size, 0);\n$cover = array_fill(0, $size, 0);\n\nfor ($mask = 0; $mask < $size; $mask++) {\n    $popcount[$mask] = substr_count(decbin($mask), '1');\n    $cover[$mask] = $mask\n        | (($mask << 1) & $full)\n        | ($mask >> 1);\n}\n\n$stateCount = $size * $size;\n$dp = array_fill(0, $stateCount, $inf);\n\nfor ($mask = 0; $mask < $size; $mask++) {\n    $dp[$mask] = $popcount[$mask];\n}\n\nfor ($row = 1; $row < $height; $row++) {\n    $next = array_fill(0, $stateCount, $inf);\n\n    for ($state = 0; $state < $stateCount; $state++) {\n        if ($dp[$state] === $inf) {\n            continue;\n        }\n\n        $previous = intdiv($state, $size);\n        $current = $state % $size;\n        $alreadyCovered = $cover[$current] | $previous;\n\n        for ($newMask = 0; $newMask < $size; $newMask++) {\n            if (($alreadyCovered | $newMask) !== $full) {\n                continue;\n            }\n\n            $newState = $current * $size + $newMask;\n            $cost = $dp[$state] + $popcount[$newMask];\n\n            if ($cost < $next[$newState]) {\n                $next[$newState] = $cost;\n            }\n        }\n    }\n\n    $dp = $next;\n}\n\n$minimumOccupied = $inf;\n\nfor ($state = 0; $state < $stateCount; $state++) {\n    if ($dp[$state] === $inf) {\n        continue;\n    }\n\n    $previous = intdiv($state, $size);\n    $current = $state % $size;\n\n    if (($cover[$current] | $previous) === $full) {\n        $minimumOccupied = min($minimumOccupied, $dp[$state]);\n    }\n}\n\necho ($n * $m - $minimumOccupied) . PHP_EOL;",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 4,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "<?php\n\n[$n, $m] = array_map('intval', preg_split('/\\s+/', trim(stream_get_contents(STDIN))));\n\n$w = min($n, $m);\n$h = max($n, $m);\n$size = 1 << $w;\n$full = $size - 1;\n\n$popcount = array_fill(0, $size, 0);\n$horizontal = array_fill(0, $size, 0);\n\nfor ($mask = 0; $mask < $size; $mask++) {\n    if ($mask > 0) {\n        $popcount[$mask] = $popcount[$mask >> 1] + ($mask & 1);\n    }\n    $horizontal[$mask] = $mask\n        | (($mask << 1) & $full)\n        | ($mask >> 1);\n}\n\n$dp = [];\nfor ($mask = 0; $mask < $size; $mask++) {\n    $dp[$mask] = $popcount[$mask];\n}\n\nfor ($row = 1; $row < $h; $row++) {\n    $next = [];\n\n    foreach ($dp as $state => $cost) {\n        $above = intdiv($state, $size);\n        $current = $state % $size;\n        $alreadyDominated = $above | $horizontal[$current];\n        $missing = $full & ~$alreadyDominated;\n\n        for ($below = $missing; $below < $size; $below = ($below + 1) | $missing) {\n            $newState = $current * $size + $below;\n            $newCost = $cost + $popcount[$below];\n\n            if (!isset($next[$newState]) || $newCost < $next[$newState]) {\n                $next[$newState] = $newCost;\n            }\n\n            if ($below === $full) {\n                break;\n            }\n        }\n    }\n\n    $dp = $next;\n}\n\n$minimumOccupied = PHP_INT_MAX;\n\nforeach ($dp as $state => $cost) {\n    $above = intdiv($state, $size);\n    $current = $state % $size;\n\n    if (($above | $horizontal[$current]) === $full) {\n        $minimumOccupied = min($minimumOccupied, $cost);\n    }\n}\n\necho ($n * $m - $minimumOccupied), PHP_EOL;",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            }
+        ],
+        "created": 1787153841,
+        "id": "chatcmpl-EEcdtyNcx2PP7ka8davKuDyqLqAbW",
+        "model": "gpt-5.6-sol-2026-07-09",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {}
+            }
+        ],
+        "service_tier": "default",
+        "system_fingerprint": null,
+        "usage": {
+            "completion_tokens": 8610,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 5558,
+                "rejected_prediction_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 4,
+                "engine_ttft_ms": 217,
+                "engine_ttlt_ms": 38173,
+                "pre_inference_ms": 119,
+                "service_tbt_ms": 4,
+                "service_ttft_ms": 523,
+                "service_ttlt_ms": 38478,
+                "total_duration_ms": 38371,
+                "user_visible_ttft_ms": 404
+            },
+            "prompt_tokens": 348,
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "total_tokens": 8958
+        },
+        "prompt": "Write a program in PHP to solve this programming problem:\nDescription: Little Petya loves training spiders. Petya has a board n\u2009\u00d7\u2009m in size. Each cell of the board initially has a spider sitting on it. After one second Petya chooses a certain action for each spider, and all of them humbly perform its commands. There are 5 possible commands: to stay idle or to move from current cell to some of the four side-neighboring cells (that is, one command for each of the four possible directions). Petya gives the commands so that no spider leaves the field. It is allowed for spiders to pass through each other when they crawl towards each other in opposite directions. All spiders crawl simultaneously and several spiders may end up in one cell. Petya wants to know the maximum possible number of spider-free cells after one second.\nInput Specification: The first line contains two space-separated integers n and m (1\u2009\u2264\u2009n,\u2009m\u2009\u2264\u200940,\u2009n\u00b7m\u2009\u2264\u200940) \u2014 the board sizes.\nOutput Specification: In the first line print the maximum number of cells without spiders.\n\nSample Input:\n1 1\nSample Output:\n0\n\nSample Input:\n2 3\nSample Output:\n4\n\nNotes: NoteIn the first sample the only possible answer is:sIn the second sample one of the possible solutions is: rdlruls denotes command \"stay idle\", l, r, d, u denote commands \"crawl left\", \"crawl right\", \"crawl down\", \"crawl up\", correspondingly.\nTake input from standard input and output to standard output\nProvide the PHP code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "097674b4dd696b30e102938f71dd39b9",
+        "difficulty": 2100,
+        "prob_desc_sample_inputs": [
+            "1 1",
+            "2 3"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "bitmasks",
+            "dp",
+            "dsu"
+        ],
+        "prob_desc_output_spec": "In the first line print the maximum number of cells without spiders.",
+        "prob_desc_input_spec": "The first line contains two space-separated integers n and m (1\u2009\u2264\u2009n,\u2009m\u2009\u2264\u200940,\u2009n\u00b7m\u2009\u2264\u200940) \u2014 the board sizes.",
+        "lang_cluster": "PHP",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first sample the only possible answer is:sIn the second sample one of the possible solutions is: rdlruls denotes command \"stay idle\", l, r, d, u denote commands \"crawl left\", \"crawl right\", \"crawl down\", \"crawl up\", correspondingly.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Little Petya loves training spiders. Petya has a board n\u2009\u00d7\u2009m in size. Each cell of the board initially has a spider sitting on it. After one second Petya chooses a certain action for each spider, and all of them humbly perform its commands. There are 5 possible commands: to stay idle or to move from current cell to some of the four side-neighboring cells (that is, one command for each of the four possible directions). Petya gives the commands so that no spider leaves the field. It is allowed for spiders to pass through each other when they crawl towards each other in opposite directions. All spiders crawl simultaneously and several spiders may end up in one cell. Petya wants to know the maximum possible number of spider-free cells after one second.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1315051200",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "0",
+            "4"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"1 1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 3\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"4 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"4 2\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"4 3\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"4 4\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1 40\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"1 2\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"1 3\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"1 4\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"1 5\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"1 6\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"1 7\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"1 8\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"1 9\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"1 10\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"1 11\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"1 12\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"1 13\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"1 14\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"1 15\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"1 16\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"1 17\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"1 18\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1 19\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1 20\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"1 21\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"1 22\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"1 23\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"1 24\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"1 25\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"1 26\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"1 27\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"1 28\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"1 29\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"1 30\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"1 31\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"1 32\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"1 33\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"1 34\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"1 35\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"1 36\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"1 37\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"1 38\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"1 39\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"2 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"2 2\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"2 4\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"2 5\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"2 6\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"2 7\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"2 8\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"2 9\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"2 10\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"2 11\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"2 12\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"2 13\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"2 14\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"2 15\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"2 16\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"2 17\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"2 18\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"2 19\\r\\n\", \"output\": [\"28\"]}, {\"input\": \"2 20\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"3 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"3 2\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"3 3\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"3 4\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"3 5\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"3 6\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"3 7\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"3 8\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"3 9\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"3 10\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"3 11\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"3 12\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"3 13\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"4 5\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"4 6\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"4 7\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"4 8\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"4 9\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"4 10\\r\\n\", \"output\": [\"30\"]}, {\"input\": \"5 1\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"5 2\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"5 3\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"5 4\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"5 5\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"5 6\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"5 7\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"5 8\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"6 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"6 2\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"6 3\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"6 4\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"6 5\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"6 6\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"7 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7 2\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"7 3\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 4\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"7 5\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"8 1\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"8 2\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"8 3\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"8 4\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"8 5\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"9 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"9 2\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"9 3\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"9 4\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"10 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"10 2\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"10 3\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"10 4\\r\\n\", \"output\": [\"30\"]}, {\"input\": \"11 1\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"11 2\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"11 3\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"12 1\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"12 2\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"12 3\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"13 1\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"13 2\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"13 3\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"14 1\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"14 2\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"15 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"15 2\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"16 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"16 2\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"17 1\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"17 2\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"18 1\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"18 2\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"19 1\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"19 2\\r\\n\", \"output\": [\"28\"]}, {\"input\": \"20 1\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"20 2\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"21 1\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"22 1\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"23 1\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"24 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"25 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"26 1\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"27 1\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"28 1\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"29 1\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"30 1\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"31 1\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"32 1\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"33 1\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"34 1\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"35 1\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"36 1\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"37 1\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"38 1\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"39 1\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"40 1\\r\\n\", \"output\": [\"26\"]}]"
+    }
+}

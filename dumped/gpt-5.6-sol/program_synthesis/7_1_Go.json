@@ -1,0 +1,143 @@
+{
+    "oai_response": {
+        "choices": [
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 0,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\n\tvar n, m int\n\tvar mod int64\n\tfmt.Fscan(in, &n, &m, &mod)\n\n\tfact := make([]int64, m+1)\n\tinvFact := make([]int64, m+1)\n\tfact[0] = 1\n\tfor i := 1; i <= m; i++ {\n\t\tfact[i] = fact[i-1] * int64(i) % mod\n\t}\n\n\tpowMod := func(a, e int64) int64 {\n\t\tresult := int64(1)\n\t\tfor e > 0 {\n\t\t\tif e&1 == 1 {\n\t\t\t\tresult = result * a % mod\n\t\t\t}\n\t\t\ta = a * a % mod\n\t\t\te >>= 1\n\t\t}\n\t\treturn result\n\t}\n\n\tinvFact[m] = powMod(fact[m], mod-2)\n\tfor i := m; i > 0; i-- {\n\t\tinvFact[i-1] = invFact[i] * int64(i) % mod\n\t}\n\n\tf := make([]int64, m+1)\n\tg := make([]int64, m+1)\n\tf[0] = 1\n\n\tfor k := 1; k <= m; k++ {\n\t\tvar sumF, sumG int64\n\n\t\tfor i := 0; i < k; i++ {\n\t\t\tj := k - 1 - i\n\n\t\t\tcomb := fact[k-1] * invFact[i] % mod\n\t\t\tcomb = comb * invFact[j] % mod\n\n\t\t\tbase := f[i] * f[j] % mod\n\t\t\tsumF = (sumF + comb*base) % mod\n\n\t\t\tpreviousCost := (g[i]*f[j] + f[i]*g[j]) % mod\n\t\t\tterm := previousCost * int64(k+1) % mod\n\n\t\t\timmediateCost := (int64(i*(i+1)/2) + int64(j*(j+1)/2)) % mod\n\t\t\tterm = (term + base*immediateCost) % mod\n\n\t\t\tsumG = (sumG + comb*term) % mod\n\t\t}\n\n\t\tf[k] = sumF * int64(k+1) % mod\n\t\tg[k] = sumG\n\t}\n\n\th := make([]int64, m+1)\n\tjSeries := make([]int64, m+1)\n\th[0] = 1\n\tfor k := 1; k <= m; k++ {\n\t\th[k] = f[k] * invFact[k] % mod\n\t\tjSeries[k] = g[k] * invFact[k] % mod\n\t}\n\n\tmultiply := func(a, b []int64) []int64 {\n\t\tc := make([]int64, m+1)\n\t\tfor i := 0; i <= m; i++ {\n\t\t\tif a[i] == 0 {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tfor j := 0; i+j <= m; j++ {\n\t\t\t\tif b[j] == 0 {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tc[i+j] = (c[i+j] + a[i]*b[j]) % mod\n\t\t\t}\n\t\t}\n\t\treturn c\n\t}\n\n\tq := n - m + 1\n\texponent := q - 1\n\tresultPoly := make([]int64, m+1)\n\tresultPoly[0] = 1\n\tbasePoly := h\n\n\tfor exponent > 0 {\n\t\tif exponent&1 == 1 {\n\t\t\tresultPoly = multiply(resultPoly, basePoly)\n\t\t}\n\t\texponent >>= 1\n\t\tif exponent > 0 {\n\t\t\tbasePoly = multiply(basePoly, basePoly)\n\t\t}\n\t}\n\n\tvar coefficient int64\n\tfor k := 1; k <= m; k++ {\n\t\tcoefficient = (coefficient + jSeries[k]*resultPoly[m-k]) % mod\n\t}\n\n\tanswer := fact[m] * int64(q) % mod\n\tanswer = answer * coefficient % mod\n\n\tout := bufio.NewWriter(os.Stdout)\n\tfmt.Fprintln(out, answer)\n\tout.Flush()\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 1,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tout := bufio.NewWriter(os.Stdout)\n\tdefer out.Flush()\n\n\tvar n, m int\n\tvar mod int64\n\tfmt.Fscan(in, &n, &m, &mod)\n\n\tmul := func(a, b int64) int64 {\n\t\treturn a * b % mod\n\t}\n\n\tinv := make([]int64, m+1)\n\tif m >= 1 {\n\t\tinv[1] = 1\n\t}\n\tfor i := 2; i <= m; i++ {\n\t\tinv[i] = (mod - mul(mod/int64(i), inv[int(mod%int64(i))])) % mod\n\t}\n\n\ttri := make([]int64, m+1)\n\tfor i := 0; i <= m; i++ {\n\t\ttri[i] = int64(i*(i+1)/2) % mod\n\t}\n\n\t// A[k] is the normalized weighted count for filling one block of length k.\n\t// E[k] is the corresponding normalized total madness.\n\tA := make([]int64, m+1)\n\tE := make([]int64, m+1)\n\tA[0] = 1\n\n\tfor k := 1; k <= m; k++ {\n\t\tvar sumA, sumE int64\n\n\t\tfor l := 0; l < k; l++ {\n\t\t\tr := k - 1 - l\n\n\t\t\tprod := mul(A[l], A[r])\n\t\t\tsumA += prod\n\t\t\tif sumA >= mod {\n\t\t\t\tsumA -= mod\n\t\t\t}\n\n\t\t\texisting := (mul(E[l], A[r]) + mul(A[l], E[r])) % mod\n\t\t\tterm := mul(int64(k+1), existing)\n\n\t\t\tlastMadness := (tri[l] + tri[r]) % mod\n\t\t\tterm += mul(prod, lastMadness)\n\t\t\tterm %= mod\n\n\t\t\tsumE += term\n\t\t\tif sumE >= mod {\n\t\t\t\tsumE -= mod\n\t\t\t}\n\t\t}\n\n\t\tA[k] = mul(mul(sumA, int64(k+1)), inv[k])\n\t\tE[k] = mul(sumE, inv[k])\n\t}\n\n\t// Compute G(x) = (1 + A[1]x + A[2]x^2 + ... )^(n-m).\n\texponent := n - m\n\tG := make([]int64, m+1)\n\tG[0] = 1\n\n\tfor k := 1; k <= m; k++ {\n\t\tvar sum int64\n\t\tfor i := 1; i <= k; i++ {\n\t\t\tcoef := int64(exponent+1)*int64(i) - int64(k)\n\t\t\tcoef %= mod\n\t\t\tif coef < 0 {\n\t\t\t\tcoef += mod\n\t\t\t}\n\n\t\t\tterm := mul(mul(coef, A[i]), G[k-i])\n\t\t\tsum += term\n\t\t\tif sum >= mod {\n\t\t\t\tsum -= mod\n\t\t\t}\n\t\t}\n\t\tG[k] = mul(sum, inv[k])\n\t}\n\n\tvar coefficient int64\n\tfor k := 1; k <= m; k++ {\n\t\tcoefficient += mul(E[k], G[m-k])\n\t\tif coefficient >= mod {\n\t\t\tcoefficient -= mod\n\t\t}\n\t}\n\n\tfactorial := int64(1)\n\tfor i := 2; i <= m; i++ {\n\t\tfactorial = mul(factorial, int64(i))\n\t}\n\n\tanswer := mul(coefficient, int64(n-m+1))\n\tanswer = mul(answer, factorial)\n\n\tfmt.Fprintln(out, answer)\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 2,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\n\tvar n, m int\n\tvar mod int64\n\tfmt.Fscan(in, &n, &m, &mod)\n\n\tinv := make([]int64, m+1)\n\tinv[1] = 1\n\tfor i := 2; i <= m; i++ {\n\t\tx := int64(i)\n\t\tinv[i] = (mod - (mod/x)*inv[mod%x]%mod) % mod\n\t}\n\n\tf := make([]int64, m+1)\n\tg := make([]int64, m+1)\n\tf[0] = 1\n\n\tfor k := 1; k <= m; k++ {\n\t\tvar sumF, sumG int64\n\n\t\tfor x := 0; x < k; x++ {\n\t\t\ty := k - 1 - x\n\n\t\t\tprod := f[x] * f[y] % mod\n\t\t\tsumF += prod\n\t\t\tif sumF >= mod {\n\t\t\t\tsumF -= mod\n\t\t\t}\n\n\t\t\tprevious := (g[x]*f[y] + f[x]*g[y]) % mod\n\t\t\tdistance := int64(x*(x+1)/2 + y*(y+1)/2)\n\n\t\t\tterm := int64(k+1) * previous % mod\n\t\t\tterm = (term + distance%mod*prod) % mod\n\n\t\t\tsumG += term\n\t\t\tif sumG >= mod {\n\t\t\t\tsumG -= mod\n\t\t\t}\n\t\t}\n\n\t\tf[k] = int64(k+1) * sumF % mod * inv[k] % mod\n\t\tg[k] = sumG * inv[k] % mod\n\t}\n\n\tq := n - m + 1\n\th := make([]int64, m+1)\n\th[0] = 1\n\n\tfor degree := 1; degree <= m; degree++ {\n\t\tvar sum int64\n\n\t\tfor k := 1; k <= degree; k++ {\n\t\t\tcoef := int64(q*k - degree)\n\t\t\tcoef %= mod\n\t\t\tif coef < 0 {\n\t\t\t\tcoef += mod\n\t\t\t}\n\n\t\t\tterm := coef * f[k] % mod\n\t\t\tterm = term * h[degree-k] % mod\n\n\t\t\tsum += term\n\t\t\tif sum >= mod {\n\t\t\t\tsum -= mod\n\t\t\t}\n\t\t}\n\n\t\th[degree] = sum * inv[degree] % mod\n\t}\n\n\tvar coefficient int64\n\tfor k := 1; k <= m; k++ {\n\t\tcoefficient += g[k] * h[m-k] % mod\n\t\tif coefficient >= mod {\n\t\t\tcoefficient -= mod\n\t\t}\n\t}\n\n\tfactorial := int64(1)\n\tfor i := 2; i <= m; i++ {\n\t\tfactorial = factorial * int64(i) % mod\n\t}\n\n\tanswer := coefficient * int64(q) % mod\n\tanswer = answer * factorial % mod\n\n\tout := bufio.NewWriter(os.Stdout)\n\tdefer out.Flush()\n\tfmt.Fprintln(out, answer)\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 3,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nvar mod int64\n\nfunc modPow(a, e int64) int64 {\n\tres := int64(1)\n\ta %= mod\n\tfor e > 0 {\n\t\tif e&1 == 1 {\n\t\t\tres = res * a % mod\n\t\t}\n\t\ta = a * a % mod\n\t\te >>= 1\n\t}\n\treturn res\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\n\tvar n, m int\n\tfmt.Fscan(in, &n, &m, &mod)\n\n\tinv := make([]int64, m+1)\n\tinvFact := make([]int64, m+1)\n\tfact := make([]int64, m+1)\n\n\tfact[0] = 1\n\tinvFact[0] = 1\n\tif m >= 1 {\n\t\tinv[1] = 1\n\t}\n\n\tfor i := 1; i <= m; i++ {\n\t\tif i > 1 {\n\t\t\tr := int(mod % int64(i))\n\t\t\tinv[i] = (mod - (mod/int64(i))*inv[r]%mod) % mod\n\t\t}\n\t\tfact[i] = fact[i-1] * int64(i) % mod\n\t\tinvFact[i] = invFact[i-1] * inv[i] % mod\n\t}\n\n\ttri := make([]int64, m+1)\n\tfor i := 0; i <= m; i++ {\n\t\ttri[i] = int64(i*(i+1)/2) % mod\n\t}\n\n\t// f[k] = F_k / k!, where F_k is the total transition weight\n\t// of a single occupied component of size k.\n\t// g[k] = G_k / k!, where G_k is its weighted total madness.\n\tf := make([]int64, m+1)\n\tg := make([]int64, m+1)\n\tf[0] = 1\n\n\tfor k := 1; k <= m; k++ {\n\t\tvar sumF, sumG, sumCost int64\n\n\t\tfor x := 0; x < k; x++ {\n\t\t\ty := k - 1 - x\n\n\t\t\tsumF = (sumF + f[x]*f[y]) % mod\n\t\t\tsumG = (sumG + g[x]*f[y]) % mod\n\n\t\t\tv := tri[x] * f[x] % mod\n\t\t\tsumCost = (sumCost + v*f[y]) % mod\n\t\t}\n\n\t\tf[k] = int64(k+1) * sumF % mod * inv[k] % mod\n\n\t\ttermG := 2 * int64(k+1) % mod * sumG % mod\n\t\ttermCost := 2 * sumCost % mod\n\t\tg[k] = (termG + termCost) % mod * inv[k] % mod\n\t}\n\n\tq := n - m + 1\n\ts := q - 1\n\n\t// A(z) = sum f[k]z^k satisfies A = exp(2zA).\n\t// h[k] is the coefficient of A(z)^s.\n\th := make([]int64, m+1)\n\th[0] = 1\n\n\tif s > 0 {\n\t\tpow2 := int64(1)\n\t\tfor k := 1; k <= m; k++ {\n\t\t\tpow2 = pow2 * 2 % mod\n\t\t\tbase := int64(k + s)\n\t\t\th[k] = pow2 * int64(s) % mod\n\t\t\th[k] = h[k] * modPow(base, int64(k-1)) % mod\n\t\t\th[k] = h[k] * invFact[k] % mod\n\t\t}\n\t}\n\n\tvar coefficient int64\n\tfor i := 0; i <= m; i++ {\n\t\tcoefficient = (coefficient + g[i]*h[m-i]) % mod\n\t}\n\n\tanswer := fact[m] * int64(q) % mod\n\tanswer = answer * coefficient % mod\n\n\tout := bufio.NewWriter(os.Stdout)\n\tfmt.Fprintln(out, answer)\n\tout.Flush()\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 4,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReaderSize(os.Stdin, 1<<20)\n\n\tvar n, m int\n\tvar mod int64\n\tfmt.Fscan(in, &n, &m, &mod)\n\n\tinv := make([]int64, m+1)\n\tif m >= 1 {\n\t\tinv[1] = 1\n\t}\n\tfor i := 2; i <= m; i++ {\n\t\tinv[i] = (mod - (mod/int64(i))*inv[mod%int64(i)]%mod) % mod\n\t}\n\n\t// b[k] = B[k] / k!, where B[k] is the weighted count for one block.\n\t// c[k] = C[k] / k!, where C[k] is its total madness.\n\tb := make([]int64, m+1)\n\tc := make([]int64, m+1)\n\tb[0] = 1\n\n\tfor k := 1; k <= m; k++ {\n\t\tvar sumB, sumC, sumQ int64\n\n\t\tfor l := 0; l < k; l++ {\n\t\t\tr := k - 1 - l\n\n\t\t\tprod := b[l] * b[r] % mod\n\t\t\tsumB += prod\n\t\t\tif sumB >= mod {\n\t\t\t\tsumB -= mod\n\t\t\t}\n\n\t\t\tpartC := (c[l]*b[r] + b[l]*c[r]) % mod\n\t\t\tsumC += partC\n\t\t\tif sumC >= mod {\n\t\t\t\tsumC -= mod\n\t\t\t}\n\n\t\t\tleftMad := int64(l*(l+1)) / 2\n\t\t\trightMad := int64(r*(r+1)) / 2\n\t\t\tq := (leftMad + rightMad) % mod\n\n\t\t\tsumQ += q * prod % mod\n\t\t\tif sumQ >= mod {\n\t\t\t\tsumQ -= mod\n\t\t\t}\n\t\t}\n\n\t\tfactor := int64(k+1) % mod\n\t\tb[k] = factor * sumB % mod * inv[k] % mod\n\t\tc[k] = (factor*sumC%mod + sumQ) % mod * inv[k] % mod\n\t}\n\n\tmaxBlocks := m\n\tavailableGaps := n - m + 1\n\tif availableGaps < maxBlocks {\n\t\tmaxBlocks = availableGaps\n\t}\n\n\tprevW := make([]int64, m+1)\n\tprevD := make([]int64, m+1)\n\tprevW[0] = 1\n\n\tvar normalizedAnswer int64\n\tchoose := int64(1)\n\n\tfor blocks := 1; blocks <= maxBlocks; blocks++ {\n\t\tchoose = choose * int64(availableGaps-blocks+1) % mod\n\t\tchoose = choose * inv[blocks] % mod\n\n\t\tcurW := make([]int64, m+1)\n\t\tcurD := make([]int64, m+1)\n\n\t\tfor total := blocks; total <= m; total++ {\n\t\t\tmaxLast := total - blocks + 1\n\t\t\tvar ways, madness int64\n\n\t\t\tfor last := 1; last <= maxLast; last++ {\n\t\t\t\tremaining := total - last\n\n\t\t\t\taddWays := prevW[remaining] * b[last] % mod\n\t\t\t\tways += addWays\n\t\t\t\tif ways >= mod {\n\t\t\t\t\tways -= mod\n\t\t\t\t}\n\n\t\t\t\taddMadness := (prevD[remaining]*b[last] +\n\t\t\t\t\tprevW[remaining]*c[last]) % mod\n\t\t\t\tmadness += addMadness\n\t\t\t\tif madness >= mod {\n\t\t\t\t\tmadness -= mod\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tcurW[total] = ways\n\t\t\tcurD[total] = madness\n\t\t}\n\n\t\tnormalizedAnswer += choose * curD[m] % mod\n\t\tif normalizedAnswer >= mod {\n\t\t\tnormalizedAnswer -= mod\n\t\t}\n\n\t\tprevW, prevD = curW, curD\n\t}\n\n\tfactorial := int64(1)\n\tfor i := 2; i <= m; i++ {\n\t\tfactorial = factorial * int64(i) % mod\n\t}\n\n\tanswer := normalizedAnswer * factorial % mod\n\n\tout := bufio.NewWriterSize(os.Stdout, 1<<20)\n\tfmt.Fprintln(out, answer)\n\tout.Flush()\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            }
+        ],
+        "created": 1787151340,
+        "id": "chatcmpl-EEbzYOHr47wZRiV21EE2ayBAGMJDR",
+        "model": "gpt-5.6-sol-2026-07-09",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {}
+            }
+        ],
+        "service_tier": "default",
+        "system_fingerprint": null,
+        "usage": {
+            "completion_tokens": 21950,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 17573,
+                "rejected_prediction_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 4,
+                "engine_ttft_ms": 224,
+                "engine_ttlt_ms": 94363,
+                "pre_inference_ms": 228,
+                "service_tbt_ms": 4,
+                "service_ttft_ms": 1008,
+                "service_ttlt_ms": 95142,
+                "total_duration_ms": 94928,
+                "user_visible_ttft_ms": 780
+            },
+            "prompt_tokens": 1119,
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cache_write_tokens": 1116,
+                "cached_tokens": 0
+            },
+            "total_tokens": 23069
+        },
+        "prompt": "Write a program in Go to solve this programming problem:\nDescription: Today is the final contest of INOI (Iranian National Olympiad in Informatics). The contest room is a row with $$$n$$$ computers. All computers are numbered with integers from $$$1$$$ to $$$n$$$ from left to right. There are $$$m$$$ participants, numbered with integers from $$$1$$$ to $$$m$$$.We have an array $$$a$$$ of length $$$m$$$ where $$$a_{i}$$$ ($$$1 \\leq a_i \\leq n$$$) is the computer behind which the $$$i$$$-th participant wants to sit.Also, we have another array $$$b$$$ of length $$$m$$$ consisting of characters 'L' and 'R'. $$$b_i$$$ is the side from which the $$$i$$$-th participant enters the room. 'L' means the participant enters from the left of computer $$$1$$$ and goes from left to right, and 'R' means the participant enters from the right of computer $$$n$$$ and goes from right to left.The participants in the order from $$$1$$$ to $$$m$$$ enter the room one by one. The $$$i$$$-th of them enters the contest room in the direction $$$b_i$$$ and goes to sit behind the $$$a_i$$$-th computer. If it is occupied he keeps walking in his direction until he reaches the first unoccupied computer. After that, he sits behind it. If he doesn't find any computer he gets upset and gives up on the contest.The madness of the $$$i$$$-th participant is the distance between his assigned computer ($$$a_i$$$) and the computer he ends up sitting behind. The distance between computers $$$i$$$ and $$$j$$$ is equal to $$$|i - j|$$$.The values in the array $$$a$$$ can be equal. There exist $$$n^m \\cdot 2^m$$$ possible pairs of arrays $$$(a, b)$$$.Consider all pairs of arrays $$$(a, b)$$$ such that no person becomes upset. For each of them let's calculate the sum of participants madnesses. Find the sum of all these values.You will be given some prime modulo $$$p$$$. Find this sum by modulo $$$p$$$.\nInput Specification: The only line contains three integers $$$n$$$, $$$m$$$, $$$p$$$ ($$$1 \\leq m \\leq n \\leq 500, 10^8 \\leq p \\leq 10 ^ 9 + 9$$$). It is guaranteed, that the number $$$p$$$ is prime.\nOutput Specification: Print only one integer\u00a0\u2014 the required sum by modulo $$$p$$$.\n\nSample Input:\n3 1 1000000007\nSample Output:\n0\n\nSample Input:\n2 2 1000000009\nSample Output:\n4\n\nSample Input:\n3 2 998244353\nSample Output:\n8\n\nSample Input:\n20 10 1000000009\nSample Output:\n352081045\n\nNotes: NoteIn the first test, there are three possible arrays $$$a$$$: $$$\\{1\\}$$$, $$$\\{2\\}$$$, and $$$ \\{3\\}$$$ and two possible arrays $$$b$$$: $$$\\{\\mathtt{L}\\}$$$ and $$$\\{\\mathtt{R}\\}$$$. For all six pairs of arrays $$$(a, b)$$$, the only participant will sit behind the computer $$$a_1$$$, so his madness will be $$$0$$$. So the total sum of madnesses will be $$$0$$$.In the second test, all possible pairs of arrays $$$(a, b)$$$, such that no person becomes upset are:  $$$(\\{1, 1\\}, \\{\\mathtt{L}, \\mathtt{L}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{1, 1\\}, \\{\\mathtt{R}, \\mathtt{L}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{2, 2\\}, \\{\\mathtt{R}, \\mathtt{R}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{2, 2\\}, \\{\\mathtt{L}, \\mathtt{R}\\})$$$, the sum of madnesses is $$$1$$$;  all possible pairs of $$$a \\in \\{\\{1, 2\\}, \\{2, 1\\}\\}$$$ and $$$b \\in \\{\\{\\mathtt{L}, \\mathtt{L}\\}, \\{\\mathtt{R}, \\mathtt{L}\\}, \\{\\mathtt{L}, \\mathtt{R}\\}, \\{\\mathtt{R}, \\mathtt{R}\\}\\}$$$, the sum of madnesses is $$$0$$$. So, the answer is $$$1 + 1 + 1 + 1 + 0 \\ldots = 4$$$.\nTake input from standard input and output to standard output\nProvide the Go code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "9812de5f2d272511a63ead8765b23190",
+        "difficulty": 3100,
+        "prob_desc_sample_inputs": [
+            "3 1 1000000007",
+            "2 2 1000000009",
+            "3 2 998244353",
+            "20 10 1000000009"
+        ],
+        "prob_desc_time_limit": "3 seconds",
+        "tags": [
+            "fft",
+            "dp",
+            "combinatorics"
+        ],
+        "prob_desc_output_spec": "Print only one integer\u00a0\u2014 the required sum by modulo $$$p$$$.",
+        "prob_desc_input_spec": "The only line contains three integers $$$n$$$, $$$m$$$, $$$p$$$ ($$$1 \\leq m \\leq n \\leq 500, 10^8 \\leq p \\leq 10 ^ 9 + 9$$$). It is guaranteed, that the number $$$p$$$ is prime.",
+        "lang_cluster": "Go",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first test, there are three possible arrays $$$a$$$: $$$\\{1\\}$$$, $$$\\{2\\}$$$, and $$$ \\{3\\}$$$ and two possible arrays $$$b$$$: $$$\\{\\mathtt{L}\\}$$$ and $$$\\{\\mathtt{R}\\}$$$. For all six pairs of arrays $$$(a, b)$$$, the only participant will sit behind the computer $$$a_1$$$, so his madness will be $$$0$$$. So the total sum of madnesses will be $$$0$$$.In the second test, all possible pairs of arrays $$$(a, b)$$$, such that no person becomes upset are:  $$$(\\{1, 1\\}, \\{\\mathtt{L}, \\mathtt{L}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{1, 1\\}, \\{\\mathtt{R}, \\mathtt{L}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{2, 2\\}, \\{\\mathtt{R}, \\mathtt{R}\\})$$$, the sum of madnesses is $$$1$$$;  $$$(\\{2, 2\\}, \\{\\mathtt{L}, \\mathtt{R}\\})$$$, the sum of madnesses is $$$1$$$;  all possible pairs of $$$a \\in \\{\\{1, 2\\}, \\{2, 1\\}\\}$$$ and $$$b \\in \\{\\{\\mathtt{L}, \\mathtt{L}\\}, \\{\\mathtt{R}, \\mathtt{L}\\}, \\{\\mathtt{L}, \\mathtt{R}\\}, \\{\\mathtt{R}, \\mathtt{R}\\}\\}$$$, the sum of madnesses is $$$0$$$. So, the answer is $$$1 + 1 + 1 + 1 + 0 \\ldots = 4$$$.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Today is the final contest of INOI (Iranian National Olympiad in Informatics). The contest room is a row with $$$n$$$ computers. All computers are numbered with integers from $$$1$$$ to $$$n$$$ from left to right. There are $$$m$$$ participants, numbered with integers from $$$1$$$ to $$$m$$$.We have an array $$$a$$$ of length $$$m$$$ where $$$a_{i}$$$ ($$$1 \\leq a_i \\leq n$$$) is the computer behind which the $$$i$$$-th participant wants to sit.Also, we have another array $$$b$$$ of length $$$m$$$ consisting of characters 'L' and 'R'. $$$b_i$$$ is the side from which the $$$i$$$-th participant enters the room. 'L' means the participant enters from the left of computer $$$1$$$ and goes from left to right, and 'R' means the participant enters from the right of computer $$$n$$$ and goes from right to left.The participants in the order from $$$1$$$ to $$$m$$$ enter the room one by one. The $$$i$$$-th of them enters the contest room in the direction $$$b_i$$$ and goes to sit behind the $$$a_i$$$-th computer. If it is occupied he keeps walking in his direction until he reaches the first unoccupied computer. After that, he sits behind it. If he doesn't find any computer he gets upset and gives up on the contest.The madness of the $$$i$$$-th participant is the distance between his assigned computer ($$$a_i$$$) and the computer he ends up sitting behind. The distance between computers $$$i$$$ and $$$j$$$ is equal to $$$|i - j|$$$.The values in the array $$$a$$$ can be equal. There exist $$$n^m \\cdot 2^m$$$ possible pairs of arrays $$$(a, b)$$$.Consider all pairs of arrays $$$(a, b)$$$ such that no person becomes upset. For each of them let's calculate the sum of participants madnesses. Find the sum of all these values.You will be given some prime modulo $$$p$$$. Find this sum by modulo $$$p$$$.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1605623700",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "0",
+            "4",
+            "8",
+            "352081045"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"3 1 1000000007\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 2 1000000009\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"3 2 998244353\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"20 10 1000000009\\r\\n\", \"output\": [\"352081045\"]}, {\"input\": \"5 2 1000000007\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"500 498 1000000007\\r\\n\", \"output\": [\"497900737\"]}, {\"input\": \"10 9 1000000007\\r\\n\", \"output\": [\"904119416\"]}, {\"input\": \"7 4 1000000009\\r\\n\", \"output\": [\"31488\"]}, {\"input\": \"8 8 700001153\\r\\n\", \"output\": [\"247497204\"]}, {\"input\": \"6 3 999999487\\r\\n\", \"output\": [\"768\"]}, {\"input\": \"310 228 998244799\\r\\n\", \"output\": [\"861313351\"]}, {\"input\": \"385 76 998244353\\r\\n\", \"output\": [\"750286580\"]}, {\"input\": \"259 76 998244353\\r\\n\", \"output\": [\"41310904\"]}, {\"input\": \"459 14 200003077\\r\\n\", \"output\": [\"142997933\"]}, {\"input\": \"1 1 1000000007\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"498 155 998244799\\r\\n\", \"output\": [\"673213318\"]}, {\"input\": \"372 309 1000000009\\r\\n\", \"output\": [\"698627891\"]}, {\"input\": \"44 19 998244799\\r\\n\", \"output\": [\"81944049\"]}, {\"input\": \"70 39 700001153\\r\\n\", \"output\": [\"401935379\"]}, {\"input\": \"282 190 300001657\\r\\n\", \"output\": [\"210852530\"]}, {\"input\": \"370 100 1000000007\\r\\n\", \"output\": [\"112411341\"]}, {\"input\": \"234 21 200003077\\r\\n\", \"output\": [\"137641479\"]}, {\"input\": \"194 184 200003077\\r\\n\", \"output\": [\"76845836\"]}, {\"input\": \"499 497 998244799\\r\\n\", \"output\": [\"514945258\"]}, {\"input\": \"500 117 1000000007\\r\\n\", \"output\": [\"234794832\"]}, {\"input\": \"45 41 200003077\\r\\n\", \"output\": [\"176259818\"]}, {\"input\": \"2 1 1000000007\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 2 1000000007\\r\\n\", \"output\": [\"4\"]}]"
+    }
+}

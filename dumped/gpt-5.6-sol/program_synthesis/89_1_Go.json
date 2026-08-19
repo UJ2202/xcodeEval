@@ -1,0 +1,138 @@
+{
+    "oai_response": {
+        "choices": [
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 0,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\n\tvar n, m int\n\tfmt.Fscan(in, &n, &m)\n\n\twidth, height := n, m\n\tif width > height {\n\t\twidth, height = height, width\n\t}\n\n\tmaskCount := 1 << width\n\tfullMask := maskCount - 1\n\n\tpopcount := make([]int, maskCount)\n\thorizontal := make([]int, maskCount)\n\tfor mask := 0; mask < maskCount; mask++ {\n\t\tpopcount[mask] = popcount[mask>>1] + mask&1\n\t\thorizontal[mask] = (mask | (mask << 1) | (mask >> 1)) & fullMask\n\t}\n\n\tconst inf = int(1e9)\n\tstateCount := maskCount * maskCount\n\tdp := make([]int, stateCount)\n\tnext := make([]int, stateCount)\n\n\tfor i := range dp {\n\t\tdp[i] = inf\n\t}\n\tfor mask := 0; mask < maskCount; mask++ {\n\t\tdp[mask] = popcount[mask]\n\t}\n\n\tfor row := 0; row < height-1; row++ {\n\t\tfor i := range next {\n\t\t\tnext[i] = inf\n\t\t}\n\n\t\tfor upper := 0; upper < maskCount; upper++ {\n\t\t\tfor current := 0; current < maskCount; current++ {\n\t\t\t\tcost := dp[upper*maskCount+current]\n\t\t\t\tif cost == inf {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\n\t\t\t\tfor lower := 0; lower < maskCount; lower++ {\n\t\t\t\t\tif horizontal[current]|upper|lower != fullMask {\n\t\t\t\t\t\tcontinue\n\t\t\t\t\t}\n\n\t\t\t\t\tindex := current*maskCount + lower\n\t\t\t\t\tnewCost := cost + popcount[lower]\n\t\t\t\t\tif newCost < next[index] {\n\t\t\t\t\t\tnext[index] = newCost\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tdp, next = next, dp\n\t}\n\n\tminSpiders := inf\n\tfor upper := 0; upper < maskCount; upper++ {\n\t\tfor current := 0; current < maskCount; current++ {\n\t\t\tif horizontal[current]|upper != fullMask {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tcost := dp[upper*maskCount+current]\n\t\t\tif cost < minSpiders {\n\t\t\t\tminSpiders = = cost\n\t\t\t}\n\t\t}\n\t}\n\n\tout := bufio.NewWriter(os.Stdout)\n\tdefer out.Flush()\n\tfmt.Fprintln(out, n*m-minSpiders)\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 1,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"math/bits\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\n\tvar n, m int\n\tfmt.Fscan(in, &n, &m)\n\n\twidth, rows := n, m\n\tif width > rows {\n\t\twidth, rows = rows, width\n\t}\n\n\tsize := 1 << width\n\tall := size - 1\n\tconst inf = int(1e9)\n\n\thorizontal := make([]int, size)\n\tcount := make([]int, size)\n\tfor mask := 0; mask < size; mask++ {\n\t\thorizontal[mask] = (mask | (mask << 1) | (mask >> 1)) & all\n\t\tcount[mask] = bits.OnesCount(uint(mask))\n\t}\n\n\tdp := make([][]int, size)\n\tnext := make([][]int, size)\n\tfor i := 0; i < size; i++ {\n\t\tdp[i] = make([]int, size)\n\t\tnext[i] = make([]int, size)\n\t\tfor j := 0; j < size; j++ {\n\t\t\tdp[i][j] = inf\n\t\t\tnext[i][j] = inf\n\t\t}\n\t}\n\n\tfor mask := 0; mask < size; mask++ {\n\t\tdp[0][mask] = count[mask]\n\t}\n\n\tfor row := 0; row < rows-1; row++ {\n\t\tfor i := 0; i < size; i++ {\n\t\t\tfor j := 0; j < size; j++ {\n\t\t\t\tnext[i][j] = inf\n\t\t\t}\n\t\t}\n\n\t\tfor above := 0; above < size; above++ {\n\t\t\tfor current := 0; current < size; current++ {\n\t\t\t\tif dp[above][current] == inf {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tcovered := above | horizontal[current]\n\t\t\t\tfor below := 0; below < size; below++ {\n\t\t\t\t\tif covered|below != all {\n\t\t\t\t\t\tcontinue\n\t\t\t\t\t}\n\t\t\t\t\tvalue := dp[above][current] + count[below]\n\t\t\t\t\tif value < next[current][below] {\n\t\t\t\t\t\tnext[current][below] = value\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\tdp, next = next, dp\n\t}\n\n\tminOccupied := inf\n\tfor above := 0; above < size; above++ {\n\t\tfor current := 0; current < size; current++ {\n\t\t\tif dp[above][current] < minOccupied &&\n\t\t\t\t(above|horizontal[current]) == all {\n\t\t\t\tminOccupied = dp[above][current]\n\t\t\t}\n\t\t}\n\t}\n\n\tout := bufio.NewWriter(os.Stdout)\n\tdefer out.Flush()\n\tfmt.Fprintln(out, n*m-minOccupied)\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 2,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"math/bits\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\n\tvar n, m int\n\tfmt.Fscan(in, &n, &m)\n\n\tw, h := n, m\n\tif w > h {\n\t\tw, h = h, w\n\t}\n\n\tsize := 1 << w\n\tfull := size - 1\n\tconst inf = int(1e9)\n\n\thorizontal := make([]int, size)\n\tcount := make([]int, size)\n\tfor mask := 0; mask < size; mask++ {\n\t\thorizontal[mask] = mask | ((mask << 1) & full) | (mask >> 1)\n\t\tcount[mask] = bits.OnesCount(uint(mask))\n\t}\n\n\tdp := make([]int, size*size)\n\tnext := make([]int, size*size)\n\tfor i := range dp {\n\t\tdp[i] = inf\n\t}\n\tfor mask := 0; mask < size; mask++ {\n\t\tdp[mask] = count[mask]\n\t}\n\n\tfor row := 1; row < h; row++ {\n\t\tfor i := range next {\n\t\t\tnext[i] = inf\n\t\t}\n\n\t\tfor prevPrev := 0; prevPrev < size; prevPrev++ {\n\t\t\tfor prev := 0; prev < size; prev++ {\n\t\t\t\tvalue := dp[prevPrev*size+prev]\n\t\t\t\tif value == inf {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\n\t\t\t\tmissing := full &^ (horizontal[prev] | prevPrev)\n\t\t\t\tfor cur := missing; ; cur = (cur - 1) & full {\n\t\t\t\t\tif cur&missing == missing {\n\t\t\t\t\t\tidx := prev*size + cur\n\t\t\t\t\t\tcandidate := value + count[cur]\n\t\t\t\t\t\tif candidate < next[idx] {\n\t\t\t\t\t\t\tnext[idx] = candidate\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t\tif cur == 0 {\n\t\t\t\t\t\tbreak\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tdp, next = next, dp\n\t}\n\n\tminOccupied := inf\n\tfor prevPrev := 0; prevPrev < size; prevPrev++ {\n\t\tfor prev := 0; prev < size; prev++ {\n\t\t\tvalue := dp[prevPrev*size+prev]\n\t\t\tif value < minOccupied && horizontal[prev]|prevPrev == full {\n\t\t\t\tminOccupied = value\n\t\t\t}\n\t\t}\n\t}\n\n\tout := bufio.NewWriter(os.Stdout)\n\tdefer out.Flush()\n\tfmt.Fprintln(out, n*m-minOccupied)\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 3,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"math/bits\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n, m int\n\tfmt.Fscan(in, &n, &m)\n\n\tw, h := n, m\n\tif w > h {\n\t\tw, h = h, w\n\t}\n\n\tmaskCount := 1 << w\n\tfull := maskCount - 1\n\thorizontal := make([]int, maskCount)\n\tpopCount := make([]int, maskCount)\n\n\tfor mask := 0; mask < maskCount; mask++ {\n\t\thorizontal[mask] = (mask | (mask << 1) | (mask >> 1)) & full\n\t\tpopCount[mask] = bits.OnesCount(uint(mask))\n\t}\n\n\tconst inf = int(1e9)\n\tstateCount := maskCount * maskCount\n\tdp := make([]int, stateCount)\n\tnext := make([]int, stateCount)\n\n\tfor i := range dp {\n\t\tdp[i] = inf\n\t}\n\tfor mask := 0; mask < maskCount; mask++ {\n\t\tdp[mask] = popCount[mask]\n\t}\n\n\tfor row := 1; row < h; row++ {\n\t\tfor i := range next {\n\t\t\tnext[i] = inf\n\t\t}\n\n\t\tfor upper := 0; upper < maskCount; upper++ {\n\t\t\tfor current := 0; current < maskCount; current++ {\n\t\t\t\tcost := dp[upper*maskCount+current]\n\t\t\t\tif cost == inf {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\n\t\t\t\tcovered := upper | horizontal[current]\n\t\t\t\tfor lower := 0; lower < maskCount; lower++ {\n\t\t\t\t\tif covered|lower != full {\n\t\t\t\t\t\tcontinue\n\t\t\t\t\t}\n\t\t\t\t\tidx := current*maskCount + lower\n\t\t\t\t\tnewCost := cost + popCount[lower]\n\t\t\t\t\tif newCost < next[idx] {\n\t\t\t\t\t\tnext[idx] = newCost\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tdp, next = next, dp\n\t}\n\n\tminOccupied := inf\n\tfor upper := 0; upper < maskCount; upper++ {\n\t\tfor current := 0; current < maskCount; current++ {\n\t\t\tcost := dp[upper*maskCount+current]\n\t\t\tif cost < minOccupied && upper|horizontal[current] == full {\n\t\t\t\tminOccupied = cost\n\t\t\t}\n\t\t}\n\t}\n\n\tout := bufio.NewWriter(os.Stdout)\n\tfmt.Fprintln(out, n*m-minOccupied)\n\tout.Flush()\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 4,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"math/bits\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\n\tvar n, m int\n\tfmt.Fscan(in, &n, &m)\n\n\th, w := n, m\n\tif w > h {\n\t\th, w = w, h\n\t}\n\n\tsize := 1 << w\n\tfull := size - 1\n\tconst inf = int(1e9)\n\n\thorizontal := make([]int, size)\n\tcount := make([]int, size)\n\tfor mask := 0; mask < size; mask++ {\n\t\thorizontal[mask] = mask | ((mask << 1) & full) | (mask >> 1)\n\t\tcount[mask] = bits.OnesCount(uint(mask))\n\t}\n\n\tdp := make([]int, size*size)\n\tnext := make([]int, size*size)\n\tfor i := range dp {\n\t\tdp[i] = inf\n\t}\n\n\tfor first := 0; first < size; first++ {\n\t\tdp[first] = count[first]\n\t}\n\n\tfor row := 0; row < h-1; row++ {\n\t\tfor i := range next {\n\t\t\tnext[i] = inf\n\t\t}\n\n\t\tfor above := 0; above < size; above++ {\n\t\t\tfor current := 0; current < size; current++ {\n\t\t\t\tvalue := dp[above*size+current]\n\t\t\t\tif value == inf {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\n\t\t\t\tfor below := 0; below < size; below++ {\n\t\t\t\t\tif (above|horizontal[current]|below) != full {\n\t\t\t\t\t\tcontinue\n\t\t\t\t\t}\n\t\t\t\t\tindex := current*size + below\n\t\t\t\t\tcost := value + count[below]\n\t\t\t\t\tif cost < next[index] {\n\t\t\t\t\t\tnext[index] = cost\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tdp, next = next, dp\n\t}\n\n\tminOccupied := inf\n\tfor above := 0; above < size; above++ {\n\t\tfor current := 0; current < size; current++ {\n\t\t\tvalue := dp[above*size+current]\n\t\t\tif value < minOccupied && (above|horizontal[current]) == full {\n\t\t\t\tminOccupied = value\n\t\t\t}\n\t\t}\n\t}\n\n\tout := bufio.NewWriter(os.Stdout)\n\tdefer out.Flush()\n\tfmt.Fprintln(out, n*m-minOccupied)\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            }
+        ],
+        "created": 1787151765,
+        "id": "chatcmpl-EEc6PtNvIeLipUyVqlt8oP8X4guAV",
+        "model": "gpt-5.6-sol-2026-07-09",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {}
+            }
+        ],
+        "service_tier": "default",
+        "system_fingerprint": null,
+        "usage": {
+            "completion_tokens": 7358,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 4575,
+                "rejected_prediction_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 4,
+                "engine_ttft_ms": 291,
+                "engine_ttlt_ms": 29044,
+                "pre_inference_ms": 143,
+                "service_tbt_ms": 4,
+                "service_ttft_ms": 678,
+                "service_ttlt_ms": 29425,
+                "total_duration_ms": 29289,
+                "user_visible_ttft_ms": 535
+            },
+            "prompt_tokens": 348,
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "total_tokens": 7706
+        },
+        "prompt": "Write a program in Go to solve this programming problem:\nDescription: Little Petya loves training spiders. Petya has a board n\u2009\u00d7\u2009m in size. Each cell of the board initially has a spider sitting on it. After one second Petya chooses a certain action for each spider, and all of them humbly perform its commands. There are 5 possible commands: to stay idle or to move from current cell to some of the four side-neighboring cells (that is, one command for each of the four possible directions). Petya gives the commands so that no spider leaves the field. It is allowed for spiders to pass through each other when they crawl towards each other in opposite directions. All spiders crawl simultaneously and several spiders may end up in one cell. Petya wants to know the maximum possible number of spider-free cells after one second.\nInput Specification: The first line contains two space-separated integers n and m (1\u2009\u2264\u2009n,\u2009m\u2009\u2264\u200940,\u2009n\u00b7m\u2009\u2264\u200940) \u2014 the board sizes.\nOutput Specification: In the first line print the maximum number of cells without spiders.\n\nSample Input:\n1 1\nSample Output:\n0\n\nSample Input:\n2 3\nSample Output:\n4\n\nNotes: NoteIn the first sample the only possible answer is:sIn the second sample one of the possible solutions is: rdlruls denotes command \"stay idle\", l, r, d, u denote commands \"crawl left\", \"crawl right\", \"crawl down\", \"crawl up\", correspondingly.\nTake input from standard input and output to standard output\nProvide the Go code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "097674b4dd696b30e102938f71dd39b9",
+        "difficulty": 2100,
+        "prob_desc_sample_inputs": [
+            "1 1",
+            "2 3"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "bitmasks",
+            "dp",
+            "dsu"
+        ],
+        "prob_desc_output_spec": "In the first line print the maximum number of cells without spiders.",
+        "prob_desc_input_spec": "The first line contains two space-separated integers n and m (1\u2009\u2264\u2009n,\u2009m\u2009\u2264\u200940,\u2009n\u00b7m\u2009\u2264\u200940) \u2014 the board sizes.",
+        "lang_cluster": "Go",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first sample the only possible answer is:sIn the second sample one of the possible solutions is: rdlruls denotes command \"stay idle\", l, r, d, u denote commands \"crawl left\", \"crawl right\", \"crawl down\", \"crawl up\", correspondingly.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Little Petya loves training spiders. Petya has a board n\u2009\u00d7\u2009m in size. Each cell of the board initially has a spider sitting on it. After one second Petya chooses a certain action for each spider, and all of them humbly perform its commands. There are 5 possible commands: to stay idle or to move from current cell to some of the four side-neighboring cells (that is, one command for each of the four possible directions). Petya gives the commands so that no spider leaves the field. It is allowed for spiders to pass through each other when they crawl towards each other in opposite directions. All spiders crawl simultaneously and several spiders may end up in one cell. Petya wants to know the maximum possible number of spider-free cells after one second.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1315051200",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "0",
+            "4"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"1 1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 3\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"4 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"4 2\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"4 3\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"4 4\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1 40\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"1 2\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"1 3\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"1 4\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"1 5\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"1 6\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"1 7\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"1 8\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"1 9\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"1 10\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"1 11\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"1 12\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"1 13\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"1 14\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"1 15\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"1 16\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"1 17\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"1 18\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1 19\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1 20\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"1 21\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"1 22\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"1 23\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"1 24\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"1 25\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"1 26\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"1 27\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"1 28\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"1 29\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"1 30\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"1 31\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"1 32\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"1 33\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"1 34\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"1 35\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"1 36\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"1 37\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"1 38\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"1 39\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"2 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"2 2\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"2 4\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"2 5\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"2 6\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"2 7\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"2 8\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"2 9\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"2 10\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"2 11\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"2 12\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"2 13\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"2 14\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"2 15\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"2 16\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"2 17\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"2 18\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"2 19\\r\\n\", \"output\": [\"28\"]}, {\"input\": \"2 20\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"3 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"3 2\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"3 3\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"3 4\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"3 5\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"3 6\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"3 7\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"3 8\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"3 9\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"3 10\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"3 11\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"3 12\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"3 13\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"4 5\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"4 6\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"4 7\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"4 8\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"4 9\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"4 10\\r\\n\", \"output\": [\"30\"]}, {\"input\": \"5 1\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"5 2\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"5 3\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"5 4\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"5 5\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"5 6\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"5 7\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"5 8\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"6 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"6 2\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"6 3\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"6 4\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"6 5\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"6 6\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"7 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7 2\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"7 3\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 4\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"7 5\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"8 1\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"8 2\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"8 3\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"8 4\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"8 5\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"9 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"9 2\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"9 3\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"9 4\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"10 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"10 2\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"10 3\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"10 4\\r\\n\", \"output\": [\"30\"]}, {\"input\": \"11 1\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"11 2\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"11 3\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"12 1\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"12 2\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"12 3\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"13 1\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"13 2\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"13 3\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"14 1\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"14 2\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"15 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"15 2\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"16 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"16 2\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"17 1\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"17 2\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"18 1\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"18 2\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"19 1\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"19 2\\r\\n\", \"output\": [\"28\"]}, {\"input\": \"20 1\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"20 2\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"21 1\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"22 1\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"23 1\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"24 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"25 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"26 1\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"27 1\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"28 1\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"29 1\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"30 1\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"31 1\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"32 1\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"33 1\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"34 1\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"35 1\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"36 1\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"37 1\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"38 1\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"39 1\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"40 1\\r\\n\", \"output\": [\"26\"]}]"
+    }
+}

@@ -1,0 +1,142 @@
+{
+    "oai_response": {
+        "choices": [
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 0,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nstatic const long long MOD = 998244353;\n\nlong long modPow(long long a, long long e) {\n    long long result = 1;\n    while (e > 0) {\n        if (e & 1) result = result * a % MOD;\n        a = a * a % MOD;\n        e >>= 1;\n    }\n    return result;\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int p, s, r;\n    cin >> p >> s >> r;\n\n    int limit = s + p + 5;\n    vector<long long> fact(limit), invFact(limit);\n\n    fact[0] = 1;\n    for (int i = 1; i < limit; ++i)\n        fact[i] = fact[i - 1] * i % MOD;\n\n    invFact[limit - 1] = modPow(fact[limit - 1], MOD - 2);\n    for (int i = limit - 1; i > 0; --i)\n        invFact[i - 1] = invFact[i] * i % MOD;\n\n    auto C = [&](int n, int k) -> long long {\n        if (n < 0 || k < 0 || k > n) return 0;\n        return fact[n] * invFact[k] % MOD * invFact[n - k] % MOD;\n    };\n\n    if (s == 0) {\n        cout << modPow(p, MOD - 2) << '\\n';\n        return 0;\n    }\n\n    int opponents = p - 1;\n    long long numerator = 0;\n\n    for (int x = max(r, 1); x <= s; ++x) {\n        int remaining = s - x;\n        int maxEqual = min(opponents, remaining / x);\n\n        for (int equal = 0; equal <= maxEqual; ++equal) {\n            int others = opponents - equal;\n            int sumOthers = remaining - equal * x;\n\n            long long ways = 0;\n\n            if (others == 0) {\n                ways = (sumOthers == 0);\n            } else if (sumOthers <= 1LL * others * (x - 1)) {\n                int maxExcluded = min(others, sumOthers / x);\n\n                for (int j = 0; j <= maxExcluded; ++j) {\n                    int value = sumOthers - j * x;\n                    long long term = C(others, j) *\n                                     C(value + others - 1, others - 1) % MOD;\n\n                    if (j & 1) {\n                        ways -= term;\n                        if (ways < 0) ways += MOD;\n                    } else {\n                        ways += term;\n                        if (ways >= MOD) ways -= MOD;\n                    }\n                }\n            }\n\n            long long chooseEqual = C(opponents, equal);\n            long long tieProbability = modPow(equal + 1, MOD - 2);\n\n            numerator = (numerator +\n                         chooseEqual * ways % MOD * tieProbability) % MOD;\n        }\n    }\n\n    long long totalStates = C(s - r + p - 1, p - 1);\n    long long answer = numerator * modPow(totalStates, MOD - 2) % MOD;\n\n    cout << answer << '\\n';\n    return 0;\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 1,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nconstexpr long long MOD = 998244353;\n\nlong long modPow(long long a, long long e) {\n    long long result = 1;\n    while (e > 0) {\n        if (e & 1) result = result * a % MOD;\n        a = a * a % MOD;\n        e >>= 1;\n    }\n    return result;\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int p, s, r;\n    cin >> p >> s >> r;\n\n    if (s == 0) {\n        cout << modPow(p, MOD - 2) << '\\n';\n        return 0;\n    }\n\n    int maxN = s + p + 5;\n    vector<long long> fact(maxN), invFact(maxN), inv(p + 1);\n\n    fact[0] = 1;\n    for (int i = 1; i < maxN; ++i)\n        fact[i] = fact[i - 1] * i % MOD;\n\n    invFact[maxN - 1] = modPow(fact[maxN - 1], MOD - 2);\n    for (int i = maxN - 1; i > 0; --i)\n        invFact[i - 1] = invFact[i] * i % MOD;\n\n    auto C = [&](int n, int k) -> long long {\n        if (k < 0 || k > n || n < 0) return 0;\n        return fact[n] * invFact[k] % MOD * invFact[n - k] % MOD;\n    };\n\n    for (int i = 1; i <= p; ++i)\n        inv[i] = modPow(i, MOD - 2);\n\n    long long weightedWins = 0;\n\n    for (int x = max(r, 1); x <= s; ++x) {\n        for (int tied = 1; tied <= p; ++tied) {\n            int remainingSum = s - tied * x;\n            if (remainingSum < 0) break;\n\n            int remainingPlayers = p - tied;\n            long long ways = 0;\n\n            if (remainingPlayers == 0) {\n                ways = (remainingSum == 0);\n            } else {\n                int maxExcluded = min(remainingPlayers, remainingSum / x);\n                for (int j = 0; j <= maxExcluded; ++j) {\n                    long long term =\n                        C(remainingPlayers, j) *\n                        C(remainingSum - j * x + remainingPlayers - 1,\n                          remainingPlayers - 1) % MOD;\n\n                    if (j & 1) {\n                        ways -= term;\n                        if (ways < 0) ways += MOD;\n                    } else {\n                        ways += term;\n                        if (ways >= MOD) ways -= MOD;\n                    }\n                }\n            }\n\n            long long chooseTied = C(p - 1, tied - 1);\n            long long contribution = chooseTied * ways % MOD * inv[tied] % MOD;\n            weightedWins += contribution;\n            if (weightedWins >= MOD) weightedWins -= MOD;\n        }\n    }\n\n    long long totalStates = C(s - r + p - 1, p - 1);\n    long long answer = weightedWins * modPow(totalStates, MOD - 2) % MOD;\n\n    cout << answer << '\\n';\n    return 0;\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 2,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nusing int64 = long long;\n\nconst int64 MOD = 998244353;\n\nint64 modPow(int64 a, int64 e) {\n    int64 result = 1;\n    while (e > 0) {\n        if (e & 1) result = result * a % MOD;\n        a = a * a % MOD;\n        e >>= 1;\n    }\n    return result;\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int p, s, r;\n    cin >> p >> s >> r;\n\n    int limit = s + p + 5;\n    vector<int64> fact(limit), invFact(limit);\n    fact[0] = 1;\n    for (int i = 1; i < limit; ++i) {\n        fact[i] = fact[i - 1] * i % MOD;\n    }\n\n    invFact[limit - 1] = modPow(fact[limit - 1], MOD - 2);\n    for (int i = limit - 1; i > 0; --i) {\n        invFact[i - 1] = invFact[i] * i % MOD;\n    }\n\n    auto C = [&](int n, int k) -> int64 {\n        if (n < 0 || k < 0 || k > n) return 0;\n        return fact[n] * invFact[k] % MOD * invFact[n - k] % MOD;\n    };\n\n    int64 totalStates = C(s + p - 1, p - 1);\n    int64 maxAtLeastR;\n\n    if (r == 0) {\n        maxAtLeastR = totalStates;\n    } else {\n        int64 boundedStates = 0;\n        int maxJ = min(p, s / r);\n\n        for (int j = 0; j <= maxJ; ++j) {\n            int remaining = s - j * r;\n            int64 term = C(p, j) * C(remaining + p - 1, p - 1) % MOD;\n\n            if (j & 1) {\n                boundedStates = (boundedStates - term + MOD) % MOD;\n            } else {\n                boundedStates = (boundedStates + term) % MOD;\n            }\n        }\n\n        maxAtLeastR = (totalStates - boundedStates + MOD) % MOD;\n    }\n\n    int64 validStates = C(s - r + p - 1, p - 1);\n    int64 denominator = validStates * p % MOD;\n    int64 answer = maxAtLeastR * modPow(denominator, MOD - 2) % MOD;\n\n    cout << answer << '\\n';\n    return 0;\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 3,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nusing int64 = long long;\n\nconst int MOD = 998244353;\n\nint64 modPow(int64 a, int64 e) {\n    int64 res = 1;\n    while (e > 0) {\n        if (e & 1) res = res * a % MOD;\n        a = a * a % MOD;\n        e >>= 1;\n    }\n    return res;\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int p, s, r;\n    cin >> p >> s >> r;\n\n    int maxN = s + p;\n    vector<int64> fact(maxN + 1), invFact(maxN + 1);\n    fact[0] = 1;\n    for (int i = 1; i <= maxN; ++i)\n        fact[i] = fact[i - 1] * i % MOD;\n\n    invFact[maxN] = modPow(fact[maxN], MOD - 2);\n    for (int i = maxN; i >= 1; --i)\n        invFact[i - 1] = invFact[i] * i % MOD;\n\n    auto C = [&](int n, int k) -> int64 {\n        if (n < 0 || k < 0 || k > n) return 0;\n        return fact[n] * invFact[k] % MOD * invFact[n - k] % MOD;\n    };\n\n    int64 total = C(s + p - 1, p - 1);\n    int64 bounded = 0;\n\n    if (r > 0) {\n        int limit = min(p, s / r);\n        for (int j = 0; j <= limit; ++j) {\n            int64 term = C(p, j) * C(s - j * r + p - 1, p - 1) % MOD;\n            if (j & 1) {\n                bounded = (bounded - term + MOD) % MOD;\n            } else {\n                bounded = (bounded + term) % MOD;\n            }\n        }\n    }\n\n    int64 favorable = (total - bounded + MOD) % MOD;\n    int64 states = C(s - r + p - 1, p - 1);\n    int64 denominator = states * p % MOD;\n\n    int64 answer = favorable * modPow(denominator, MOD - 2) % MOD;\n    cout << answer << '\\n';\n\n    return 0;\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            },
+            {
+                "content_filter_results": {},
+                "finish_reason": "stop",
+                "index": 4,
+                "logprobs": null,
+                "message": {
+                    "annotations": [],
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nstatic const long long MOD = 998244353;\n\nlong long modPow(long long a, long long e) {\n    long long res = 1;\n    while (e > 0) {\n        if (e & 1) res = res * a % MOD;\n        a = a * a % MOD;\n        e >>= 1;\n    }\n    return res;\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int p, s, r;\n    cin >> p >> s >> r;\n\n    int maxN = s + p + 5;\n    vector<long long> fact(maxN), invFact(maxN);\n    fact[0] = 1;\n    for (int i = 1; i < maxN; ++i) fact[i] = fact[i - 1] * i % MOD;\n\n    invFact[maxN - 1] = modPow(fact[maxN - 1], MOD - 2);\n    for (int i = maxN - 1; i > 0; --i)\n        invFact[i - 1] = invFact[i] * i % MOD;\n\n    auto C = [&](int n, int k) -> long long {\n        if (k < 0 || k > n || n < 0) return 0;\n        return fact[n] * invFact[k] % MOD * invFact[n - k] % MOD;\n    };\n\n    long long total = C(s + p - 1, p - 1);\n    long long bounded = 0;\n\n    if (r > 0) {\n        int limit = min(p, s / r);\n        for (int j = 0; j <= limit; ++j) {\n            long long term = C(p, j) * C(s - j * r + p - 1, p - 1) % MOD;\n            if (j & 1) {\n                bounded = (bounded - term + MOD) % MOD;\n            } else {\n                bounded = (bounded + term) % MOD;\n            }\n        }\n    }\n\n    long long favorable = (total - bounded + MOD) % MOD;\n    long long states = C(s - r + p - 1, p - 1);\n\n    long long answer = favorable * modPow(p, MOD - 2) % MOD;\n    answer = answer * modPow(states, MOD - 2) % MOD;\n\n    cout << answer << '\\n';\n    return 0;\n}",
+                    "refusal": null,
+                    "role": "assistant"
+                }
+            }
+        ],
+        "created": 1787150811,
+        "id": "chatcmpl-EEbr133cp7WW3SU7aqQz9KNYUuRHV",
+        "model": "gpt-5.6-sol-2026-07-09",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {}
+            }
+        ],
+        "service_tier": "default",
+        "system_fingerprint": null,
+        "usage": {
+            "completion_tokens": 9480,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 6271,
+                "rejected_prediction_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 4,
+                "engine_ttft_ms": 256,
+                "engine_ttlt_ms": 41001,
+                "pre_inference_ms": 164,
+                "service_tbt_ms": 4,
+                "service_ttft_ms": 625,
+                "service_ttlt_ms": 41263,
+                "total_duration_ms": 41206,
+                "user_visible_ttft_ms": 461
+            },
+            "prompt_tokens": 788,
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cache_write_tokens": 0,
+                "cached_tokens": 0
+            },
+            "total_tokens": 10268
+        },
+        "prompt": "Write a program in C++ to solve this programming problem:\nDescription: Hasan loves playing games and has recently discovered a game called TopScore. In this soccer-like game there are $$$p$$$ players doing penalty shoot-outs. Winner is the one who scores the most. In case of ties, one of the top-scorers will be declared as the winner randomly with equal probability.They have just finished the game and now are waiting for the result. But there's a tiny problem! The judges have lost the paper of scores! Fortunately they have calculated sum of the scores before they get lost and also for some of the players they have remembered a lower bound on how much they scored. However, the information about the bounds is private, so Hasan only got to know his bound.According to the available data, he knows that his score is at least $$$r$$$ and sum of the scores is $$$s$$$.Thus the final state of the game can be represented in form of sequence of $$$p$$$ integers $$$a_1, a_2, \\dots, a_p$$$ ($$$0 \\le a_i$$$) \u2014 player's scores. Hasan is player number $$$1$$$, so $$$a_1 \\ge r$$$. Also $$$a_1 + a_2 + \\dots + a_p = s$$$. Two states are considered different if there exists some position $$$i$$$ such that the value of $$$a_i$$$ differs in these states. Once again, Hasan doesn't know the exact scores (he doesn't know his exact score as well). So he considers each of the final states to be equally probable to achieve.Help Hasan find the probability of him winning.It can be shown that it is in the form of $$$\\frac{P}{Q}$$$ where $$$P$$$ and $$$Q$$$ are non-negative integers and $$$Q \\ne 0$$$, $$$P \\le Q$$$. Report the value of $$$P \\cdot Q^{-1} \\pmod {998244353}$$$.\nInput Specification: The only line contains three integers $$$p$$$, $$$s$$$ and $$$r$$$ ($$$1 \\le p \\le 100$$$, $$$0 \\le r \\le s \\le 5000$$$) \u2014 the number of players, the sum of scores of all players and Hasan's score, respectively.\nOutput Specification: Print a single integer \u2014 the probability of Hasan winning. It can be shown that it is in the form of $$$\\frac{P}{Q}$$$ where $$$P$$$ and $$$Q$$$ are non-negative integers and $$$Q \\ne 0$$$, $$$P \\le Q$$$. Report the value of $$$P \\cdot Q^{-1} \\pmod {998244353}$$$.\n\nSample Input:\n2 6 3\nSample Output:\n124780545\n\nSample Input:\n5 20 11\nSample Output:\n1\n\nSample Input:\n10 30 10\nSample Output:\n85932500\n\nNotes: NoteIn the first example Hasan can score $$$3$$$, $$$4$$$, $$$5$$$ or $$$6$$$ goals. If he scores $$$4$$$ goals or more than he scores strictly more than his only opponent. If he scores $$$3$$$ then his opponent also scores $$$3$$$ and Hasan has a probability of $$$\\frac 1 2$$$ to win the game. Thus, overall he has the probability of $$$\\frac 7 8$$$ to win.In the second example even Hasan's lower bound on goal implies him scoring more than any of his opponents. Thus, the resulting probability is $$$1$$$.\nTake input from standard input and output to standard output\nProvide the C++ code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "609195ef4a970c62a8210dafe118580e",
+        "difficulty": 2500,
+        "prob_desc_sample_inputs": [
+            "2 6 3",
+            "5 20 11",
+            "10 30 10"
+        ],
+        "prob_desc_time_limit": "3 seconds",
+        "tags": [
+            "math",
+            "probabilities",
+            "combinatorics",
+            "dp"
+        ],
+        "prob_desc_output_spec": "Print a single integer \u2014 the probability of Hasan winning. It can be shown that it is in the form of $$$\\frac{P}{Q}$$$ where $$$P$$$ and $$$Q$$$ are non-negative integers and $$$Q \\ne 0$$$, $$$P \\le Q$$$. Report the value of $$$P \\cdot Q^{-1} \\pmod {998244353}$$$.",
+        "prob_desc_input_spec": "The only line contains three integers $$$p$$$, $$$s$$$ and $$$r$$$ ($$$1 \\le p \\le 100$$$, $$$0 \\le r \\le s \\le 5000$$$) \u2014 the number of players, the sum of scores of all players and Hasan's score, respectively.",
+        "lang_cluster": "C++",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first example Hasan can score $$$3$$$, $$$4$$$, $$$5$$$ or $$$6$$$ goals. If he scores $$$4$$$ goals or more than he scores strictly more than his only opponent. If he scores $$$3$$$ then his opponent also scores $$$3$$$ and Hasan has a probability of $$$\\frac 1 2$$$ to win the game. Thus, overall he has the probability of $$$\\frac 7 8$$$ to win.In the second example even Hasan's lower bound on goal implies him scoring more than any of his opponents. Thus, the resulting probability is $$$1$$$.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Hasan loves playing games and has recently discovered a game called TopScore. In this soccer-like game there are $$$p$$$ players doing penalty shoot-outs. Winner is the one who scores the most. In case of ties, one of the top-scorers will be declared as the winner randomly with equal probability.They have just finished the game and now are waiting for the result. But there's a tiny problem! The judges have lost the paper of scores! Fortunately they have calculated sum of the scores before they get lost and also for some of the players they have remembered a lower bound on how much they scored. However, the information about the bounds is private, so Hasan only got to know his bound.According to the available data, he knows that his score is at least $$$r$$$ and sum of the scores is $$$s$$$.Thus the final state of the game can be represented in form of sequence of $$$p$$$ integers $$$a_1, a_2, \\dots, a_p$$$ ($$$0 \\le a_i$$$) \u2014 player's scores. Hasan is player number $$$1$$$, so $$$a_1 \\ge r$$$. Also $$$a_1 + a_2 + \\dots + a_p = s$$$. Two states are considered different if there exists some position $$$i$$$ such that the value of $$$a_i$$$ differs in these states. Once again, Hasan doesn't know the exact scores (he doesn't know his exact score as well). So he considers each of the final states to be equally probable to achieve.Help Hasan find the probability of him winning.It can be shown that it is in the form of $$$\\frac{P}{Q}$$$ where $$$P$$$ and $$$Q$$$ are non-negative integers and $$$Q \\ne 0$$$, $$$P \\le Q$$$. Report the value of $$$P \\cdot Q^{-1} \\pmod {998244353}$$$.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1546007700",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "124780545",
+            "1",
+            "85932500"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"2 6 3\\r\\n\", \"output\": [\"124780545\"]}, {\"input\": \"5 20 11\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10 30 10\\r\\n\", \"output\": [\"85932500\"]}, {\"input\": \"100 0 0\\r\\n\", \"output\": [\"828542813\"]}, {\"input\": \"100 1 0\\r\\n\", \"output\": [\"828542813\"]}, {\"input\": \"1 5000 0\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"1 5000 4999\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"2 4999 0\\r\\n\", \"output\": [\"499122177\"]}, {\"input\": \"83 2813 123\\r\\n\", \"output\": [\"758958584\"]}, {\"input\": \"100 5000 5000\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"100 5000 30\\r\\n\", \"output\": [\"860412292\"]}, {\"input\": \"100 5000 0\\r\\n\", \"output\": [\"828542813\"]}, {\"input\": \"1 0 0\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"1 1 0\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"2 1 0\\r\\n\", \"output\": [\"499122177\"]}, {\"input\": \"45 2315 860\\r\\n\", \"output\": [\"256332294\"]}, {\"input\": \"69 813 191\\r\\n\", \"output\": [\"367363860\"]}, {\"input\": \"93 2364 1182\\r\\n\", \"output\": [\"952630216\"]}, {\"input\": \"21 862 387\\r\\n\", \"output\": [\"910580465\"]}, {\"input\": \"45 886 245\\r\\n\", \"output\": [\"23345522\"]}, {\"input\": \"45 2315 2018\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"69 813 598\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"93 2364 2364\\r\\n\", \"output\": [\"1\"]}]"
+    }
+}
