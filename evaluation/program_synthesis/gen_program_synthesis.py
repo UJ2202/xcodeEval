@@ -58,7 +58,15 @@ SHORT_LANG_MAP = {
 LANGS = sorted(set([v for k, v in SHORT_LANG_MAP.items()]))
 
 
-openai.api_key = os.environ["OPENAI_API_KEY"]
+openai.api_key = os.environ.get("OPENAI_API_KEY", "sk-local-dev")
+openai.api_base = os.environ.get("OPENAI_API_BASE", "http://localhost:4000")
+MODEL = os.environ.get("XCODEEVAL_MODEL", "gpt4o")
+
+# vLLM models need thinking disabled; gpt4o goes through LiteLLM which doesn't accept this param
+VLLM_MODELS = {"qwen-nvfp4", "laguna-nvfp4"}
+EXTRA_KWARGS = {"chat_template_kwargs": {"enable_thinking": False}} if MODEL in VLLM_MODELS else {}
+MAX_TOKENS = 4096 if MODEL in VLLM_MODELS or MODEL == "nemotron-ultra-nvfp4" else 8192
+MAX_N = 8 if MODEL == "gpt4o" else 20  # Azure gpt4o hard limit is n<=8
 
 
 def gen(prompt, temperature, nsample):
@@ -68,15 +76,17 @@ def gen(prompt, temperature, nsample):
             return None
         try:
             c = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
+                model=MODEL,
                 messages=[
                     {"role": "user", "content": f"{prompt}"},
                 ],
                 temperature=temperature,
+                max_tokens=MAX_TOKENS,
                 top_p=1,
-                n=nsample,
+                n=min(nsample, MAX_N),
                 frequency_penalty=0.0,
                 presence_penalty=0.0,
+                **EXTRA_KWARGS,
             )
             break
         except Exception as e:
@@ -135,6 +145,17 @@ def main():
         type=int,
         help="Number of parallel API request.",
     )
+    parser.add_argument(
+        "--languages",
+        default=None,
+        nargs="+",
+        help="Subset of languages to evaluate. e.g. --languages Python Java C++. Default: all 11.",
+    )
+    parser.add_argument(
+        "--data-dir",
+        default=None,
+        help="Path to dataset_subset/ with ps_compact.jsonl. Skips HuggingFace download.",
+    )
     args = parser.parse_args()
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir, exist_ok=True)
@@ -144,12 +165,23 @@ def main():
     ]
     template = templates[0]
 
-    prog_synthesis_dataset = datasets.load_dataset(
-        "NTU-NLP-sg/xCodeEval", "program_synthesis", num_proc=16, trust_remote_code=True
-    )["compact"]
+    if args.data_dir:
+        prog_synthesis_dataset = datasets.load_dataset(
+            "json", data_files=os.path.join(args.data_dir, "ps_compact.jsonl")
+        )["train"]
+    else:
+        prog_synthesis_dataset = datasets.load_dataset(
+            "NTU-NLP-sg/xCodeEval", "program_synthesis", trust_remote_code=True
+        )["compact"]
     # temperature_list = np.linspace(0, 2, args.nsample)
     temperature_list = [0.3157894736842105]
-    for language in LANGS:
+    selected_langs = args.languages if args.languages else LANGS
+    invalid = [l for l in selected_langs if l not in LANGS]
+    if invalid:
+        print(f"Warning: unknown languages {invalid}. Valid: {LANGS}")
+        selected_langs = [l for l in selected_langs if l in LANGS]
+    print(f"Running for languages: {selected_langs}")
+    for language in selected_langs:
         with concurrent.futures.ProcessPoolExecutor(
             max_workers=int(args.num_proc)
         ) as executor:

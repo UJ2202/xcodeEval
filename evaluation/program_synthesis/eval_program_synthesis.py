@@ -143,9 +143,12 @@ def get_idx(file_name):
     return int(file_name.split(".json")[0].split("_")[0])
 
 
+LANG_TAGS = {"cpp", "go", "java", "javascript", "js", "php", "python", "python3",
+             "kotlin", "ruby", "rust", "c", "csharp", "c#", "typescript", "ts"}
+
 def sanitize_code(code):
     FLAG = True
-    while FLAG == True:
+    while FLAG:
         FLAG = False
         if code.startswith("```"):
             FLAG = True
@@ -153,11 +156,13 @@ def sanitize_code(code):
         last_index = code.rfind("```")
         if last_index != -1:
             FLAG = True
-            code = code[:last_index] + "" + code[last_index + len("```") :]
-        if code.startswith("cpp"):
+            code = code[:last_index] + code[last_index + 3:]
+        # Strip any language tag on its own line at the start
+        first_line = code.split("\n")[0].strip().lower()
+        if first_line in LANG_TAGS:
             FLAG = True
-            code = code.replace("cpp", "", 1)
-    return code
+            code = code[code.index("\n") + 1:] if "\n" in code else ""
+    return code.strip()
 
 
 def fix_uts(uts):
@@ -174,6 +179,9 @@ def fix_uts(uts):
 
 def process(args):
     sample, execeval = args
+    if not sample.get("oai_response") or not sample["oai_response"].get("choices"):
+        sample["unit_test_results"] = []
+        return sample
     src_uid = sample["source_data"]["src_uid"]
     unit_tests = json.loads(sample["source_data"]["hidden_unit_tests"])
     compiler = LANG_CLUSTER_TO_LANG_COMPILER[sample["source_data"]["lang_cluster"]]
@@ -218,7 +226,7 @@ def main():
         with concurrent.futures.ThreadPoolExecutor(max_workers=129) as thread_executor:
             with jsonlines.open(output_file, "w") as jwp:
                 files = sorted(os.listdir(path))
-                with APICommunication(server_url="http://localhost:5000") as execeval:
+                with APICommunication(server_url=os.environ.get("EXECEVAL_URL", "http://localhost:5000")) as execeval:
                     all_samples = []
                     for file in files:
                         full_path = os.path.join(path, file)

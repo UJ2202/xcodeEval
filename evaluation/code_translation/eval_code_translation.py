@@ -143,9 +143,14 @@ def get_idx(file_name):
     return int(file_name.split(".json")[0].split("_")[0])
 
 
+LANG_TAGS = {"cpp", "go", "java", "javascript", "js", "php", "python", "python3",
+             "kotlin", "ruby", "rust", "c", "csharp", "c#", "typescript", "ts"}
+
 def sanitize_code(code):
+    if code is None:
+        return ""
     FLAG = True
-    while FLAG == True:
+    while FLAG:
         FLAG = False
         if code.startswith("```"):
             FLAG = True
@@ -153,11 +158,12 @@ def sanitize_code(code):
         last_index = code.rfind("```")
         if last_index != -1:
             FLAG = True
-            code = code[:last_index] + "" + code[last_index + len("```") :]
-        if code.startswith("cpp"):
+            code = code[:last_index] + code[last_index + 3:]
+        first_line = code.split("\n")[0].strip().lower()
+        if first_line in LANG_TAGS:
             FLAG = True
-            code = code.replace("cpp", "", 1)
-    return code
+            code = code[code.index("\n") + 1:] if "\n" in code else ""
+    return code.strip()
 
 
 def fix_uts(uts):
@@ -174,6 +180,9 @@ def fix_uts(uts):
 
 def process(args):
     sample, execeval = args
+    if not sample.get("oai_response") or not sample["oai_response"].get("choices"):
+        sample["unit_test_results"] = []
+        return sample
     src_uid = sample["source_data"]["src_uid"]
     unit_tests = json.loads(sample["source_data"]["hidden_unit_tests"])
     compiler = LANG_CLUSTER_TO_LANG_COMPILER[sample["source_data"]["target_lang"]]
@@ -224,7 +233,7 @@ def main():
                 ) as thread_executor:
                     files = sorted(os.listdir(path))
                     with APICommunication(
-                        server_url="http://localhost:5000"
+                        server_url=os.environ.get("EXECEVAL_URL", "http://localhost:5000")
                     ) as execeval:
                         all_samples = []
                         for file in files:
@@ -232,6 +241,14 @@ def main():
                             if os.path.isdir(full_path):
                                 continue
                             sample = json.load(open(full_path))
+                            if "target_lang" not in sample["source_data"]:
+                                # derive target_lang from filename: idx_temp_src--tgt.json
+                                fname = os.path.splitext(file)[0]
+                                parts = fname.split("_", 2)
+                                if len(parts) == 3 and "--" in parts[2]:
+                                    sample["source_data"]["target_lang"] = parts[2].split("--")[1]
+                                else:
+                                    continue
                             if (
                                 sample["source_data"]["target_lang"]
                                 not in LANG_CLUSTER_TO_LANG_COMPILER

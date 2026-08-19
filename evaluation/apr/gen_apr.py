@@ -58,7 +58,14 @@ SHORT_LANG_MAP = {
 LANGS = sorted(set([v for k, v in SHORT_LANG_MAP.items()]))
 
 
-openai.api_key = os.environ["OPENAI_API_KEY"]
+openai.api_key = os.environ.get("OPENAI_API_KEY", "sk-local-dev")
+openai.api_base = os.environ.get("OPENAI_API_BASE", "http://localhost:4000")
+MODEL = os.environ.get("XCODEEVAL_MODEL", "gpt4o")
+
+VLLM_MODELS = {"qwen-nvfp4", "laguna-nvfp4"}
+EXTRA_KWARGS = {"chat_template_kwargs": {"enable_thinking": False}} if MODEL in VLLM_MODELS else {}
+MAX_TOKENS = 4096 if MODEL in VLLM_MODELS or MODEL == "nemotron-ultra-nvfp4" else 8192
+MAX_N = 8 if MODEL == "gpt4o" else 20
 
 
 def gen(prompt, temperature, nsample):
@@ -68,15 +75,17 @@ def gen(prompt, temperature, nsample):
             return None
         try:
             c = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
+                model=MODEL,
                 messages=[
                     {"role": "user", "content": f"{prompt}"},
                 ],
                 temperature=temperature,
+                max_tokens=MAX_TOKENS,
                 top_p=1,
-                n=nsample,
+                n=min(nsample, MAX_N),
                 frequency_penalty=0.0,
                 presence_penalty=0.0,
+                **EXTRA_KWARGS,
             )
             break
         except Exception as e:
@@ -89,7 +98,7 @@ def gen(prompt, temperature, nsample):
 
 xcodeeval_prompt_template = {
     "apr": [
-        "Fix a buggy program written in {{lang_cluster}} language to solve the following programming problem:\nDescription: {{prob_desc_description}}\nInput Specification: {{prob_desc_input_spec}}\nOutput Specification: {{prob_desc_output_spec}}\n{% for input, output in zip(prob_desc_sample_inputs, prob_desc_sample_outputs) %}\nSample Input:\n{{input}}\nSample Output:\n{{output}}\n{% endfor %}\nNotes: {{prob_desc_notes}}\nTake input from {{prob_desc_input_from}} and output to {{prob_desc_output_to}}\n\nHere is the code with a bug of {{bug_exec_outcome}}:\n\n{{bug_source_code}}\n\nProvide the fixed {{lang_cluster}} code without any description or extra tokens.\n\nFixed source code:\n ||END-of-SRC|| "
+        "Fix the following buggy {{lang_cluster}} program. The bug causes a {{bug_exec_outcome}} error.\n\nBuggy code:\n\n{{bug_source_code}}\n\nProvide the fixed {{lang_cluster}} code without any description or extra tokens.\n\nFixed source code:\n ||END-of-SRC|| "
     ]
 }
 
@@ -98,8 +107,6 @@ def process_prompt(dt, temperature, template, nsample, output_dir, index, dry_ru
     language = dt["lang_cluster"]
     file_path = os.path.join(output_dir, f"{index}_{temperature}_{language}.json")
     if not os.path.exists(file_path):
-        dt["prob_desc_sample_inputs"] = json.loads(dt["prob_desc_sample_inputs"])
-        dt["prob_desc_sample_outputs"] = json.loads(dt["prob_desc_sample_outputs"])
         lm_io = template.apply(dt)
         assert len(lm_io) == 2, f"{json.dumps(lm_io, indent=4)}"
         if dry_run:
@@ -133,6 +140,17 @@ def main():
         type=int,
         help="Number of parallel API request.",
     )
+    parser.add_argument(
+        "--languages",
+        default=None,
+        nargs="+",
+        help="Subset of languages to evaluate. Default: all.",
+    )
+    parser.add_argument(
+        "--apr-data-dir",
+        default="/home/ujjwal.tiwari/ace/benchmarks/xcodeEval/apr_test_data",
+        help="Path to locally downloaded APR test JSONL files.",
+    )
     args = parser.parse_args()
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir, exist_ok=True)
@@ -142,7 +160,29 @@ def main():
     ]
     template = templates[0]
 
-    apr_dataset = datasets.load_dataset("NTU-NLP-sg/xCodeEval", "apr", num_proc=16, trust_remote_code=True)["compact"]
+    LANG_TO_FILE = {
+        "C": "C.jsonl", "C#": "C%23.jsonl", "C++": "C%2B%2B.jsonl",
+        "Go": "Go.jsonl", "Java": "Java.jsonl", "Javascript": "Javascript.jsonl",
+        "Kotlin": "Kotlin.jsonl", "PHP": "PHP.jsonl", "Python": "Python.jsonl",
+        "Ruby": "Ruby.jsonl", "Rust": "Rust.jsonl",
+    }
+    selected_langs = args.languages if args.languages else list(LANG_TO_FILE.keys())
+    invalid = [l for l in selected_langs if l not in LANG_TO_FILE]
+    if invalid:
+        print(f"Warning: unknown languages {invalid}")
+        selected_langs = [l for l in selected_langs if l in LANG_TO_FILE]
+    print(f"Loading APR data for languages: {selected_langs}")
+    apr_dataset = []
+    for lang in selected_langs:
+        fpath = os.path.join(args.apr_data_dir, LANG_TO_FILE[lang])
+        if not os.path.exists(fpath):
+            print(f"WARNING: {fpath} not found, skipping {lang}")
+            continue
+        with open(fpath) as f:
+            rows = [json.loads(line) for line in f if line.strip()]
+        print(f"  {lang}: {len(rows)} rows")
+        apr_dataset.extend(rows)
+    print(f"Total APR rows loaded: {len(apr_dataset)}")
     # temperature_list = np.linspace(0, 2, args.nsample)
     temperature_list = [0.3157894736842105]
     with concurrent.futures.ProcessPoolExecutor(
