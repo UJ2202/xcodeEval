@@ -66,7 +66,7 @@ def gen(prompt):
                 model=MODEL,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=TEMP,
-                max_tokens=MAX_TOKENS,
+                max_completion_tokens=MAX_TOKENS,
                 top_p=1,
                 n=NSAMPLE,
                 frequency_penalty=0.0,

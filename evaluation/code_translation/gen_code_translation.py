@@ -80,7 +80,7 @@ def gen(prompt, temperature, nsample):
                     {"role": "user", "content": f"{prompt}"},
                 ],
                 temperature=temperature,
-                max_tokens=MAX_TOKENS,
+                max_completion_tokens=MAX_TOKENS,
                 top_p=1,
                 n=min(nsample, MAX_N),
                 frequency_penalty=0.0,
