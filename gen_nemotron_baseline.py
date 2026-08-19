@@ -230,7 +230,8 @@ def run_apr():
             baseline_files = set(l.strip() for l in f if l.strip())
     else:
         baseline_files = set(os.listdir(baseline_dir))
-    APR_DATA_DIR = "/home/ujjwal.tiwari/ace/benchmarks/xcodeEval/apr_test_data"
+    APR_DATA_DIR = os.environ.get("XCODEEVAL_APR_DATA_DIR",
+                      os.path.join(os.path.dirname(os.path.abspath(__file__)), "apr_test_data"))
     LANG_TO_FILE = {
         "C": "C.jsonl", "C#": "C%23.jsonl", "C++": "C%2B%2B.jsonl",
         "Go": "Go.jsonl", "Java": "Java.jsonl", "Javascript": "Javascript.jsonl",
