@@ -186,7 +186,7 @@ def main():
         code_translation_dataset = datasets.load_dataset(
             "NTU-NLP-sg/xCodeEval", "code_translation", trust_remote_code=True
         )["compact"]
-    temperature_list = [0.3157894736842105]
+    temperature_list = [1]
 
     out_dir = args.output_dir + "/compact_small"
     if not os.path.exists(out_dir):

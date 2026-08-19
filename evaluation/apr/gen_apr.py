@@ -184,7 +184,7 @@ def main():
         apr_dataset.extend(rows)
     print(f"Total APR rows loaded: {len(apr_dataset)}")
     # temperature_list = np.linspace(0, 2, args.nsample)
-    temperature_list = [0.3157894736842105]
+    temperature_list = [1]
     with concurrent.futures.ProcessPoolExecutor(
         max_workers=int(args.num_proc)
     ) as executor:

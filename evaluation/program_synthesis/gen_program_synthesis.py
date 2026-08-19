@@ -174,7 +174,7 @@ def main():
             "NTU-NLP-sg/xCodeEval", "program_synthesis", trust_remote_code=True
         )["compact"]
     # temperature_list = np.linspace(0, 2, args.nsample)
-    temperature_list = [0.3157894736842105]
+    temperature_list = [1]
     selected_langs = args.languages if args.languages else LANGS
     invalid = [l for l in selected_langs if l not in LANGS]
     if invalid:

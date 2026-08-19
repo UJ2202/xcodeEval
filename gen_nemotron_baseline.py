@@ -27,7 +27,7 @@ _model_out = os.environ.get("MODEL_OUT_NAME", "nemotron-550b")
 OUT_ROOT = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "dumped", _model_out
 )
-TEMP = 0.3157894736842105
+TEMP = 1
 
 # When set, load PS/CT from local JSONL and use filelist/ instead of scanning BASELINE_ROOT.
 # Set to the dataset_subset/ directory on the repo.  Leave unset to use HF cache + live dir scan.
