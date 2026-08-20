@@ -1,0 +1,92 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-436a2f7d-9d21-4f36-9b03-421b83555112",
+        "created": 1787236002,
+        "model": "claude-opus-5",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```php\n<?php\n$in = stream_get_contents(STDIN);\n$tok = preg_split('/\\s+/', trim($in));\n$n = (int)$tok[0];\n$m = (int)$tok[1];\n$a = array();\n$b = array();\nfor ($i = 0; $i < $n; $i++) $a[$i] = (int)$tok[2 + $i];\nfor ($i = 0; $i < $n; $i++) $b[$i] = (int)$tok[2 + $n + $i];\n\n$INF = PHP_INT_MAX / 4;\n$sz = $n + 1;\n\n// build base matrix\n$base = array();\nfor ($s = 0; $s < $sz; $s++) {\n    $dp = array_fill(0, $sz, $INF);\n    $dp[$s] = 0;\n    for ($i = 0; $i < $n; $i++) {\n        $ndp = array_fill(0, $sz, $INF);\n        $ai = $a[$i];\n        $bi = $b[$i];\n        for ($bal = 0; $bal < $sz; $bal++) {\n            $cur = $dp[$bal];\n            if ($cur >= $INF) continue;\n            if ($bal + 1 < $sz) {\n                $v = $cur + $ai;\n                if ($v < $ndp[$bal + 1]) $ndp[$bal + 1] = $v;\n            }\n            if ($bal - 1 >= 0) {\n                $v = $cur + $bi;\n                if ($v < $ndp[$bal - 1]) $ndp[$bal - 1] = $v;\n            }\n        }\n        $dp = $ndp;\n    }\n    $base[$s] = $dp;\n}\n\nfunction matmul($X, $Y, $sz, $INF) {\n    $R = array();\n    for ($i = 0; $i < $sz; $i++) {\n        $row = array_fill(0, $sz, $INF);\n        $Xi = $X[$i];\n        for ($k = 0; $k < $sz; $k++) {\n            $xik = $Xi[$k];\n            if ($xik >= $INF) continue;\n            $Yk = $Y[$k];\n            for ($j = 0; $j < $sz; $j++) {\n                $ykj = $Yk[$j];\n                if ($ykj >= $INF) continue;\n                $v = $xik + $ykj;\n                if ($v < $row[$j]) $row[$j] = $v;\n            }\n        }\n        $R[$i] = $row;\n    }\n    return $R;\n}\n\n// identity\n$res = array();\nfor ($i = 0; $i < $sz; $i++) {\n    $row = array_fill(0, $sz, $INF);\n    $row[$i] = 0;\n    $res[$i] = $row;\n}\n\n$e = $m;\n$p = $base;\nwhile ($e > 0) {\n    if ($e & 1) {\n        $res = matmul($res, $p, $sz, $INF);\n    }\n    $e >>= 1;\n    if ($e > 0) $p = matmul($p, $p, $sz, $INF);\n}\n\necho $res[0][0], \"\\n\";\n```",
+                    "role": "assistant",
+                    "reasoning_content": "",
+                    "thinking_blocks": [
+                        {
+                            "type": "thinking",
+                            "thinking": "",
+                            "signature": "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"
+                        }
+                    ],
+                    "provider_specific_fields": {
+                        "citations": null,
+                        "thinking_blocks": [
+                            {
+                                "type": "thinking",
+                                "thinking": "",
+                                "signature": "CAIS8REKjgEIEBgCKkDnXJtIx8hYeN6SRBfBlpewE86QPShj/ssBV/vkiPMqfyJ5UUcQGGPIb/AVK1NXpNKDhp3ktlyokxvbjGvouI9wMg1jbGF1ZGUtb3B1cy01OAFCCHRoaW5raW5nWiRmZTVkMDgyYS1iNjQxLTQzNmItYWQ2ZS1kNDE4NmMyM2Y5NGSoAZqdnNQGEgwCr7/4bySRpysxfKcaDF7uoiKIp4/C5Ua6KCIwaIKn3Gq8DCGayO8KhQGQJzO6InKwyuW9ghPhkNEC3g20b5qRoDMcy0gEtbJ6rAFEKo8QGIz0Eetc5RZzPP+e+OgEXG9zVVolDvyX4O76tDIlSqUw1NAsJ5NV7kCUhL9nsFgI5TAjxiI7FqM+87a/B997BEXtWd+xZsDqWOhA6IWSEKZw49s/lkf1DBO090ajRJTrWQmJD5+G5Mm+5Yqs9D0X7jXx350j6rCnG4YH4ILT4U9YJJjWNzIg2o5iQB7U3HflRQmRtqo0ILUHw4R+khszo4m9OR3grgsVe0iuI02n+u9a5W5yMYHyWP5vOtUFcPsfw0k/dX48B86xZWOiVxcW7qv0J3BkCufh4UszeW2axUVatzIwYnlmEzFK72LmRMiQghz82h7q90bVG7h1YsVaG7aULGjc2vThhspADW+uib+LjYevEDwYLInREeQYkrv/A70mGPWt0pwHyHq4O+OYlJ7S/BTQpgr10If+ygFuWLDRuohjFLhsf7gQJ9dWiWGaPoeVmHMZF+P9GBrbXyETcKJFQ1m0uj2Qj04SkjikMZD5aei+m5gVyhjb33bBmEwR/V1cTxtpLrt08AHeBl7aOWUQYT/VzeQYwHdrECwHvY8lMR/KTLuie9yCmRwg0u4IWZVBipQ+CUMyFVUcyRegNRjZdukviHuhxwPD9wNNnppVTfzYopExa4c+PDptt5V+D+Xn8NyMHNvQD5P4JtLs1xbFEM8B+baAkQ6BYGmdkpJ/pYtScpnVEFiQNDIM/hqJLKmCbbd+Wi7SXdfu9sgIH2dx17SCYaj4SiDxzgVwVcDC7cLGlrt4aDvnr8fo0UG1fc734OTLCDI7lOYZip/3Rl5et8tURoksbIgtS6zBJGoS4vnIN6bzjLITqrTff6NV4BDLiP3NHNnXg1HYMGeku63X/hHTv8a/CHD/9XFZDzWd5rH5bhSuL27SecyQXhO2lc+A7G1Gt1GKRQOZgMJW894rxtkOf6yycLWhOWysbr17HeK6psLvQqXRjW/NJGGER123VPVGRVKuP+25Mb4JUXOIhOeLvRVEPRnsjEB7yRDm5auc7MPh7SKMDaytsl7c1aOo8F9clBfMPBKnjne1+ldsOH82lHLK0Xs5mKAVaf4bBhG9MQp/g0qRQ+EZue+5WLzzym4iX6UKz1h5BnmaF2FWWVQedCa1RxYutKtWl51/3eo4ETXF5/8T/sP3qTlnq/fHKzXii905xRCqQMFljrnoQfFp9RtcOQLF70f0cQssVedePMNm0m+8f3B31mh2mIj7OEf428TewnZI4KEmRUZHD98MDwyHhgQyEixU0vFDlJDrFnWfD1o/lkF6psHyb+06wv6yeB0N9sgaOSx8QU/2ifMsEYoffnOHWQQ/ErJqlxu3P8mgfmHvmVNEZHb/fX1OqL/kiHsoenNaxiRsupjrcFCWRRYBz+VS4XjvxuQ7TWRi+O9GxstlNwZRYklD7G2q9PODf4CDs90U7o1TCXK4/FWOeczzxv3kagjtF4S0dqyJIFxzqi18au3iI2CWYrnBmEiPfsMwwjKtG2E2ONLZHIX2v0NomW22qSrludr/8CiwwNpb8BYrvhv1K3Y75kerusIYpgB03Cd/Auq3VS8UHfRSVGJ8pKgokY46aWLod7ikiePIVK7fVG8lleMtaY4hfrhxn0C/BnLRyeuYyttEW6d3XDevEx/K3RXx3qdOFOalFPD8hQkxdHVanTBhSNnaDzU1e39qK9Fw//mF6ibANKwHPDFXuvF0WKFWYi7v9XWKcu+Qx8pwGMGKwbX4P/A/gS8+JaHUijwtbTDIsknn44hMDpN/jogoJLVk3PLQwx5FAI/ApVjte90fzKlBv3SXP85wSEG3UToRsbMuJIkWPLnoJy2Xfd7gkijO1ZJyxPEg3OWgpUviwE2WHh4jy7cUVcqw862h8nQJ3YOaF+YqyAkZ+k48nh9/jkcK4Bk4GP2+2+9la9gscQIybf2Ad4djS+s27vIChyxwhzMwWBYDH4jwTlFaVzya6z0vAyih9yqnn8WxcURfE1ZB36I/E6aWLLsFBkL/LG/ZWDLazOvSjup5PxZMbot1wztYlGuiGVvW3WShqB1UWtq4o0RiJZ0Kn/9uOL5SS9YT6/R0Aucr+6RbBgQnwBEoWQ++2GqI8IeuHY1XoIejoC/FTmTrb7oyqeio910AgOOaMNaZ0YLn9lmQDLx8sYup4p6X+G0CiJbmkunp3zUteKrurnt1mzYxK61c7fCVjdZ95T8R3dDGjvk8f1in/VmvfGJqV3z5xqkLlWdUQEGXrwB7AAlER7Ny+5yt7onQPU7Epl182fySZzkQJ3/UglpS0UTpkk+2qdTDYG9tg1BTi7Ht1D+upcYVkCyOpp2aklwUcJPaxr7Kb+qSMpRHor488ZRCld9s7lOGmGrrVieJM6lcj2qWHqQNZ7IlDTltwSP81g364h6466F7BUFfZ90YBiOgf8XhpoqC7u2kaOPaMB6GgDwff6AlyXpg3/NhtkzOQjt5wih5jcohXPzDkvt9+03GYdQnnvOJNjXVSop+A2jecI/mEGD2tAtbGl7AZeP92ucNrIBV5l5jxlPSYvDCNVEf6UBqtgnVO5vOEYu9LXJwiNb2+pq0Jdmkf/HPBD3IrvZn6xJZ2y409bXMaeeUKfV6WMozY87vUE5xVDLjg/VLaetA8bqLjvT4MHpKIiOxWgn+8m/2n4MvZ0AFeITT3HLatbK46mdP/Q8RBioWYe/LJaTqHeCogxnDg2u4eJjQoJrwhOqVUlrfMVrZ85OABNGEGiVc2sVz8G/vjT9paIRHrIAYAQ=="
+                            }
+                        ]
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 1948,
+            "prompt_tokens": 554,
+            "total_tokens": 2502,
+            "completion_tokens_details": {
+                "reasoning_tokens": 0,
+                "text_tokens": 1948
+            },
+            "prompt_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0,
+                "text_tokens": 554,
+                "cache_creation_tokens": 0,
+                "cache_creation_token_details": {
+                    "ephemeral_5m_input_tokens": 0,
+                    "ephemeral_1h_input_tokens": 0
+                }
+            },
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0,
+            "inference_geo": "global",
+            "service_tier": "standard"
+        },
+        "prompt": "Write a program in PHP to solve this programming problem:\nDescription: Jeff loves regular bracket sequences.Today Jeff is going to take a piece of paper and write out the regular bracket sequence, consisting of nm brackets. Let's number all brackets of this sequence from 0 to nm - 1 from left to right. Jeff knows that he is going to spend ai mod n liters of ink on the i-th bracket of the sequence if he paints it opened and bi mod n liters if he paints it closed.You've got sequences a, b and numbers n, m. What minimum amount of ink will Jeff need to paint a regular bracket sequence of length nm?Operation x mod y means taking the remainder after dividing number x by number y.\nInput Specification: The first line contains two integers n and m (1\u2009\u2264\u2009n\u2009\u2264\u200920;\u00a01\u2009\u2264\u2009m\u2009\u2264\u2009107; m is even). The next line contains n integers: a0, a1, ..., an\u2009-\u20091 (1\u2009\u2264\u2009ai\u2009\u2264\u200910). The next line contains n integers: b0, b1, ..., bn\u2009-\u20091 (1\u2009\u2264\u2009bi\u2009\u2264\u200910). The numbers are separated by spaces.\nOutput Specification: In a single line print the answer to the problem \u2014 the minimum required amount of ink in liters.\n\nSample Input:\n2 6\n1 2\n2 1\nSample Output:\n12\n\nSample Input:\n1 10000000\n2\n3\nSample Output:\n25000000\n\nNotes: NoteIn the first test the optimal sequence is: ()()()()()(), the required number of ink liters is 12.\nTake input from standard input and output to standard output\nProvide the PHP code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "f40900973f4ebeb6fdafd75ebe4e9601",
+        "difficulty": 2500,
+        "prob_desc_sample_inputs": [
+            "2 6\n1 2\n2 1",
+            "1 10000000\n2\n3"
+        ],
+        "prob_desc_time_limit": "1 second",
+        "tags": [
+            "dp",
+            "matrices"
+        ],
+        "prob_desc_output_spec": "In a single line print the answer to the problem \u2014 the minimum required amount of ink in liters.",
+        "prob_desc_input_spec": "The first line contains two integers n and m (1\u2009\u2264\u2009n\u2009\u2264\u200920;\u00a01\u2009\u2264\u2009m\u2009\u2264\u2009107; m is even). The next line contains n integers: a0, a1, ..., an\u2009-\u20091 (1\u2009\u2264\u2009ai\u2009\u2264\u200910). The next line contains n integers: b0, b1, ..., bn\u2009-\u20091 (1\u2009\u2264\u2009bi\u2009\u2264\u200910). The numbers are separated by spaces.",
+        "lang_cluster": "PHP",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first test the optimal sequence is: ()()()()()(), the required number of ink liters is 12.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Jeff loves regular bracket sequences.Today Jeff is going to take a piece of paper and write out the regular bracket sequence, consisting of nm brackets. Let's number all brackets of this sequence from 0 to nm - 1 from left to right. Jeff knows that he is going to spend ai mod n liters of ink on the i-th bracket of the sequence if he paints it opened and bi mod n liters if he paints it closed.You've got sequences a, b and numbers n, m. What minimum amount of ink will Jeff need to paint a regular bracket sequence of length nm?Operation x mod y means taking the remainder after dividing number x by number y.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1380900600",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "12",
+            "25000000"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"2 6\\r\\n1 2\\r\\n2 1\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1 10000000\\r\\n2\\r\\n3\\r\\n\", \"output\": [\"25000000\"]}, {\"input\": \"3 184\\r\\n3 2 8\\r\\n3 9 2\\r\\n\", \"output\": [\"1288\"]}, {\"input\": \"4 26\\r\\n10 2 5 9\\r\\n5 4 2 5\\r\\n\", \"output\": [\"444\"]}, {\"input\": \"3 76\\r\\n4 7 9\\r\\n10 1 1\\r\\n\", \"output\": [\"684\"]}, {\"input\": \"3 98\\r\\n6 1 9\\r\\n10 2 4\\r\\n\", \"output\": [\"1127\"]}, {\"input\": \"5 114\\r\\n7 5 8 10 10\\r\\n2 7 9 4 5\\r\\n\", \"output\": [\"3021\"]}, {\"input\": \"1 14\\r\\n7\\r\\n6\\r\\n\", \"output\": [\"91\"]}, {\"input\": \"5 142\\r\\n8 7 6 2 2\\r\\n8 2 6 1 7\\r\\n\", \"output\": [\"2703\"]}, {\"input\": \"1 184\\r\\n8\\r\\n8\\r\\n\", \"output\": [\"1472\"]}, {\"input\": \"2 1900670\\r\\n10 3\\r\\n9 6\\r\\n\", \"output\": [\"22808044\"]}, {\"input\": \"6 17656\\r\\n2 7 4 7 7 3\\r\\n3 5 3 6 9 10\\r\\n\", \"output\": [\"459064\"]}, {\"input\": \"16 3273408\\r\\n3 2 8 8 10 1 1 7 1 4 5 7 5 8 10 10\\r\\n4 4 3 4 7 9 5 1 7 10 7 2 7 9 4 5\\r\\n\", \"output\": [\"186584261\"]}, {\"input\": \"11 4532614\\r\\n7 3 4 1 8 3 5 2 8 10 9\\r\\n6 10 3 7 5 1 1 8 4 9 7\\r\\n\", \"output\": [\"201701323\"]}, {\"input\": \"7 3952828\\r\\n1 1 9 3 5 9 2\\r\\n3 5 6 2 7 9 4\\r\\n\", \"output\": [\"106726356\"]}, {\"input\": \"20 807878\\r\\n9 4 2 5 2 7 9 3 4 4 9 2 8 3 8 9 5 7 4 7\\r\\n8 4 8 7 10 4 10 6 8 1 7 9 3 10 2 2 6 7 3 9\\r\\n\", \"output\": [\"67053877\"]}, {\"input\": \"3 3684044\\r\\n8 6 4\\r\\n3 1 2\\r\\n\", \"output\": [\"38682465\"]}, {\"input\": \"9 7683580\\r\\n4 6 8 5 10 6 3 4 7\\r\\n6 7 3 10 3 10 1 4 10\\r\\n\", \"output\": [\"303501412\"]}, {\"input\": \"10 6007734\\r\\n4 7 6 7 4 3 4 7 7 6\\r\\n8 9 5 7 6 3 2 2 10 4\\r\\n\", \"output\": [\"270348030\"]}, {\"input\": \"7 859320\\r\\n10 1 4 9 2 5 5\\r\\n5 10 3 6 6 5 10\\r\\n\", \"output\": [\"23201650\"]}, {\"input\": \"20 10000000\\r\\n10 3 2 6 2 3 9 2 8 4 4 4 3 4 7 9 5 1 7 10\\r\\n9 6 2 8 3 2 8 10 6 3 2 8 8 10 1 1 7 1 4 5\\r\\n\", \"output\": [\"730000001\"]}, {\"input\": \"20 10000000\\r\\n7 10 9 2 9 7 6 10 3 7 5 1 1 8 4 9 7 9 6 8\\r\\n9 4 3 6 1 7 3 4 1 8 3 5 2 8 10 9 1 2 10 4\\r\\n\", \"output\": [\"780000008\"]}, {\"input\": \"20 10000000\\r\\n2 7 9 4 1 9 8 4 6 10 5 10 4 5 9 9 10 9 1 6\\r\\n5 9 2 9 8 9 1 10 1 9 5 6 4 9 1 10 3 9 9 7\\r\\n\", \"output\": [\"890000001\"]}, {\"input\": \"20 10000000\\r\\n6 7 3 9 10 10 1 9 4 6 8 5 10 6 3 4 7 8 6 6\\r\\n7 4 7 2 7 3 10 10 6 7 3 10 3 10 1 4 10 10 7 3\\r\\n\", \"output\": [\"920000004\"]}, {\"input\": \"20 10000000\\r\\n7 4 3 4 7 7 6 5 4 6 5 8 3 5 3 8 4 3 4 8\\r\\n7 6 3 2 2 10 4 3 5 7 9 9 8 5 4 9 4 3 3 4\\r\\n\", \"output\": [\"880000001\"]}, {\"input\": \"1 2\\r\\n1\\r\\n1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"20 10000000\\r\\n1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1\\r\\n1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1\\r\\n\", \"output\": [\"200000000\"]}, {\"input\": \"20 10000000\\r\\n10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10\\r\\n10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10\\r\\n\", \"output\": [\"2000000000\"]}]"
+    }
+}

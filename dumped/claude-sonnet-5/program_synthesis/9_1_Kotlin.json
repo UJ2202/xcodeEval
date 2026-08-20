@@ -1,0 +1,96 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-cea6aad4-3252-4dbd-912f-f1c00571d0e5",
+        "created": 1787241322,
+        "model": "azure_ai/claude-sonnet-5",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```kotlin\nimport java.util.Scanner\n\nconst val MOD = 1_000_000_007L\n\nfun power(base: Long, exp: Long, mod: Long): Long {\n    var result = 1L\n    var b = base % mod\n    if (b < 0) b += mod\n    var e = exp\n    while (e > 0) {\n        if (e and 1L == 1L) {\n            result = result * b % mod\n        }\n        b = b * b % mod\n        e = e shr 1\n    }\n    return result\n}\n\nfun modInverse(a: Long, mod: Long): Long {\n    return power(a, mod - 2, mod)\n}\n\nfun main() {\n    val br = System.`in`.bufferedReader()\n    val line = br.readLine().trim().split(\" \")\n    var n = line[0].toLong()\n    val k = line[1].toInt()\n\n    // Factorize n\n    val factors = LinkedHashMap<Long, Int>()\n    var num = n\n    var i = 2L\n    while (i * i <= num) {\n        if (num % i == 0L) {\n            var cnt = 0\n            while (num % i == 0L) {\n                num /= i\n                cnt++\n            }\n            factors[i] = cnt\n        }\n        i++\n    }\n    if (num > 1L) {\n        factors[num] = (factors[num] ?: 0) + 1\n    }\n\n    var answer = 1L\n\n    for ((p, e) in factors) {\n        // dp array over exponents 0..e\n        var dp = LongArray(e + 1)\n        dp[e] = 1L\n\n        // precompute inverses for 1..(e+1)\n        val inv = LongArray(e + 2)\n        for (j in 1..(e + 1)) {\n            inv[j] = modInverse(j.toLong(), MOD)\n        }\n\n        for (step in 1..k) {\n            val c = LongArray(e + 1)\n            for (idx in 0..e) {\n                c[idx] = dp[idx] * inv[idx + 1] % MOD\n            }\n            val newDp = LongArray(e + 1)\n            var suffix = 0L\n            for (j in e downTo 0) {\n                suffix = (suffix + c[j]) % MOD\n                newDp[j] = suffix\n            }\n            dp = newDp\n        }\n\n        val pMod = p % MOD\n        var contrib = 0L\n        var pPow = 1L // p^0\n        for (j in 0..e) {\n            contrib = (contrib + dp[j] * pPow) % MOD\n            pPow = pPow * pMod % MOD\n        }\n\n        answer = answer * contrib % MOD\n    }\n\n    println(answer)\n}\n```",
+                    "role": "assistant",
+                    "reasoning_content": "",
+                    "thinking_blocks": [
+                        {
+                            "type": "thinking",
+                            "thinking": "",
+                            "signature": "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"
+                        }
+                    ],
+                    "provider_specific_fields": {
+                        "citations": null,
+                        "thinking_blocks": [
+                            {
+                                "type": "thinking",
+                                "thinking": "",
+                                "signature": "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"
+                            }
+                        ]
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 2023,
+            "prompt_tokens": 848,
+            "total_tokens": 2871,
+            "completion_tokens_details": {
+                "reasoning_tokens": 0,
+                "text_tokens": 2023
+            },
+            "prompt_tokens_details": {
+                "cache_write_tokens": 0,
+                "cached_tokens": 0,
+                "text_tokens": 848,
+                "cache_creation_tokens": 0,
+                "cache_creation_token_details": {
+                    "ephemeral_5m_input_tokens": 0,
+                    "ephemeral_1h_input_tokens": 0
+                }
+            },
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0,
+            "inference_geo": "not_available",
+            "service_tier": "standard"
+        },
+        "prompt": "Write a program in Kotlin to solve this programming problem:\nDescription: Makoto has a big blackboard with a positive integer $$$n$$$ written on it. He will perform the following action exactly $$$k$$$ times:Suppose the number currently written on the blackboard is $$$v$$$. He will randomly pick one of the divisors of $$$v$$$ (possibly $$$1$$$ and $$$v$$$) and replace $$$v$$$ with this divisor. As Makoto uses his famous random number generator (RNG) and as he always uses $$$58$$$ as his generator seed, each divisor is guaranteed to be chosen with equal probability.He now wonders what is the expected value of the number written on the blackboard after $$$k$$$ steps.It can be shown that this value can be represented as $$$\\frac{P}{Q}$$$ where $$$P$$$ and $$$Q$$$ are coprime integers and $$$Q \\not\\equiv 0 \\pmod{10^9+7}$$$. Print the value of $$$P \\cdot Q^{-1}$$$ modulo $$$10^9+7$$$.\nInput Specification: The only line of the input contains two integers $$$n$$$ and $$$k$$$ ($$$1 \\leq n \\leq 10^{15}$$$, $$$1 \\leq k \\leq 10^4$$$).\nOutput Specification: Print a single integer \u2014 the expected value of the number on the blackboard after $$$k$$$ steps as $$$P \\cdot Q^{-1} \\pmod{10^9+7}$$$ for $$$P$$$, $$$Q$$$ defined above.\n\nSample Input:\n6 1\nSample Output:\n3\n\nSample Input:\n6 2\nSample Output:\n875000008\n\nSample Input:\n60 5\nSample Output:\n237178099\n\nNotes: NoteIn the first example, after one step, the number written on the blackboard is $$$1$$$, $$$2$$$, $$$3$$$ or $$$6$$$ \u2014 each occurring with equal probability. Hence, the answer is $$$\\frac{1+2+3+6}{4}=3$$$.In the second example, the answer is equal to $$$1 \\cdot \\frac{9}{16}+2 \\cdot \\frac{3}{16}+3 \\cdot \\frac{3}{16}+6 \\cdot \\frac{1}{16}=\\frac{15}{8}$$$.\nTake input from standard input and output to standard output\nProvide the Kotlin code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "dc466d9c24b7dcb37c0e99337b4124d2",
+        "difficulty": 2200,
+        "prob_desc_sample_inputs": [
+            "6 1",
+            "6 2",
+            "60 5"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "math",
+            "number theory",
+            "probabilities",
+            "dp"
+        ],
+        "prob_desc_output_spec": "Print a single integer \u2014 the expected value of the number on the blackboard after $$$k$$$ steps as $$$P \\cdot Q^{-1} \\pmod{10^9+7}$$$ for $$$P$$$, $$$Q$$$ defined above.",
+        "prob_desc_input_spec": "The only line of the input contains two integers $$$n$$$ and $$$k$$$ ($$$1 \\leq n \\leq 10^{15}$$$, $$$1 \\leq k \\leq 10^4$$$).",
+        "lang_cluster": "Kotlin",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first example, after one step, the number written on the blackboard is $$$1$$$, $$$2$$$, $$$3$$$ or $$$6$$$ \u2014 each occurring with equal probability. Hence, the answer is $$$\\frac{1+2+3+6}{4}=3$$$.In the second example, the answer is equal to $$$1 \\cdot \\frac{9}{16}+2 \\cdot \\frac{3}{16}+3 \\cdot \\frac{3}{16}+6 \\cdot \\frac{1}{16}=\\frac{15}{8}$$$.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Makoto has a big blackboard with a positive integer $$$n$$$ written on it. He will perform the following action exactly $$$k$$$ times:Suppose the number currently written on the blackboard is $$$v$$$. He will randomly pick one of the divisors of $$$v$$$ (possibly $$$1$$$ and $$$v$$$) and replace $$$v$$$ with this divisor. As Makoto uses his famous random number generator (RNG) and as he always uses $$$58$$$ as his generator seed, each divisor is guaranteed to be chosen with equal probability.He now wonders what is the expected value of the number written on the blackboard after $$$k$$$ steps.It can be shown that this value can be represented as $$$\\frac{P}{Q}$$$ where $$$P$$$ and $$$Q$$$ are coprime integers and $$$Q \\not\\equiv 0 \\pmod{10^9+7}$$$. Print the value of $$$P \\cdot Q^{-1}$$$ modulo $$$10^9+7$$$.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1546613100",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "3",
+            "875000008",
+            "237178099"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"6 1\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"6 2\\r\\n\", \"output\": [\"875000008\"]}, {\"input\": \"60 5\\r\\n\", \"output\": [\"237178099\"]}, {\"input\": \"2 4\\r\\n\", \"output\": [\"562500005\"]}, {\"input\": \"12 3\\r\\n\", \"output\": [\"775462970\"]}, {\"input\": \"55 5\\r\\n\", \"output\": [\"789062507\"]}, {\"input\": \"935 9\\r\\n\", \"output\": [\"658825880\"]}, {\"input\": \"1 10000\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"120 1\\r\\n\", \"output\": [\"500000026\"]}, {\"input\": \"1000000000000000 10000\\r\\n\", \"output\": [\"215514159\"]}, {\"input\": \"671058194037157 8673\\r\\n\", \"output\": [\"298638658\"]}, {\"input\": \"900018062553298 4801\\r\\n\", \"output\": [\"345432320\"]}, {\"input\": \"128973636102142 5521\\r\\n\", \"output\": [\"99152648\"]}, {\"input\": \"999999999999993 8123\\r\\n\", \"output\": [\"868053217\"]}, {\"input\": \"260858031033600 9696\\r\\n\", \"output\": [\"692221824\"]}, {\"input\": \"562949953421312 9779\\r\\n\", \"output\": [\"98057767\"]}, {\"input\": \"357933504618282 1649\\r\\n\", \"output\": [\"197730476\"]}, {\"input\": \"586884783199831 5073\\r\\n\", \"output\": [\"883678085\"]}, {\"input\": \"187877211524483 8497\\r\\n\", \"output\": [\"562808746\"]}, {\"input\": \"866421317361600 10000\\r\\n\", \"output\": [\"82212846\"]}, {\"input\": \"782574093100800 9999\\r\\n\", \"output\": [\"293217028\"]}, {\"input\": \"577614211574400 9998\\r\\n\", \"output\": [\"681915605\"]}, {\"input\": \"65214507758400 9997\\r\\n\", \"output\": [\"677959603\"]}, {\"input\": \"963761198400 9996\\r\\n\", \"output\": [\"669401143\"]}, {\"input\": \"5587021440 9995\\r\\n\", \"output\": [\"360750834\"]}, {\"input\": \"17297280 9994\\r\\n\", \"output\": [\"94383698\"]}, {\"input\": \"7560 9993\\r\\n\", \"output\": [\"412712546\"]}, {\"input\": \"120 9992\\r\\n\", \"output\": [\"167656619\"]}, {\"input\": \"1 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"609359740010496 1337\\r\\n\", \"output\": [\"263703037\"]}, {\"input\": \"912750790581630 9876\\r\\n\", \"output\": [\"291557094\"]}, {\"input\": \"617673396283947 7777\\r\\n\", \"output\": [\"488769014\"]}, {\"input\": \"890604418498560 9119\\r\\n\", \"output\": [\"185509970\"]}, {\"input\": \"524288004718592 8888\\r\\n\", \"output\": [\"851726115\"]}, {\"input\": \"999999999999989 8998\\r\\n\", \"output\": [\"391873310\"]}, {\"input\": \"999999999999999 8123\\r\\n\", \"output\": [\"41003922\"]}, {\"input\": \"817237005720659 4233\\r\\n\", \"output\": [\"533017938\"]}, {\"input\": \"1000000007 1\\r\\n\", \"output\": [\"500000004\"]}, {\"input\": \"1000000007 2\\r\\n\", \"output\": [\"750000006\"]}, {\"input\": \"999999999999970 8998\\r\\n\", \"output\": [\"939941657\"]}, {\"input\": \"900000060000001 8123\\r\\n\", \"output\": [\"865356488\"]}, {\"input\": \"999011322032079 4233\\r\\n\", \"output\": [\"546309400\"]}, {\"input\": \"999005327998113 9119\\r\\n\", \"output\": [\"106270540\"]}, {\"input\": \"900000720000023 9876\\r\\n\", \"output\": [\"511266473\"]}]"
+    }
+}
