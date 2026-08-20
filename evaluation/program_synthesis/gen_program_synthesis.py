@@ -68,22 +68,30 @@ EXTRA_KWARGS = {"chat_template_kwargs": {"enable_thinking": False}} if MODEL in 
 MAX_TOKENS = 65536 if MODEL == "nvidia/nemotron-3-ultra-550b-a55b" else (4096 if MODEL in VLLM_MODELS else 8192)
 MAX_N = 8 if MODEL == "gpt4o" else 20  # Azure gpt4o hard limit is n<=8
 
-# ── Anthropic support ────────────────────────────────────────────────────────
-# Set ANTHROPIC_API_KEY to enable; set ANTHROPIC_BASE_URL for Azure AI endpoints.
-# Azure example: ANTHROPIC_BASE_URL=https://<resource>.services.ai.azure.com/anthropic
+# ── Anthropic / Azure AI Foundry support ─────────────────────────────────────
+# Direct Anthropic: set ANTHROPIC_API_KEY only.
+# Azure AI Foundry:  set ANTHROPIC_API_KEY + ANTHROPIC_BASE_URL
+#   e.g. ANTHROPIC_BASE_URL=https://<resource>.services.ai.azure.com/anthropic
+#   Uses AnthropicFoundry client which handles Azure auth correctly.
 ANTHROPIC_API_KEY  = os.environ.get("ANTHROPIC_API_KEY")
 ANTHROPIC_BASE_URL = os.environ.get("ANTHROPIC_BASE_URL")
-USE_ANTHROPIC = bool(ANTHROPIC_API_KEY)
+USE_ANTHROPIC = bool(ANTHROPIC_API_KEY or ANTHROPIC_BASE_URL)
+_IS_AZURE = bool(ANTHROPIC_BASE_URL and "azure.com" in ANTHROPIC_BASE_URL)
 
 _anth_client = None
 if USE_ANTHROPIC:
     import anthropic as _anthropic_module
-    _anth_kwargs = {"api_key": ANTHROPIC_API_KEY}
-    if ANTHROPIC_BASE_URL:
-        _anth_kwargs["base_url"] = ANTHROPIC_BASE_URL
-        if "azure.com" in ANTHROPIC_BASE_URL:
-            _anth_kwargs["default_headers"] = {"api-key": ANTHROPIC_API_KEY}
-    _anth_client = _anthropic_module.Anthropic(**_anth_kwargs)
+    if _IS_AZURE:
+        _anth_client = _anthropic_module.AnthropicFoundry(
+            api_key=ANTHROPIC_API_KEY,
+            base_url=ANTHROPIC_BASE_URL,
+        )
+    else:
+        _anth_client = _anthropic_module.Anthropic(
+            api_key=ANTHROPIC_API_KEY,
+            **({"base_url": ANTHROPIC_BASE_URL} if ANTHROPIC_BASE_URL else {}),
+            timeout=120.0,
+        )
 
 def _gen_anthropic(prompt, temperature, nsample, max_tokens):
     choices = []
@@ -94,8 +102,7 @@ def _gen_anthropic(prompt, temperature, nsample, max_tokens):
                 break
             try:
                 resp = _anth_client.messages.create(
-                    model=MODEL,
-                    max_tokens=max_tokens,
+                    model=MODEL, max_tokens=max_tokens,
                     temperature=temperature,
                     messages=[{"role": "user", "content": prompt}],
                 )
@@ -104,8 +111,7 @@ def _gen_anthropic(prompt, temperature, nsample, max_tokens):
             except Exception as e:
                 cnt += 1
                 time.sleep(3)
-                if cnt <= 3:
-                    print(f"  anthropic retry {cnt}: {e}")
+                print(f"  anthropic retry {cnt}/20: {e}")
     return {"choices": choices, "prompt": prompt}
 
 
