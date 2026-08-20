@@ -18,8 +18,48 @@ openai.api_key  = os.environ.get("OPENAI_API_KEY", "sk-local-dev")
 openai.api_base = os.environ.get("OPENAI_API_BASE", "http://localhost:4000")
 MODEL      = os.environ.get("XCODEEVAL_MODEL", "nvidia/nemotron-3-ultra-550b-a55b")
 NSAMPLE    = int(os.environ.get("NSAMPLE", "5"))
-MAX_TOKENS = 4096
+MAX_TOKENS = int(os.environ.get("MAX_TOKENS", "16384"))
 NUM_WORKERS = int(os.environ.get("NUM_PROC", "16"))
+
+# ── Anthropic support ────────────────────────────────────────────────────────
+# Set ANTHROPIC_API_KEY to enable; set ANTHROPIC_BASE_URL for Azure AI endpoints.
+# Azure example: ANTHROPIC_BASE_URL=https://<resource>.services.ai.azure.com/anthropic
+ANTHROPIC_API_KEY  = os.environ.get("ANTHROPIC_API_KEY")
+ANTHROPIC_BASE_URL = os.environ.get("ANTHROPIC_BASE_URL")
+USE_ANTHROPIC = bool(ANTHROPIC_API_KEY)
+
+_anth_client = None
+if USE_ANTHROPIC:
+    import anthropic as _anthropic_module
+    _anth_kwargs = {"api_key": ANTHROPIC_API_KEY}
+    if ANTHROPIC_BASE_URL:
+        _anth_kwargs["base_url"] = ANTHROPIC_BASE_URL
+        if "azure.com" in ANTHROPIC_BASE_URL:
+            _anth_kwargs["default_headers"] = {"api-key": ANTHROPIC_API_KEY}
+    _anth_client = _anthropic_module.Anthropic(**_anth_kwargs)
+
+def _gen_anthropic(prompt, temperature, nsample, max_tokens):
+    choices = []
+    for _ in range(nsample):
+        cnt = 0
+        while True:
+            if cnt >= 20:
+                break
+            try:
+                resp = _anth_client.messages.create(
+                    model=MODEL,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                choices.append({"message": {"content": resp.content[0].text}})
+                break
+            except Exception as e:
+                cnt += 1
+                time.sleep(3)
+                if cnt <= 3:
+                    print(f"  anthropic retry {cnt}: {e}")
+    return {"choices": choices, "prompt": prompt}
 
 BASELINE_ROOT = "/home/ujjwal.tiwari/ace/benchmarks/xcodeEval/dumped/baseline/gpt4o"
 # Set MODEL_OUT_NAME to name the output dir (e.g. "llama-4-scout"); defaults to nemotron-550b
@@ -57,6 +97,8 @@ LANGS = sorted(set(SHORT_LANG_MAP.values()))
 
 
 def gen(prompt):
+    if USE_ANTHROPIC:
+        return _gen_anthropic(prompt, TEMP, NSAMPLE, MAX_TOKENS)
     cnt = 0
     while True:
         if cnt >= 20:

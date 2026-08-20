@@ -174,6 +174,8 @@ def fix_uts(uts):
 def process(args):
     sample, execeval = args
     src_uid = sample["source_data"]["src_uid"]
+    if "hidden_unit_tests" not in sample["source_data"]:
+        return None
     unit_tests = json.loads(sample["source_data"]["hidden_unit_tests"])
     compiler = LANG_CLUSTER_TO_LANG_COMPILER[sample["source_data"]["lang_cluster"]]
     sample["unit_test_results"] = []
@@ -249,7 +251,8 @@ def main():
                     ):
                         try:
                             __out = _out.result()
-                            jwp.write(__out)
+                            if __out is not None:
+                                jwp.write(__out)
                         except Exception as emsg:
                             print("Exception msg: {}".format(emsg))
                             pass

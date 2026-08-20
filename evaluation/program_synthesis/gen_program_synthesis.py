@@ -63,13 +63,55 @@ openai.api_base = os.environ.get("OPENAI_API_BASE", "http://localhost:4000")
 MODEL = os.environ.get("XCODEEVAL_MODEL", "gpt4o")
 
 # vLLM models need thinking disabled; gpt4o goes through LiteLLM which doesn't accept this param
-VLLM_MODELS = {"qwen-nvfp4", "laguna-nvfp4"}
+VLLM_MODELS = {"qwen-nvfp4", "laguna-nvfp4", "nvidia/nemotron-3-ultra-550b-a55b"}
 EXTRA_KWARGS = {"chat_template_kwargs": {"enable_thinking": False}} if MODEL in VLLM_MODELS else {}
-MAX_TOKENS = 4096 if MODEL in VLLM_MODELS or MODEL == "nemotron-ultra-nvfp4" else 8192
+MAX_TOKENS = 65536 if MODEL == "nvidia/nemotron-3-ultra-550b-a55b" else (4096 if MODEL in VLLM_MODELS else 8192)
 MAX_N = 8 if MODEL == "gpt4o" else 20  # Azure gpt4o hard limit is n<=8
+
+# ── Anthropic support ────────────────────────────────────────────────────────
+# Set ANTHROPIC_API_KEY to enable; set ANTHROPIC_BASE_URL for Azure AI endpoints.
+# Azure example: ANTHROPIC_BASE_URL=https://<resource>.services.ai.azure.com/anthropic
+ANTHROPIC_API_KEY  = os.environ.get("ANTHROPIC_API_KEY")
+ANTHROPIC_BASE_URL = os.environ.get("ANTHROPIC_BASE_URL")
+USE_ANTHROPIC = bool(ANTHROPIC_API_KEY)
+
+_anth_client = None
+if USE_ANTHROPIC:
+    import anthropic as _anthropic_module
+    _anth_kwargs = {"api_key": ANTHROPIC_API_KEY}
+    if ANTHROPIC_BASE_URL:
+        _anth_kwargs["base_url"] = ANTHROPIC_BASE_URL
+        if "azure.com" in ANTHROPIC_BASE_URL:
+            _anth_kwargs["default_headers"] = {"api-key": ANTHROPIC_API_KEY}
+    _anth_client = _anthropic_module.Anthropic(**_anth_kwargs)
+
+def _gen_anthropic(prompt, temperature, nsample, max_tokens):
+    choices = []
+    for _ in range(nsample):
+        cnt = 0
+        while True:
+            if cnt >= 20:
+                break
+            try:
+                resp = _anth_client.messages.create(
+                    model=MODEL,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                choices.append({"message": {"content": resp.content[0].text}})
+                break
+            except Exception as e:
+                cnt += 1
+                time.sleep(3)
+                if cnt <= 3:
+                    print(f"  anthropic retry {cnt}: {e}")
+    return {"choices": choices, "prompt": prompt}
 
 
 def gen(prompt, temperature, nsample):
+    if USE_ANTHROPIC:
+        return _gen_anthropic(prompt, temperature, nsample, MAX_TOKENS)
     cnt = 0
     while True:
         if cnt == 999:
