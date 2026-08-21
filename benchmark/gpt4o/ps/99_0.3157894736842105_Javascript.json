@@ -1,0 +1,348 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEI5jxSsrxvCJjRIddSimICFiyE8N",
+        "created": 1787074843,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nif (input.length < 2) process.exit(0);\nconst n = input[0];\nconst t = input[1];\n\nconst MAX_Y = 4;\n\n// dp[pos][prevY][prevDir+1][peaks][valleys]\nlet dp = [];\nfor (let pos = 0; pos <= n; pos++) {\n    dp[pos] = [];\n    for (let y = 0; y <= MAX_Y; y++) {\n        dp[pos][y] = [];\n        for (let d = 0; d < 3; d++) {\n            dp[pos][y][d] = [];\n            for (let p = 0; p <= t; p++) {\n                dp[pos][y][d][p] = new Array(t).fill(0);\n            }\n        }\n    }\n}\n\n// Initialization for position 1\nfor (let y1 = 1; y1 <= MAX_Y; y1++) {\n    // prevDir index: 0 -> -1, 1 -> 0, 2 -> +1\n    dp[1][y1][1][0][0] = 1; // direction 0 (no previous segment)\n}\n\nfor (let pos = 2; pos <= n; pos++) {\n    for (let prevY = 1; prevY <= MAX_Y; prevY++) {\n        for (let dirIdx = 0; dirIdx < 3; dirIdx++) {\n            for (let peaks = 0; peaks <= t; peaks++) {\n                for (let valleys = 0; valleys < t; valleys++) {\n                    const curWays = dp[pos - 1][prevY][dirIdx][peaks][valleys];\n                    if (!curWays) continue;\n\n                    for (let y = 1; y <= MAX_Y; y++) {\n                        if (y === prevY) continue; // no horizontal segment\n\n                        const newDir = y > prevY ? 1 : -1;\n                        const newDirIdx = newDir + 1;\n\n                        let newPeaks = peaks;\n                        let newValleys = valleys;\n\n                        if (pos >= 3) {\n                            const prevDir = dirIdx - 1;\n                            if (prevDir === 1 && newDir === -1) {\n                                // peak at pos-1\n                                newPeaks++;\n                            } else if (prevDir === -1 && newDir === 1) {\n                                // valley at pos-1\n                                newValleys++;\n                            }\n                        }\n\n                        if (newPeaks > t || newValleys >= t) continue;\n\n                        dp[pos][y][newDirIdx][newPeaks][newValleys] += curWays;\n                    }\n                }\n            }\n        }\n    }\n}\n\nlet result = 0;\nfor (let y = 1; y <= MAX_Y; y++) {\n    for (let dirIdx = 0; dirIdx < 3; dirIdx++) {\n        result += dp[n][y][dirIdx][t][t - 1];\n    }\n}\n\nconsole.log(result.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nif (input.length < 2) process.exit(0);\nconst n = input[0];\nconst t = input[1];\n\nconst MAX_Y = 4;\n\n// dp[pos][lastY][dir][peaks][valleys]\n// dir: 0 = down, 1 = up\n// lastY in [1..4]\nconst dp = [];\nfor (let pos = 0; pos <= n; pos++) {\n    dp[pos] = [];\n    for (let y = 0; y <= MAX_Y; y++) {\n        dp[pos][y] = [];\n        for (let d = 0; d < 2; d++) {\n            dp[pos][y][d] = [];\n            for (let p = 0; p <= t; p++) {\n                dp[pos][y][d][p] = new Array(t).fill(0n);\n            }\n        }\n    }\n}\n\n// Initialize for position 1: choose y1 in [1..4]\nfor (let y1 = 1; y1 <= MAX_Y; y1++) {\n    // We don't know direction yet; it will be set at pos=2\n    // So we handle initialization when setting pos=2 transitions.\n    // We'll store a temporary array for pos=1.\n}\n\n// temp[pos][lastY] = count of sequences up to pos with lastY, no direction yet\nconst temp = [];\ntemp[1] = new Array(MAX_Y + 1).fill(0n);\nfor (let y1 = 1; y1 <= MAX_Y; y1++) {\n    temp[1][y1] = 1n;\n}\n\n// Handle transitions from pos=1 to pos=2, setting initial direction\nconst pos = 2;\nfor (let lastY = 1; lastY <= MAX_Y; lastY++) {\n    const ways = temp[1][lastY];\n    if (ways === 0n) continue;\n    for (let y = 1; y <= MAX_Y; y++) {\n        if (y === lastY) continue; // no horizontal segments\n        const dir = y > lastY ? 1 : 0; // up or down\n        // At pos=2, we have no peaks or valleys yet (need middle point)\n        dp[pos][y][dir][0][0] += ways;\n    }\n}\n\n// Main DP for positions 3..n\nfor (let i = 3; i <= n; i++) {\n    for (let lastY = 1; lastY <= MAX_Y; lastY++) {\n        for (let dir = 0; dir < 2; dir++) {\n            for (let peaks = 0; peaks <= t; peaks++) {\n                for (let valleys = 0; valleys < t; valleys++) {\n                    const curVal = dp[i - 1][lastY][dir][peaks][valleys];\n                    if (curVal === 0n) continue;\n                    for (let y = 1; y <= MAX_Y; y++) {\n                        if (y === lastY) continue;\n                        const newDir = y > lastY ? 1 : 0;\n                        let newPeaks = peaks;\n                        let newValleys = valleys;\n                        if (newDir !== dir) {\n                            // direction change => lastY is extremum\n                            if (dir === 1 && newDir === 0) {\n                                // up then down => peak at lastY\n                                newPeaks++;\n                                if (newPeaks > t) continue;\n                            } else if (dir === 0 && newDir === 1) {\n                                // down then up => valley at lastY\n                                newValleys++;\n                                if (newValleys >= t) continue;\n                            }\n                        }\n                        dp[i][y][newDir][newPeaks][newValleys] += curVal;\n                    }\n                }\n            }\n        }\n    }\n}\n\n// Sum results at position n with exactly t peaks and t-1 valleys\nlet result = 0n;\nif (t === 0) {\n    // No humps: no peaks and no valleys\n    for (let lastY = 1; lastY <= MAX_Y; lastY++) {\n        for (let dir = 0; dir < 2; dir++) {\n            result += dp[n][lastY][dir][0][0];\n        }\n    }\n} else {\n    for (let lastY = 1; lastY <= MAX_Y; lastY++) {\n        for (let dir = 0; dir < 2; dir++) {\n            result += dp[n][lastY][dir][t][t - 1];\n        }\n    }\n}\n\nconsole.log(result.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nif (input.length < 2) process.exit(0);\nconst n = input[0];\nconst t = input[1];\n\nconst MAX_Y = 4;\n\n// dp[pos][prev][curr][peaks][valleys][trend]\n// trend: 0 = none, 1 = up, 2 = down\n// Using object map to store only reachable states\nlet dp = new Map();\n\nfunction key(pos, prev, curr, peaks, valleys, trend) {\n    return `${pos}|${prev}|${curr}|${peaks}|${valleys}|${trend}`;\n}\n\nlet ans = 0;\n\n// Initialize for position 2 (we choose y1 and y2)\nfor (let y1 = 1; y1 <= MAX_Y; y1++) {\n    for (let y2 = 1; y2 <= MAX_Y; y2++) {\n        if (y1 === y2) continue; // no horizontal segment\n        const trend = y2 > y1 ? 1 : 2;\n        const k = key(2, y1, y2, 0, 0, trend);\n        dp.set(k, (dp.get(k) || 0) + 1);\n    }\n}\n\nfor (let pos = 2; pos < n; pos++) {\n    const nextDp = new Map();\n    for (const [stateKey, count] of dp.entries()) {\n        const parts = stateKey.split('|').map(Number);\n        const prev = parts[1];\n        const curr = parts[2];\n        const peaks = parts[3];\n        const valleys = parts[4];\n        const trend = parts[5];\n\n        for (let next = 1; next <= MAX_Y; next++) {\n            if (next === curr) continue; // no horizontal segment\n\n            let newTrend = trend;\n            let newPeaks = peaks;\n            let newValleys = valleys;\n\n            if (next > curr) {\n                if (trend === 2) {\n                    // was down, now up -> valley at curr\n                    newValleys++;\n                }\n                newTrend = 1;\n            } else { // next < curr\n                if (trend === 1) {\n                    // was up, now down -> peak at curr\n                    newPeaks++;\n                }\n                newTrend = 2;\n            }\n\n            // Prune if already exceed required peaks/valleys\n            if (newPeaks > t || newValleys > t - 1) continue;\n\n            const k = key(pos + 1, curr, next, newPeaks, newValleys, newTrend);\n            nextDp.set(k, (nextDp.get(k) || 0) + count);\n        }\n    }\n    dp = nextDp;\n}\n\n// At the end, we just need states with exactly t peaks and t-1 valleys\nfor (const [stateKey, count] of dp.entries()) {\n    const parts = stateKey.split('|').map(Number);\n    const peaks = parts[3];\n    const valleys = parts[4];\n    if (peaks === t && valleys === t - 1) {\n        ans += count;\n    }\n}\n\nconsole.log(ans.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nif (input.length < 2) process.exit(0);\nconst n = input[0];\nconst t = input[1];\n\nconst MAX_Y = 4;\n\n// dp[pos][lastY][trend+1][peaks][valleys]\nlet dp = [];\nfor (let pos = 0; pos <= n; pos++) {\n    dp[pos] = [];\n    for (let y = 0; y <= MAX_Y; y++) {\n        dp[pos][y] = [];\n        for (let tr = 0; tr < 3; tr++) {\n            dp[pos][y][tr] = [];\n            for (let p = 0; p <= t; p++) {\n                dp[pos][y][tr][p] = new Array(t).fill(0n);\n            }\n        }\n    }\n}\n\n// Initialize for position 1: choose y1 in [1..4]\nfor (let y = 1; y <= MAX_Y; y++) {\n    // trend index: 0 -> -1, 1 -> 0, 2 -> +1\n    dp[1][y][1][0][0] = 1n; // trend = 0 (no previous step)\n}\n\nfor (let pos = 2; pos <= n; pos++) {\n    for (let lastY = 1; lastY <= MAX_Y; lastY++) {\n        for (let tr = 0; tr < 3; tr++) {\n            for (let peaks = 0; peaks <= t; peaks++) {\n                for (let valleys = 0; valleys < t; valleys++) {\n                    const curVal = dp[pos - 1][lastY][tr][peaks][valleys];\n                    if (curVal === 0n) continue;\n\n                    for (let ny = 1; ny <= MAX_Y; ny++) {\n                        if (ny === lastY) continue; // no horizontal segment\n\n                        let newTrend;\n                        if (ny > lastY) newTrend = 2; // +1\n                        else newTrend = 0; // -1\n\n                        let newPeaks = peaks;\n                        let newValleys = valleys;\n\n                        if (tr !== 1) { // previous trend not 0\n                            const prevTrend = tr - 1; // -1 or +1\n                            const currTrend = newTrend - 1;\n                            if (prevTrend === 1 && currTrend === -1) {\n                                // peak at pos-1\n                                newPeaks++;\n                                if (newPeaks > t) continue;\n                            } else if (prevTrend === -1 && currTrend === 1) {\n                                // valley at pos-1\n                                newValleys++;\n                                if (newValleys >= t) continue;\n                            }\n                        }\n\n                        dp[pos][ny][newTrend][newPeaks][newValleys] += curVal;\n                    }\n                }\n            }\n        }\n    }\n}\n\nlet result = 0n;\nfor (let y = 1; y <= MAX_Y; y++) {\n    for (let tr = 0; tr < 3; tr++) {\n        result += dp[n][y][tr][t][t - 1];\n    }\n}\n\nconsole.log(result.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```javascript\n// Camel counting problem - dynamic programming with memoization\n// Reads from stdin, writes to stdout\n\nconst fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nif (input.length < 2) {\n    process.exit(0);\n}\nconst n = input[0];\nconst t = input[1];\n\nconst MAX_Y = 4;\n\n// Memoization map: key -> value\n// key: `${pos},${prev},${dir},${peaks},${valleys}`\nconst memo = new Map();\n\nfunction dfs(pos, prev, dir, peaks, valleys) {\n    // pos: current position index (1-based). We have already assigned y at pos-1 = prev.\n    // dir: -1 (down), 1 (up), 0 (undefined for first step)\n    const key = `${pos},${prev},${dir},${peaks},${valleys}`;\n    if (memo.has(key)) return memo.get(key);\n\n    if (pos > n) {\n        // Finished assigning all positions; check counts\n        const res = (peaks === t && valleys === t - 1) ? 1n : 0n;\n        memo.set(key, res);\n        return res;\n    }\n\n    let total = 0n;\n    for (let y = 1; y <= MAX_Y; y++) {\n        if (y === prev) continue; // no horizontal segment\n\n        let newDir = dir;\n        let newPeaks = peaks;\n        let newValleys = valleys;\n\n        if (pos === 2) {\n            // First step, direction is determined here\n            newDir = (y > prev) ? 1 : -1;\n        } else {\n            // We have prev direction and now choose new y\n            const curDir = (y > prev) ? 1 : -1;\n            if (curDir !== dir) {\n                // Direction change => either peak or valley at position pos-1\n                if (dir === 1 && curDir === -1) {\n                    // up then down => peak\n                    newPeaks++;\n                } else if (dir === -1 && curDir === 1) {\n                    // down then up => valley\n                    newValleys++;\n                }\n            }\n            newDir = curDir;\n        }\n\n        // Prune if already impossible to reach required peaks/valleys\n        // Remaining positions: n - pos\n        // Each new internal point can contribute at most 1 peak or valley\n        const remaining = n - pos;\n        if (newPeaks > t || newValleys > t - 1) continue;\n        if (newPeaks + remaining < t) continue;\n        if (newValleys + remaining < t - 1) continue;\n\n        total += dfs(pos + 1, y, newDir, newPeaks, newValleys);\n    }\n\n    memo.set(key, total);\n    return total;\n}\n\nlet answer = 0n;\nfor (let y1 = 1; y1 <= MAX_Y; y1++) {\n    // Start at position 1 with y1\n    answer += dfs(2, y1, 0, 0, 0);\n}\n\nconsole.log(answer.toString());\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nif (input.length < 2) process.exit(0);\nconst n = input[0];\nconst t = input[1];\n\nconst MAX_Y = 4;\n\n// dp[pos][lastY][trend][peaks][valleys]\n// trend: 0 = none, 1 = up, 2 = down\n// Using arrays of size [n+1][5][3][t+1][t] (valleys up to t-1 but we store t for simplicity)\nlet dp = [];\nfor (let pos = 0; pos <= n; pos++) {\n    dp[pos] = [];\n    for (let y = 0; y <= MAX_Y; y++) {\n        dp[pos][y] = [];\n        for (let tr = 0; tr < 3; tr++) {\n            dp[pos][y][tr] = [];\n            for (let p = 0; p <= t; p++) {\n                dp[pos][y][tr][p] = new Array(t + 1).fill(0n);\n            }\n        }\n    }\n}\n\n// Initialize for position 1: choose any y1 in [1..4]\nfor (let y = 1; y <= MAX_Y; y++) {\n    dp[1][y][0][0][0] = 1n;\n}\n\nfor (let pos = 2; pos <= n; pos++) {\n    for (let lastY = 1; lastY <= MAX_Y; lastY++) {\n        for (let tr = 0; tr < 3; tr++) {\n            for (let p = 0; p <= t; p++) {\n                for (let v = 0; v <= t; v++) {\n                    let curVal = dp[pos - 1][lastY][tr][p][v];\n                    if (curVal === 0n) continue;\n\n                    for (let newY = 1; newY <= MAX_Y; newY++) {\n                        if (newY === lastY) continue; // no horizontal segment\n\n                        let newTrend = tr;\n                        let newP = p;\n                        let newV = v;\n\n                        if (tr === 0) {\n                            // first step defines trend\n                            newTrend = newY > lastY ? 1 : 2;\n                        } else if (tr === 1) { // up\n                            if (newY > lastY) {\n                                newTrend = 1;\n                            } else { // newY < lastY\n                                // peak at pos-1\n                                newP = p + 1;\n                                if (newP > t) continue;\n                                newTrend = 2;\n                            }\n                        } else { // tr === 2 (down)\n                            if (newY < lastY) {\n                                newTrend = 2;\n                            } else { // newY > lastY\n                                // valley at pos-1\n                                newV = v + 1;\n                                if (newV > t) continue;\n                                newTrend = 1;\n                            }\n                        }\n\n                        dp[pos][newY][newTrend][newP][newV] += curVal;\n                    }\n                }\n            }\n        }\n    }\n}\n\nlet result = 0n;\nfor (let y = 1; y <= MAX_Y; y++) {\n    for (let tr = 0; tr < 3; tr++) {\n        if (tr === 0) continue; // cannot end with no trend if n>=2\n        result += dp[n][y][tr][t][t - 1];\n    }\n}\n\nconsole.log(result.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nif (input.length < 2) process.exit(0);\nconst n = input[0];\nconst t = input[1];\n\nconst MAX_Y = 4;\n\n// dp[pos][prev][curr][peaks][valleys][dirIndex]\n// dirIndex: 0 = decreasing (prev>curr), 1 = increasing (prev<curr)\nconst dp = {};\nfunction key(pos, prev, curr, peaks, valleys, dir) {\n    return `${pos}|${prev}|${curr}|${peaks}|${valleys}|${dir}`;\n}\n\nfunction solve() {\n    let ans = 0;\n\n    // Initialize for position 2: choose y1 and y2\n    for (let y1 = 1; y1 <= MAX_Y; y1++) {\n        for (let y2 = 1; y2 <= MAX_Y; y2++) {\n            if (y1 === y2) continue; // no horizontal segment\n            const dir = y1 < y2 ? 1 : 0; // 1 increasing, 0 decreasing\n            const k = key(2, y1, y2, 0, 0, dir);\n            dp[k] = (dp[k] || 0) + 1;\n        }\n    }\n\n    for (let pos = 2; pos < n; pos++) {\n        const newDp = {};\n        for (const state in dp) {\n            const [sPos, sPrev, sCurr, sPeaks, sValleys, sDir] = state.split('|').map(Number);\n            if (sPos !== pos) continue;\n            const ways = dp[state];\n            for (let nextY = 1; nextY <= MAX_Y; nextY++) {\n                if (nextY === sCurr) continue; // no horizontal\n                const newDir = sCurr < nextY ? 1 : 0;\n                let peaks = sPeaks;\n                let valleys = sValleys;\n\n                if (newDir !== sDir) {\n                    // direction change -> local extremum at sCurr\n                    if (sDir === 1 && newDir === 0) {\n                        // was increasing, now decreasing -> peak\n                        peaks++;\n                    } else if (sDir === 0 && newDir === 1) {\n                        // was decreasing, now increasing -> valley\n                        valleys++;\n                    }\n                }\n\n                if (peaks > t || valleys > t - 1) continue;\n\n                const nk = key(pos + 1, sCurr, nextY, peaks, valleys, newDir);\n                newDp[nk] = (newDp[nk] || 0) + ways;\n            }\n        }\n        // merge newDp into dp\n        for (const k in newDp) {\n            dp[k] = (dp[k] || 0) + newDp[k];\n        }\n    }\n\n    // Sum valid sequences at position n with exact t peaks and t-1 valleys\n    for (const state in dp) {\n        const [sPos, , , sPeaks, sValleys] = state.split('|').map(Number);\n        if (sPos === n && sPeaks === t && sValleys === t - 1) {\n            ans += dp[state];\n        }\n    }\n\n    console.log(ans);\n}\n\nsolve();",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```javascript\n// Camel counting problem - Node.js solution\n\nconst fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nif (input.length < 2) process.exit(0);\nconst n = input[0];\nconst t = input[1];\n\n// DP[pos][lastY][trend][peaks][valleys]\n// trend: 0 = flat(start), 1 = up, 2 = down\n// lastY: 1..4\n// peaks, valleys: 0..t (cap at t)\nconst DP = [];\nfor (let pos = 0; pos <= n; pos++) {\n    DP[pos] = [];\n    for (let y = 0; y <= 4; y++) {\n        DP[pos][y] = [];\n        for (let tr = 0; tr < 3; tr++) {\n            DP[pos][y][tr] = [];\n            for (let p = 0; p <= t; p++) {\n                DP[pos][y][tr][p] = new Array(t + 1).fill(0);\n            }\n        }\n    }\n}\n\n// Initialize for position 1: choose any y1 in [1..4]\nfor (let y = 1; y <= 4; y++) {\n    // pos=1, lastY=y, trend=0 (no direction yet), peaks=0, valleys=0\n    DP[1][y][0][0][0] = 1;\n}\n\n// Transition\nfor (let pos = 1; pos < n; pos++) {\n    for (let lastY = 1; lastY <= 4; lastY++) {\n        for (let tr = 0; tr < 3; tr++) {\n            for (let peaks = 0; peaks <= t; peaks++) {\n                for (let valleys = 0; valleys <= t; valleys++) {\n                    const curVal = DP[pos][lastY][tr][peaks][valleys];\n                    if (!curVal) continue;\n\n                    for (let ny = 1; ny <= 4; ny++) {\n                        if (ny === lastY) continue; // no horizontal segment\n\n                        let ntr;\n                        if (ny > lastY) ntr = 1; // up\n                        else ntr = 2; // down\n\n                        let npeaks = peaks;\n                        let nvalleys = valleys;\n\n                        // From position >=2 we can detect peaks/valleys when trend changes\n                        if (pos >= 2 && tr !== 0 && tr !== ntr) {\n                            if (tr === 1 && ntr === 2) {\n                                // up -> down : peak at pos\n                                npeaks++;\n                            } else if (tr === 2 && ntr === 1) {\n                                // down -> up : valley at pos\n                                nvalleys++;\n                            }\n                            if (npeaks > t || nvalleys > t - 1) continue;\n                        }\n\n                        DP[pos + 1][ny][ntr][npeaks][nvalleys] += curVal;\n                    }\n                }\n            }\n        }\n    }\n}\n\n// Sum results at position n with exactly t peaks and t-1 valleys\nlet result = 0;\nfor (let lastY = 1; lastY <= 4; lastY++) {\n    for (let tr = 0; tr < 3; tr++) {\n        result += DP[n][lastY][tr][t][t - 1] || 0;\n    }\n}\n\nconsole.log(result.toString());\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 6135,
+            "prompt_tokens": 483,
+            "total_tokens": 6618,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 3,
+                "engine_ttft_ms": 311,
+                "engine_ttlt_ms": 16943,
+                "pre_inference_ms": 189,
+                "service_tbt_ms": 3,
+                "service_ttft_ms": 641,
+                "service_ttlt_ms": 17238,
+                "total_duration_ms": 17057,
+                "user_visible_ttft_ms": 451
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Javascript to solve this programming problem:\nDescription: Bob likes to draw camels: with a single hump, two humps, three humps, etc. He draws a camel by connecting points on a coordinate plane. Now he's drawing camels with t humps, representing them as polylines in the plane. Each polyline consists of n vertices with coordinates (x1,\u2009y1), (x2,\u2009y2), ..., (xn,\u2009yn). The first vertex has a coordinate x1\u2009=\u20091, the second \u2014 x2\u2009=\u20092, etc. Coordinates yi might be any, but should satisfy the following conditions:  there should be t humps precisely, i.e. such indexes j (2\u2009\u2264\u2009j\u2009\u2264\u2009n\u2009-\u20091), so that yj\u2009-\u20091\u2009&lt;\u2009yj\u2009&gt;\u2009yj\u2009+\u20091,  there should be precisely t\u2009-\u20091 such indexes j (2\u2009\u2264\u2009j\u2009\u2264\u2009n\u2009-\u20091), so that yj\u2009-\u20091\u2009&gt;\u2009yj\u2009&lt;\u2009yj\u2009+\u20091,  no segment of a polyline should be parallel to the Ox-axis,  all yi are integers between 1 and 4. For a series of his drawings of camels with t humps Bob wants to buy a notebook, but he doesn't know how many pages he will need. Output the amount of different polylines that can be drawn to represent camels with t humps for a given number n.\nInput Specification: The first line contains a pair of integers n and t (3\u2009\u2264\u2009n\u2009\u2264\u200920, 1\u2009\u2264\u2009t\u2009\u2264\u200910).\nOutput Specification: Output the required amount of camels with t humps.\n\nSample Input:\n6 1\nSample Output:\n6\n\nSample Input:\n4 2\nSample Output:\n0\n\nNotes: NoteIn the first sample test sequences of y-coordinates for six camels are: 123421, 123431, 123432, 124321, 134321 \u0438 234321 (each digit corresponds to one value of yi).\nTake input from standard input and output to standard output\nProvide the Javascript code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "6d67559744583229455c5eafe68f7952",
+        "difficulty": 1900,
+        "prob_desc_sample_inputs": [
+            "6 1",
+            "4 2"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "dp"
+        ],
+        "prob_desc_output_spec": "Output the required amount of camels with t humps.",
+        "prob_desc_input_spec": "The first line contains a pair of integers n and t (3\u2009\u2264\u2009n\u2009\u2264\u200920, 1\u2009\u2264\u2009t\u2009\u2264\u200910).",
+        "lang_cluster": "Javascript",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first sample test sequences of y-coordinates for six camels are: 123421, 123431, 123432, 124321, 134321 \u0438 234321 (each digit corresponds to one value of yi).",
+        "prob_desc_memory_limit": "64 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Bob likes to draw camels: with a single hump, two humps, three humps, etc. He draws a camel by connecting points on a coordinate plane. Now he's drawing camels with t humps, representing them as polylines in the plane. Each polyline consists of n vertices with coordinates (x1,\u2009y1), (x2,\u2009y2), ..., (xn,\u2009yn). The first vertex has a coordinate x1\u2009=\u20091, the second \u2014 x2\u2009=\u20092, etc. Coordinates yi might be any, but should satisfy the following conditions:  there should be t humps precisely, i.e. such indexes j (2\u2009\u2264\u2009j\u2009\u2264\u2009n\u2009-\u20091), so that yj\u2009-\u20091\u2009&lt;\u2009yj\u2009&gt;\u2009yj\u2009+\u20091,  there should be precisely t\u2009-\u20091 such indexes j (2\u2009\u2264\u2009j\u2009\u2264\u2009n\u2009-\u20091), so that yj\u2009-\u20091\u2009&gt;\u2009yj\u2009&lt;\u2009yj\u2009+\u20091,  no segment of a polyline should be parallel to the Ox-axis,  all yi are integers between 1 and 4. For a series of his drawings of camels with t humps Bob wants to buy a notebook, but he doesn't know how many pages he will need. Output the amount of different polylines that can be drawn to represent camels with t humps for a given number n.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1274283000",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "6",
+            "0"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"6 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"4 2\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 1\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"3 2\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 3\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 10\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"4 1\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"4 3\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"4 9\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"5 2\\r\\n\", \"output\": [\"70\"]}, {\"input\": \"5 3\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 5\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 9\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 10\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"6 2\\r\\n\", \"output\": [\"232\"]}, {\"input\": \"6 3\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6 4\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6 10\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"19 1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"19 2\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"19 3\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"19 4\\r\\n\", \"output\": [\"32632\"]}, {\"input\": \"19 5\\r\\n\", \"output\": [\"4594423\"]}, {\"input\": \"19 6\\r\\n\", \"output\": [\"69183464\"]}, {\"input\": \"19 7\\r\\n\", \"output\": [\"197939352\"]}, {\"input\": \"19 8\\r\\n\", \"output\": [\"109824208\"]}, {\"input\": \"19 9\\r\\n\", \"output\": [\"5846414\"]}, {\"input\": \"19 10\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"20 1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"20 2\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"20 3\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"20 4\\r\\n\", \"output\": [\"12628\"]}, {\"input\": \"20 5\\r\\n\", \"output\": [\"3715462\"]}, {\"input\": \"20 6\\r\\n\", \"output\": [\"96046590\"]}, {\"input\": \"20 7\\r\\n\", \"output\": [\"468541040\"]}, {\"input\": \"20 8\\r\\n\", \"output\": [\"503245466\"]}, {\"input\": \"20 9\\r\\n\", \"output\": [\"90700276\"]}, {\"input\": \"20 10\\r\\n\", \"output\": [\"0\"]}]"
+    }
+}

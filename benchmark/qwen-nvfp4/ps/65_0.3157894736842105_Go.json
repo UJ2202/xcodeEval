@@ -1,0 +1,389 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-a666606e111da7c1",
+        "created": 1787076055,
+        "model": "qwen-nvfp4",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.27.1-d7a14dad",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"math\"\n)\n\nfunc main() {\n\tvar x int64\n\tfmt.Scan(&x)\n\n\t// The image is rotated by -x degrees (counter-clockwise if x is positive)\n\t// We can apply k times 90 degrees clockwise, where k is 0, 1, 2, or 3\n\t// Total rotation of image = -x + 90*k\n\t// We want to minimize the deviation from vertical (0 degrees)\n\t// Deviation is the minimum angle between the total rotation and 0 (mod 360)\n\n\t// For each k in {0, 1, 2, 3}, compute the deviation\n\tminDeviation := math.MaxInt64\n\tbestK := 0\n\n\tfor k := int64(0); k <= 3; k++ {\n\t\t// Total rotation = -x + 90*k\n\t\ttotal := -x + 90*k\n\n\t\t// Normalize to [0, 360)\n\t\ttotal = total % 360\n\t\tif total < 0 {\n\t\t\ttotal += 360\n\t\t}\n\n\t\t// Deviation from vertical: min(total, 360 - total)\n\t\tdeviation := total\n\t\tif 360-total < deviation {\n\t\t\tdeviation = 360 - total\n\t\t}\n\n\t\tif deviation < minDeviation {\n\t\t\tminDeviation = deviation\n\t\t\tbestK = int(k)\n\t\t}\n\t}\n\n\tfmt.Println(bestK)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"math\"\n)\n\nfunc main() {\n\tvar x int64\n\tfmt.Scan(&x)\n\n\t// The image is rotated by -x degrees (counter-clockwise if x is positive)\n\t// We need to find the minimum number of 90-degree clockwise turns (0, 1, 2, or 3)\n\t// such that the total rotation deviation from vertical is minimized.\n\t//\n\t// After k turns of 90 degrees clockwise, the total rotation of the image is:\n\t// (-x + k * 90) degrees\n\t//\n\t// We want to minimize the absolute deviation from vertical, which is the\n\t// minimum of |angle| and 360 - |angle|, where angle is normalized to [0, 360).\n\t//\n\t// Actually, the deviation from vertical is the smallest angle between the\n\t// current orientation and vertical (0 or 180 degrees, but since we're talking\n\t// about \"up direction deviation from vertical\", it's the angle from 0 degrees).\n\t//\n\t// The deviation is min(|total|, 360 - |total|) where total is normalized.\n\t// More precisely, for an angle a, the deviation from vertical is:\n\t// min(a mod 360, 360 - (a mod 360)) but we need to handle negative angles.\n\t//\n\t// Let's compute for k = 0, 1, 2, 3:\n\t// total = (-x + k*90) mod 360, normalized to [0, 360)\n\t// deviation = min(total, 360 - total)\n\t//\n\t// We want the k (0-3) that gives the minimum deviation. If there's a tie,\n\t// we want the minimum k.\n\n\tbestK := 0\n\tbestDev := math.MaxInt64\n\n\tfor k := int64(0); k <= 3; k++ {\n\t\ttotal := (-x + k*90) % 360\n\t\tif total < 0 {\n\t\t\ttotal += 360\n\t\t}\n\t\tdev := total\n\t\tif 360-total < dev {\n\t\t\tdev = 360 - total\n\t\t}\n\t\tif dev < bestDev || (dev == bestDev && k < int64(bestK)) {\n\t\t\tbestDev = dev\n\t\t\tbestK = int(k)\n\t\t}\n\t}\n\n\tfmt.Println(bestK)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"math\"\n)\n\nfunc main() {\n\tvar x int64\n\tfmt.Scan(&x)\n\n\t// The image is rotated by -x degrees (counter-clockwise if x is positive)\n\t// We can apply k times 90 degrees clockwise rotation, where k is 0, 1, 2, or 3\n\t// After k rotations, the total image rotation is (-x + k*90) degrees\n\t// We want to minimize the deviation from vertical, which is the minimum of\n\t// |angle| and 360 - |angle|, where angle is normalized to [0, 360)\n\n\tminDeviation := int64(math.MaxInt64)\n\tminTurns := int64(0)\n\n\tfor k := int64(0); k <= 3; k++ {\n\t\t// Total rotation of the image\n\t\ttotalRotation := -x + k*90\n\n\t\t// Normalize to [0, 360)\n\t\ttotalRotation = ((totalRotation % 360) + 360) % 360\n\n\t\t// Deviation from vertical is min(totalRotation, 360 - totalRotation)\n\t\tdeviation := totalRotation\n\t\tif 360-totalRotation < deviation {\n\t\t\tdeviation = 360 - totalRotation\n\t\t}\n\n\t\tif deviation < minDeviation {\n\t\t\tminDeviation = deviation\n\t\t\tminTurns = k\n\t\t}\n\t}\n\n\tfmt.Println(minTurns)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"math\"\n)\n\nfunc main() {\n\tvar x int64\n\tfmt.Scan(&x)\n\n\t// The image is rotated by -x degrees (counter-clockwise if x is positive)\n\t// We need to find k (0, 1, 2, 3) such that the total rotation deviation from vertical is minimized\n\t// After k clockwise 90-degree turns, the total image rotation is: -x + k*90\n\t// We want to minimize the deviation from vertical, which is the minimum of |angle| mod 360 and 360 - |angle| mod 360\n\n\t// Normalize x to [0, 360)\n\t// The image rotation is -x degrees\n\t// After k turns, total rotation = -x + k*90\n\t// We want to minimize the angular distance from 0 (or 360, 720, etc.)\n\n\t// Let's compute for k = 0, 1, 2, 3\n\t// The deviation is the minimum angle between the total rotation and the nearest multiple of 360\n\n\t// Total rotation after k turns: (-x + k*90)\n\t// We need to find the minimum absolute deviation from a multiple of 360\n\n\t// Normalize -x to [0, 360)\n\t// Let r = (-x) mod 360, normalized to [0, 360)\n\t// Then for each k, the total rotation mod 360 is (r + k*90) mod 360\n\t// The deviation is min(val, 360 - val) where val is in [0, 360)\n\n\t// Compute r = (-x) mod 360, normalized to [0, 360)\n\t// In Go, % can return negative values, so we need to be careful\n\n\t// Let's compute (-x) mod 360 properly\n\t// r = ((-x) % 360 + 360) % 360\n\t// But x can be very large, so we use int64\n\n\tnegX := -x\n\tr := (negX % 360 + 360) % 360\n\n\tbestK := 0\n\tbestDev := int64(360) // max possible deviation is 180\n\n\tfor k := int64(0); k <= 3; k++ {\n\t\tval := (r + k*90) % 360\n\t\tdev := val\n\t\tif 360-val < dev {\n\t\t\tdev = 360 - val\n\t\t}\n\t\tif dev < bestDev {\n\t\t\tbestDev = dev\n\t\t\tbestK = int(k)\n\t\t}\n\t}\n\n\tfmt.Println(bestK)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"math\"\n)\n\nfunc main() {\n\tvar x int64\n\tfmt.Scan(&x)\n\n\t// The image is rotated by -x degrees (counter-clockwise if x is positive)\n\t// We need to find k (0, 1, 2, 3) such that the deviation from vertical is minimized\n\t// After k clockwise 90-degree turns, the total rotation of the image is:\n\t// -x + 90*k (mod 360)\n\t// We want to minimize the deviation from vertical, which means we want the angle to be as close to 0 or 180 as possible\n\t// Actually, we want the angle to be as close to 0 mod 180 as possible (since vertical can be up or down)\n\t// Wait, let me re-read the problem.\n\t\n\t// The image content is rotated counter-clockwise by x degrees when camera rotates clockwise by x degrees.\n\t// So the image has a rotation of -x degrees (or equivalently 360-x if x>0)\n\t// When we apply k clockwise 90-degree turns, the total rotation becomes: -x + 90*k\n\t// We want to minimize the deviation from vertical.\n\t// Vertical means the angle should be 0 or 180 (mod 360)\n\t// So we want to minimize min(|(-x + 90*k) mod 360|, 360 - |(-x + 90*k) mod 360|)\n\t// But actually, deviation from vertical means how far the \"up\" direction is from true vertical.\n\t// If the image is rotated by angle a, the deviation from vertical is the minimum of |a mod 360| and |360 - (a mod 360)|, but also considering that 180 degrees is also vertical (just upside down).\n\t// Actually, the problem says \"minimally deviated from vertical\". Looking at the examples:\n\t// For x = -60 (camera rotated 60 degrees counter-clockwise), image is rotated 60 degrees clockwise.\n\t// k=0: total rotation = 60 degrees clockwise. Deviation = 60\n\t// k=1: total rotation = 60 + 90 = 150 degrees clockwise. Deviation = 150? But the note says 150.\n\t// k=2: total rotation = 60 + 180 = 240 degrees clockwise. Deviation = 120 (since 240 clockwise = 120 counter-clockwise)\n\t// k=3: total rotation = 60 + 270 = 330 degrees clockwise. Deviation = 30 (since 330 clockwise = 30 counter-clockwise)\n\t\n\t// So the deviation is the minimum angle between the total rotation and the nearest multiple of 180? No.\n\t// Actually, looking at the note: deviation is the smallest angle to get to vertical (0 or 180).\n\t// For 60 degrees: deviation is 60 (to 0) or 120 (to 180), so min is 60.\n\t// For 150 degrees: deviation is 150 (to 0) or 30 (to 180), so min is 30? But the note says 150.\n\t\n\t// Wait, let me re-read: \"deviation from 'true up' for one turn is 150 degrees\"\n\t// So it's the deviation from true up, not just vertical. So we want the angle to be as close to 0 as possible (mod 360).\n\t// But 180 degrees would mean the image is upside down, which is also a valid \"vertical\" orientation?\n\t\n\t// Let me check: for 240 degrees clockwise, the note says deviation is 120 because 240 clockwise = 120 counter-clockwise.\n\t// So the deviation is the minimum of the clockwise angle and the counter-clockwise angle to get to 0.\n\t// i.e., min(a mod 360, 360 - (a mod 360))\n\t\n\t// For 60: min(60, 300) = 60\n\t// For 150: min(150, 210) = 150\n\t// For 240: min(240, 120) = 120\n\t// For 330: min(330, 30) = 30\n\t\n\t// So we want to minimize min((total) mod 360, 360 - (total) mod 360) where total = -x + 90*k\n\t\n\t// Let's compute for k = 0, 1, 2, 3 and find the one with minimum deviation.\n\t\n\tbestK := 0\n\tbestDev := math.MaxFloat64\n\t\n\tfor k := 0; k < 4; k++ {\n\t\t// total rotation in degrees\n\t\ttotal := float64(-x) + float64(90*k)\n\t\t// normalize to [0, 360)\n\t\ttotal = math.Mod(total, 360)\n\t\tif total < 0 {\n\t\t\ttotal += 360\n\t\t}\n\t\tdev := math.Min(total, 360-total)\n\t\tif dev < bestDev {\n\t\t\tbestDev = dev\n\t\t\tbestK = k\n\t\t}\n\t}\n\t\n\tfmt.Println(bestK)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"math\"\n)\n\nfunc main() {\n\tvar x int64\n\tfmt.Scan(&x)\n\n\t// The image is rotated by -x degrees (counter-clockwise if x is positive)\n\t// We need to find the minimum number of 90-degree clockwise turns (0, 1, 2, or 3)\n\t// such that the total rotation deviation from vertical is minimized.\n\t//\n\t// If we apply k turns of 90 degrees clockwise, the total rotation of the image becomes:\n\t// -x + k*90 degrees\n\t//\n\t// The deviation from vertical is the minimum of |angle| and 360 - |angle|,\n\t// where angle is normalized to [0, 360).\n\t//\n\t// Actually, we want to minimize the deviation from 0 (vertical). The deviation\n\t// is the minimum of the absolute angle modulo 360 and 360 minus that.\n\t//\n\t// Let's compute for k = 0, 1, 2, 3:\n\t// total = (-x + k*90) mod 360, normalized to [0, 360)\n\t// deviation = min(total, 360 - total)\n\n\tminDev := math.MaxInt64\n\tbestK := 0\n\n\tfor k := 0; k <= 3; k++ {\n\t\t// total rotation = -x + k*90\n\t\ttotal := -x + int64(k)*90\n\t\t// Normalize to [0, 360)\n\t\ttotal = total % 360\n\t\tif total < 0 {\n\t\t\ttotal += 360\n\t\t}\n\t\t// Deviation from vertical\n\t\tdev := total\n\t\tif 360-total < dev {\n\t\t\tdev = 360 - total\n\t\t}\n\t\tif dev < minDev {\n\t\t\tminDev = dev\n\t\t\tbestK = k\n\t\t}\n\t}\n\n\tfmt.Println(bestK)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"math\"\n)\n\nfunc main() {\n\tvar x int64\n\tfmt.Scan(&x)\n\n\t// The image is rotated by -x degrees (counter-clockwise if x is positive)\n\t// We need to find the minimum number of 90-degree clockwise turns (0, 1, 2, or 3)\n\t// such that the total rotation deviation from vertical is minimized.\n\t//\n\t// If we apply k 90-degree clockwise turns, the total image rotation becomes:\n\t// (-x + k*90) degrees\n\t//\n\t// We want to minimize the absolute deviation from vertical, which means\n\t// we want (-x + k*90) mod 360 to be as close to 0 or 180 as possible.\n\t// Actually, the deviation from vertical is the minimum of:\n\t//   |angle| and 180 - |angle| where angle is normalized to [0, 180]\n\t// More precisely, for a rotation angle a, the deviation from vertical is:\n\t//   min(a mod 360, 360 - (a mod 360)) but capped at 180\n\t// Actually, the deviation is the minimum angle between the current up direction and true up.\n\t// If the image is rotated by angle a, the deviation is min(|a mod 360|, 360 - |a mod 360|)\n\t// But since we're dealing with signed angles, let's think differently.\n\t//\n\t// The deviation from vertical for a rotation of angle a is:\n\t//   Let r = a mod 360, normalized to [0, 360)\n\t//   deviation = min(r, 360 - r)\n\t//\n\t// We try k = 0, 1, 2, 3 and find which gives the minimum deviation.\n\t// If there's a tie, we choose the smallest k.\n\n\tbestK := 0\n\tbestDev := math.MaxFloat64\n\n\tfor k := 0; k < 4; k++ {\n\t\t// Total rotation of the image: -x + k*90\n\t\ttotal := -x + int64(k)*90\n\n\t\t// Normalize to [0, 360)\n\t\tr := total % 360\n\t\tif r < 0 {\n\t\t\tr += 360\n\t\t}\n\n\t\t// Deviation from vertical\n\t\tdev := float64(r)\n\t\tif dev > 180 {\n\t\t\tdev = 360 - dev\n\t\t}\n\n\t\tif dev < bestDev || (dev == bestDev && k < bestK) {\n\t\t\tbestDev = dev\n\t\t\tbestK = k\n\t\t}\n\t}\n\n\tfmt.Println(bestK)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"math\"\n)\n\nfunc main() {\n\tvar x int64\n\tfmt.Scan(&x)\n\n\t// The image is rotated by -x degrees (counter-clockwise if x is positive)\n\t// We can apply k times 90 degrees clockwise rotation, where k is 0, 1, 2, or 3\n\t// After k rotations, the total image rotation is (-x + k*90) degrees\n\t// We want to minimize the deviation from vertical, which is the minimum of:\n\t// |angle|, 180 - |angle| (for angles in [0, 180])\n\t// More precisely, the deviation is min(|a| mod 360, 360 - (|a| mod 360)) but we need to be careful\n\t// Actually, the deviation from vertical is the minimum angle between the current up direction and true up\n\t// This is min(|a|, 360 - |a|) where a is normalized to [0, 360)\n\t// But actually it's the minimum of |a| and 360-|a|, which gives us a value in [0, 180]\n\n\t// Let's compute for k = 0, 1, 2, 3\n\t// total rotation of image = -x + k*90\n\t// We need to find the deviation from vertical for each k\n\n\tbestDeviation := math.MaxFloat64\n\tbestK := 0\n\n\tfor k := 0; k <= 3; k++ {\n\t\t// total rotation of the image content\n\t\ttotal := float64(-x) + float64(k)*90.0\n\n\t\t// Normalize to [0, 360)\n\t\ttotal = math.Mod(total, 360.0)\n\t\tif total < 0 {\n\t\t\ttotal += 360.0\n\t\t}\n\n\t\t// Deviation from vertical: the minimum angle to 0 or 180\n\t\t// Actually, \"vertical\" means the up direction should be at 0 degrees (or 180, but that's upside down)\n\t\t// The problem says \"minimally deviated from vertical\"\n\t\t// Looking at the examples:\n\t\t// For x = 60 (camera rotated 60 clockwise), image is rotated 60 counter-clockwise = -60 degrees\n\t\t// k=0: total = -60, normalized to 300. Deviation = min(300, 60) = 60\n\t\t// k=1: total = -60+90 = 30. Deviation = min(30, 330) = 30\n\t\t// k=2: total = -60+180 = 120. Deviation = min(120, 240) = 120\n\t\t// k=3: total = -60+270 = 210. Deviation = min(210, 150) = 150\n\t\t// Minimum is 30 at k=1. Output is 1. Correct.\n\n\t\t// For x = -60 (camera rotated 60 counter-clockwise), image is rotated 60 clockwise = 60 degrees\n\t\t// k=0: total = 60. Deviation = 60\n\t\t// k=1: total = 60+90 = 150. Deviation = min(150, 210) = 150\n\t\t// k=2: total = 60+180 = 240. Deviation = min(240, 120) = 120\n\t\t// k=3: total = 60+270 = 330. Deviation = min(330, 30) = 30\n\t\t// Minimum is 30 at k=3. Output is 3. Correct.\n\n\t\tdeviation := total\n\t\tif 360.0-total < deviation {\n\t\t\tdeviation = 360.0 - total\n\t\t}\n\n\t\tif deviation < bestDeviation {\n\t\t\tbestDeviation = deviation\n\t\t\tbestK = k\n\t\t}\n\t}\n\n\tfmt.Println(bestK)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 8,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"math\"\n)\n\nfunc main() {\n\tvar x int64\n\tfmt.Scan(&x)\n\n\t// The image is rotated by -x degrees (counter-clockwise if x is positive)\n\t// We need to find the minimum number of 90-degree clockwise turns (k)\n\t// such that the total rotation deviation from vertical is minimized.\n\t//\n\t// After k 90-degree clockwise turns, the total image rotation is:\n\t// image_rotation = -x + k * 90\n\t//\n\t// We want to minimize the deviation from vertical, which is the absolute\n\t// angle modulo 360, taking the minimum of the angle and 360 - angle.\n\t//\n\t// Since k can be 0, 1, 2, or 3 (as 4 turns = 360 degrees = no change),\n\t// we just need to check these four values.\n\n\tminDeviation := int64(math.MaxInt64)\n\tminTurns := 0\n\n\tfor k := int64(0); k <= 3; k++ {\n\t\t// Total rotation of the image\n\t\ttotalRotation := -x + k*90\n\n\t\t// Normalize to [0, 360)\n\t\ttotalRotation %= 360\n\t\tif totalRotation < 0 {\n\t\t\ttotalRotation += 360\n\t\t}\n\n\t\t// Deviation from vertical is min(totalRotation, 360 - totalRotation)\n\t\tdeviation := totalRotation\n\t\tif 360-totalRotation < deviation {\n\t\t\tdeviation = 360 - totalRotation\n\t\t}\n\n\t\tif deviation < minDeviation {\n\t\t\tminDeviation = deviation\n\t\t\tminTurns = int(k)\n\t\t}\n\t}\n\n\tfmt.Println(minTurns)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 9,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"math\"\n)\n\nfunc main() {\n\tvar x int64\n\tfmt.Scan(&x)\n\n\t// The image is rotated by -x degrees (counter-clockwise if x is positive)\n\t// We need to find minimum number of 90-degree clockwise turns (0, 1, 2, 3)\n\t// such that the total rotation deviation from vertical is minimized.\n\t//\n\t// After n turns (each 90 degrees clockwise), the total image rotation is:\n\t// (-x + n*90) degrees\n\t//\n\t// The deviation from vertical is the minimum of |angle| and 360 - |angle|,\n\t// where angle is normalized to [0, 360).\n\t//\n\t// We need to minimize this deviation over n in {0, 1, 2, 3}.\n\n\t// Normalize -x to [0, 360)\n\t// But since x can be very large, we work with modulo 360.\n\t// The image rotation is -x degrees. Let's compute the effective angle.\n\t// We want to find n in {0,1,2,3} that minimizes the deviation.\n\n\t// Let's compute for each n the resulting angle and its deviation.\n\t// angle = (-x + n*90) mod 360\n\t// deviation = min(angle, 360-angle) if angle is in [0, 360)\n\n\t// Since x can be up to 10^18, we need to handle modulo carefully.\n\t// We'll compute (-x) mod 360 first.\n\n\t// Compute -x mod 360\n\t// In Go, % can give negative results, so we adjust.\n\tnegX := -x\n\t// Compute mod\n\tmod := func(a, b int64) int64 {\n\t\tr := a % b\n\t\tif r < 0 {\n\t\t\tr += b\n\t\t}\n\t\treturn r\n\t}\n\n\tbase := mod(negX, 360)\n\n\tbestN := 0\n\tbestDev := math.MaxInt64\n\n\tfor n := int64(0); n <= 3; n++ {\n\t\tangle := mod(base+n*90, 360)\n\t\tdev := int(angle)\n\t\tif 360-int(angle) < dev {\n\t\t\tdev = 360 - int(angle)\n\t\t}\n\t\tif int64(dev) < bestDev {\n\t\t\tbestDev = int64(dev)\n\t\t\tbestN = int(n)\n\t\t}\n\t}\n\n\tfmt.Println(bestN)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 10,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"math\"\n)\n\nfunc main() {\n\tvar x int64\n\tfmt.Scan(&x)\n\n\t// The image is rotated by -x degrees (counter-clockwise if x is positive)\n\t// We can apply k times 90 degrees clockwise rotation, k = 0, 1, 2, 3\n\t// Total rotation of image = -x + 90*k (in degrees)\n\t// We want to minimize the deviation from vertical, i.e., minimize |angle| mod 360, but considering the shortest angle to 0 (or 360)\n\n\t// For each k in 0..3, compute the total rotation angle\n\t// Then compute the deviation from vertical: the smallest angle between the total rotation and 0 (mod 360)\n\n\tminDeviation := math.MaxInt64\n\tbestK := 0\n\n\tfor k := int64(0); k <= 3; k++ {\n\t\t// Total rotation of the image content\n\t\ttotal := -x + 90*k\n\n\t\t// Normalize to [0, 360)\n\t\ttotalMod := total % 360\n\t\tif totalMod < 0 {\n\t\t\ttotalMod += 360\n\t\t}\n\n\t\t// Deviation from vertical: min(totalMod, 360 - totalMod)\n\t\tdeviation := totalMod\n\t\tif 360-totalMod < deviation {\n\t\t\tdeviation = 360 - totalMod\n\t\t}\n\n\t\tif deviation < minDeviation {\n\t\t\tminDeviation = deviation\n\t\t\tbestK = int(k)\n\t\t}\n\t}\n\n\tfmt.Println(bestK)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 11,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"math\"\n)\n\nfunc main() {\n\tvar x int64\n\tfmt.Scan(&x)\n\n\t// The image is rotated by -x degrees (counter-clockwise if x is positive)\n\t// We can apply k times 90 degrees clockwise rotation\n\t// Total rotation of image: -x + 90*k degrees\n\t// We want to minimize the deviation from vertical (0 or 180 degrees)\n\t// Deviation is the minimum angle between the total rotation and the nearest multiple of 180\n\t// Actually, deviation from vertical means the angle to the nearest vertical direction (0 or 180)\n\t// So we want to minimize min(|total mod 360|, |360 - (total mod 360)|) but considering 180 as well\n\t// More precisely, the deviation from vertical is the minimum of:\n\t// - angle to 0 degrees (mod 360)\n\t// - angle to 180 degrees (mod 360)\n\t// Which is: min(|a|, |a-180|, |a-360|, |a+180|) where a is total rotation mod 360\n\t// Simpler: deviation = min(|a mod 360|, |360 - (a mod 360)|, |(a mod 360) - 180|, |180 - (a mod 360)|)\n\t// But actually, the deviation from vertical is the minimum angle to either 0 or 180.\n\t// So deviation = min(|a|, |a - 180|, |a - 360|, |a + 180|) but normalized to [0, 180]\n\t// Let's think differently: the deviation is the minimum of the absolute angles to 0 and 180.\n\t// For a given total rotation r, the deviation is min(|r mod 360|, |360 - (r mod 360)|, |(r mod 360) - 180|, |180 - (r mod 360)|)\n\t// But since we're dealing with mod 360, let's normalize r to [0, 360)\n\t// Then deviation = min(r, 360-r, |r-180|)\n\t// Wait, that's not quite right. Let me reconsider.\n\t\n\t// The \"up direction deviation from vertical\" means how much the up direction is tilted from true vertical.\n\t// If the image is rotated by angle r, then the up direction is at angle r from true up.\n\t// The deviation is the minimum angle between r and the nearest multiple of 180 (since vertical can be up or down).\n\t// So deviation = min over k of |r - 180*k|, but we only need to consider k=0 and k=1 (and k=-1, k=2)\n\t// Which simplifies to: let r_mod = r mod 360, normalized to [0, 360)\n\t// deviation = min(r_mod, 360 - r_mod, abs(r_mod - 180))\n\t// But abs(r_mod - 180) is already covered if we think about it: if r_mod is in [0, 180], then min(r_mod, 360-r_mod, 180-r_mod)\n\t// If r_mod is in [180, 360], then min(r_mod, 360-r_mod, r_mod-180)\n\t// Actually, the minimum angle to the nearest multiple of 180 is:\n\t// min(r_mod % 180, 180 - (r_mod % 180))\n\t// Because the multiples of 180 are 0, 180, 360, etc.\n\t// So for any angle, the deviation from vertical is min(angle mod 180, 180 - (angle mod 180))\n\t\n\t// So we want to minimize: min(((-x + 90*k) mod 180 + 180) % 180, 180 - ((-x + 90*k) mod 180 + 180) % 180)\n\t// But since we only have 4 possible values of k (0, 1, 2, 3), we can just check all 4.\n\t\n\t// Note: -x + 90*k mod 180\n\t// Since 90 mod 180 = 90, and k can be 0, 1, 2, 3\n\t// Let's compute for k = 0, 1, 2, 3\n\t\n\tbest := int64(4)\n\tbestK := int64(0)\n\t\n\tfor k := int64(0); k <= 3; k++ {\n\t\t// Total rotation of image: -x + 90*k\n\t\t// We need to find the deviation from vertical\n\t\t// Deviation = min angle to nearest multiple of 180\n\t\t\n\t\t// Compute (-x + 90*k) mod 180, handling negative numbers\n\t\tr := (-x + 90*k) % 180\n\t\tif r < 0 {\n\t\t\tr += 180\n\t\t}\n\t\t// r is now in [0, 180)\n\t\tdev := r\n\t\tif 180-r < dev {\n\t\t\tdev = 180 - r\n\t\t}\n\t\t\n\t\tif dev < best || (dev == best && k < bestK) {\n\t\t\tbest = dev\n\t\t\tbestK = k\n\t\t}\n\t}\n\t\n\tfmt.Println(bestK)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 12,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"math\"\n)\n\nfunc main() {\n\tvar x int64\n\tfmt.Scan(&x)\n\n\t// The image is rotated by -x degrees (counter-clockwise if camera is clockwise)\n\t// We can apply k times 90 degrees clockwise rotation, where k is 0, 1, 2, or 3\n\t// After k rotations, the total image rotation is (-x + k*90) degrees\n\t// We want to minimize the deviation from vertical, which is the minimum of\n\t// |angle| and 360 - |angle|, modulo 360\n\n\t// Normalize x to [0, 360)\n\txMod := x % 360\n\tif xMod < 0 {\n\t\txMod += 360\n\t}\n\n\t// The image rotation is -xMod (mod 360)\n\t// After k clockwise 90-degree turns, total rotation = (-xMod + k*90) mod 360\n\t// Deviation = min(total, 360 - total)\n\n\tbestK := 0\n\tbestDev := math.MaxInt64\n\n\tfor k := 0; k < 4; k++ {\n\t\ttotal := (-xMod + int64(k)*90) % 360\n\t\tif total < 0 {\n\t\t\ttotal += 360\n\t\t}\n\t\tdev := total\n\t\tif 360-total < dev {\n\t\t\tdev = 360 - total\n\t\t}\n\t\tif dev < bestDev {\n\t\t\tbestDev = dev\n\t\t\tbestK = k\n\t\t}\n\t}\n\n\tfmt.Println(bestK)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 13,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"math\"\n)\n\nfunc main() {\n\tvar x int64\n\tfmt.Scan(&x)\n\n\t// The image is rotated by -x degrees (counter-clockwise if x is positive clockwise camera rotation)\n\t// We need to find the minimum number of 90-degree clockwise turns (0, 1, 2, or 3)\n\t// such that the total rotation deviation from vertical is minimized.\n\n\t// After k clockwise 90-degree turns, the total image rotation is:\n\t// image_rotation = -x + k * 90\n\t// We want to minimize the absolute deviation from vertical, which is:\n\t// min(|angle|, 360 - |angle|) where angle is normalized to [0, 360)\n\n\t// Let's compute for k = 0, 1, 2, 3\n\tbestK := 0\n\tbestDev := math.MaxInt64\n\n\tfor k := int64(0); k <= 3; k++ {\n\t\t// Total rotation of the image after k clockwise 90-degree turns\n\t\ttotal := -x + k*90\n\n\t\t// Normalize to [0, 360)\n\t\ttotal = total % 360\n\t\tif total < 0 {\n\t\t\ttotal += 360\n\t\t}\n\n\t\t// Deviation from vertical: min(total, 360 - total)\n\t\tdev := total\n\t\tif 360-total < dev {\n\t\t\tdev = 360 - total\n\t\t}\n\n\t\tif dev < bestDev {\n\t\t\tbestDev = dev\n\t\t\tbestK = int(k)\n\t\t}\n\t}\n\n\tfmt.Println(bestK)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 14,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"math\"\n)\n\nfunc main() {\n\tvar x int64\n\tfmt.Scan(&x)\n\n\t// The image is rotated by -x degrees (counter-clockwise if x is positive clockwise)\n\t// We need to find the minimum number of 90-degree clockwise turns (0, 1, 2, or 3)\n\t// such that the total rotation deviation from vertical is minimized.\n\n\t// Let's think about it:\n\t// Camera rotation: x degrees (positive = clockwise)\n\t// Image rotation: -x degrees (so if camera rotates clockwise, image appears counter-clockwise)\n\t// After k 90-degree clockwise turns, the image is rotated by (-x + 90*k) degrees.\n\t// We want to minimize the deviation from vertical, which is the minimum of:\n\t//   |(-x + 90*k) mod 360| and 360 - |(-x + 90*k) mod 360|\n\t// But actually, the deviation from vertical is the smallest angle between the current up direction and true up.\n\t// So for a total rotation angle A, the deviation is min(A mod 360, 360 - (A mod 360)) where A mod 360 is in [0, 360).\n\n\t// Let's compute for k = 0, 1, 2, 3:\n\t// total_rotation = -x + 90*k\n\t// We need to normalize this to [0, 360) and then find the min deviation.\n\n\tbest := int64(4) // max is 3\n\tbestK := int64(0)\n\n\tfor k := int64(0); k <= 3; k++ {\n\t\ttotal := -x + 90*k\n\t\t// Normalize to [0, 360)\n\t\t// total mod 360, but handle negative values\n\t\tremainder := total % 360\n\t\tif remainder < 0 {\n\t\t\tremainder += 360\n\t\t}\n\t\t// Deviation is min(remainder, 360 - remainder)\n\t\tdev := remainder\n\t\tif 360-remainder < dev {\n\t\t\tdev = 360 - remainder\n\t\t}\n\t\tif dev < best || (dev == best && k < bestK) {\n\t\t\tbest = dev\n\t\t\tbestK = k\n\t\t}\n\t}\n\n\tfmt.Println(bestK)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 15,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"math\"\n)\n\nfunc main() {\n\tvar x int64\n\tfmt.Scan(&x)\n\n\t// The image is rotated by -x degrees (counter-clockwise if x is positive)\n\t// We can apply k times 90 degrees clockwise rotation.\n\t// Total rotation of image = -x + k*90 degrees (clockwise positive)\n\t// We want to minimize the deviation from vertical, i.e., minimize |angle mod 360| in terms of circular distance.\n\t// The deviation is min(|a|, 360 - |a|) where a is the total rotation mod 360.\n\n\t// We need to find k in {0, 1, 2, 3} that minimizes the deviation.\n\t// Since k is modulo 4, we only need to check k = 0, 1, 2, 3.\n\n\tbestK := 0\n\tbestDev := math.MaxInt64\n\n\tfor k := int64(0); k < 4; k++ {\n\t\t// Total rotation = -x + k*90\n\t\ttotal := -x + k*90\n\t\t// Normalize to [0, 360)\n\t\ttotal = total % 360\n\t\tif total < 0 {\n\t\t\ttotal += 360\n\t\t}\n\t\t// Deviation from vertical: min(total, 360 - total)\n\t\tdev := total\n\t\tif 360-total < dev {\n\t\t\tdev = 360 - total\n\t\t}\n\t\tif dev < bestDev {\n\t\t\tbestDev = dev\n\t\t\tbestK = int(k)\n\t\t}\n\t}\n\n\tfmt.Println(bestK)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 16,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"math\"\n)\n\nfunc main() {\n\tvar x int64\n\tfmt.Scan(&x)\n\n\t// The image is rotated by -x degrees (counter-clockwise if x is positive)\n\t// We can apply k times 90 degrees clockwise rotation to the image.\n\t// After k rotations, the total image rotation is: -x + 90*k degrees (clockwise positive)\n\t// We want to minimize the deviation from vertical, i.e., minimize |(-x + 90*k) mod 360| \n\t// but considering that deviation is the minimum angle to 0 or 360.\n\t// Actually, deviation from vertical means the angle modulo 360, and we want the minimum absolute deviation.\n\t// The deviation is min(d, 360-d) where d = ((-x + 90*k) % 360 + 360) % 360\n\n\t// We need to find k in {0, 1, 2, 3} that minimizes the deviation.\n\t// Since k is modulo 4, we only need to check k = 0, 1, 2, 3.\n\n\t// Normalize x to [0, 360)\n\t// But x can be very large, so we use modulo arithmetic.\n\t// Let's compute the effective image rotation before any correction: -x mod 360\n\t// Then for each k in 0..3, total rotation = (-x + 90*k) mod 360\n\t// Deviation = min(total, 360 - total)\n\n\t// We want the minimum k (number of turns) that gives the minimum deviation.\n\t// If there are ties in deviation, we pick the smallest k.\n\n\t// Compute -x mod 360\n\t// In Go, % can give negative results, so we adjust.\n\t// Let base = (-x) % 360, adjusted to [0, 360)\n\tbase := (-x) % 360\n\tif base < 0 {\n\t\tbase += 360\n\t}\n\n\tbestK := 0\n\tbestDev := int64(361) // larger than any possible deviation\n\n\tfor k := int64(0); k < 4; k++ {\n\t\ttotal := (base + 90*k) % 360\n\t\tdev := total\n\t\tif 360-total < dev {\n\t\t\tdev = 360 - total\n\t\t}\n\t\tif dev < bestDev {\n\t\t\tbestDev = dev\n\t\t\tbestK = int(k)\n\t\t}\n\t}\n\n\tfmt.Println(bestK)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 17,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"math\"\n)\n\nfunc main() {\n\tvar x int64\n\tfmt.Scan(&x)\n\n\t// The image is rotated by -x degrees (counter-clockwise if x is positive)\n\t// We can apply k times 90 degrees clockwise rotation, where k is 0, 1, 2, or 3\n\t// After k rotations, the total image rotation is (-x + k*90) degrees\n\t// We want to minimize the deviation from vertical, which is the minimum of\n\t// |angle| and 360 - |angle|, where angle is normalized to [0, 360)\n\n\t// Normalize x to [0, 360)\n\txMod := x % 360\n\tif xMod < 0 {\n\t\txMod += 360\n\t}\n\n\t// The image rotation is -xMod (mod 360)\n\t// After k clockwise 90-degree rotations, total rotation = (-xMod + k*90) mod 360\n\t// We want to find k in {0, 1, 2, 3} that minimizes the deviation from 0 (vertical)\n\n\tminDev := int64(360)\n\tbestK := int64(0)\n\n\tfor k := int64(0); k <= 3; k++ {\n\t\t// Total rotation of the image\n\t\ttotal := (-xMod + k*90) % 360\n\t\tif total < 0 {\n\t\t\ttotal += 360\n\t\t}\n\t\t// Deviation from vertical: min(total, 360-total)\n\t\tdev := total\n\t\tif 360-total < dev {\n\t\t\tdev = 360 - total\n\t\t}\n\t\tif dev < minDev {\n\t\t\tminDev = dev\n\t\t\tbestK = k\n\t\t}\n\t}\n\n\tfmt.Println(bestK)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 18,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"math\"\n)\n\nfunc main() {\n\tvar x int64\n\tfmt.Scan(&x)\n\n\t// The image is rotated by -x degrees (counter-clockwise if x is positive)\n\t// We can apply 0, 1, 2, or 3 clockwise 90-degree turns.\n\t// After k turns, the total rotation of the image is (-x + 90*k) degrees.\n\t// We want to minimize the deviation from vertical (0 or 180 degrees).\n\t// The deviation is the minimum angle between the current rotation and the nearest multiple of 180.\n\n\t// Normalize x to [0, 360)\n\t// Actually, we just need to consider the effective rotation modulo 360.\n\t// Let's compute the deviation for k = 0, 1, 2, 3.\n\n\tminDev := math.MaxInt64\n\tbestK := 0\n\n\tfor k := 0; k < 4; k++ {\n\t\t// Total rotation of image: -x + 90*k\n\t\t// We want this to be as close to 0 or 180 (mod 360) as possible.\n\t\t// Deviation = min(|angle mod 360|, |360 - (angle mod 360)|) but also considering 180.\n\t\t// Actually, deviation from vertical means how far is the \"up\" direction from true vertical.\n\t\t// If the image is rotated by angle a, the deviation from vertical is min(a mod 360, 360 - (a mod 360)) if we consider 0 as vertical.\n\t\t// But wait, vertical could be 0 or 180 (up or down). The problem says \"deviation from vertical\", which typically means how far from the vertical axis.\n\t\t// So if the image is rotated by 90 degrees, the deviation is 90. If rotated by 180, deviation is 0 (it's still vertical, just upside down).\n\t\t// If rotated by 270, deviation is 90.\n\t\t// So deviation = min(angle mod 180, 180 - (angle mod 180)) where angle is normalized to [0, 180).\n\t\t\n\t\t// Let's compute the effective rotation modulo 360.\n\t\trot := (-x + 90*int64(k)) % 360\n\t\tif rot < 0 {\n\t\t\trot += 360\n\t\t}\n\t\t\n\t\t// Now rot is in [0, 360). The deviation from vertical (0 or 180) is:\n\t\t// If rot <= 180, deviation = min(rot, 180-rot) ... wait no.\n\t\t// Deviation from vertical axis: the angle between the current up direction and the vertical axis.\n\t\t// The vertical axis is at 0 and 180.\n\t\t// So deviation = min(rot, 360-rot) if we only consider 0. But 180 is also vertical.\n\t\t// Actually, deviation from vertical = min(rot, 180-rot, 180+rot, 360-rot) ... no.\n\t\t// Simpler: deviation = min(rot % 180, 180 - (rot % 180))\n\t\t// Let's verify: rot=0 -> 0. rot=90 -> min(90,90)=90. rot=180 -> min(0,180)=0. rot=270 -> min(90,90)=90.\n\t\t\n\t\trotMod180 := rot % 180\n\t\tdev := int64(rotMod180)\n\t\tif 180-dev < dev {\n\t\t\tdev = 180 - dev\n\t\t}\n\t\t\n\t\tif dev < minDev {\n\t\t\tminDev = dev\n\t\t\tbestK = k\n\t\t}\n\t}\n\n\tfmt.Println(bestK)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 19,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"math\"\n)\n\nfunc main() {\n\tvar x int64\n\tfmt.Scan(&x)\n\n\t// The image is rotated by -x degrees (counter-clockwise if x is positive)\n\t// We can apply k times 90 degrees clockwise rotation\n\t// Total rotation of image: -x + 90*k\n\t// We want to minimize the deviation from vertical (0 degrees)\n\t// Deviation is the minimum angle between the total rotation and a multiple of 360\n\n\t// Normalize x to [0, 360)\n\t// But x can be very large, so we work with modulo\n\n\t// The image rotation is -x degrees\n\t// After k clockwise 90-degree turns, total image rotation is (-x + 90*k) degrees\n\t// We want to minimize the angular distance from 0 (mod 360)\n\n\t// Let's normalize -x mod 360 to [0, 360)\n\t// Actually, let's think in terms of the deviation.\n\n\t// The deviation for k turns is:\n\t// d(k) = min(|(-x + 90*k) mod 360|, 360 - |(-x + 90*k) mod 360|)\n\t// But we need to be careful with negative values.\n\n\t// Let's compute the image rotation angle modulo 360.\n\t// image_rot = -x (in degrees)\n\t// After k turns: total_rot = -x + 90*k\n\n\t// We want to find k in {0, 1, 2, 3} that minimizes the deviation.\n\t// Since 90*4 = 360, k only needs to be 0, 1, 2, or 3.\n\n\t// Normalize -x to [0, 360)\n\t// (-x) mod 360\n\t// In Go, % can be negative, so we need to handle that.\n\n\t// Let's compute base = (-x) % 360, normalized to [0, 360)\n\tbase := (-x) % 360\n\tif base < 0 {\n\t\tbase += 360\n\t}\n\n\t// Now for k = 0, 1, 2, 3:\n\t// total_rot = (base + 90*k) % 360\n\t// deviation = min(total_rot, 360 - total_rot)\n\n\tbestK := 0\n\tbestDev := int64(360) // max possible deviation is 180\n\n\tfor k := int64(0); k < 4; k++ {\n\t\ttotal := (base + 90*k) % 360\n\t\tdev := total\n\t\tif 360-total < dev {\n\t\t\tdev = 360 - total\n\t\t}\n\t\tif dev < bestDev || (dev == bestDev && k < bestK) {\n\t\t\tbestDev = dev\n\t\t\tbestK = int(k)\n\t\t}\n\t}\n\n\tfmt.Println(bestK)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 12612,
+            "prompt_tokens": 732,
+            "total_tokens": 13344
+        },
+        "prompt": "Write a program in Go to solve this programming problem:\nDescription: Vasya started working in a machine vision company of IT City. Vasya's team creates software and hardware for identification of people by their face.One of the project's know-how is a camera rotating around its optical axis on shooting. People see an eye-catching gadget \u2014 a rotating camera \u2014 come up to it to see it better, look into it. And the camera takes their photo at that time. What could be better for high quality identification?But not everything is so simple. The pictures from camera appear rotated too (on clockwise camera rotation frame the content becomes rotated counter-clockwise). But the identification algorithm can work only with faces that are just slightly deviated from vertical.Vasya was entrusted to correct the situation \u2014 to rotate a captured image so that image would be minimally deviated from vertical. Requirements were severe. Firstly, the picture should be rotated only on angle divisible by 90 degrees to not lose a bit of information about the image. Secondly, the frames from the camera are so huge and FPS is so big that adequate rotation speed is provided by hardware FPGA solution only. And this solution can rotate only by 90 degrees clockwise. Of course, one can apply 90 degrees turn several times but for the sake of performance the number of turns should be minimized.Help Vasya implement the program that by the given rotation angle of the camera can determine the minimum number of 90 degrees clockwise turns necessary to get a picture in which up direction deviation from vertical is minimum.The next figure contains frames taken from an unrotated camera, then from rotated 90 degrees clockwise, then from rotated 90 degrees counter-clockwise. Arrows show direction to \"true up\".  The next figure shows 90 degrees clockwise turn by FPGA hardware.  \nInput Specification: The only line of the input contains one integer x (\u2009-\u20091018\u2009\u2264\u2009x\u2009\u2264\u20091018) \u2014 camera angle in degrees. Positive value denotes clockwise camera rotation, negative \u2014 counter-clockwise.\nOutput Specification: Output one integer \u2014 the minimum required number of 90 degrees clockwise turns.\n\nSample Input:\n60\nSample Output:\n1\n\nSample Input:\n-60\nSample Output:\n3\n\nNotes: NoteWhen the camera is rotated 60 degrees counter-clockwise (the second example), an image from it is rotated 60 degrees clockwise. One 90 degrees clockwise turn of the image result in 150 degrees clockwise total rotation and deviation from \"true up\" for one turn is 150 degrees. Two 90 degrees clockwise turns of the image result in 240 degrees clockwise total rotation and deviation from \"true up\" for two turns is 120 degrees because 240 degrees clockwise equal to 120 degrees counter-clockwise. Three 90 degrees clockwise turns of the image result in 330 degrees clockwise total rotation and deviation from \"true up\" for three turns is 30 degrees because 330 degrees clockwise equal to 30 degrees counter-clockwise.From 60, 150, 120 and 30 degrees deviations the smallest is 30, and it it achieved in three 90 degrees clockwise turns.\nTake input from standard input and output to standard output\nProvide the Go code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "509db9cb6156b692557ba874a09f150e",
+        "difficulty": 1800,
+        "prob_desc_sample_inputs": [
+            "60",
+            "-60"
+        ],
+        "prob_desc_time_limit": "0.5 seconds",
+        "tags": [
+            "geometry",
+            "math"
+        ],
+        "prob_desc_output_spec": "Output one integer \u2014 the minimum required number of 90 degrees clockwise turns.",
+        "prob_desc_input_spec": "The only line of the input contains one integer x (\u2009-\u20091018\u2009\u2264\u2009x\u2009\u2264\u20091018) \u2014 camera angle in degrees. Positive value denotes clockwise camera rotation, negative \u2014 counter-clockwise.",
+        "lang_cluster": "Go",
+        "source_code": "",
+        "prob_desc_notes": "NoteWhen the camera is rotated 60 degrees counter-clockwise (the second example), an image from it is rotated 60 degrees clockwise. One 90 degrees clockwise turn of the image result in 150 degrees clockwise total rotation and deviation from \"true up\" for one turn is 150 degrees. Two 90 degrees clockwise turns of the image result in 240 degrees clockwise total rotation and deviation from \"true up\" for two turns is 120 degrees because 240 degrees clockwise equal to 120 degrees counter-clockwise. Three 90 degrees clockwise turns of the image result in 330 degrees clockwise total rotation and deviation from \"true up\" for three turns is 30 degrees because 330 degrees clockwise equal to 30 degrees counter-clockwise.From 60, 150, 120 and 30 degrees deviations the smallest is 30, and it it achieved in three 90 degrees clockwise turns.",
+        "prob_desc_memory_limit": "64 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Vasya started working in a machine vision company of IT City. Vasya's team creates software and hardware for identification of people by their face.One of the project's know-how is a camera rotating around its optical axis on shooting. People see an eye-catching gadget \u2014 a rotating camera \u2014 come up to it to see it better, look into it. And the camera takes their photo at that time. What could be better for high quality identification?But not everything is so simple. The pictures from camera appear rotated too (on clockwise camera rotation frame the content becomes rotated counter-clockwise). But the identification algorithm can work only with faces that are just slightly deviated from vertical.Vasya was entrusted to correct the situation \u2014 to rotate a captured image so that image would be minimally deviated from vertical. Requirements were severe. Firstly, the picture should be rotated only on angle divisible by 90 degrees to not lose a bit of information about the image. Secondly, the frames from the camera are so huge and FPS is so big that adequate rotation speed is provided by hardware FPGA solution only. And this solution can rotate only by 90 degrees clockwise. Of course, one can apply 90 degrees turn several times but for the sake of performance the number of turns should be minimized.Help Vasya implement the program that by the given rotation angle of the camera can determine the minimum number of 90 degrees clockwise turns necessary to get a picture in which up direction deviation from vertical is minimum.The next figure contains frames taken from an unrotated camera, then from rotated 90 degrees clockwise, then from rotated 90 degrees counter-clockwise. Arrows show direction to \"true up\".  The next figure shows 90 degrees clockwise turn by FPGA hardware.  ",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1455807600",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "1",
+            "3"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"60\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-60\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"44\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"45\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"46\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"134\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"135\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"136\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"224\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"225\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"226\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"227\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"313\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"314\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"315\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"316\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"358\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"359\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"360\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"361\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"999999999999999340\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"999999999999999325\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"999999999999999326\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"999999999999999415\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"999999999999999416\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"999999999999999504\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"999999999999999505\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"999999999999999506\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"999999999999999594\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"999999999999999595\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"999999999999999596\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"999999999999999639\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"999999999999999640\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"6678504591813508\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"201035370138545377\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"441505850043460771\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"252890591709237675\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"272028913373922389\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"141460527912396122\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"479865961765156498\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-44\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-45\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-46\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"-134\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"-135\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-136\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-224\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-225\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-226\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-227\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-313\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-314\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-315\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-316\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-358\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-359\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-360\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-361\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-999999999999999340\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-999999999999999325\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-999999999999999326\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-999999999999999415\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"-999999999999999416\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"-999999999999999504\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-999999999999999505\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-999999999999999506\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-999999999999999594\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-999999999999999595\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-999999999999999596\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-999999999999999639\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-999999999999999640\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-6678504591813508\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-201035370138545377\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-441505850043460771\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"-252890591709237675\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-272028913373922389\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-141460527912396122\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-479865961765156498\\r\\n\", \"output\": [\"2\"]}]"
+    }
+}

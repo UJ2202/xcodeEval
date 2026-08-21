@@ -1,0 +1,348 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEI1xNjjUxiX6fnBdpBN6DgmKeA5S",
+        "created": 1787074609,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/);\nlet idx = 0;\nconst n = parseInt(input[idx++], 10);\nconst c1 = parseInt(input[idx++], 10);\nconst c2 = parseInt(input[idx++], 10);\nconst s = input[idx++] || '';\n\nlet adults = 0;\nfor (let i = 0; i < n; i++) {\n    if (s[i] === '1') adults++;\n}\n\nconst pupils = n - adults;\n\n// If there are no pupils, best is each adult alone\nif (pupils === 0) {\n    const ans = BigInt(adults) * BigInt(c1);\n    console.log(ans.toString());\n    process.exit(0);\n}\n\n// If there is only one adult, everyone must be in one group\nif (adults === 1) {\n    const x = BigInt(n);\n    const ans = BigInt(c1) + BigInt(c2) * (x - 1n) * (x - 1n);\n    console.log(ans.toString());\n    process.exit(0);\n}\n\n// General case: we can form groups of size 2 (one adult + one pupil) and\n// groups of size 1 (single adult). Larger groups are never cheaper than\n// splitting into 1s and 2s under this pricing.\nconst pairs = Math.min(adults, pupils);\nconst remainingAdults = adults - pairs;\n\n// cost for each pair group (size 2): c1 + c2 * (2 - 1)^2 = c1 + c2\nconst pairCost = BigInt(c1 + c2);\nconst singleCost = BigInt(c1);\n\nconst ans =\n    BigInt(pairs) * pairCost +\n    BigInt(remainingAdults) * singleCost;\n\nconsole.log(ans.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/);\nlet idx = 0;\nconst n = parseInt(input[idx++], 10);\nconst c1 = BigInt(input[idx++]);\nconst c2 = BigInt(input[idx++]);\nconst s = input[idx++] || '';\n\nlet adults = 0;\nlet pupils = 0;\nfor (let i = 0; i < n; i++) {\n    if (s[i] === '1') adults++;\n    else pupils++;\n}\n\nfunction cost(x) {\n    const bx = BigInt(x);\n    const t = bx - 1n;\n    return c1 + c2 * t * t;\n}\n\nlet best = null;\n\nfor (let k = 1; k <= adults; k++) {\n    const baseAdults = Math.floor(adults / k);\n    const extraAdultsGroups = adults % k;\n\n    const groupsWithExtraAdult = extraAdultsGroups;\n    const groupsWithBaseAdult = k - extraAdultsGroups;\n\n    const pupilsPerExtraGroup = Math.floor(pupils / k) + 1;\n    const pupilsPerBaseGroup = Math.floor(pupils / k);\n\n    const totalPupilsAssigned =\n        groupsWithExtraAdult * pupilsPerExtraGroup +\n        groupsWithBaseGroup * pupilsPerBaseGroup;\n\n    if (totalPupilsAssigned < pupils) continue;\n\n    const sizeExtra = baseAdults + 1 + pupilsPerExtraGroup;\n    const sizeBase = baseAdults + pupilsPerBaseGroup;\n\n    const totalCost =\n        cost(sizeExtra) * BigInt(groupsWithExtraAdult) +\n        cost(sizeBase) * BigInt(groupsWithBaseGroup);\n\n    if (best === null || totalCost < best) best = totalCost;\n}\n\nconsole.log(String(best));",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/);\nlet idx = 0;\nconst n = parseInt(input[idx++], 10);\nconst c1 = parseInt(input[idx++], 10);\nconst c2 = parseInt(input[idx++], 10);\nconst s = input[idx++] || '';\n\nlet adults = 0;\nlet pupils = 0;\n\nfor (let i = 0; i < n; i++) {\n    if (s[i] === '1') adults++;\n    else pupils++;\n}\n\n// Cost function: c1 + c2 * (x - 1)^2\nfunction cost(x) {\n    const t = x - 1;\n    return c1 + c2 * t * t;\n}\n\n// If there are no pupils, just group all adults together\nif (pupils === 0) {\n    console.log(cost(adults).toString());\n    process.exit(0);\n}\n\n// Try all possible numbers of groups k (1..adults) that can host all pupils\n// Each group must contain at least one adult, so k <= adults\n// Each group must contain at least one pupil, so k <= pupils\nconst maxK = Math.min(adults, pupils);\nlet best = Infinity;\n\nfor (let k = 1; k <= maxK; k++) {\n    // Each group has at least one pupil: k pupils used\n    // Remaining pupils to distribute: pupils - k\n    // Adults: at least one per group: k adults used\n    // Remaining adults to distribute: adults - k\n\n    const remP = pupils - k;\n    const remA = adults - k;\n\n    // Total extra people to distribute among k groups\n    const extra = remP + remA;\n\n    // Distribute extra people as evenly as possible:\n    // group sizes: base = 2 + floor(extra/k) or 2 + ceil(extra/k)\n    const baseExtra = Math.floor(extra / k);\n    const biggerGroups = extra % k; // number of groups with baseExtra+1 extra\n\n    const sizeSmall = 2 + baseExtra;\n    const sizeBig = sizeSmall + 1;\n\n    const totalCost =\n        biggerGroups * cost(sizeBig) +\n        (k - biggerGroups) * cost(sizeSmall);\n\n    if (totalCost < best) best = totalCost;\n}\n\nconsole.log(best.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/);\nlet idx = 0;\nconst n = parseInt(input[idx++], 10);\nconst c1 = parseInt(input[idx++], 10);\nconst c2 = parseInt(input[idx++], 10);\nconst s = input[idx++] || '';\n\nlet adults = 0;\nlet pupils = 0;\nfor (let i = 0; i < n; i++) {\n    if (s[i] === '1') adults++;\n    else pupils++;\n}\n\nfunction cost(x) {\n    const d = x - 1;\n    return c1 + c2 * d * d;\n}\n\nlet ans = Infinity;\n\n// Case 1: all in one group\nans = Math.min(ans, cost(n));\n\n// Case 2: separate adults and pupils (if pupils > 0)\nif (pupils > 0) {\n    ans = Math.min(ans, cost(adults) + cost(pupils));\n}\n\n// Case 3: one mixed group (1 adult + all pupils), remaining adults alone\nif (pupils > 0 && adults >= 1) {\n    const mixedSize = pupils + 1;\n    const remainingAdults = adults - 1;\n    ans = Math.min(ans, cost(mixedSize) + remainingAdults * cost(1));\n}\n\nconsole.log(ans.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/);\nlet idx = 0;\nconst n = parseInt(input[idx++], 10);\nconst c1 = parseInt(input[idx++], 10);\nconst c2 = parseInt(input[idx++], 10);\nconst s = input[idx++] || '';\n\nlet adults = 0;\nlet pupils = 0;\nfor (let i = 0; i < n; i++) {\n    if (s[i] === '1') adults++;\n    else pupils++;\n}\n\nlet best = Infinity;\n\n// Try k groups (1..adults)\nfor (let k = 1; k <= adults; k++) {\n    const baseAdultsPerGroup = Math.floor(adults / k);\n    const groupsWithExtraAdult = adults % k;\n\n    // Check if we can assign at least one adult to each group\n    if (baseAdultsPerGroup === 0) break; // further k will have 0 adults per group\n\n    // Compute total people per group\n    const x1 = baseAdultsPerGroup;      // groups without extra adult\n    const x2 = baseAdultsPerGroup + 1;  // groups with extra adult\n\n    // Total capacity (people) with these group sizes\n    const totalCapacity = x1 * (k - groupsWithExtraAdult) + x2 * groupsWithExtraAdult;\n    if (totalCapacity < n) continue; // not enough capacity to place all visitors\n\n    // Total cost\n    const cost = c1 * k +\n        c2 * ((k - groupsWithExtraAdult) * (x1 - 1) * (x1 - 1) +\n              groupsWithExtraAdult * (x2 - 1) * (x2 - 1));\n\n    if (cost < best) best = cost;\n}\n\nconsole.log(best.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/);\nlet idx = 0;\nconst n = parseInt(input[idx++], 10);\nconst c1 = parseInt(input[idx++], 10);\nconst c2 = parseInt(input[idx++], 10);\nconst s = input[idx++] || '';\n\nlet adults = 0;\nlet pupils = 0;\n\nfor (let i = 0; i < n; i++) {\n    if (s[i] === '1') adults++;\n    else pupils++;\n}\n\nlet totalCost = 0;\n\nif (pupils === 0) {\n    // Only adults: one group of all adults\n    const x = adults;\n    totalCost = c1 + c2 * (x - 1) * (x - 1);\n} else {\n    // At least one pupil: one group with all pupils + at least one adult\n    // and all remaining adults in another group (if any)\n    const x1 = pupils + 1; // group with pupils and one adult\n    totalCost = c1 + c2 * (x1 - 1) * (x1 - 1);\n    const remainingAdults = adults - 1;\n    if (remainingAdults > 0) {\n        const x2 = remainingAdults;\n        totalCost += c1 + c2 * (x2 - 1) * (x2 - 1);\n    }\n}\n\nconsole.log(totalCost.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/);\nlet idx = 0;\nconst n = parseInt(input[idx++], 10);\nconst c1 = parseInt(input[idx++], 10);\nconst c2 = parseInt(input[idx++], 10);\nconst s = input[idx++] || '';\n\nlet adults = 0;\nlet pupils = 0;\nfor (let i = 0; i < n; i++) {\n    if (s[i] === '1') adults++;\n    else pupils++;\n}\n\n// Precompute cost for group sizes up to n\nconst cost = new Array(n + 1);\nfor (let x = 1; x <= n; x++) {\n    const diff = x - 1;\n    cost[x] = c1 + c2 * diff * diff;\n}\n\n// dp[a][p] = minimal cost to serve a adults and p pupils\nconst INF = BigInt('9000000000000000000000000000000');\nconst dp = Array.from({ length: adults + 1 }, () =>\n    Array(pupils + 1).fill(INF)\n);\ndp[0][0] = 0n;\n\nfor (let a = 0; a <= adults; a++) {\n    for (let p = 0; p <= pupils; p++) {\n        const cur = dp[a][p];\n        if (cur === INF) continue;\n        // group size x, with at least one adult: k adults, x-k pupils\n        // k from 1..a, x-k from 0..p\n        // So x ranges from 1..(a+p)\n        const maxX = a + p;\n        for (let x = 1; x <= maxX; x++) {\n            const maxAdultsInGroup = Math.min(a, x);\n            const minAdultsInGroup = Math.max(1, x - p);\n            if (minAdultsInGroup > maxAdultsInGroup) continue;\n            // We can choose any k in [minAdultsInGroup, maxAdultsInGroup],\n            // but result only depends on x, so just pick one feasible k.\n            const k = minAdultsInGroup;\n            const na = a - k;\n            const np = p - (x - k);\n            const newCost = cur + BigInt(cost[x]);\n            if (newCost < dp[na][np]) dp[na][np] = newCost;\n        }\n    }\n}\n\nconsole.log(dp[adults][pupils].toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/);\nlet idx = 0;\nconst n = parseInt(input[idx++], 10);\nconst c1 = parseInt(input[idx++], 10);\nconst c2 = parseInt(input[idx++], 10);\nconst s = input[idx++] || '';\n\nlet adults = 0;\nlet pupils = 0;\nfor (let i = 0; i < n; i++) {\n    if (s[i] === '1') adults++;\n    else pupils++;\n}\n\nfunction cost(x) {\n    const t = x - 1;\n    return c1 + c2 * t * t;\n}\n\nlet best = Infinity;\n\n// Try k groups, each with at least one adult\nfor (let k = 1; k <= adults; k++) {\n    const baseAdults = adults - (k - 1); // adults in the big group\n    const baseSize = baseAdults;         // start size of big group (no pupils yet)\n    const extraPupils = pupils;          // all pupils go to big group\n\n    const bigSize = baseSize + extraPupils;\n    const total = cost(bigSize) + (k - 1) * cost(1); // remaining groups are single adults\n    if (total < best) best = total;\n}\n\nconsole.log(best.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 3226,
+            "prompt_tokens": 568,
+            "total_tokens": 3794,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 1,
+                "engine_ttft_ms": 47,
+                "engine_ttlt_ms": 3603,
+                "pre_inference_ms": 181,
+                "service_tbt_ms": 1,
+                "service_ttft_ms": 322,
+                "service_ttlt_ms": 3873,
+                "total_duration_ms": 3704,
+                "user_visible_ttft_ms": 141
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Javascript to solve this programming problem:\nDescription: Pupils decided to go to amusement park. Some of them were with parents. In total, n people came to the park and they all want to get to the most extreme attraction and roll on it exactly once.Tickets for group of x people are sold on the attraction, there should be at least one adult in each group (it is possible that the group consists of one adult). The ticket price for such group is c1\u2009+\u2009c2\u00b7(x\u2009-\u20091)2 (in particular, if the group consists of one person, then the price is c1). All pupils who came to the park and their parents decided to split into groups in such a way that each visitor join exactly one group, and the total price of visiting the most extreme attraction is as low as possible. You are to determine this minimum possible total price. There should be at least one adult in each group. \nInput Specification: The first line contains three integers n, c1 and c2 (1\u2009\u2264\u2009n\u2009\u2264\u2009200\u2009000, 1\u2009\u2264\u2009c1,\u2009c2\u2009\u2264\u2009107)\u00a0\u2014 the number of visitors and parameters for determining the ticket prices for a group. The second line contains the string of length n, which consists of zeros and ones. If the i-th symbol of the string is zero, then the i-th visitor is a pupil, otherwise the i-th person is an adult. It is guaranteed that there is at least one adult. It is possible that there are no pupils.\nOutput Specification: Print the minimum price of visiting the most extreme attraction for all pupils and their parents. Each of them should roll on the attraction exactly once.\n\nSample Input:\n3 4 1\n011\nSample Output:\n8\n\nSample Input:\n4 7 2\n1101\nSample Output:\n18\n\nNotes: NoteIn the first test one group of three people should go to the attraction. Then they have to pay 4\u2009+\u20091\u2009*\u2009(3\u2009-\u20091)2\u2009=\u20098.In the second test it is better to go to the attraction in two groups. The first group should consist of two adults (for example, the first and the second person), the second should consist of one pupil and one adult (the third and the fourth person). Then each group will have a size of two and for each the price of ticket is 7\u2009+\u20092\u2009*\u2009(2\u2009-\u20091)2\u2009=\u20099. Thus, the total price for two groups is 18.\nTake input from standard input and output to standard output\nProvide the Javascript code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "78d013b01497053b8e321fe7b6ce3760",
+        "difficulty": 2100,
+        "prob_desc_sample_inputs": [
+            "3 4 1\n011",
+            "4 7 2\n1101"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "ternary search"
+        ],
+        "prob_desc_output_spec": "Print the minimum price of visiting the most extreme attraction for all pupils and their parents. Each of them should roll on the attraction exactly once.",
+        "prob_desc_input_spec": "The first line contains three integers n, c1 and c2 (1\u2009\u2264\u2009n\u2009\u2264\u2009200\u2009000, 1\u2009\u2264\u2009c1,\u2009c2\u2009\u2264\u2009107)\u00a0\u2014 the number of visitors and parameters for determining the ticket prices for a group. The second line contains the string of length n, which consists of zeros and ones. If the i-th symbol of the string is zero, then the i-th visitor is a pupil, otherwise the i-th person is an adult. It is guaranteed that there is at least one adult. It is possible that there are no pupils.",
+        "lang_cluster": "Javascript",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first test one group of three people should go to the attraction. Then they have to pay 4\u2009+\u20091\u2009*\u2009(3\u2009-\u20091)2\u2009=\u20098.In the second test it is better to go to the attraction in two groups. The first group should consist of two adults (for example, the first and the second person), the second should consist of one pupil and one adult (the third and the fourth person). Then each group will have a size of two and for each the price of ticket is 7\u2009+\u20092\u2009*\u2009(2\u2009-\u20091)2\u2009=\u20099. Thus, the total price for two groups is 18.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Pupils decided to go to amusement park. Some of them were with parents. In total, n people came to the park and they all want to get to the most extreme attraction and roll on it exactly once.Tickets for group of x people are sold on the attraction, there should be at least one adult in each group (it is possible that the group consists of one adult). The ticket price for such group is c1\u2009+\u2009c2\u00b7(x\u2009-\u20091)2 (in particular, if the group consists of one person, then the price is c1). All pupils who came to the park and their parents decided to split into groups in such a way that each visitor join exactly one group, and the total price of visiting the most extreme attraction is as low as possible. You are to determine this minimum possible total price. There should be at least one adult in each group. ",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1491406500",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "8",
+            "18"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"3 4 1\\r\\n011\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"4 7 2\\r\\n1101\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"1 2 2\\r\\n1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"2 3 10\\r\\n01\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"5 10 3\\r\\n11100\\r\\n\", \"output\": [\"35\"]}, {\"input\": \"10 2 2\\r\\n1111101111\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"20 3 13\\r\\n01111110011111010101\\r\\n\", \"output\": [\"120\"]}, {\"input\": \"50 13 44\\r\\n11101110100110111100010110001111001001110010111011\\r\\n\", \"output\": [\"1270\"]}, {\"input\": \"100 1000 1000\\r\\n0000010100101100110100101111001111111111100101111100111011110001011110110111111010000000101000111000\\r\\n\", \"output\": [\"100000\"]}, {\"input\": \"1000 10000 10000\\r\\n1111011110111111111111111111011111111001111111111111111111011111111101111111111111101011111111111011111111111111111101111111111011111111101111111111111111111111111111111110111110110111111111111101111110101111111101111111111111111111111110111111011001111011111111111110101101111111101111111101111111101111111111110101111111111111111111011011111101111101111111111111111111111111110111011100111111101111101111101101111111111111110111011111111111111111111111111111111111111111111111011111111011111...\", \"output\": [\"10000000\"]}, {\"input\": \"10000 100 1000000\\r\\n101111011011011111011111100110111001100110101111100100011101011011110110001011001101011010111110101011011101111111111010111101001110111111111010011100110111111110101101111111011010111111101111101100011000101010111101110111111101011110010100111010110011011011101111111111011011010110011010111110111101110010101011011100011110100011101100101010111100111111101111100011000110110001111111110111101110101010111110111101011111111110101001101001100111100110110000011111110001110010001011011101001110...\", \"output\": [\"3759624100\"]}, {\"input\": \"20001 1000 100\\r\\n000100010100111100011011010110111011110111110011000110010010010000110111001000010101111000110110111010101000100111100100101010101010000010111101011000010011111011110001110001110111001000110111110001011100010011001110110100010011101010001010101101000110001000001010011001100010011111001010001101111101110010001011011000101111110001111101010010101101000000100110011100100100001110111001010011110011000111100001011011111011100101100111110010011010111001001011011000111110101011000101010111000111110...\", \"output\": [\"9333800\"]}, {\"input\": \"50000 100 1000\\r\\n100001000000100000101110011001101100001101110010010001000101011000010000000000000000100111001000000100111010000110011011011011011101011100100010000010000001011010010000011100100100000010000000000001000011010011001000110110110100001001001010100011011000110010000011001000001110100100000000111110000110000010010011001111101000000000100001110001011001000011101010010100110110100011110001010000010101000111100001010110011100000100001000001010000000000100100000000110100010100010101111111010010000101...\", \"output\": [\"62539900\"]}, {\"input\": \"99999 10000 10000\\r\\n010010000000000000000001000000000001000100001000001000000010000000000110000000001000100000000000100000000000000000100010000000100000000001001010000000010000000000010110000000000000000001000010000000000000000000000000000001100000000000000100000000000000000000010010000000000000100010000100010000101001000001000001000000110000100000000000000000000000100000000000010000001000000000001000000000101000000000000000000000000000010000000001000010000100001000000100000000000000000000000100000001001000...\", \"output\": [\"6092190000\"]}, {\"input\": \"200000 1234 234123\\r\\n00000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000100000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000001000000000000000000...\", \"output\": [\"1612837280853\"]}, {\"input\": \"200000 123 1242\\r\\n00000010000000000000001000000000010000000000000000000000000000000000010000000000000000000000000000000000000000000000010000000000000000000001100000000000000000000000000000000000000000000000000000000000010000000000000000000000100000000000000000000000000000001000000000000000000000000000000000100000000000000000000010000000000000000100000000101000000000000000000000000000000000000000001000000000000000000000000100010000000100000000000000000000000000000000000100100000000010001001000001000000100000...\", \"output\": [\"4251434880\"]}, {\"input\": \"200000 10000000 10000000\\r\\n00000000000000000000001000000000000000000000001000001010000100100000000000000000001001000000000000000000000000000000000000000100000011010000000000010000000000000000000000000000000010000000000000000100000000000000000000000000000000000000000000010000000100000000000100000000000101000000000000000000100010001000001000000001010010000000000000000001000000000000000000000000000000000000000000000010000000000010000000000000000000000000000000000000000000010000000000000000000000000000000000000...\", \"output\": [\"31778720000000\"]}, {\"input\": \"200000 10000 10000\\r\\n11110111111111111111111111101111111111111111101111111111101111111110111111101111111111111111111111111110111101111111111111011111111111100111111111111101101111111111111111111111111111111111110111111111111111111111101111011011111111111111111111011011111110111110111111111111101111110111111111110111101111111111111111111111110101110111111111111111110111111111111111111011111111101111101111111101101101111111111111111111111111111111111110111111111111111111111111110111001111111111111011111110111...\", \"output\": [\"2000000000\"]}, {\"input\": \"200000 1000 10000000\\r\\n000100001100000000100001100000010011110000001000001000000100001100000100000101000100000001000010100001010000011010010100001001011010000000000000111000011100110001000100001000000000000000001000101110110001001100010101000000000011100110000110100001011100110110000001000010100100000101010000000000000010000000001000000011010101100000110000011110000000000001111011010001101011011011000000100000000000101011010001100001000000011001010000000100011011000001100000000000000100111010001010100010001...\", \"output\": [\"3897475478000\"]}, {\"input\": \"200000 10000000 3\\r\\n111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111...\", \"output\": [\"2189709470\"]}, {\"input\": \"200000 10000000 10000000\\r\\n10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000...\", \"output\": [\"399996000020000000\"]}, {\"input\": \"200000 3 44\\r\\n000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000...\", \"output\": [\"42909231279\"]}, {\"input\": \"200000 2 44\\r\\n110111111011110111111110111110101110110010101010110111111011100011101111111111011011011101000010110111101110101001111101101110101111111100111100011111111111111111111100001101111011111110111011100110110011011111011101011111010101100111010001111110111111111111011011111111111111101101110011101010101101111011011011001110111100100111111111111001111110111101111111110111111001111111101100111011111111111000110000101111110111101111101111101111011111110010110111101101111111010111110000101111010110101101...\", \"output\": [\"2588662\"]}, {\"input\": \"200000 33 1212\\r\\n111111111111111111111111110110111111111111111111111111111111111111101111111111111111111111110111111111111111111101111111111111111111111111111111111111111111110111111011111111111111110111111111111111111111111101111111111111101111111101111111111111111111110110111111111111111111111111111011111111111111111101111111111101111111110111111111111111111111111111111111111101111111111111111111111111111111111111111111111111111101111111111111101111111111111110111111111111111111111111011111111111111111111...\", \"output\": [\"15754935\"]}, {\"input\": \"200000 123123 45345\\r\\n1111111011101111111111111111111111111111111111111111111111111111111010111111111110111111111111111111111111111111111111111111011111111111111111111111101111111111111111111111111111111111111111111111111111111111111111111111001111011111111111111111111111111110111111111111111111111111111111111011111111111111111111111111111111111111111111110011110111111111011111111111111111111111011111111111111111111101111111111111111111111111011110111111111111111111111111111111110111111111111101111111111111...\", \"output\": [\"16846800000\"]}, {\"input\": \"200000 234531 565456\\r\\n010000000100100000000000001000000000100100000000000000000000000010000000000000000000000000000000000000000100000000000000010000001000000100000000001010010000000010000000100000000000000000000010000000000000000000000000000100010000001000101000000000000000001000000000000001000000000000000000000000000000000000000000000000000000001000000001000000000000100000000000000101001000000010010010011000000001001000001000000010010001000000000001000000000000000000000000000010100001000000010000001100000...\", \"output\": [\"1194827034888\"]}, {\"input\": \"200000 10000000 123434\\r\\n0010111000100000111111000111011010010001100101001011100000001010111000101010110010011000100110001001101000000001110101000001101100000010111111010000001010000110011110100101000010001001100011001000000011100000000110010101010010001000101001110111001100100101001101111001001100100001111000011000110001000111000111101001011010000101011110100011000101100010011001011100101110110111111110010010101001110011011010000010000100110100101010010000000011110000011101001010001111101001001001101011001...\", \"output\": [\"397773019028\"]}, {\"input\": \"200000 10000000 234345\\r\\n0000000100000001000000000010000100000000000000000000000100000001010010000010000000100000000000100000000000100010000001100000100001000000000000101010000000000000000000010000000000000000000010000000000000001000100000000001000100000000000000000000010000000000000000001000000000100100000010000000000001000000000000000001100001000000000011000000000000000000000010000000000000000000001000100000000000000000000000000000100000001000000010000000000000000000001000000000000000000000010000000000000...\", \"output\": [\"552374355975\"]}, {\"input\": \"200000 1000 1203\\r\\n0001000111000000010000100010110000101111000001000100010100001010000000000001110000101000010000000101001000100000110001000001100011000000010010000110000000010001010011000000101000001110100100000101010100000110100000100000000000010100110110010000100000100001000000010000010100000100000101100000010000001011000101010000000000100010000010000000101001001000000000010100010000000000000100100010000001010100000110000100000001010101000100000011001101000001000100011010010010011010000000010010100001100...\", \"output\": [\"498073375\"]}, {\"input\": \"200000 1000000 1000000\\r\\n1110111111111111111111011110101111111111111110111110111111111111111111111111111111111111111111111111111111111111111111111111010111100111110111111011111111111111111111111111111111011011101111111111111111111011110110111111111111111111111111111111111111111111111111101111111111110111111111110111111111011111111110111111111111111111111100111111110111110111111111111111110111111111110111111111111111101111111111111111111111111111111111011111111100110011111111111111111111011111111011111111111...\", \"output\": [\"200000000000\"]}, {\"input\": \"200000 11200 100\\r\\n0000000010000100100100000000100100000000000000000000000000000010000000100000000000000000000000000000000000000000000011000000000000000000000001000101000001000000001110000000010000000100000001001000000000000000000000100000000000000100000010101010000000000000100100000000000001000010000000010010000000000010010000000000000000010110001010010010101010001001110000000000000000000100000110000000000000000000000010000000000010000000000000100001000101000000010000000000100000110000000000011001100001111...\", \"output\": [\"385454600\"]}]"
+    }
+}

@@ -1,0 +1,390 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-90fd6618eb2eda9e",
+        "created": 1787072403,
+        "model": "qwen-nvfp4",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.27.1-d7a14dad",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <climits>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n\n    // dp[i][j] = minimum weight to triangulate the polygon with vertices i, i+1, ..., j\n    // Vertices are labeled 1 to n\n    // We'll use 1-indexed for clarity\n\n    vector<vector<long long>> dp(n + 1, vector<long long>(n + 1, 0));\n\n    // Base case: triangles (3 vertices)\n    // For a triangle with vertices i, i+1, i+2, the weight is i * (i+1) * (i+2)\n    // But we need to handle wrap-around? No, since we're dealing with a linear sequence in DP.\n    \n    // Actually, let's think about this more carefully.\n    // The polygon has vertices 1, 2, ..., n in order.\n    // We can use interval DP where dp[i][j] represents the minimum cost to triangulate \n    // the sub-polygon formed by vertices i, i+1, ..., j (consecutive vertices).\n    \n    // For a sub-polygon with vertices from i to j (inclusive), if j - i + 1 < 3, \n    // it's not a polygon yet (needs at least 3 vertices).\n    // If j - i + 1 == 3, it's a triangle with vertices i, i+1, i+2, cost = i*(i+1)*(i+2)\n    // Wait, that's only if they are consecutive. But in a polygon, any three vertices \n    // that form a triangle in the triangulation must be connected by diagonals.\n    \n    // Standard approach: dp[i][j] = min over k in (i+1, j-1) of \n    //   dp[i][k] + dp[k][j] + i * k * j\n    // where dp[i][j] is the min cost to triangulate the polygon with vertices i, i+1, ..., j.\n    \n    // But wait, this assumes that the \"polygon\" is formed by consecutive vertices i through j.\n    // In a regular polygon with vertices 1..n, the sub-polygon from i to j (going clockwise \n    // or counter-clockwise) consists of vertices i, i+1, ..., j.\n    \n    // Let's verify with n=4:\n    // dp[1][4] = min over k in {2,3} of dp[1][k] + dp[k][4] + 1*k*4\n    // k=2: dp[1][2] + dp[2][4] + 1*2*4\n    //   dp[1][2]: only 2 vertices, not a polygon. Should be 0.\n    //   dp[2][4]: vertices 2,3,4 -> triangle, cost = 2*3*4 = 24\n    //   So total = 0 + 24 + 8 = 32\n    // k=3: dp[1][3] + dp[3][4] + 1*3*4\n    //   dp[1][3]: vertices 1,2,3 -> triangle, cost = 1*2*3 = 6\n    //   dp[3][4]: only 2 vertices, cost = 0\n    //   So total = 6 + 0 + 12 = 18\n    // min(32, 18) = 18. Correct!\n    \n    // So the recurrence is:\n    // dp[i][j] = 0 if j - i + 1 < 3 (i.e., less than 3 vertices)\n    // dp[i][j] = i*(i+1)*(i+2) if j - i + 1 == 3? No, that's not general.\n    // Actually, for any i, j with j >= i+2:\n    //   dp[i][j] = min_{k=i+1}^{j-1} (dp[i][k] + dp[k][j] + i*k*j)\n    // And dp[i][i+1] = 0 (no triangulation needed for 2 vertices, it's just an edge)\n    // dp[i][i] = 0\n    \n    // Let's re-verify: for j = i+2 (3 vertices), the only k is i+1.\n    // dp[i][i+2] = dp[i][i+1] + dp[i+1][i+2] + i*(i+1)*(i+2) = 0 + 0 + i*(i+1)*(i+2)\n    // That's correct.\n    \n    // Initialize\n    for (int i = 1; i <= n; i++) {\n        dp[i][i] = 0;\n        dp[i][i+1] = 0; // if i+1 <= n\n    }\n    \n    // Fill dp table\n    // Length of the interval (number of vertices) from 3 to n\n    for (int len = 3; len <= n; len++) {\n        for (int i = 1; i + len - 1 <= n; i++) {\n            int j = i + len - 1;\n            dp[i][j] = LLONG_MAX;\n            for (int k = i + 1; k <= j - 1; k++) {\n                long long cost = dp[i][k] + dp[k][j] + (long long)i * k * j;\n                if (cost < dp[i][j]) {\n                    dp[i][j] = cost;\n                }\n            }\n        }\n    }\n    \n    cout << dp[1][n] << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <climits>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    // dp[i][j] = minimum weight to triangulate the sub-polygon from vertex i to vertex j\n    // The vertices are labeled 1 to n\n    // We use 1-indexed for vertices\n    \n    vector<vector<long long>> dp(n + 1, vector<long long>(n + 1, 0));\n    \n    // For a sub-polygon from i to j (inclusive), where j - i >= 2\n    // We need to choose a vertex k (i < k < j) such that triangle (i, k, j) is formed\n    // and then triangulate sub-polygons (i, k) and (k, j)\n    \n    // Base case: if j - i < 2, no triangle can be formed, weight is 0\n    // For j - i == 2, it's a single triangle: weight = i * (i+1) * j\n    \n    for (int len = 2; len < n; len++) {\n        for (int i = 1; i + len <= n; i++) {\n            int j = i + len;\n            dp[i][j] = LLONG_MAX;\n            for (int k = i + 1; k < j; k++) {\n                long long weight = (long long)i * k * j + dp[i][k] + dp[k][j];\n                if (weight < dp[i][j]) {\n                    dp[i][j] = weight;\n                }\n            }\n        }\n    }\n    \n    cout << dp[1][n] << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <climits>\n#include <algorithm>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    // dp[i][j] = minimum weight to triangulate polygon with vertices i, i+1, ..., j\n    // Vertices are labeled 1 to n\n    // We use 0-indexed internally, so vertex k in 1-indexed is k-1 in 0-indexed\n    // But the weight uses the original labels (1 to n)\n    \n    // dp[i][j] where i and j are 0-indexed, representing vertices (i+1) and (j+1)\n    // The sub-polygon has vertices from i to j (inclusive), which is j-i+1 vertices\n    // We need at least 3 vertices, so j - i + 1 >= 3\n    \n    vector<vector<long long>> dp(n, vector<long long>(n, 0));\n    \n    // For a triangle (3 vertices), dp[i][i+2] = (i+1) * (i+2) * (i+3)\n    // In general, dp[i][j] = min over k from i+1 to j-1 of:\n    //   dp[i][k] + dp[k][j] + (i+1) * (k+1) * (j+1)\n    // where dp[i][k] is 0 if k-i < 2 (i.e., less than 3 vertices)\n    \n    // Initialize\n    for (int i = 0; i < n; i++) {\n        for (int j = 0; j < n; j++) {\n            dp[i][j] = 0;\n        }\n    }\n    \n    // Fill dp table by increasing length of the sub-polygon\n    // Length = j - i + 1\n    for (int len = 3; len <= n; len++) {\n        for (int i = 0; i <= n - len; i++) {\n            int j = i + len - 1;\n            if (len == 3) {\n                // Triangle: vertices (i+1), (i+2), (i+3)\n                dp[i][j] = (long long)(i + 1) * (i + 2) * (i + 3);\n            } else {\n                dp[i][j] = LLONG_MAX;\n                for (int k = i + 1; k < j; k++) {\n                    long long cost = dp[i][k] + dp[k][j] + (long long)(i + 1) * (k + 1) * (j + 1);\n                    if (cost < dp[i][j]) {\n                        dp[i][j] = cost;\n                    }\n                }\n            }\n        }\n    }\n    \n    cout << dp[0][n - 1] << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <climits>\n#include <algorithm>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    // dp[i][j] = minimum weight to triangulate the polygon from vertex i to vertex j (inclusive)\n    // where the vertices are labeled 1 to n in counter-clockwise order\n    // We use 1-based indexing for vertices\n    \n    vector<vector<long long>> dp(n + 1, vector<long long>(n + 1, 0));\n    \n    // Base case: no triangulation needed for 2 vertices (edge)\n    // For 3 vertices (triangle), the weight is i * (i+1) * (i+2)\n    \n    // Fill the DP table\n    // len is the number of vertices in the sub-polygon\n    for (int len = 3; len <= n; len++) {\n        for (int i = 1; i + len - 1 <= n; i++) {\n            int j = i + len - 1;\n            dp[i][j] = LLONG_MAX;\n            \n            // Try all possible k such that triangle (i, k, j) is formed\n            // and the sub-polygons (i, k) and (k, j) are triangulated\n            for (int k = i + 1; k < j; k++) {\n                long long weight = (long long)i * k * j + dp[i][k] + dp[k][j];\n                if (weight < dp[i][j]) {\n                    dp[i][j] = weight;\n                }\n            }\n        }\n    }\n    \n    cout << dp[1][n] << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <climits>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    // dp[i][j] = minimum weight to triangulate the polygon formed by vertices i, i+1, ..., j\n    // Vertices are labeled 1 to n\n    // We use 1-indexed for vertices\n    \n    vector<vector<long long>> dp(n + 1, vector<long long>(n + 1, 0));\n    \n    // Base case: no triangulation needed for 2 vertices (edge), weight = 0\n    // For 3 vertices (triangle), weight = i * (i+1) * (i+2)\n    \n    // Fill dp for increasing length of sub-polygon\n    // Length is the number of vertices in the sub-polygon\n    // A sub-polygon from i to j has (j - i + 1) vertices\n    \n    for (int len = 3; len <= n; len++) {\n        for (int i = 1; i + len - 1 <= n; i++) {\n            int j = i + len - 1;\n            dp[i][j] = LLONG_MAX;\n            \n            // Choose a vertex k (i < k < j) to form triangle (i, k, j)\n            // This splits the polygon into:\n            // - Triangle (i, k, j) with weight i * k * j\n            // - Sub-polygon from i to k\n            // - Sub-polygon from k to j\n            \n            for (int k = i + 1; k < j; k++) {\n                long long weight = (long long)i * k * j + dp[i][k] + dp[k][j];\n                if (weight < dp[i][j]) {\n                    dp[i][j] = weight;\n                }\n            }\n        }\n    }\n    \n    cout << dp[1][n] << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <climits>\n#include <algorithm>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    // dp[i][j] = minimum weight to triangulate the polygon with vertices i, i+1, ..., j\n    // where vertices are numbered 1 to n\n    // We use 1-based indexing for vertices\n    \n    vector<vector<long long>> dp(n + 1, vector<long long>(n + 1, 0));\n    \n    // Base case: for any i, dp[i][i] = 0 (single vertex)\n    // For two vertices, dp[i][i+1] = 0 (just an edge, no triangle)\n    \n    // Fill the DP table\n    // len is the length of the chain of vertices (number of vertices in the sub-polygon)\n    for (int len = 3; len <= n; len++) {\n        for (int i = 1; i + len - 1 <= n; i++) {\n            int j = i + len - 1;\n            dp[i][j] = LLONG_MAX;\n            \n            // Try all possible k such that triangle (i, k, j) is formed\n            // k can range from i+1 to j-1\n            for (int k = i + 1; k < j; k++) {\n                long long weight = (long long)i * k * j;\n                long long left = dp[i][k];\n                long long right = dp[k][j];\n                \n                if (left == 0 && k - i < 2) left = 0; // no triangle needed\n                if (right == 0 && j - k < 2) right = 0; // no triangle needed\n                \n                long long total = weight + left + right;\n                if (total < dp[i][j]) {\n                    dp[i][j] = total;\n                }\n            }\n        }\n    }\n    \n    cout << dp[1][n] << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <climits>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    // dp[i][j] = minimum weight to triangulate the sub-polygon from vertex i to vertex j\n    // where i and j are indices in 0..n-1, and the sub-polygon includes vertices i, i+1, ..., j\n    // We need to handle the circular nature, but since it's a regular polygon with labels 1..n,\n    // we can use 0-indexed vertices where vertex i has label i+1.\n    \n    // For a sub-polygon from vertex i to vertex j (in order), the number of vertices is (j - i + 1).\n    // If j - i + 1 < 3, it's not a polygon (or just a line/point), so weight is 0.\n    // If j - i + 1 == 3, it's a triangle, weight = (i+1)*(i+2)*(j+1) [since labels are 1-indexed]\n    // Wait, let's be careful. Vertex indices 0 to n-1 correspond to labels 1 to n.\n    // So vertex i has label i+1.\n    \n    // dp[i][j] for i <= j, representing the polygon with vertices i, i+1, ..., j\n    // We need to consider all possible k such that i < k < j, and split into:\n    // - triangle (i, k, j) with weight (i+1)*(k+1)*(j+1)\n    // - sub-polygon from i to k\n    // - sub-polygon from k to j\n    \n    // But wait, the sub-polygon from i to k includes vertices i, i+1, ..., k\n    // and the sub-polygon from k to j includes vertices k, k+1, ..., j\n    // The triangle is (i, k, j)\n    \n    // Actually, the standard DP for polygon triangulation:\n    // dp[i][j] = min over k in (i+1, j-1) of dp[i][k] + dp[k][j] + (i+1)*(k+1)*(j+1)\n    // Base case: if j - i + 1 < 3, dp[i][j] = 0\n    // If j - i + 1 == 3, dp[i][j] = (i+1)*(i+2)*(j+1) [which is (i+1)*(k+1)*(j+1) where k=i+1]\n    \n    // Let's use 0-indexed. Vertex i has label i+1.\n    \n    vector<vector<long long>> dp(n, vector<long long>(n, 0));\n    \n    // Fill dp for increasing length of sub-polygons\n    // Length = number of vertices = j - i + 1\n    // We need length >= 3\n    \n    for (int len = 3; len <= n; len++) {\n        for (int i = 0; i + len - 1 < n; i++) {\n            int j = i + len - 1;\n            if (len == 3) {\n                // Triangle: vertices i, i+1, j (which is i+2)\n                dp[i][j] = (long long)(i + 1) * (i + 2) * (j + 1);\n            } else {\n                dp[i][j] = LLONG_MAX;\n                for (int k = i + 1; k < j; k++) {\n                    long long cost = dp[i][k] + dp[k][j] + (long long)(i + 1) * (k + 1) * (j + 1);\n                    if (cost < dp[i][j]) {\n                        dp[i][j] = cost;\n                    }\n                }\n            }\n        }\n    }\n    \n    cout << dp[0][n - 1] << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <climits>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    // dp[i][j] = minimum weight to triangulate polygon from vertex i to vertex j (inclusive)\n    // where i and j are indices 0 to n-1\n    // The polygon is labeled 1 to n, so vertex i+1 corresponds to index i\n    \n    vector<vector<long long>> dp(n, vector<long long>(n, 0));\n    \n    // Base case: triangles (3 vertices)\n    for (int i = 0; i < n; i++) {\n        int j = (i + 2) % n;\n        // But we need to be careful with the DP formulation\n        // Let's use a different approach: dp[i][j] where i < j and the subpolygon is from i to j going counter-clockwise\n        // Actually, let's use the standard matrix chain multiplication style DP\n    }\n    \n    // Let's redefine: dp[i][j] = minimum weight to triangulate the subpolygon with vertices i, i+1, ..., j (in order, where indices are 0-based)\n    // The vertices are labeled 1 to n, so vertex at index i has label i+1\n    \n    // Initialize with 0 for base cases\n    for (int i = 0; i < n; i++) {\n        dp[i][i] = 0;\n        dp[i][(i + 1) % n] = 0; // Two vertices, no triangle\n    }\n    \n    // Fill DP table for increasing lengths\n    // Length is the number of vertices in the subpolygon\n    // For a subpolygon from i to j (inclusive), the number of vertices is (j - i + 1) if j >= i\n    // But since we're dealing with a polygon, we need to handle the wrap-around\n    \n    // Actually, let's use a cleaner formulation:\n    // dp[i][j] where 0 <= i < j < n, representing the subpolygon with vertices i, i+1, ..., j\n    // The number of vertices is j - i + 1\n    // Base case: if j - i + 1 == 2, dp[i][j] = 0 (no triangle)\n    // If j - i + 1 == 3, dp[i][j] = (i+1) * (i+2) * (j+1)\n    // For larger, dp[i][j] = min over k from i+1 to j-1 of: dp[i][k] + dp[k][j] + (i+1)*(k+1)*(j+1)\n    \n    // Reset dp\n    for (int i = 0; i < n; i++) {\n        for (int j = 0; j < n; j++) {\n            dp[i][j] = 0;\n        }\n    }\n    \n    // Fill for length 2 (two vertices, no triangle needed)\n    for (int i = 0; i < n - 1; i++) {\n        dp[i][i + 1] = 0;\n    }\n    \n    // Fill for length 3 and above\n    for (int len = 3; len <= n; len++) {\n        for (int i = 0; i + len - 1 < n; i++) {\n            int j = i + len - 1;\n            dp[i][j] = LLONG_MAX;\n            for (int k = i + 1; k < j; k++) {\n                long long cost = dp[i][k] + dp[k][j] + (long long)(i + 1) * (k + 1) * (j + 1);\n                if (cost < dp[i][j]) {\n                    dp[i][j] = cost;\n                }\n            }\n        }\n    }\n    \n    cout << dp[0][n - 1] << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 8,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <climits>\n#include <algorithm>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    // dp[i][j] = minimum weight to triangulate the polygon with vertices i, i+1, ..., j\n    // (consecutive vertices in the polygon)\n    vector<vector<long long>> dp(n, vector<long long>(n, 0));\n    \n    // Base case: no triangulation needed for 2 vertices (edge)\n    // For 3 vertices (triangle), dp[i][i+2] = i * (i+1) * (i+2)\n    \n    // Fill the DP table for increasing lengths\n    // Length is the number of vertices in the sub-polygon\n    for (int len = 3; len <= n; len++) {\n        for (int i = 0; i <= n - len; i++) {\n            int j = i + len - 1;\n            dp[i][j] = LLONG_MAX;\n            \n            // Try all possible k such that we form triangle (i, k, j)\n            // and triangulate (i, ..., k) and (k, ..., j)\n            for (int k = i + 1; k < j; k++) {\n                long long weight = (long long)(i + 1) * (k + 1) * (j + 1);\n                long long left = (k - i >= 3) ? dp[i][k] : 0;\n                long long right = (j - k >= 3) ? dp[k][j] : 0;\n                long long total = left + right + weight;\n                if (total < dp[i][j]) {\n                    dp[i][j] = total;\n                }\n            }\n        }\n    }\n    \n    cout << dp[0][n - 1] << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 9,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <climits>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    // dp[i][j] = minimum weight to triangulate the polygon formed by vertices i, i+1, ..., j\n    // Vertices are labeled 1 to n\n    // We use 0-indexed internally: vertex i corresponds to label i+1\n    \n    vector<vector<long long>> dp(n, vector<long long>(n, 0));\n    \n    // For length = 1 (i.e., j - i + 1 = 2, which means 2 vertices, no triangle)\n    // Actually, we need at least 3 vertices to form a triangle.\n    // dp[i][j] is defined for j - i + 1 >= 2 (at least 2 vertices)\n    // But triangulation only makes sense for >= 3 vertices.\n    // For 2 vertices, dp[i][i+1] = 0 (no triangle)\n    // For 3 vertices, dp[i][i+2] = (i+1)*(i+2)*(i+3)\n    \n    // Initialize for base cases\n    for (int i = 0; i < n; i++) {\n        dp[i][i] = 0;\n        if (i + 1 < n) {\n            dp[i][i + 1] = 0;\n        }\n    }\n    \n    // Fill the table for increasing lengths\n    // length = j - i + 1, from 3 to n\n    for (int len = 3; len <= n; len++) {\n        for (int i = 0; i + len - 1 < n; i++) {\n            int j = i + len - 1;\n            dp[i][j] = LLONG_MAX;\n            \n            // Try all possible k such that we form triangle (i, k, j)\n            // and triangulate (i, ..., k) and (k, ..., j)\n            // k ranges from i+1 to j-1\n            for (int k = i + 1; k < j; k++) {\n                long long weight = (long long)(i + 1) * (k + 1) * (j + 1);\n                long long total = dp[i][k] + dp[k][j] + weight;\n                if (total < dp[i][j]) {\n                    dp[i][j] = total;\n                }\n            }\n        }\n    }\n    \n    cout << dp[0][n - 1] << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 10,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <climits>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    // dp[i][j] = minimum weight to triangulate the polygon with vertices i, i+1, ..., j\n    // We use 1-indexed vertices\n    vector<vector<long long>> dp(n + 1, vector<long long>(n + 1, 0));\n    \n    // For a triangle (i, i+1, i+2), the weight is i * (i+1) * (i+2)\n    // Base case: when j - i == 2, it's a single triangle\n    for (int i = 1; i <= n - 2; i++) {\n        dp[i][i + 2] = (long long)i * (i + 1) * (i + 2);\n    }\n    \n    // Fill the DP table\n    // Length of the chain from i to j is len = j - i + 1\n    // We need len >= 3\n    for (int len = 3; len <= n; len++) {\n        for (int i = 1; i + len - 1 <= n; i++) {\n            int j = i + len - 1;\n            if (len == 3) {\n                dp[i][j] = (long long)i * (i + 1) * (i + 2);\n            } else {\n                dp[i][j] = LLONG_MAX;\n                // Try all possible k such that we form triangle (i, k, j)\n                // and triangulate (i, ..., k) and (k, ..., j)\n                for (int k = i + 1; k < j; k++) {\n                    long long cost = dp[i][k] + dp[k][j] + (long long)i * k * j;\n                    if (cost < dp[i][j]) {\n                        dp[i][j] = cost;\n                    }\n                }\n            }\n        }\n    }\n    \n    cout << dp[1][n] << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 11,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <climits>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    // dp[i][j] = minimum weight to triangulate polygon with vertices i, i+1, ..., j\n    // using 1-indexed vertices\n    vector<vector<long long>> dp(n + 1, vector<long long>(n + 1, 0));\n    \n    // Base case: no triangle needed for length < 3\n    for (int i = 1; i <= n; i++) {\n        for (int j = i; j <= n; j++) {\n            dp[i][j] = 0;\n        }\n    }\n    \n    // Fill DP table\n    // len is the number of vertices in the sub-polygon\n    for (int len = 3; len <= n; len++) {\n        for (int i = 1; i + len - 1 <= n; i++) {\n            int j = i + len - 1;\n            dp[i][j] = LLONG_MAX;\n            // Try all possible k such that triangle (i, k, j) is formed\n            // k ranges from i+1 to j-1\n            for (int k = i + 1; k < j; k++) {\n                long long cost = dp[i][k] + dp[k][j] + (long long)i * k * j;\n                if (cost < dp[i][j]) {\n                    dp[i][j] = cost;\n                }\n            }\n        }\n    }\n    \n    cout << dp[1][n] << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 12,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <climits>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    // dp[i][j] = minimum weight to triangulate polygon from vertex i to vertex j\n    // We use 1-indexed vertices\n    vector<vector<long long>> dp(n + 1, vector<long long>(n + 1, 0));\n    \n    // Base case: no triangulation needed for adjacent vertices\n    for (int i = 1; i <= n; i++) {\n        for (int j = 1; j <= n; j++) {\n            dp[i][j] = 0;\n        }\n    }\n    \n    // Fill DP table\n    // len is the length of the chain (number of edges)\n    for (int len = 2; len <= n - 1; len++) {\n        for (int i = 1; i + len <= n; i++) {\n            int j = i + len;\n            dp[i][j] = LLONG_MAX;\n            // Try all possible k such that triangle (i, k, j) is formed\n            // and we triangulate (i, k) and (k, j)\n            for (int k = i + 1; k < j; k++) {\n                long long weight = (long long)i * k * j + dp[i][k] + dp[k][j];\n                if (weight < dp[i][j]) {\n                    dp[i][j] = weight;\n                }\n            }\n        }\n    }\n    \n    cout << dp[1][n] << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 13,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <climits>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    // dp[i][j] = minimum weight to triangulate polygon with vertices i, i+1, ..., j (cyclic)\n    // We use a 2D DP where we consider the polygon as a sequence of vertices 0 to n-1\n    // dp[i][j] represents the minimum cost to triangulate the sub-polygon formed by vertices i, i+1, ..., j\n    // where the vertices are consecutive in the original polygon (not wrapping around in the index, but we handle the cyclic nature by fixing vertex 0)\n    \n    // Actually, let's use a standard matrix chain multiplication style DP.\n    // Let dp[i][j] be the minimum weight to triangulate the polygon with vertices i, i+1, ..., j (in order)\n    // The base case: if j == i+1, it's an edge, no triangle, cost = 0\n    // If j == i+2, it's a triangle with vertices i, i+1, i+2, cost = (i+1)*(i+2)*(i+3) if 1-indexed\n    // Wait, vertices are labeled 1 to n. So vertex at index i (0-indexed) has label i+1.\n    \n    // Let's define dp[i][j] for 0 <= i < j < n\n    // This represents the minimum cost to triangulate the polygonal chain from vertex i to vertex j\n    // The vertices involved are i, i+1, ..., j\n    // We need to choose a vertex k (i < k < j) such that triangle (i, k, j) is formed\n    // Then the cost is: (i+1)*(k+1)*(j+1) + dp[i][k] + dp[k][j]\n    \n    // But wait, this only works if the polygon is \"convex\" in the sense that we can always form such triangles.\n    // For a regular polygon, this is valid.\n    \n    // However, the standard approach for polygon triangulation DP is:\n    // dp[i][j] = min over k in (i+1 to j-1) of { dp[i][k] + dp[k][j] + (i+1)*(k+1)*(j+1) }\n    // Base case: dp[i][i+1] = 0 (no triangle, just an edge)\n    // Answer: dp[0][n-1]\n    \n    vector<vector<long long>> dp(n, vector<long long>(n, 0));\n    \n    // Initialize: dp[i][i+1] = 0 for all valid i\n    // For larger gaps, we compute\n    \n    // The length of the chain is j - i\n    // We iterate by length from 2 to n-1\n    for (int len = 2; len < n; len++) {\n        for (int i = 0; i + len < n; i++) {\n            int j = i + len;\n            if (len == 1) {\n                dp[i][j] = 0;\n            } else if (len == 2) {\n                // Triangle with vertices i, i+1, i+2 (labels i+1, i+2, i+3)\n                dp[i][j] = (long long)(i + 1) * (i + 2) * (i + 3);\n            } else {\n                dp[i][j] = LLONG_MAX;\n                for (int k = i + 1; k < j; k++) {\n                    long long cost = dp[i][k] + dp[k][j] + (long long)(i + 1) * (k + 1) * (j + 1);\n                    if (cost < dp[i][j]) {\n                        dp[i][j] = cost;\n                    }\n                }\n            }\n        }\n    }\n    \n    cout << dp[0][n - 1] << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 14,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <climits>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    // dp[i][j] = minimum weight to triangulate the polygon with vertices i, i+1, ..., j\n    // Vertices are labeled 1 to n\n    // We use 1-indexed for clarity\n    \n    const long long INF = 1e18;\n    vector<vector<long long>> dp(n + 1, vector<long long>(n + 1, INF));\n    \n    // Base case: a triangle (3 vertices)\n    for (int i = 1; i <= n - 2; i++) {\n        dp[i][i + 2] = (long long)i * (i + 1) * (i + 2);\n    }\n    \n    // Fill DP table\n    // len is the number of vertices in the sub-polygon\n    for (int len = 4; len <= n; len++) {\n        for (int i = 1; i + len - 1 <= n; i++) {\n            int j = i + len - 1;\n            // Try all possible k such that triangle (i, k, j) is formed\n            // and we triangulate (i, i+1, ..., k) and (k, k+1, ..., j)\n            for (int k = i + 1; k <= j - 1; k++) {\n                long long cost = (long long)i * k * j;\n                long long left = (k - i >= 2) ? dp[i][k] : 0;\n                long long right = (j - k >= 2) ? dp[k][j] : 0;\n                if (left < INF && right < INF) {\n                    dp[i][j] = min(dp[i][j], cost + left + right);\n                }\n            }\n        }\n    }\n    \n    cout << dp[1][n] << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 15,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <climits>\n#include <algorithm>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    // dp[i][j] = minimum weight to triangulate polygon with vertices i, i+1, ..., j\n    // We use 1-based indexing for vertices\n    // The polygon has vertices 1 to n\n    \n    // Since n can be up to 500, we need a 2D DP table\n    // dp[i][j] where i and j are vertex indices (1 to n)\n    // But the polygon is circular, so we need to handle the wrap-around\n    \n    // Actually, let's think about this differently.\n    // For a polygon with vertices 1..n, we can fix vertex 1 and consider subproblems.\n    // Let dp[i][j] be the minimum weight to triangulate the polygon formed by vertices i, i+1, ..., j (in order)\n    // where the vertices are consecutive in the original polygon.\n    \n    // But since it's a regular polygon with vertices labeled 1 to n counter-clockwise,\n    // and we need to handle the circular nature, we can use the following approach:\n    \n    // Fix vertex 1. Any triangulation must include triangle (1, k, k+1) for some k, or more generally,\n    // we can use the standard polygon triangulation DP.\n    \n    // Let's define dp[i][j] as the minimum weight to triangulate the polygon with vertices i, i+1, ..., j\n    // where these vertices are consecutive in the polygon. The base case is dp[i][i+1] = 0 (no triangle needed for an edge).\n    // For a triangle (i, i+1, i+2), dp[i][i+2] = i * (i+1) * (i+2).\n    \n    // But wait, the vertices are labeled 1 to n, and the polygon is circular.\n    // So vertex n is adjacent to vertex 1.\n    \n    // Let's use a different approach. We'll create a DP where:\n    // dp[i][j] = minimum weight to triangulate the sub-polygon with vertices i, i+1, ..., j\n    // where the indices are taken modulo n, but we need to be careful.\n    \n    // Actually, the standard approach for polygon triangulation DP works when the vertices are in a line.\n    // For a circular polygon, we can break it by fixing one vertex.\n    \n    // Let's define dp[i][j] for 1 <= i < j <= n+1, where we consider the polygon with vertices\n    // i, i+1, ..., j-1 (mod n, but we unwrap it).\n    \n    // Hmm, let me think again. The vertices are 1, 2, ..., n in counter-clockwise order.\n    // We can use the standard DP for polygon triangulation where:\n    // dp[i][j] = min over k (i < k < j) of dp[i][k] + dp[k][j] + i * k * j\n    // But this only works if the vertices i, i+1, ..., j are consecutive and form a valid sub-polygon.\n    \n    // For a convex polygon (which a regular polygon is), the standard DP works.\n    // The key insight is that for a convex polygon, any triangulation can be represented by this DP.\n    \n    // But we need to handle the circular case. One way is to duplicate the vertices or use a different indexing.\n    \n    // Let's try: dp[i][j] where i and j are vertex indices, and we consider the sub-polygon from i to j going counter-clockwise.\n    // The number of vertices in this sub-polygon is (j - i + n) % n + 1.\n    // But this gets complicated.\n    \n    // Alternative: Since n <= 500, we can use O(n^3) DP.\n    // Let's define dp[i][j] as the minimum weight to triangulate the polygon formed by vertices i, i+1, ..., j\n    // where the vertices are consecutive in the original polygon (i.e., j - i + 1 vertices).\n    // We consider i and j such that 1 <= i < j <= n, and the sub-polygon has vertices i, i+1, ..., j.\n    // But what about the wrap-around? E.g., vertices n, 1, 2?\n    \n    // To handle the wrap-around, we can note that any triangulation of the full polygon must include\n    // some triangle that contains vertex 1. Let's say the triangle is (1, a, b) where a and b are\n    // adjacent to 1 in the triangulation. But this is getting complex.\n    \n    // Let's use a simpler approach: duplicate the array.\n    // Create an array of vertices: 1, 2, ..., n, 1, 2, ..., n\n    // Then dp[i][j] for 1 <= i < j <= 2n, where j - i < n (to ensure we don't go around more than once).\n    // The answer would be dp[1][n+1] or something similar.\n    \n    // Actually, let's just use the standard DP for a convex polygon with vertices 1..n.\n    // The standard DP for polygon triangulation (minimum weight) is:\n    // dp[i][j] = min_{i<k<j} (dp[i][k] + dp[k][j] + weight(i, k, j))\n    // where weight(i, k, j) = i * k * j\n    // Base case: dp[i][i+1] = 0 (edge, no triangle)\n    // dp[i][i+2] = i * (i+1) * (i+2)\n    \n    // But this assumes the vertices are in a line, not a circle. For a circle, we need to be careful.\n    \n    // Wait, for a convex polygon, the standard DP works if we consider the vertices in order.\n    // The issue is that the polygon is circular, so vertex n is connected to vertex 1.\n    \n    // Let's try this: we'll compute dp[i][j] for all 1 <= i < j <= n, where dp[i][j] represents\n    // the minimum weight to triangulate the sub-polygon with vertices i, i+1, ..., j (consecutive).\n    // The full polygon is dp[1][n], but we also need to account for the edge from n to 1.\n    \n    // Hmm, actually, in the standard polygon triangulation DP, the polygon is defined by its vertices in order,\n    // and the DP naturally handles the \"closing\" of the polygon. Let me verify with the examples.\n    \n    // For n=3: dp[1][3] = 1*2*3 = 6. Correct.\n    // For n=4: dp[1][4] = min(dp[1][2]+dp[2][4]+1*2*4, dp[1][3]+dp[3][4]+1*3*4)\n    // dp[1][2] = 0, dp[2][4] = 2*3*4 = 24, so first option = 0+24+8 = 32\n    // dp[1][3] = 1*2*3 = 6, dp[3][4] = 0, so second option = 6+0+12 = 18\n    // min(32, 18) = 18. Correct!\n    \n    // So the standard DP works. Let's implement it.\n    \n    vector<vector<long long>> dp(n + 2, vector<long long>(n + 2, 0));\n    \n    // Base cases: dp[i][i+1] = 0 for all i\n    for (int i = 1; i <= n; i++) {\n        dp[i][i + 1] = 0;\n    }\n    \n    // Fill the DP table\n    // len = number of vertices in the sub-polygon, from 3 to n\n    for (int len = 3; len <= n; len++) {\n        for (int i = 1; i + len - 1 <= n; i++) {\n            int j = i + len - 1;\n            dp[i][j] = LLONG_MAX;\n            for (int k = i + 1; k < j; k++) {\n                long long val = dp[i][k] + dp[k][j] + (long long)i * k * j;\n                if (val < dp[i][j]) {\n                    dp[i][j] = val;\n                }\n            }\n        }\n    }\n    \n    cout << dp[1][n] << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 16,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <climits>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    // dp[i][j] = minimum weight to triangulate the polygon from vertex i to vertex j (inclusive)\n    // where i and j are indices in 0..n-1, and we consider the chain of vertices i, i+1, ..., j\n    // The triangulation of the sub-polygon formed by vertices i, i+1, ..., j\n    \n    // We use 1-indexed labels: vertex at index i has label i+1\n    // But it's easier to think in terms of labels directly.\n    // Let's use dp[i][j] where i and j are labels (1 to n), and i < j.\n    // The sub-polygon is formed by vertices i, i+1, ..., j (in cyclic order, but since we're dealing with a contiguous chain, we assume i < j and the chain goes i, i+1, ..., j).\n    // However, the polygon is cyclic. We can fix vertex 1 and consider the polygon as a chain from 1 to n.\n    \n    // Actually, for a convex polygon with vertices labeled 1 to n in order, we can use:\n    // dp[i][j] = minimum weight to triangulate the polygon formed by vertices i, i+1, ..., j (where these are consecutive in the polygon).\n    // The base case: if j == i+1, there's no triangle (just an edge), so dp[i][i+1] = 0.\n    // If j == i+2, there's one triangle: (i, i+1, i+2), so dp[i][i+2] = i * (i+1) * (i+2).\n    \n    // For j > i+2, we can choose a vertex k (i < k < j) to form a triangle (i, k, j), and then triangulate the two sub-polygons (i, ..., k) and (k, ..., j).\n    // dp[i][j] = min over k in (i+1, j-1) of [dp[i][k] + dp[k][j] + i * k * j]\n    \n    // We need to be careful: the vertices are labeled 1 to n. The sub-polygon from i to j includes vertices i, i+1, ..., j.\n    // This is valid as long as we don't wrap around. Since we're fixing the polygon and considering contiguous chains, and the whole polygon is 1 to n, we can compute dp for all i < j where j - i >= 2.\n    \n    // The answer will be dp[1][n].\n    \n    vector<vector<long long>> dp(n + 2, vector<long long>(n + 2, 0));\n    \n    // Initialize: for all i, dp[i][i+1] = 0 (already 0)\n    // For length 2 (i.e., j = i+2), dp[i][j] = i * (i+1) * (i+2)\n    \n    for (int i = 1; i <= n - 2; i++) {\n        dp[i][i + 2] = (long long)i * (i + 1) * (i + 2);\n    }\n    \n    // Fill dp for larger spans\n    // span = j - i, from 3 to n-1\n    for (int span = 3; span <= n - 1; span++) {\n        for (int i = 1; i + span <= n; i++) {\n            int j = i + span;\n            dp[i][j] = LLONG_MAX;\n            for (int k = i + 1; k < j; k++) {\n                long long val = dp[i][k] + dp[k][j] + (long long)i * k * j;\n                if (val < dp[i][j]) {\n                    dp[i][j] = val;\n                }\n            }\n        }\n    }\n    \n    cout << dp[1][n] << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 17,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <climits>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    // dp[i][j] = minimum weight to triangulate the polygon with vertices i, i+1, ..., j\n    // Vertices are labeled 1 to n\n    // We use 1-indexed for clarity\n    \n    vector<vector<long long>> dp(n + 1, vector<long long>(n + 1, 0));\n    \n    // For a triangle (j - i == 2), the weight is i * (i+1) * (i+2)\n    // For larger polygons, we try all possible k such that i < k < j\n    // dp[i][j] = min over k of (dp[i][k] + dp[k][j] + i * k * j)\n    \n    for (int len = 2; len < n; len++) {\n        for (int i = 1; i + len <= n; i++) {\n            int j = i + len;\n            if (len == 2) {\n                // Triangle: vertices i, i+1, i+2\n                dp[i][j] = (long long)i * (i + 1) * (i + 2);\n            } else {\n                dp[i][j] = LLONG_MAX;\n                for (int k = i + 1; k < j; k++) {\n                    long long cost = dp[i][k] + dp[k][j] + (long long)i * k * j;\n                    if (cost < dp[i][j]) {\n                        dp[i][j] = cost;\n                    }\n                }\n            }\n        }\n    }\n    \n    cout << dp[1][n] << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 18,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <climits>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    // dp[i][j] = minimum weight to triangulate polygon with vertices i, i+1, ..., j\n    // Vertices are labeled 1 to n\n    // We use 0-indexed internally: vertex i corresponds to label i+1\n    \n    vector<vector<long long>> dp(n, vector<long long>(n, 0));\n    \n    // For a triangle (i, i+1, i+2), the weight is (i+1)*(i+2)*(i+3)\n    // Base case: for length 2 (3 vertices), dp[i][i+2] = (i+1)*(i+2)*(i+3)\n    \n    // Fill dp table\n    // len is the number of vertices in the sub-polygon\n    // len = 2 means 3 vertices (a triangle)\n    for (int len = 2; len < n; len++) {\n        for (int i = 0; i + len < n; i++) {\n            int j = i + len;\n            if (len == 2) {\n                // Triangle with vertices i, i+1, i+2\n                dp[i][j] = (long long)(i + 1) * (i + 2) * (i + 3);\n            } else {\n                dp[i][j] = LLONG_MAX;\n                // Try all possible k such that triangle (i, k, j) is formed\n                // k ranges from i+1 to j-1\n                for (int k = i + 1; k < j; k++) {\n                    long long weight = (long long)(i + 1) * (k + 1) * (j + 1);\n                    long long left = (k - i >= 2) ? dp[i][k] : 0;\n                    long long right = (j - k >= 2) ? dp[k][j] : 0;\n                    long long total = left + right + weight;\n                    if (total < dp[i][j]) {\n                        dp[i][j] = total;\n                    }\n                }\n            }\n        }\n    }\n    \n    cout << dp[0][n - 1] << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 19,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <climits>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    if (n == 3) {\n        cout << 6 << endl;\n        return 0;\n    }\n    \n    // dp[i][j] = minimum weight to triangulate polygon from vertex i to vertex j (inclusive)\n    // Vertices are labeled 1 to n\n    // We use 0-indexed internally: vertex i corresponds to label i+1\n    \n    vector<vector<long long>> dp(n, vector<long long>(n, 0));\n    \n    // For length 1 (single vertex), dp[i][i] = 0\n    // For length 2 (two vertices), dp[i][i+1] = 0 (no triangle)\n    // For length 3 (three vertices), dp[i][i+2] = (i+1)*(i+2)*(i+3)\n    \n    // Fill dp for increasing lengths\n    for (int len = 2; len < n; len++) {\n        for (int i = 0; i + len < n; i++) {\n            int j = i + len;\n            if (len == 2) {\n                // Triangle with vertices i, i+1, i+2 (0-indexed)\n                // Labels: i+1, i+2, i+3\n                dp[i][j] = (long long)(i + 1) * (i + 2) * (i + 3);\n            } else {\n                dp[i][j] = LLONG_MAX;\n                // Try all possible k where k is the vertex that forms a triangle with i and j\n                // The triangle is (i, k, j) with label (i+1, k+1, j+1)\n                // The subproblems are dp[i][k] and dp[k][j]\n                for (int k = i + 1; k < j; k++) {\n                    long long weight = (long long)(i + 1) * (k + 1) * (j + 1);\n                    long long total = dp[i][k] + dp[k][j] + weight;\n                    if (total < dp[i][j]) {\n                        dp[i][j] = total;\n                    }\n                }\n            }\n        }\n    }\n    \n    cout << dp[0][n - 1] << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 13785,
+            "prompt_tokens": 436,
+            "total_tokens": 14221
+        },
+        "prompt": "Write a program in C++ to solve this programming problem:\nDescription: You are given a regular polygon with $$$n$$$ vertices labeled from $$$1$$$ to $$$n$$$ in counter-clockwise order. The triangulation of a given polygon is a set of triangles such that each vertex of each triangle is a vertex of the initial polygon, there is no pair of triangles such that their intersection has non-zero area, and the total area of all triangles is equal to the area of the given polygon. The weight of a triangulation is the sum of weigths of triangles it consists of, where the weight of a triagle is denoted as the product of labels of its vertices.Calculate the minimum weight among all triangulations of the polygon.\nInput Specification: The first line contains single integer $$$n$$$ ($$$3 \\le n \\le 500$$$) \u2014 the number of vertices in the regular polygon.\nOutput Specification: Print one integer \u2014 the minimum weight among all triangulations of the given polygon.\n\nSample Input:\n3\nSample Output:\n6\n\nSample Input:\n4\nSample Output:\n18\n\nNotes: NoteAccording to Wiki: polygon triangulation is the decomposition of a polygonal area (simple polygon) $$$P$$$ into a set of triangles, i.\u2009e., finding a set of triangles with pairwise non-intersecting interiors whose union is $$$P$$$.In the first example the polygon is a triangle, so we don't need to cut it further, so the answer is $$$1 \\cdot 2 \\cdot 3 = 6$$$.In the second example the polygon is a rectangle, so it should be divided into two triangles. It's optimal to cut it using diagonal $$$1-3$$$ so answer is $$$1 \\cdot 2 \\cdot 3 + 1 \\cdot 3 \\cdot 4 = 6 + 12 = 18$$$.\nTake input from standard input and output to standard output\nProvide the C++ code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "1bd29d7a8793c22e81a1f6fd3991307a",
+        "difficulty": 1200,
+        "prob_desc_sample_inputs": [
+            "3",
+            "4"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "dp",
+            "greedy",
+            "math"
+        ],
+        "prob_desc_output_spec": "Print one integer \u2014 the minimum weight among all triangulations of the given polygon.",
+        "prob_desc_input_spec": "The first line contains single integer $$$n$$$ ($$$3 \\le n \\le 500$$$) \u2014 the number of vertices in the regular polygon.",
+        "lang_cluster": "C++",
+        "source_code": "",
+        "prob_desc_notes": "NoteAccording to Wiki: polygon triangulation is the decomposition of a polygonal area (simple polygon) $$$P$$$ into a set of triangles, i.\u2009e., finding a set of triangles with pairwise non-intersecting interiors whose union is $$$P$$$.In the first example the polygon is a triangle, so we don't need to cut it further, so the answer is $$$1 \\cdot 2 \\cdot 3 = 6$$$.In the second example the polygon is a rectangle, so it should be divided into two triangles. It's optimal to cut it using diagonal $$$1-3$$$ so answer is $$$1 \\cdot 2 \\cdot 3 + 1 \\cdot 3 \\cdot 4 = 6 + 12 = 18$$$.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "You are given a regular polygon with $$$n$$$ vertices labeled from $$$1$$$ to $$$n$$$ in counter-clockwise order. The triangulation of a given polygon is a set of triangles such that each vertex of each triangle is a vertex of the initial polygon, there is no pair of triangles such that their intersection has non-zero area, and the total area of all triangles is equal to the area of the given polygon. The weight of a triangulation is the sum of weigths of triangles it consists of, where the weight of a triagle is denoted as the product of labels of its vertices.Calculate the minimum weight among all triangulations of the polygon.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1553267100",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "6",
+            "18"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"3\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"4\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"5\\r\\n\", \"output\": [\"38\"]}, {\"input\": \"6\\r\\n\", \"output\": [\"68\"]}, {\"input\": \"7\\r\\n\", \"output\": [\"110\"]}, {\"input\": \"8\\r\\n\", \"output\": [\"166\"]}, {\"input\": \"9\\r\\n\", \"output\": [\"238\"]}, {\"input\": \"10\\r\\n\", \"output\": [\"328\"]}, {\"input\": \"100\\r\\n\", \"output\": [\"333298\"]}, {\"input\": \"101\\r\\n\", \"output\": [\"343398\"]}, {\"input\": \"102\\r\\n\", \"output\": [\"353700\"]}, {\"input\": \"103\\r\\n\", \"output\": [\"364206\"]}, {\"input\": \"104\\r\\n\", \"output\": [\"374918\"]}, {\"input\": \"105\\r\\n\", \"output\": [\"385838\"]}, {\"input\": \"106\\r\\n\", \"output\": [\"396968\"]}, {\"input\": \"107\\r\\n\", \"output\": [\"408310\"]}, {\"input\": \"108\\r\\n\", \"output\": [\"419866\"]}, {\"input\": \"109\\r\\n\", \"output\": [\"431638\"]}, {\"input\": \"110\\r\\n\", \"output\": [\"443628\"]}, {\"input\": \"500\\r\\n\", \"output\": [\"41666498\"]}, {\"input\": \"497\\r\\n\", \"output\": [\"40920990\"]}, {\"input\": \"494\\r\\n\", \"output\": [\"40184428\"]}, {\"input\": \"491\\r\\n\", \"output\": [\"39456758\"]}, {\"input\": \"488\\r\\n\", \"output\": [\"38737926\"]}, {\"input\": \"485\\r\\n\", \"output\": [\"38027878\"]}, {\"input\": \"482\\r\\n\", \"output\": [\"37326560\"]}, {\"input\": \"479\\r\\n\", \"output\": [\"36633918\"]}, {\"input\": \"476\\r\\n\", \"output\": [\"35949898\"]}, {\"input\": \"473\\r\\n\", \"output\": [\"35274446\"]}, {\"input\": \"470\\r\\n\", \"output\": [\"34607508\"]}, {\"input\": \"467\\r\\n\", \"output\": [\"33949030\"]}, {\"input\": \"464\\r\\n\", \"output\": [\"33298958\"]}, {\"input\": \"461\\r\\n\", \"output\": [\"32657238\"]}, {\"input\": \"458\\r\\n\", \"output\": [\"32023816\"]}, {\"input\": \"455\\r\\n\", \"output\": [\"31398638\"]}, {\"input\": \"452\\r\\n\", \"output\": [\"30781650\"]}, {\"input\": \"449\\r\\n\", \"output\": [\"30172798\"]}, {\"input\": \"446\\r\\n\", \"output\": [\"29572028\"]}, {\"input\": \"42\\r\\n\", \"output\": [\"24680\"]}, {\"input\": \"69\\r\\n\", \"output\": [\"109478\"]}, {\"input\": \"228\\r\\n\", \"output\": [\"3950706\"]}, {\"input\": \"233\\r\\n\", \"output\": [\"4216366\"]}, {\"input\": \"420\\r\\n\", \"output\": [\"24695858\"]}, {\"input\": \"368\\r\\n\", \"output\": [\"16611886\"]}, {\"input\": \"225\\r\\n\", \"output\": [\"3796798\"]}, {\"input\": \"11\\r\\n\", \"output\": [\"438\"]}, {\"input\": \"12\\r\\n\", \"output\": [\"570\"]}, {\"input\": \"13\\r\\n\", \"output\": [\"726\"]}, {\"input\": \"14\\r\\n\", \"output\": [\"908\"]}, {\"input\": \"135\\r\\n\", \"output\": [\"820078\"]}, {\"input\": \"199\\r\\n\", \"output\": [\"2626798\"]}, {\"input\": \"137\\r\\n\", \"output\": [\"857070\"]}, {\"input\": \"131\\r\\n\", \"output\": [\"749318\"]}, {\"input\": \"130\\r\\n\", \"output\": [\"732288\"]}, {\"input\": \"139\\r\\n\", \"output\": [\"895158\"]}]"
+    }
+}

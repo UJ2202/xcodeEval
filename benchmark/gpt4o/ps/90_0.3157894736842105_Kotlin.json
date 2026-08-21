@@ -1,0 +1,350 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEIOEhwxpXm4McxMStrPy9PSh8ddB",
+        "created": 1787075990,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport kotlin.math.min\n\nfun isLucky(x: Long): Boolean {\n    var n = x\n    if (n <= 0) return false\n    while (n > 0) {\n        val d = n % 10\n        if (d != 4L && d != 7L) return false\n        n /= 10\n    }\n    return true\n}\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toLong()\n    var k = st.nextToken().toLong()\n\n    // Precompute factorials up to 20 with cap > 1e18\n    val fact = LongArray(21)\n    fact[0] = 1L\n    for (i in 1..20) {\n        val v = fact[i - 1] * i\n        fact[i] = if (v > 1_000_000_000_000_000_000L) 1_000_000_000_000_000_000L else v\n    }\n\n    // If n > 20, prefix is fixed, only last m = min(20, n) positions permuted\n    val m = min(20L, n).toInt()\n    val fixedPrefix = (n - m).toInt() // positions 1..fixedPrefix are fixed\n\n    // Check if k-th permutation exists\n    if (k > fact[m]) {\n        println(-1)\n        return\n    }\n\n    // Build the list of numbers in the permuted suffix\n    val suffixStart = (n - m + 1).toInt()\n    val available = ArrayList<Long>()\n    for (i in suffixStart..n.toInt()) {\n        available.add(i.toLong())\n    }\n\n    // Build the k-th permutation of the suffix (1-based k)\n    val perm = LongArray(m)\n    var kk = k - 1 // 0-based\n    for (i in 0 until m) {\n        val blockSize = fact[m - 1 - i]\n        val idx = (kk / blockSize).toInt()\n        kk %= blockSize\n        perm[i] = available[idx]\n        available.removeAt(idx)\n    }\n\n    var ans = 0L\n\n    // Count lucky positions in fixed prefix: ai = i\n    for (i in 1..fixedPrefix) {\n        val pos = i.toLong()\n        if (isLucky(pos) && isLucky(pos)) ans++\n    }\n\n    // Count lucky positions in permuted suffix\n    for (i in 0 until m) {\n        val pos = (fixedPrefix + 1 + i).toLong()\n        val value = perm[i]\n        if (isLucky(pos) && isLucky(value)) ans++\n    }\n\n    println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport kotlin.math.min\n\nfun isLucky(x: Long): Boolean {\n    var n = x\n    if (n <= 0) return false\n    while (n > 0) {\n        val d = n % 10\n        if (d != 4L && d != 7L) return false\n        n /= 10\n    }\n    return true\n}\n\nfun genLucky(limit: Long): List<Int> {\n    val res = ArrayList<Int>()\n    fun dfs(cur: Long) {\n        if (cur > limit) return\n        if (cur != 0L) res.add(cur.toInt())\n        dfs(cur * 10 + 4)\n        dfs(cur * 10 + 7)\n    }\n    dfs(0)\n    res.sort()\n    return res\n}\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(br.readLine())\n    val n = st.nextLong()\n    var k = st.nextLong()\n\n    val MAXFACT = 20\n    val fact = LongArray(MAXFACT + 1)\n    fact[0] = 1L\n    for (i in 1..MAXFACT) {\n        val v = fact[i - 1] * i\n        fact[i] = if (v < 0 || v > Long.MAX_VALUE / 2) Long.MAX_VALUE else v\n    }\n\n    val m = if (n > MAXFACT) MAXFACT else n.toInt()\n    if (k > fact[m]) {\n        println(-1)\n        return\n    }\n\n    val offset = (n - m).toInt()\n    val used = BooleanArray(m + 1)\n    val perm = IntArray(m + 1) // 1-based for suffix\n\n    var kk = k - 1 // zero-based\n    for (pos in 1..m) {\n        val blockSize = fact[m - pos]\n        var idx = (kk / blockSize).toInt()\n        kk %= blockSize\n        var cnt = -1\n        var chosen = -1\n        for (v in 1..m) {\n            if (!used[v]) {\n                cnt++\n                if (cnt == idx) {\n                    chosen = v\n                    used[v] = true\n                    break\n                }\n            }\n        }\n        perm[pos] = offset + chosen\n    }\n\n    val luckyPositions = genLucky(n)\n    var ans = 0\n    for (pos in luckyPositions) {\n        if (pos.toLong() > n) break\n        val value = if (pos <= offset) pos else perm[pos - offset]\n        if (isLucky(value.toLong())) ans++\n    }\n\n    println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport kotlin.math.min\n\nfun isLucky(x: Long): Boolean {\n    var t = x\n    if (t <= 0) return false\n    while (t > 0) {\n        val d = t % 10\n        if (d != 4L && d != 7L) return false\n        t /= 10\n    }\n    return true\n}\n\nfun main() {\n    val reader = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(reader.readLine())\n    val n = st.nextToken().toLong()\n    var k = st.nextToken().toLong()\n\n    // Precompute factorials up to 20 with cap > 1e18\n    val fact = LongArray(21)\n    fact[0] = 1L\n    for (i in 1..20) {\n        val v = fact[i - 1] * i\n        fact[i] = if (v > 1_000_000_000_000_000_000L) 1_000_000_000_000_000_000L else v\n    }\n\n    val MAX = 20L\n    if (n <= MAX) {\n        if (k > fact[n.toInt()]) {\n            println(-1)\n            return\n        }\n    } else {\n        val tail = n - MAX\n        if (k > fact[MAX.toInt()]) {\n            println(-1)\n            return\n        }\n        // positions 1..tail are fixed 1..tail\n    }\n\n    val tailStart = if (n > MAX) n - MAX + 1 else 1L\n    val tailSize = (n - tailStart + 1).toInt()\n\n    // Build list of numbers in tail\n    val tailNums = LongArray(tailSize)\n    var v = tailStart\n    for (i in 0 until tailSize) {\n        tailNums[i] = v\n        v++\n    }\n\n    // Generate k-th permutation of tailNums (1-based k)\n    val used = BooleanArray(tailSize)\n    val perm = LongArray(tailSize)\n    var kk = k - 1 // 0-based\n    for (pos in 0 until tailSize) {\n        val blockSize = fact[tailSize - pos - 1]\n        var idx = (kk / blockSize).toInt()\n        kk %= blockSize\n        // pick idx-th unused element\n        var cnt = -1\n        var chosen = -1\n        for (i in 0 until tailSize) {\n            if (!used[i]) {\n                cnt++\n                if (cnt == idx) {\n                    chosen = i\n                    break\n                }\n            }\n        }\n        used[chosen] = true\n        perm[pos] = tailNums[chosen]\n    }\n\n    var ans = 0\n    // Check positions 1..tailStart-1: ai = i\n    var iPos = 1L\n    while (iPos < tailStart) {\n        if (isLucky(iPos) && isLucky(iPos)) ans++\n        iPos++\n    }\n    // Check tail positions\n    for (i in 0 until tailSize) {\n        val pos = tailStart + i\n        val value = perm[i]\n        if (isLucky(pos) && isLucky(value)) ans++\n    }\n\n    println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport kotlin.math.min\n\nfun isLucky(x: Long): Boolean {\n    var t = x\n    if (t <= 0) return false\n    while (t > 0) {\n        val d = t % 10\n        if (d != 4L && d != 7L) return false\n        t /= 10\n    }\n    return true\n}\n\nfun main() {\n    val reader = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(reader.readLine())\n    val n = st.nextToken().toLong()\n    var k = st.nextToken().toLong()\n\n    // Precompute factorials up to 20 with cap > 1e18\n    val maxFactN = 20\n    val fact = LongArray(maxFactN + 1)\n    fact[0] = 1L\n    for (i in 1..maxFactN) {\n        val v = fact[i - 1] * i\n        fact[i] = if (v > 1_000_000_000_000_000_000L) 1_000_000_000_000_000_000L else v\n    }\n\n    // If n > 20, we only permute last m = min(20, n) elements\n    val m = min(20L, n).toInt()\n    val fixedPrefix = (n - m).toInt()\n\n    // Check if k-th permutation exists for the variable part\n    if (k > fact[m]) {\n        println(-1)\n        return\n    }\n\n    // Build list of numbers in the variable part\n    val base = (n - m + 1).toInt()\n    val nums = ArrayList<Long>()\n    for (i in 0 until m) {\n        nums.add((base + i).toLong())\n    }\n\n    // Generate k-th permutation (1-based k)\n    k-- // make it 0-based\n    val perm = LongArray(m)\n    for (i in 0 until m) {\n        val blockSize = fact[m - 1 - i]\n        val idx = (k / blockSize).toInt()\n        k %= blockSize\n        perm[i] = nums[idx]\n        nums.removeAt(idx)\n    }\n\n    var ans = 0\n\n    // Count for fixed prefix positions 1..fixedPrefix\n    // ai = i, so we just need lucky i\n    for (i in 1..fixedPrefix) {\n        if (isLucky(i.toLong())) ans++\n    }\n\n    // Count for variable part positions\n    for (i in 0 until m) {\n        val pos = fixedPrefix + 1 + i\n        val value = perm[i]\n        if (isLucky(pos.toLong()) && isLucky(value)) ans++\n    }\n\n    println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport kotlin.math.min\n\nfun isLucky(x: Long): Boolean {\n    var n = x\n    if (n <= 0) return false\n    while (n > 0) {\n        val d = n % 10\n        if (d != 4L && d != 7L) return false\n        n /= 10\n    }\n    return true\n}\n\nfun main() {\n    val reader = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(reader.readLine())\n    val n = st.nextToken().toLong()\n    var k = st.nextToken().toLong()\n\n    // Precompute factorials up to 20 with cap > 1e18\n    val fact = LongArray(21)\n    fact[0] = 1L\n    for (i in 1..20) {\n        val v = fact[i - 1] * i\n        fact[i] = if (v > 1_000_000_000_000_000_000L) 1_000_000_000_000_000_000L else v\n    }\n\n    val m = if (n > 20) 20 else n.toInt()\n    if (k > fact[m]) {\n        println(-1)\n        return\n    }\n\n    var ans = 0\n\n    // Count lucky indices among first n-m positions (fixed part)\n    val fixed = n - m\n    var i = 1L\n    while (i <= fixed) {\n        if (isLucky(i)) ans++\n        i++\n    }\n\n    // Build k-th permutation of last m numbers: [n-m+1 .. n]\n    val base = n - m + 1\n    val used = BooleanArray(m)\n    val perm = LongArray(m)\n    k-- // 0-based\n\n    for (pos in 0 until m) {\n        val blockSize = if (m - pos - 1 >= 0) fact[m - pos - 1] else 1L\n        var idx = (k / blockSize).toInt()\n        k %= blockSize\n\n        var cnt = 0\n        var chosen = -1\n        for (j in 0 until m) {\n            if (!used[j]) {\n                if (cnt == idx) {\n                    chosen = j\n                    break\n                }\n                cnt++\n            }\n        }\n        used[chosen] = true\n        perm[pos] = base + chosen\n    }\n\n    // Count lucky positions and values in the variable part\n    for (pos in 0 until m) {\n        val idxPos = fixed + 1 + pos\n        if (isLucky(idxPos.toLong()) && isLucky(perm[pos])) ans++\n    }\n\n    println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\n\nprivate fun isLucky(x: Long): Boolean {\n    if (x <= 0) return false\n    var t = x\n    while (t > 0) {\n        val d = t % 10\n        if (d != 4L && d != 7L) return false\n        t /= 10\n    }\n    return true\n}\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toLong()\n    var k = st.nextToken().toLong()\n\n    // Factorials up to 20 (since 20! fits in Long, 21! doesn't)\n    val fact = LongArray(21)\n    fact[0] = 1L\n    for (i in 1..20) {\n        val v = fact[i - 1] * i\n        fact[i] = if (v < 0 || v < fact[i - 1]) Long.MAX_VALUE else v\n    }\n\n    // If n > 20, only last 20 positions are permuted; prefix is fixed\n    val m = if (n > 20) 20 else n.toInt()\n    val prefix = n - m\n\n    // Check if k-th permutation exists\n    if (k > fact[m]) {\n        println(-1)\n        return\n    }\n\n    // Build the list of numbers that are permuted (last m numbers)\n    val permNumbers = LongArray(m)\n    var start = prefix + 1\n    for (i in 0 until m) {\n        permNumbers[i] = start + i\n    }\n\n    // We will construct k-th permutation (1-based k)\n    k-- // make it 0-based\n    val used = BooleanArray(m)\n    val result = LongArray(m)\n\n    for (pos in 0 until m) {\n        val remaining = m - pos - 1\n        val blockSize = if (remaining >= 0) fact[remaining] else 1L\n        var idx = (k / blockSize).toInt()\n        k %= blockSize\n\n        // pick idx-th unused element\n        var cnt = -1\n        var chosen = -1\n        for (i in 0 until m) {\n            if (!used[i]) {\n                cnt++\n                if (cnt == idx) {\n                    chosen = i\n                    break\n                }\n            }\n        }\n        used[chosen] = true\n        result[pos] = permNumbers[chosen]\n    }\n\n    // Count positions where index and value are both lucky\n    var ans = 0\n\n    // Fixed prefix: positions 1..prefix, values 1..prefix\n    var iPos = 1L\n    while (iPos <= prefix) {\n        if (isLucky(iPos) && isLucky(iPos)) ans++\n        iPos++\n    }\n\n    // Suffix: positions prefix+1..n, values from result[]\n    for (i in 0 until m) {\n        val pos = prefix + 1 + i\n        val value = result[i]\n        if (isLucky(pos) && isLucky(value)) ans++\n    }\n\n    println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport kotlin.math.min\n\nfun isLucky(x: Long): Boolean {\n    var t = x\n    if (t <= 0) return false\n    while (t > 0) {\n        val d = t % 10\n        if (d != 4L && d != 7L) return false\n        t /= 10\n    }\n    return true\n}\n\nfun main() {\n    val reader = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(reader.readLine())\n    val n = st.nextToken().toLong()\n    var k = st.nextToken().toLong()\n\n    // Factorials up to 20 (since 20! fits in Long, 21! doesn't)\n    val maxFactN = 20\n    val fact = LongArray(maxFactN + 1)\n    fact[0] = 1L\n    for (i in 1..maxFactN) {\n        val v = fact[i - 1] * i\n        fact[i] = if (v < 0 || v > Long.MAX_VALUE / 2) Long.MAX_VALUE else v\n    }\n\n    // If n > 20, we only permute last m = min(20, n) elements\n    val m = if (n > maxFactN) maxFactN else n.toInt()\n    val prefixLen = n - m\n\n    // Check if k-th permutation exists for the last m elements\n    if (k > fact[m]) {\n        println(-1)\n        return\n    }\n\n    // Build list of elements for the last m positions\n    val base = (prefixLen + 1).toLong()\n    val elems = java.util.TreeSet<Long>()\n    for (i in 0 until m) {\n        elems.add(base + i)\n    }\n\n    val perm = LongArray(m.toInt())\n    var kk = k - 1 // 0-based index\n    for (i in 0 until m) {\n        val remaining = m - i\n        val blockSize = if (remaining - 1 >= 0) fact[remaining - 1] else 1L\n        val idx = (kk / blockSize).toInt()\n        kk %= blockSize\n\n        // get idx-th smallest element from elems\n        var cnt = 0\n        var chosen: Long = -1\n        val it = elems.iterator()\n        while (it.hasNext()) {\n            val v = it.next()\n            if (cnt == idx) {\n                chosen = v\n                it.remove()\n                break\n            }\n            cnt++\n        }\n        perm[i] = chosen\n    }\n\n    var ans = 0L\n\n    // Count for prefix positions (1..prefixLen) where index and value are both lucky\n    // For prefix, a[i] = i\n    var i = 1L\n    while (i <= prefixLen) {\n        if (isLucky(i)) ans++\n        i++\n    }\n\n    // Count for last m positions\n    for (pos in 0 until m) {\n        val idx = prefixLen + 1 + pos\n        val value = perm[pos]\n        if (isLucky(idx) && isLucky(value)) ans++\n    }\n\n    println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport kotlin.math.min\n\nfun isLucky(x: Long): Boolean {\n    var t = x\n    if (t <= 0) return false\n    while (t > 0) {\n        val d = t % 10\n        if (d != 4L && d != 7L) return false\n        t /= 10\n    }\n    return true\n}\n\nfun genLucky(limit: Long, res: MutableList<Long>, cur: Long) {\n    if (cur > limit) return\n    if (cur != 0L) res.add(cur)\n    genLucky(limit, res, cur * 10 + 4)\n    genLucky(limit, res, cur * 10 + 7)\n}\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toLong()\n    var k = st.nextToken().toLong()\n\n    // Precompute factorials up to 20 with cap > 1e18\n    val fact = LongArray(21)\n    fact[0] = 1L\n    for (i in 1..20) {\n        val v = fact[i - 1] * i\n        fact[i] = if (v > 1_000_000_000_000_000_000L) 1_000_000_000_000_000_000L else v\n    }\n\n    // If n > 20, prefix is fixed; suffix length m <= 20\n    val m = min(20L, n).toInt()\n    val totalPerm = fact[m]\n    if (k > totalPerm) {\n        println(-1)\n        return\n    }\n\n    // Generate lucky indices up to n\n    val luckyIdx = mutableListOf<Long>()\n    genLucky(n, luckyIdx, 0L)\n    luckyIdx.sort()\n\n    var ans = 0\n    // Count lucky positions in prefix [1 .. n-m] where a[i] = i\n    val prefixLen = (n - m).toInt()\n    for (idx in luckyIdx) {\n        if (idx <= prefixLen.toLong()) {\n            if (isLucky(idx)) ans++\n        } else break\n    }\n\n    // Build k-th permutation of suffix [n-m+1 .. n]\n    val base = (n - m + 1).toInt()\n    val used = BooleanArray(m)\n    val perm = IntArray(m)\n    k-- // zero-based\n    for (pos in 0 until m) {\n        val blockSize = fact[m - 1 - pos]\n        var block = (k / blockSize).toInt()\n        k %= blockSize\n        // pick block-th unused number\n        var cnt = -1\n        var chosen = -1\n        for (i in 0 until m) {\n            if (!used[i]) {\n                cnt++\n                if (cnt == block) {\n                    chosen = i\n                    used[i] = true\n                    break\n                }\n            }\n        }\n        perm[pos] = base + chosen\n    }\n\n    // Count lucky positions in suffix\n    for (i in 0 until m) {\n        val idx = (base + i).toLong()\n        if (!isLucky(idx.toLong())) continue\n        if (isLucky(perm[i].toLong())) ans++\n    }\n\n    println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 5384,
+            "prompt_tokens": 467,
+            "total_tokens": 5851,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 2,
+                "engine_ttft_ms": 316,
+                "engine_ttlt_ms": 13447,
+                "pre_inference_ms": 196,
+                "service_tbt_ms": 2,
+                "service_ttft_ms": 621,
+                "service_ttlt_ms": 13743,
+                "total_duration_ms": 13557,
+                "user_visible_ttft_ms": 425
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Kotlin to solve this programming problem:\nDescription: Petya loves lucky numbers. Everybody knows that lucky numbers are positive integers whose decimal representation contains only the lucky digits 4 and 7. For example, numbers 47, 744, 4 are lucky and 5, 17, 467 are not.One day Petya dreamt of a lexicographically k-th permutation of integers from 1 to n. Determine how many lucky numbers in the permutation are located on the positions whose indexes are also lucky numbers.\nInput Specification: The first line contains two integers n and k (1\u2009\u2264\u2009n,\u2009k\u2009\u2264\u2009109) \u2014 the number of elements in the permutation and the lexicographical number of the permutation.\nOutput Specification: If the k-th permutation of numbers from 1 to n does not exist, print the single number \"-1\" (without the quotes). Otherwise, print the answer to the problem: the number of such indexes i, that i and ai are both lucky numbers.\n\nSample Input:\n7 4\nSample Output:\n1\n\nSample Input:\n4 7\nSample Output:\n1\n\nNotes: NoteA permutation is an ordered set of n elements, where each integer from 1 to n occurs exactly once. The element of permutation in position with index i is denoted as ai (1\u2009\u2264\u2009i\u2009\u2264\u2009n). Permutation a is lexicographically smaller that permutation b if there is such a i (1\u2009\u2264\u2009i\u2009\u2264\u2009n), that ai\u2009&lt;\u2009bi, and for any j (1\u2009\u2264\u2009j\u2009&lt;\u2009i) aj\u2009=\u2009bj. Let's make a list of all possible permutations of n elements and sort it in the order of lexicographical increasing. Then the lexicographically k-th permutation is the k-th element of this list of permutations.In the first sample the permutation looks like that:1 2 3 4 6 7 5The only suitable position is 4.In the second sample the permutation looks like that:2 1 3 4The only suitable position is 4.\nTake input from standard input and output to standard output\nProvide the Kotlin code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "cb2aa02772f95fefd1856960b6ceac4c",
+        "difficulty": 1900,
+        "prob_desc_sample_inputs": [
+            "7 4",
+            "4 7"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "brute force",
+            "combinatorics",
+            "number theory"
+        ],
+        "prob_desc_output_spec": "If the k-th permutation of numbers from 1 to n does not exist, print the single number \"-1\" (without the quotes). Otherwise, print the answer to the problem: the number of such indexes i, that i and ai are both lucky numbers.",
+        "prob_desc_input_spec": "The first line contains two integers n and k (1\u2009\u2264\u2009n,\u2009k\u2009\u2264\u2009109) \u2014 the number of elements in the permutation and the lexicographical number of the permutation.",
+        "lang_cluster": "Kotlin",
+        "source_code": "",
+        "prob_desc_notes": "NoteA permutation is an ordered set of n elements, where each integer from 1 to n occurs exactly once. The element of permutation in position with index i is denoted as ai (1\u2009\u2264\u2009i\u2009\u2264\u2009n). Permutation a is lexicographically smaller that permutation b if there is such a i (1\u2009\u2264\u2009i\u2009\u2264\u2009n), that ai\u2009&lt;\u2009bi, and for any j (1\u2009\u2264\u2009j\u2009&lt;\u2009i) aj\u2009=\u2009bj. Let's make a list of all possible permutations of n elements and sort it in the order of lexicographical increasing. Then the lexicographically k-th permutation is the k-th element of this list of permutations.In the first sample the permutation looks like that:1 2 3 4 6 7 5The only suitable position is 4.In the second sample the permutation looks like that:2 1 3 4The only suitable position is 4.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Petya loves lucky numbers. Everybody knows that lucky numbers are positive integers whose decimal representation contains only the lucky digits 4 and 7. For example, numbers 47, 744, 4 are lucky and 5, 17, 467 are not.One day Petya dreamt of a lexicographically k-th permutation of integers from 1 to n. Determine how many lucky numbers in the permutation are located on the positions whose indexes are also lucky numbers.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1319727600",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "1",
+            "1"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"7 4\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"4 7\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"7 5040\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10 1023\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 7477\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"10 10000\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"3 7\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"27 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"40 8544\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"47 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"47 8547744\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"50 1000000000\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"64 87\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"98 854555\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"100 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"9985 5888454\\r\\n\", \"output\": [\"30\"]}, {\"input\": \"1 1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"1 2\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"2 1000000000\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"10 1000000000\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"20 1000000000\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"777777 1\\r\\n\", \"output\": [\"126\"]}, {\"input\": \"777777 2\\r\\n\", \"output\": [\"125\"]}, {\"input\": \"777474 10000\\r\\n\", \"output\": [\"120\"]}, {\"input\": \"1000000000 1\\r\\n\", \"output\": [\"1022\"]}, {\"input\": \"777777777 5\\r\\n\", \"output\": [\"1021\"]}, {\"input\": \"777777777 1\\r\\n\", \"output\": [\"1022\"]}, {\"input\": \"777477774 1\\r\\n\", \"output\": [\"989\"]}, {\"input\": \"444747744 1000000000\\r\\n\", \"output\": [\"554\"]}, {\"input\": \"475 88555458\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"12 855448\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"20 1000000000\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"47 99998544\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"49 1000000000\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"854459 95554455\\r\\n\", \"output\": [\"126\"]}, {\"input\": \"77777779 1000000000\\r\\n\", \"output\": [\"508\"]}, {\"input\": \"77 47\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"6999 85488877\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"7479 58884598\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"1000000000 1000000000\\r\\n\", \"output\": [\"1022\"]}, {\"input\": \"7 1000\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 124\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 2048\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 3001\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 127\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 980\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 5000\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 4095\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"7 3856\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 5032\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 4999\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 3\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"2 4\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"7 985\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"4 25\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"6 121\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"11 39916801\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"29 1000000000\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"10 4589\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10 100000\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10 98564\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"10 100000009\\r\\n\", \"output\": [\"-1\"]}]"
+    }
+}

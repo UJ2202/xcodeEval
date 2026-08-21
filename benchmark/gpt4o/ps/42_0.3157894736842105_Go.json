@@ -1,0 +1,352 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEHnHPU2YmNiGRrNSF64qXsJ9KgS3",
+        "created": 1787073699,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst MOD int64 = 1000000007\n\nfunc modAdd(a, b int64) int64 {\n\ta += b\n\tif a >= MOD {\n\t\ta -= MOD\n\t}\n\treturn a\n}\n\nfunc modSub(a, b int64) int64 {\n\ta -= b\n\tif a < 0 {\n\t\ta += MOD\n\t}\n\treturn a\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n, k int\n\tfmt.Fscan(in, &n, &k)\n\n\tif k == 1 {\n\t\t// Only permutation [1..n] gives correct max=n\n\t\t// Answer = n! - 1\n\t\tfact := int64(1)\n\t\tfor i := 2; i <= n; i++ {\n\t\t\tfact = fact * int64(i) % MOD\n\t\t}\n\t\tans := modSub(fact, 1)\n\t\tfmt.Println(ans)\n\t\treturn\n\t}\n\n\t// Precompute factorials and inverse factorials\n\tfact := make([]int64, n+1)\n\tifact := make([]int64, n+1)\n\tfact[0] = 1\n\tfor i := 1; i <= n; i++ {\n\t\tfact[i] = fact[i-1] * int64(i) % MOD\n\t}\n\tifact[n] = modPow(fact[n], MOD-2)\n\tfor i := n; i > 0; i-- {\n\t\tifact[i-1] = ifact[i] * int64(i) % MOD\n\t}\n\n\t// dp[i] = number of permutations of size i where fast_max returns i\n\tdp := make([]int64, n+1)\n\tpref := make([]int64, n+1) // prefix sums of dp\n\n\tdp[0] = 1\n\tpref[0] = 1\n\n\tfor i := 1; i <= n; i++ {\n\t\t// dp[i] = sum_{t=1..min(k,i)} dp[i-t] * C(i-1, t-1)\n\t\t// Using prefix sums:\n\t\t// dp[i] = sum_{j=max(0,i-k)..i-1} dp[j] * C(i-1, j)\n\t\t// but we compute directly with t\n\t\tvar val int64 = 0\n\t\tmaxT := k\n\t\tif maxT > i {\n\t\t\tmaxT = i\n\t\t}\n\t\tfor t := 1; t <= maxT; t++ {\n\t\t\tj := i - t\n\t\t\tcomb := fact[i-1] * ifact[t-1] % MOD * ifact[i-t] % MOD\n\t\t\tval = (val + dp[j]*comb) % MOD\n\t\t}\n\t\tdp[i] = val\n\t\tpref[i] = modAdd(pref[i-1], dp[i])\n\t}\n\n\t// Total permutations where fast_max returns n is dp[n]\n\t// Answer = n! - dp[n]\n\tans := modSub(fact[n], dp[n])\n\tfmt.Println(ans)\n}\n\nfunc modPow(a, e int64) int64 {\n\tres := int64(1)\n\tfor e > 0 {\n\t\tif e&1 == 1 {\n\t\t\tres = res * a % MOD\n\t\t}\n\t\ta = a * a % MOD\n\t\te >>= 1\n\t}\n\treturn res\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst MOD int64 = 1000000007\n\nfunc modAdd(a, b int64) int64 {\n\ta += b\n\tif a >= MOD {\n\t\ta -= MOD\n\t}\n\treturn a\n}\n\nfunc modSub(a, b int64) int64 {\n\ta -= b\n\tif a < 0 {\n\t\ta += MOD\n\t}\n\treturn a\n}\n\nfunc modMul(a, b int64) int64 {\n\treturn (a * b) % MOD\n}\n\nfunc modPow(a, e int64) int64 {\n\tres := int64(1)\n\tfor e > 0 {\n\t\tif e&1 == 1 {\n\t\t\tres = modMul(res, a)\n\t\t}\n\t\ta = modMul(a, a)\n\t\te >>= 1\n\t}\n\treturn res\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n, k int\n\tfmt.Fscan(in, &n, &k)\n\n\tif k == 1 {\n\t\t// Only permutation with max n returned is [n, ...]\n\t\t// answer = n! - 1\n\t\tfact := int64(1)\n\t\tfor i := 2; i <= n; i++ {\n\t\t\tfact = modMul(fact, int64(i))\n\t\t}\n\t\tans := modSub(fact, 1)\n\t\tfmt.Println(ans)\n\t\treturn\n\t}\n\n\t// Precompute factorials and inverse factorials up to n\n\tfact := make([]int64, n+1)\n\tifact := make([]int64, n+1)\n\tfact[0] = 1\n\tfor i := 1; i <= n; i++ {\n\t\tfact[i] = modMul(fact[i-1], int64(i))\n\t}\n\tifact[n] = modPow(fact[n], MOD-2)\n\tfor i := n; i > 0; i-- {\n\t\tifact[i-1] = modMul(ifact[i], int64(i))\n\t}\n\n\t// dp[i] = number of permutations of length i where fast_max returns i\n\tdp := make([]int64, n+1)\n\tdp[0] = 1\n\n\tfor i := 1; i <= n; i++ {\n\t\t// dp[i] = sum_{j=0}^{min(k-1, i-1)} C(i-1, j) * dp[i-1-j]\n\t\tlimit := k - 1\n\t\tif limit > i-1 {\n\t\t\tlimit = i - 1\n\t\t}\n\t\tvar sum int64 = 0\n\t\tfor j := 0; j <= limit; j++ {\n\t\t\tcomb := modMul(fact[i-1], modMul(ifact[j], ifact[i-1-j]))\n\t\t\tsum = modAdd(sum, modMul(comb, dp[i-1-j]))\n\t\t}\n\t\tdp[i] = sum\n\t}\n\n\ttotal := fact[n]\n\tans := modSub(total, dp[n])\n\tfmt.Println(ans)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst MOD int64 = 1000000007\n\nfunc modAdd(a, b int64) int64 {\n\ta += b\n\tif a >= MOD {\n\t\ta -= MOD\n\t}\n\treturn a\n}\n\nfunc modSub(a, b int64) int64 {\n\ta -= b\n\tif a < 0 {\n\t\ta += MOD\n\t}\n\treturn a\n}\n\nfunc modMul(a, b int64) int64 {\n\treturn (a * b) % MOD\n}\n\nfunc modPow(a, e int64) int64 {\n\tres := int64(1)\n\tfor e > 0 {\n\t\tif e&1 == 1 {\n\t\t\tres = modMul(res, a)\n\t\t}\n\t\ta = modMul(a, a)\n\t\te >>= 1\n\t}\n\treturn res\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n, k int\n\tfmt.Fscan(in, &n, &k)\n\n\tif k == 1 {\n\t\t// Only permutation [1..n] gives correct max n\n\t\t// So answer = n! - 1\n\t\tfact := int64(1)\n\t\tfor i := 2; i <= n; i++ {\n\t\t\tfact = modMul(fact, int64(i))\n\t\t}\n\t\tans := modSub(fact, 1)\n\t\tfmt.Println(ans)\n\t\treturn\n\t}\n\n\t// Precompute factorials and inverse factorials up to n\n\tfact := make([]int64, n+1)\n\tifact := make([]int64, n+1)\n\tfact[0] = 1\n\tfor i := 1; i <= n; i++ {\n\t\tfact[i] = modMul(fact[i-1], int64(i))\n\t}\n\tifact[n] = modPow(fact[n], MOD-2)\n\tfor i := n; i > 0; i-- {\n\t\tifact[i-1] = modMul(ifact[i], int64(i))\n\t}\n\n\t// Precompute powers of 2 up to n\n\tpow2 := make([]int64, n+1)\n\tpow2[0] = 1\n\tfor i := 1; i <= n; i++ {\n\t\tpow2[i] = modMul(pow2[i-1], 2)\n\t}\n\n\t// dp[i] = number of permutations of size i with no block of k consecutive\n\t// elements all < current maximum (i.e., function returns n)\n\tdp := make([]int64, n+1)\n\tdp[0] = 1\n\tfor i := 1; i <= n; i++ {\n\t\tval := pow2[i-1]\n\t\tif i >= k {\n\t\t\tval = modSub(val, dp[i-k])\n\t\t}\n\t\tdp[i] = val\n\t}\n\n\t// Answer: total permutations - permutations where function returns n\n\t// permutations where function returns n = sum_{i=1..n} C(n-1, i-1) * dp[i-1] * (n-i)!\n\t// derived from placing n at position i and counting valid left part\n\ttotal := fact[n]\n\tvar good int64 = 0\n\tfor i := 1; i <= n; i++ {\n\t\tleft := i - 1\n\t\tcomb := modMul(fact[n-1], modMul(ifact[left], ifact[n-1-left]))\n\t\tways := modMul(comb, modMul(dp[left], fact[n-i]))\n\t\tgood = modAdd(good, ways)\n\t}\n\tans := modSub(total, good)\n\tfmt.Println(ans)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst MOD int64 = 1000000007\n\nfunc modAdd(a, b int64) int64 {\n\ta += b\n\tif a >= MOD {\n\t\ta -= MOD\n\t}\n\treturn a\n}\n\nfunc modMul(a, b int64) int64 {\n\treturn (a * b) % MOD\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n, k int\n\tif _, err := fmt.Fscan(in, &n, &k); err != nil {\n\t\treturn\n\t}\n\n\tif k == 1 {\n\t\t// Only permutation where max is n is [n, ...]\n\t\t// So answer = n! - 1\n\t\tfact := int64(1)\n\t\tfor i := 2; i <= n; i++ {\n\t\t\tfact = modMul(fact, int64(i))\n\t\t}\n\t\tans := fact - 1\n\t\tif ans < 0 {\n\t\t\tans += MOD\n\t\t}\n\t\tfmt.Println(ans)\n\t\treturn\n\t}\n\n\t// Precompute factorials up to n\n\tfact := make([]int64, n+1)\n\tfact[0] = 1\n\tfor i := 1; i <= n; i++ {\n\t\tfact[i] = modMul(fact[i-1], int64(i))\n\t}\n\n\t// dp[i] = number of permutations of length i (using values 1..i)\n\t// such that the function returns i (i is max) with parameter k.\n\t// Recurrence:\n\t// dp[i] = sum_{t=0}^{min(k-1, i-1)} C(i-1, t) * dp[i-1-t]\n\t// We compute dp up to n.\n\tdp := make([]int64, n+1)\n\tdp[0] = 1\n\n\t// Precompute binomial coefficients C up to n using Pascal\n\t// C[i][j] for 0<=i<=n, 0<=j<=i\n\tC := make([][]int64, n+1)\n\tfor i := 0; i <= n; i++ {\n\t\tC[i] = make([]int64, i+1)\n\t\tC[i][0] = 1\n\t\tC[i][i] = 1\n\t\tfor j := 1; j < i; j++ {\n\t\t\tC[i][j] = modAdd(C[i-1][j-1], C[i-1][j])\n\t\t}\n\t}\n\n\tfor i := 1; i <= n; i++ {\n\t\tlimit := k - 1\n\t\tif limit > i-1 {\n\t\t\tlimit = i - 1\n\t\t}\n\t\tvar val int64 = 0\n\t\tfor t := 0; t <= limit; t++ {\n\t\t\tval = modAdd(val, modMul(C[i-1][t], dp[i-1-t]))\n\t\t}\n\t\tdp[i] = val\n\t}\n\n\t// dp[n] is number of permutations where function returns n.\n\t// Total permutations = n!\n\t// Answer = n! - dp[n]\n\tans := fact[n] - dp[n]\n\tif ans < 0 {\n\t\tans += MOD\n\t}\n\tfmt.Println(ans)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst MOD int64 = 1000000007\n\nfunc modAdd(a, b int64) int64 {\n\ta += b\n\tif a >= MOD {\n\t\ta -= MOD\n\t}\n\treturn a\n}\n\nfunc modSub(a, b int64) int64 {\n\ta -= b\n\tif a < 0 {\n\t\ta += MOD\n\t}\n\treturn a\n}\n\nfunc modMul(a, b int64) int64 {\n\treturn (a * b) % MOD\n}\n\nfunc modPow(a, e int64) int64 {\n\tres := int64(1)\n\tfor e > 0 {\n\t\tif e&1 == 1 {\n\t\t\tres = modMul(res, a)\n\t\t}\n\t\ta = modMul(a, a)\n\t\te >>= 1\n\t}\n\treturn res\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n, k int\n\tfmt.Fscan(in, &n, &k)\n\n\tif k == 1 {\n\t\t// All permutations except those with n at the end\n\t\t// count = n! - (n-1)! = (n-1)! * (n-1)\n\t\tfact := int64(1)\n\t\tfor i := 2; i <= n; i++ {\n\t\t\tfact = modMul(fact, int64(i))\n\t\t}\n\t\tfactNm1 := modMul(fact, modPow(int64(n), MOD-2)) // (n-1)!\n\t\tans := modMul(factNm1, int64(n-1))\n\t\tfmt.Println(ans % MOD)\n\t\treturn\n\t}\n\n\t// Precompute factorials and inverse factorials\n\tfact := make([]int64, n+1)\n\tifact := make([]int64, n+1)\n\tfact[0] = 1\n\tfor i := 1; i <= n; i++ {\n\t\tfact[i] = modMul(fact[i-1], int64(i))\n\t}\n\tifact[n] = modPow(fact[n], MOD-2)\n\tfor i := n; i > 0; i-- {\n\t\tifact[i-1] = modMul(ifact[i], int64(i))\n\t}\n\n\t// dp[i] = number of permutations of size i where max is found correctly (ans = i)\n\tdp := make([]int64, n+1)\n\tdp[0] = 1\n\n\tfor i := 1; i <= n; i++ {\n\t\tif i <= k {\n\t\t\tdp[i] = fact[i]\n\t\t} else {\n\t\t\t// dp[i] = i! - sum_{t=0}^{i-k-1} C(i-1, t) * dp[t] * (i-1-t)!\n\t\t\tsum := int64(0)\n\t\t\tlimit := i - k - 1\n\t\t\tfor t := 0; t <= limit; t++ {\n\t\t\t\t// C(i-1, t) = fact[i-1] * ifact[t] * ifact[i-1-t]\n\t\t\t\tcomb := modMul(fact[i-1], modMul(ifact[t], ifact[i-1-t]))\n\t\t\t\tterm := modMul(comb, modMul(dp[t], fact[i-1-t]))\n\t\t\t\tsum = modAdd(sum, term)\n\t\t\t}\n\t\t\tdp[i] = modSub(fact[i], sum)\n\t\t}\n\t}\n\n\tans := modSub(fact[n], dp[n])\n\tfmt.Println(ans % MOD)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst MOD int64 = 1000000007\n\nfunc modAdd(a, b int64) int64 {\n\ta += b\n\tif a >= MOD {\n\t\ta -= MOD\n\t}\n\treturn a\n}\n\nfunc modSub(a, b int64) int64 {\n\ta -= b\n\tif a < 0 {\n\t\ta += MOD\n\t}\n\treturn a\n}\n\nfunc modMul(a, b int64) int64 {\n\treturn (a * b) % MOD\n}\n\nfunc modPow(a, e int64) int64 {\n\tres := int64(1)\n\tfor e > 0 {\n\t\tif e&1 == 1 {\n\t\t\tres = modMul(res, a)\n\t\t}\n\t\ta = modMul(a, a)\n\t\te >>= 1\n\t}\n\treturn res\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n, k int\n\tfmt.Fscan(in, &n, &k)\n\n\tif k == 1 {\n\t\t// Only permutation [1..n] returns n; others fail\n\t\t// answer = n! - 1\n\t\tfact := int64(1)\n\t\tfor i := 2; i <= n; i++ {\n\t\t\tfact = modMul(fact, int64(i))\n\t\t}\n\t\tans := modSub(fact, 1)\n\t\tfmt.Println(ans)\n\t\treturn\n\t}\n\n\t// Precompute factorials and inverse factorials up to n\n\tfact := make([]int64, n+1)\n\tifact := make([]int64, n+1)\n\tfact[0] = 1\n\tfor i := 1; i <= n; i++ {\n\t\tfact[i] = modMul(fact[i-1], int64(i))\n\t}\n\tifact[n] = modPow(fact[n], MOD-2)\n\tfor i := n; i > 0; i-- {\n\t\tifact[i-1] = modMul(ifact[i], int64(i))\n\t}\n\n\t// Precompute powers of 2 up to n\n\tpow2 := make([]int64, n+1)\n\tpow2[0] = 1\n\tfor i := 1; i <= n; i++ {\n\t\tpow2[i] = modMul(pow2[i-1], 2)\n\t}\n\n\t// dp[t] = number of sequences of length t over {max, non-max}\n\t// with no run of k consecutive non-max, ending with a non-max.\n\t// We only need dp up to t = n-1.\n\tdp := make([]int64, n)\n\tdp[0] = 0\n\tfor t := 1; t <= n-1; t++ {\n\t\tval := modMul(2, dp[t-1])\n\t\tif t >= k {\n\t\t\tval = modSub(val, dp[t-k])\n\t\t}\n\t\tdp[t] = val\n\t}\n\n\t// Compute answer: sum over t = k..n-1 of C(n-1, t) * dp[t] * (n-1-t)!\n\tans := int64(0)\n\tfor t := k; t <= n-1; t++ {\n\t\tcomb := modMul(fact[n-1], modMul(ifact[t], ifact[n-1-t]))\n\t\tways := modMul(comb, modMul(dp[t], fact[n-1-t]))\n\t\tans = modAdd(ans, ways)\n\t}\n\n\tfmt.Println(ans)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst MOD int64 = 1000000007\n\nfunc modAdd(a, b int64) int64 {\n\ta += b\n\tif a >= MOD {\n\t\ta -= MOD\n\t}\n\treturn a\n}\n\nfunc modSub(a, b int64) int64 {\n\ta -= b\n\tif a < 0 {\n\t\ta += MOD\n\t}\n\treturn a\n}\n\nfunc modMul(a, b int64) int64 {\n\treturn (a * b) % MOD\n}\n\nfunc modPow(a, e int64) int64 {\n\tres := int64(1)\n\tfor e > 0 {\n\t\tif e&1 == 1 {\n\t\t\tres = modMul(res, a)\n\t\t}\n\t\ta = modMul(a, a)\n\t\te >>= 1\n\t}\n\treturn res\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n, k int\n\tfmt.Fscan(in, &n, &k)\n\n\tif k == 1 {\n\t\t// Only permutation where max is n is [1..n]\n\t\t// Answer = n! - 1\n\t\tfact := int64(1)\n\t\tfor i := 2; i <= n; i++ {\n\t\t\tfact = modMul(fact, int64(i))\n\t\t}\n\t\tans := modSub(fact, 1)\n\t\tfmt.Println(ans)\n\t\treturn\n\t}\n\n\t// Precompute factorials and inverse factorials up to n\n\tfact := make([]int64, n+1)\n\tifact := make([]int64, n+1)\n\tfact[0] = 1\n\tfor i := 1; i <= n; i++ {\n\t\tfact[i] = modMul(fact[i-1], int64(i))\n\t}\n\tifact[n] = modPow(fact[n], MOD-2)\n\tfor i := n; i > 0; i-- {\n\t\tifact[i-1] = modMul(ifact[i], int64(i))\n\t}\n\n\t// Precompute powers of (k-1) up to n\n\tpow := make([]int64, n+1)\n\tpow[0] = 1\n\tbase := int64(k - 1)\n\tfor i := 1; i <= n; i++ {\n\t\tpow[i] = modMul(pow[i-1], base)\n\t}\n\n\t// Compute number of permutations where max is n\n\t// ans = sum_{i=0..n} C(n, i) * (k-1)^i\n\tans := int64(0)\n\tfor i := 0; i <= n; i++ {\n\t\t// C(n, i) = fact[n] * ifact[i] * ifact[n-i]\n\t\tcomb := modMul(fact[n], modMul(ifact[i], ifact[n-i]))\n\t\tterm := modMul(comb, pow[i])\n\t\tans = modAdd(ans, term)\n\t}\n\n\t// Total permutations = n!\n\ttotal := fact[n]\n\t// Faulty permutations = total - ans\n\tres := modSub(total, ans)\n\tfmt.Println(res)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst MOD int64 = 1000000007\n\nfunc modAdd(a, b int64) int64 {\n\ta += b\n\tif a >= MOD {\n\t\ta -= MOD\n\t}\n\treturn a\n}\n\nfunc modMul(a, b int64) int64 {\n\treturn (a * b) % MOD\n}\n\nfunc modPow(a, e int64) int64 {\n\tres := int64(1)\n\tfor e > 0 {\n\t\tif e&1 == 1 {\n\t\t\tres = modMul(res, a)\n\t\t}\n\t\ta = modMul(a, a)\n\t\te >>= 1\n\t}\n\treturn res\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n, k int\n\tfmt.Fscan(in, &n, &k)\n\n\tif k == 1 {\n\t\t// Only permutation with max=n is [1..n]\n\t\t// So answer = n! - 1\n\t\tfact := int64(1)\n\t\tfor i := 2; i <= n; i++ {\n\t\t\tfact = modMul(fact, int64(i))\n\t\t}\n\t\tans := fact - 1\n\t\tif ans < 0 {\n\t\t\tans += MOD\n\t\t}\n\t\tfmt.Println(ans)\n\t\treturn\n\t}\n\n\t// Precompute factorials and inverse factorials\n\tfact := make([]int64, n+1)\n\tifact := make([]int64, n+1)\n\tfact[0] = 1\n\tfor i := 1; i <= n; i++ {\n\t\tfact[i] = modMul(fact[i-1], int64(i))\n\t}\n\tifact[n] = modPow(fact[n], MOD-2)\n\tfor i := n; i > 0; i-- {\n\t\tifact[i-1] = modMul(ifact[i], int64(i))\n\t}\n\n\t// Precompute powers of 2 up to n\n\tpow2 := make([]int64, n+1)\n\tpow2[0] = 1\n\tfor i := 1; i <= n; i++ {\n\t\tpow2[i] = modAdd(pow2[i-1], pow2[i-1])\n\t}\n\n\t// dp[t] for t = 0..k-1\n\tdp := make([]int64, k)\n\tdp[0] = 1\n\tfor t := 1; t < k; t++ {\n\t\tdp[t] = modAdd(dp[t-1], pow2[t-1])\n\t}\n\n\t// Compute sum over t=0..k-1 of dp[t] * C(n-1, t)\n\tans := int64(0)\n\tfor t := 0; t < k && t <= n-1; t++ {\n\t\tcomb := fact[n-1]\n\t\tcomb = modMul(comb, ifact[t])\n\t\tcomb = modMul(comb, ifact[n-1-t])\n\t\tans = modAdd(ans, modMul(dp[t], comb))\n\t}\n\n\t// Total permutations with max != n\n\ttotal := fact[n]\n\tres := total - ans\n\tif res < 0 {\n\t\tres += MOD\n\t}\n\tfmt.Println(res)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 5791,
+            "prompt_tokens": 511,
+            "total_tokens": 6302,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 2,
+                "engine_ttft_ms": 318,
+                "engine_ttlt_ms": 12346,
+                "pre_inference_ms": 197,
+                "service_tbt_ms": 2,
+                "service_ttft_ms": 705,
+                "service_ttlt_ms": 12665,
+                "total_duration_ms": 12476,
+                "user_visible_ttft_ms": 509
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Go to solve this programming problem:\nDescription: One day Petya was solving a very interesting problem. But although he used many optimization techniques, his solution still got Time limit exceeded verdict. Petya conducted a thorough analysis of his program and found out that his function for finding maximum element in an array of n positive integers was too slow. Desperate, Petya decided to use a somewhat unexpected optimization using parameter k, so now his function contains the following code:int fast_max(int n, int a[]) {     int ans = 0;    int offset = 0;    for (int i = 0; i &lt; n; ++i)        if (ans &lt; a[i]) {            ans = a[i];            offset = 0;        } else {            offset = offset + 1;            if (offset == k)                return ans;        }    return ans;}That way the function iteratively checks array elements, storing the intermediate maximum, and if after k consecutive iterations that maximum has not changed, it is returned as the answer.Now Petya is interested in fault rate of his function. He asked you to find the number of permutations of integers from 1 to n such that the return value of his function on those permutations is not equal to n. Since this number could be very big, output the answer modulo 109\u2009+\u20097.\nInput Specification: The only line contains two integers n and k (1\u2009\u2264\u2009n,\u2009k\u2009\u2264\u2009106), separated by a space\u00a0\u2014 the length of the permutations and the parameter k.\nOutput Specification: Output the answer to the problem modulo 109\u2009+\u20097.\n\nSample Input:\n5 2\nSample Output:\n22\n\nSample Input:\n5 3\nSample Output:\n6\n\nSample Input:\n6 3\nSample Output:\n84\n\nNotes: NotePermutations from second example: [4,\u20091,\u20092,\u20093,\u20095], [4,\u20091,\u20093,\u20092,\u20095], [4,\u20092,\u20091,\u20093,\u20095], [4,\u20092,\u20093,\u20091,\u20095], [4,\u20093,\u20091,\u20092,\u20095], [4,\u20093,\u20092,\u20091,\u20095].\nTake input from standard input and output to standard output\nProvide the Go code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "0644605611a2cd10ab3a9f12f18d7ae4",
+        "difficulty": 2400,
+        "prob_desc_sample_inputs": [
+            "5 2",
+            "5 3",
+            "6 3"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "dp",
+            "combinatorics",
+            "math"
+        ],
+        "prob_desc_output_spec": "Output the answer to the problem modulo 109\u2009+\u20097.",
+        "prob_desc_input_spec": "The only line contains two integers n and k (1\u2009\u2264\u2009n,\u2009k\u2009\u2264\u2009106), separated by a space\u00a0\u2014 the length of the permutations and the parameter k.",
+        "lang_cluster": "Go",
+        "source_code": "",
+        "prob_desc_notes": "NotePermutations from second example: [4,\u20091,\u20092,\u20093,\u20095], [4,\u20091,\u20093,\u20092,\u20095], [4,\u20092,\u20091,\u20093,\u20095], [4,\u20092,\u20093,\u20091,\u20095], [4,\u20093,\u20091,\u20092,\u20095], [4,\u20093,\u20092,\u20091,\u20095].",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "One day Petya was solving a very interesting problem. But although he used many optimization techniques, his solution still got Time limit exceeded verdict. Petya conducted a thorough analysis of his program and found out that his function for finding maximum element in an array of n positive integers was too slow. Desperate, Petya decided to use a somewhat unexpected optimization using parameter k, so now his function contains the following code:int fast_max(int n, int a[]) {     int ans = 0;    int offset = 0;    for (int i = 0; i &lt; n; ++i)        if (ans &lt; a[i]) {            ans = a[i];            offset = 0;        } else {            offset = offset + 1;            if (offset == k)                return ans;        }    return ans;}That way the function iteratively checks array elements, storing the intermediate maximum, and if after k consecutive iterations that maximum has not changed, it is returned as the answer.Now Petya is interested in fault rate of his function. He asked you to find the number of permutations of integers from 1 to n such that the return value of his function on those permutations is not equal to n. Since this number could be very big, output the answer modulo 109\u2009+\u20097.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1510502700",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "22",
+            "6",
+            "84"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"5 2\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"5 3\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"6 3\\r\\n\", \"output\": [\"84\"]}, {\"input\": \"5 10\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"1 1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 2\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"3 2\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 3\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"4 1\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"4 2\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"4 3\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"4 4\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 1\\r\\n\", \"output\": [\"55\"]}, {\"input\": \"5 4\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 5\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"1000000 500000\\r\\n\", \"output\": [\"900097839\"]}, {\"input\": \"1000000 1000000\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"1000000 1\\r\\n\", \"output\": [\"131797017\"]}, {\"input\": \"1 1000000\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"959139 199252\\r\\n\", \"output\": [\"770937198\"]}, {\"input\": \"9859 748096\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"125987 264237\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"209411 813081\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"325539 329221\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"376259 910770\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"492387 235422\\r\\n\", \"output\": [\"249147139\"]}, {\"input\": \"608515 751563\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"691939 300407\\r\\n\", \"output\": [\"700547157\"]}, {\"input\": \"30518 196518\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"146646 521171\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"230070 37311\\r\\n\", \"output\": [\"993306535\"]}, {\"input\": \"313494 586155\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"396918 167704\\r\\n\", \"output\": [\"943821934\"]}, {\"input\": \"513046 683844\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"629174 232688\\r\\n\", \"output\": [\"831745227\"]}, {\"input\": \"679894 524637\\r\\n\", \"output\": [\"655418678\"]}, {\"input\": \"796022 73481\\r\\n\", \"output\": [\"883548575\"]}, {\"input\": \"879446 655030\\r\\n\", \"output\": [\"563982505\"]}, {\"input\": \"405440 588704\\r\\n\", \"output\": [\"0\"]}]"
+    }
+}

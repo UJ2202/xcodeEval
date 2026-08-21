@@ -1,0 +1,350 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEHpst7j6GaSfLuhZGGJvhrkwgdYk",
+        "created": 1787073860,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n, m int\n\tfmt.Fscan(in, &n, &m)\n\tN := n * m\n\n\t// Enumerate cells\n\ttype Cell struct{ r, c int }\n\tcells := make([]Cell, 0, N)\n\tfor i := 0; i < n; i++ {\n\t\tfor j := 0; j < m; j++ {\n\t\t\tcells = append(cells, Cell{i, j})\n\t\t}\n\t}\n\n\t// Precompute neighbors (including staying)\n\tneighbors := make([][]int, N)\n\tfor idx, cell := range cells {\n\t\tr, c := cell.r, cell.c\n\t\tvar ns []int\n\t\tns = append(ns, idx) // stay\n\t\tif r > 0 {\n\t\t\tns = append(ns, (r-1)*m+c)\n\t\t}\n\t\tif r+1 < n {\n\t\t\tns = append(ns, (r+1)*m+c)\n\t\t}\n\t\tif c > 0 {\n\t\t\tns = append(ns, r*m+(c-1))\n\t\t}\n\t\tif c+1 < m {\n\t\t\tns = append(ns, r*m+(c+1))\n\t\t}\n\t\tneighbors[idx] = ns\n\t}\n\n\tmaxFree := 0\n\ttotalMasks := 1 << N\n\n\t// For each subset of empty cells\n\tfor mask := 0; mask < totalMasks; mask++ {\n\t\toccupiedCount := N - bitsCount(mask)\n\t\tif occupiedCount <= maxFree {\n\t\t\tcontinue\n\t\t}\n\t\t// Build bipartite graph: spiders (left) -> target cells (right)\n\t\tadj := make([][]int, N)\n\t\tfor i := 0; i < N; i++ {\n\t\t\tif (mask>>i)&1 != 0 {\n\t\t\t\tcontinue // cell i is empty, no spider\n\t\t\t}\n\t\t\tfor _, to := range neighbors[i] {\n\t\t\t\tif (mask>>to)&1 == 0 { // target must be occupied cell\n\t\t\t\t\tadj[i] = append(adj[i], to)\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\t// Maximum bipartite matching\n\t\tmatchR := make([]int, N)\n\t\tfor i := range matchR {\n\t\t\tmatchR[i] = -1\n\t\t}\n\n\t\tvar dfs func(int, []bool) bool\n\t\tdfs = func(v int, used []bool) bool {\n\t\t\tfor _, to := range adj[v] {\n\t\t\t\tif used[to] {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tused[to] = true\n\t\t\t\tif matchR[to] == -1 || dfs(matchR[to], used) {\n\t\t\t\t\tmatchR[to] = v\n\t\t\t\t\treturn true\n\t\t\t\t}\n\t\t\t}\n\t\t\treturn false\n\t\t}\n\n\t\tmatched := 0\n\t\tfor i := 0; i < N; i++ {\n\t\t\tif (mask>>i)&1 != 0 {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tused := make([]bool, N)\n\t\t\tif dfs(i, used) {\n\t\t\t\tmatched++\n\t\t\t}\n\t\t}\n\n\t\tif matched == occupiedCount {\n\t\t\tif N-occupiedCount > maxFree {\n\t\t\t\tmaxFree = N - occupiedCount\n\t\t\t}\n\t\t}\n\t}\n\n\tfmt.Println(maxFree)\n}\n\nfunc bitsCount(x int) int {\n\t// simple popcount for small N (<=40)\n\tcnt := 0\n\tfor x > 0 {\n\t\tcnt += x & 1\n\t\tx >>= 1\n\t}\n\treturn cnt\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\ntype Edge struct {\n\tto   int\n\trev  int\n\tcap  int\n}\n\ntype Dinic struct {\n\tn     int\n\tg     [][]Edge\n\tlevel []int\n\tit    []int\n}\n\nfunc NewDinic(n int) *Dinic {\n\treturn &Dinic{\n\t\tn:     n,\n\t\tg:     make([][]Edge, n),\n\t\tlevel: make([]int, n),\n\t\tit:    make([]int, n),\n\t}\n}\n\nfunc (d *Dinic) addEdge(from, to, cap int) {\n\tfwd := Edge{to: to, rev: len(d.g[to]), cap: cap}\n\trev := Edge{to: from, rev: len(d.g[from]), cap: 0}\n\td.g[from] = append(d.g[from], fwd)\n\td.g[to] = append(d.g[to], rev)\n}\n\nfunc min(a, b int) int {\n\tif a < b {\n\t\treturn a\n\t}\n\treturn b\n}\n\nfunc (d *Dinic) bfs(s, t int) bool {\n\tfor i := range d.level {\n\t\td.level[i] = -1\n\t}\n\tqueue := []int{s}\n\td.level[s] = 0\n\tfor len(queue) > 0 {\n\t\tv := queue[0]\n\t\tqueue = queue[1:]\n\t\tfor _, e := range d.g[v] {\n\t\t\tif e.cap > 0 && d.level[e.to] < 0 {\n\t\t\t\td.level[e.to] = d.level[v] + 1\n\t\t\t\tqueue = append(queue, e.to)\n\t\t\t}\n\t\t}\n\t}\n\treturn d.level[t] >= 0\n}\n\nfunc (d *Dinic) dfs(v, t, f int) int {\n\tif v == t {\n\t\treturn f\n\t}\n\tfor ; d.it[v] < len(d.g[v]); d.it[v]++ {\n\t\tei := d.it[v]\n\t\te := &d.g[v][ei]\n\t\tif e.cap > 0 && d.level[v] < d.level[e.to] {\n\t\t\tdelta := d.dfs(e.to, t, min(f, e.cap))\n\t\t\tif delta > 0 {\n\t\t\t\te.cap -= delta\n\t\t\t\tre := &d.g[e.to][e.rev]\n\t\t\t\tre.cap += delta\n\t\t\t\treturn delta\n\t\t\t}\n\t\t}\n\t}\n\treturn 0\n}\n\nfunc (d *Dinic) maxFlow(s, t int) int {\n\tflow := 0\n\tfor d.bfs(s, t) {\n\t\tfor i := range d.it {\n\t\t\td.it[i] = 0\n\t\t}\n\t\tfor {\n\t\t\tf := d.dfs(s, t, 1<<30)\n\t\t\tif f == 0 {\n\t\t\t\tbreak\n\t\t\t}\n\t\t\tflow += f\n\t\t}\n\t}\n\treturn flow\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n, m int\n\tfmt.Fscan(in, &n, &m)\n\n\ttotal := n * m\n\tif total == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\n\t// Directions: stay, up, down, left, right\n\tdirs := [][2]int{{0, 0}, {-1, 0}, {1, 0}, {0, -1}, {0, 1}}\n\n\t// Precompute possible moves for each cell\n\ttype Move struct {\n\t\tto int\n\t}\n\tmoves := make([][]Move, total)\n\tfor i := 0; i < n; i++ {\n\t\tfor j := 0; j < m; j++ {\n\t\t\tid := i*m + j\n\t\t\tfor _, d := range dirs {\n\t\t\t\tni, nj := i+d[0], j+d[1]\n\t\t\t\tif ni >= 0 && ni < n && nj >= 0 && nj < m {\n\t\t\t\t\tto := ni*m + nj\n\t\t\t\t\tmoves[id] = append(moves[id], Move{to})\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\t// Build bipartite graph: left side = spiders (one per cell), right side = cells\n\t// Edge from spider s to cell c if spider at cell s can move/stay to cell c\n\t// We want maximum matching size = maximum number of occupied cells\n\t// Answer = total cells - maximum matching\n\tS := total * 2\n\tT := S + 1\n\tdinic := NewDinic(T + 1)\n\n\t// Left nodes: 0..total-1 (spiders)\n\t// Right nodes: total..2*total-1 (cells)\n\tfor s := 0; s < total; s++ {\n\t\tdinic.addEdge(S, s, 1)\n\t}\n\tfor c := 0; c < total; c++ {\n\t\tdinic.addEdge(total+c, T, 1)\n\t}\n\n\tfor s := 0; s < total; s++ {\n\t\tfor _, mv := range moves[s] {\n\t\t\tc := mv.to\n\t\t\tdinic.addEdge(s, total+c, 1)\n\t\t}\n\t}\n\n\tmaxMatching := dinic.maxFlow(S, T)\n\tans := total - maxMatching\n\tfmt.Println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst INF = int(1e9)\n\ntype Edge struct {\n\tto   int\n\trev  int\n\tcap  int\n}\n\ntype Dinic struct {\n\tn     int\n\tgraph [][]Edge\n\tlevel []int\n\titer  []int\n}\n\nfunc NewDinic(n int) *Dinic {\n\treturn &Dinic{\n\t\tn:     n,\n\t\tgraph: make([][]Edge, n),\n\t\tlevel: make([]int, n),\n\t\titer:  make([]int, n),\n\t}\n}\n\nfunc (d *Dinic) addEdge(from, to, cap int) {\n\tfwd := Edge{to: to, rev: len(d.graph[to]), cap: cap}\n\trev := Edge{to: from, rev: len(d.graph[from]), cap: 0}\n\td.graph[from] = append(d.graph[from], fwd)\n\td.graph[to] = append(d.graph[to], rev)\n}\n\nfunc (d *Dinic) bfs(s, t int) bool {\n\tfor i := range d.level {\n\t\td.level[i] = -1\n\t}\n\tqueue := []int{s}\n\td.level[s] = 0\n\tfor len(queue) > 0 {\n\t\tv := queue[0]\n\t\tqueue = queue[1:]\n\t\tfor _, e := range d.graph[v] {\n\t\t\tif e.cap > 0 && d.level[e.to] < 0 {\n\t\t\t\td.level[e.to] = d.level[v] + 1\n\t\t\t\tqueue = append(queue, e.to)\n\t\t\t}\n\t\t}\n\t}\n\treturn d.level[t] >= 0\n}\n\nfunc (d *Dinic) dfs(v, t, f int) int {\n\tif v == t {\n\t\treturn f\n\t}\n\tfor ; d.iter[v] < len(d.graph[v]); d.iter[v]++ {\n\t\te := &d.graph[v][d.iter[v]]\n\t\tif e.cap > 0 && d.level[v] < d.level[e.to] {\n\t\t\tdmin := f\n\t\t\tif e.cap < dmin {\n\t\t\t\tdmin = e.cap\n\t\t\t}\n\t\t\tdflow := d.dfs(e.to, t, dmin)\n\t\t\tif dflow > 0 {\n\t\t\t\te.cap -= dflow\n\t\t\t\td.graph[e.to][e.rev].cap += dflow\n\t\t\t\treturn dflow\n\t\t\t}\n\t\t}\n\t}\n\treturn 0\n}\n\nfunc (d *Dinic) maxFlow(s, t int) int {\n\tflow := 0\n\tfor d.bfs(s, t) {\n\t\tfor i := range d.iter {\n\t\t\td.iter[i] = 0\n\t\t}\n\t\tfor {\n\t\t\tf := d.dfs(s, t, INF)\n\t\t\tif f == 0 {\n\t\t\t\tbreak\n\t\t\t}\n\t\t\tflow += f\n\t\t}\n\t}\n\treturn flow\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n, m int\n\tfmt.Fscan(in, &n, &m)\n\n\ttotal := n * m\n\tif total == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\n\t// Node indexing:\n\t// 0 .. total-1 : initial cells\n\t// total .. 2*total-1 : final cells\n\t// S = 2*total, T = 2*total+1\n\tS := 2 * total\n\tT := 2*total + 1\n\tdinic := NewDinic(2*total + 2)\n\n\tid := func(i, j int) int {\n\t\treturn i*m + j\n\t}\n\n\t// Directions: stay, up, down, left, right\n\tdirs := [][2]int{{0, 0}, {-1, 0}, {1, 0}, {0, -1}, {0, 1}}\n\n\tfor i := 0; i < n; i++ {\n\t\tfor j := 0; j < m; j++ {\n\t\t\tu := id(i, j)\n\t\t\t// Source to initial cell\n\t\t\tdinic.addEdge(S, u, 1)\n\t\t\t// Final cell to sink\n\t\t\tfinal := total + u\n\t\t\tdinic.addEdge(final, T, 1)\n\n\t\t\t// Moves\n\t\t\tfor _, dxy := range dirs {\n\t\t\t\tni, nj := i+dxy[0], j+dxy[1]\n\t\t\t\tif ni >= 0 && ni < n && nj >= 0 && nj < m {\n\t\t\t\t\tv := id(ni, nj)\n\t\t\t\t\tfinalV := total + v\n\t\t\t\t\tdinic.addEdge(u, finalV, 1)\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tmaxMatch := dinic.maxFlow(S, T)\n\t// Maximum spider-free cells = total cells - number of occupied cells\n\t// Number of occupied cells equals size of maximum matching\n\tfmt.Println(total - maxMatch)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst INF = int(1e9)\n\ntype Edge struct {\n\tto   int\n\trev  int\n\tcap  int\n}\n\ntype Dinic struct {\n\tn    int\n\tg    [][]Edge\n\tlevel []int\n\tit   []int\n}\n\nfunc NewDinic(n int) *Dinic {\n\treturn &Dinic{\n\t\tn:     n,\n\t\tg:     make([][]Edge, n),\n\t\tlevel: make([]int, n),\n\t\tit:    make([]int, n),\n\t}\n}\n\nfunc (d *Dinic) addEdge(from, to, cap int) {\n\tfwd := Edge{to: to, rev: len(d.g[to]), cap: cap}\n\trev := Edge{to: from, rev: len(d.g[from]), cap: 0}\n\td.g[from] = append(d.g[from], fwd)\n\td.g[to] = append(d.g[to], rev)\n}\n\nfunc min(a, b int) int {\n\tif a < b {\n\t\treturn a\n\t}\n\treturn b\n}\n\nfunc (d *Dinic) bfs(s, t int) bool {\n\tfor i := range d.level {\n\t\td.level[i] = -1\n\t}\n\tqueue := []int{s}\n\td.level[s] = 0\n\tfor len(queue) > 0 {\n\t\tv := queue[0]\n\t\tqueue = queue[1:]\n\t\tfor _, e := range d.g[v] {\n\t\t\tif e.cap > 0 && d.level[e.to] < 0 {\n\t\t\t\td.level[e.to] = d.level[v] + 1\n\t\t\t\tqueue = append(queue, e.to)\n\t\t\t}\n\t\t}\n\t}\n\treturn d.level[t] >= 0\n}\n\nfunc (d *Dinic) dfs(v, t, f int) int {\n\tif v == t {\n\t\treturn f\n\t}\n\tfor ; d.it[v] < len(d.g[v]); d.it[v]++ {\n\t\ti := d.it[v]\n\t\te := &d.g[v][i]\n\t\tif e.cap > 0 && d.level[v] < d.level[e.to] {\n\t\t\tdmin := d.dfs(e.to, t, min(f, e.cap))\n\t\t\tif dmin > 0 {\n\t\t\t\te.cap -= dmin\n\t\t\t\td.g[e.to][e.rev].cap += dmin\n\t\t\t\treturn dmin\n\t\t\t}\n\t\t}\n\t}\n\treturn 0\n}\n\nfunc (d *Dinic) maxFlow(s, t int) int {\n\tflow := 0\n\tfor d.bfs(s, t) {\n\t\tfor i := range d.it {\n\t\t\td.it[i] = 0\n\t\t}\n\t\tfor {\n\t\t\tf := d.dfs(s, t, INF)\n\t\t\tif f == 0 {\n\t\t\t\tbreak\n\t\t\t}\n\t\t\tflow += f\n\t\t}\n\t}\n\treturn flow\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n, m int\n\tfmt.Fscan(in, &n, &m)\n\n\ttotal := n * m\n\tif total == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\n\t// Node indexing:\n\t// For each cell i: in = 2*i, out = 2*i+1\n\t// source = 2*total, sink = 2*total+1\n\tN := 2*total + 2\n\tsource := 2 * total\n\tsink := 2*total + 1\n\tdinic := NewDinic(N)\n\n\tid := func(r, c int) int {\n\t\treturn r*m + c\n\t}\n\n\t// Directions: up, down, left, right\n\tdr := []int{-1, 1, 0, 0}\n\tdc := []int{0, 0, -1, 1}\n\n\tfor r := 0; r < n; r++ {\n\t\tfor c := 0; c < m; c++ {\n\t\t\tcell := id(r, c)\n\t\t\tin := 2 * cell\n\t\t\tout := 2*cell + 1\n\n\t\t\t// capacity 1 for staying in the same cell\n\t\t\tdinic.addEdge(in, out, 1)\n\n\t\t\t// edges to neighbors (capacity INF)\n\t\t\tfor k := 0; k < 4; k++ {\n\t\t\t\tnr := r + dr[k]\n\t\t\t\tnc := c + dc[k]\n\t\t\t\tif nr >= 0 && nr < n && nc >= 0 && nc < m {\n\t\t\t\t\tncell := id(nr, nc)\n\t\t\t\t\tnin := 2 * ncell\n\t\t\t\t\tdinic.addEdge(in, nin, INF)\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tif (r+c)%2 == 0 {\n\t\t\t\t// left partition: source -> in\n\t\t\t\tdinic.addEdge(source, in, 1)\n\t\t\t} else {\n\t\t\t\t// right partition: out -> sink\n\t\t\t\tdinic.addEdge(out, sink, 1)\n\t\t\t}\n\t\t}\n\t}\n\n\t// For odd total, we still run maxflow; construction handles it.\n\tmaxMatching := dinic.maxFlow(source, sink)\n\tresult := total - maxMatching\n\tfmt.Println(result)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n, m int\n\tfmt.Fscan(in, &n, &m)\n\ttotal := n * m\n\n\t// Build bipartite graph: black cells -> white cells\n\t// color by (i+j)%2\n\ttype Edge struct {\n\t\tto int\n\t}\n\t// map cell (i,j) to id\n\tid := make([][]int, n)\n\tfor i := 0; i < n; i++ {\n\t\tid[i] = make([]int, m)\n\t}\n\tblackCount, whiteCount := 0, 0\n\tfor i := 0; i < n; i++ {\n\t\tfor j := 0; j < m; j++ {\n\t\t\tif (i+j)%2 == 0 {\n\t\t\t\tid[i][j] = blackCount\n\t\t\t\tblackCount++\n\t\t\t} else {\n\t\t\t\tid[i][j] = whiteCount\n\t\t\t\twhiteCount++\n\t\t\t}\n\t\t}\n\t}\n\n\tadj := make([][]int, blackCount)\n\tdirs := [][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}\n\tfor i := 0; i < n; i++ {\n\t\tfor j := 0; j < m; j++ {\n\t\t\tif (i+j)%2 != 0 {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tu := id[i][j]\n\t\t\tfor _, d := range dirs {\n\t\t\t\tni, nj := i+d[0], j+d[1]\n\t\t\t\tif ni >= 0 && ni < n && nj >= 0 && nj < m {\n\t\t\t\t\tv := id[ni][nj]\n\t\t\t\t\tadj[u] = append(adj[u], v)\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\t// Maximum bipartite matching (Kuhn)\n\tmatchR := make([]int, whiteCount)\n\tfor i := range matchR {\n\t\tmatchR[i] = -1\n\t}\n\tvar used []bool\n\tvar dfs func(int) bool\n\tdfs = func(v int) bool {\n\t\tfor _, to := range adj[v] {\n\t\t\tif used[to] {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tused[to] = true\n\t\t\tif matchR[to] == -1 || dfs(matchR[to]) {\n\t\t\t\tmatchR[to] = v\n\t\t\t\treturn true\n\t\t\t}\n\t\t}\n\t\treturn false\n\t}\n\n\tmatching := 0\n\tfor v := 0; v < blackCount; v++ {\n\t\tused = make([]bool, whiteCount)\n\t\tif dfs(v) {\n\t\t\tmatching++\n\t\t}\n\t}\n\n\t// Each matched edge can host 2 spiders; unmatched cells host 1\n\toccupied := 2*matching + (total - 2*matching)\n\t// But we can place at most one spider per cell initially; after movement,\n\t// each matched pair can be merged into one cell, freeing one cell.\n\t// So maximum free cells = matching\n\t// However, total cells - occupied after merging:\n\t// occupied after merging = total - matching\n\t// free = matching\n\tfreeCells := matching\n\tfmt.Println(freeCells)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\ntype Edge struct {\n\tto   int\n\trev  int\n\tcap  int\n}\n\ntype Dinic struct {\n\tn     int\n\tgraph [][]Edge\n\tlevel []int\n\titer  []int\n}\n\nfunc NewDinic(n int) *Dinic {\n\treturn &Dinic{\n\t\tn:     n,\n\t\tgraph: make([][]Edge, n),\n\t\tlevel: make([]int, n),\n\t\titer:  make([]int, n),\n\t}\n}\n\nfunc (d *Dinic) addEdge(from, to, cap int) {\n\tfwd := Edge{to: to, rev: len(d.graph[to]), cap: cap}\n\trev := Edge{to: from, rev: len(d.graph[from]), cap: 0}\n\td.graph[from] = append(d.graph[from], fwd)\n\td.graph[to] = append(d.graph[to], rev)\n}\n\nfunc min(a, b int) int {\n\tif a < b {\n\t\treturn a\n\t}\n\treturn b\n}\n\nfunc (d *Dinic) bfs(s, t int) bool {\n\tfor i := range d.level {\n\t\td.level[i] = -1\n\t}\n\tqueue := []int{s}\n\td.level[s] = 0\n\tfor len(queue) > 0 {\n\t\tv := queue[0]\n\t\tqueue = queue[1:]\n\t\tfor _, e := range d.graph[v] {\n\t\t\tif e.cap > 0 && d.level[e.to] < 0 {\n\t\t\t\td.level[e.to] = d.level[v] + 1\n\t\t\t\tqueue = append(queue, e.to)\n\t\t\t}\n\t\t}\n\t}\n\treturn d.level[t] >= 0\n}\n\nfunc (d *Dinic) dfs(v, t, f int) int {\n\tif v == t {\n\t\treturn f\n\t}\n\tfor ; d.iter[v] < len(d.graph[v]); d.iter[v]++ {\n\t\te := &d.graph[v][d.iter[v]]\n\t\tif e.cap > 0 && d.level[v] < d.level[e.to] {\n\t\t\tdmin := d.dfs(e.to, t, min(f, e.cap))\n\t\t\tif dmin > 0 {\n\t\t\t\te.cap -= dmin\n\t\t\t\td.graph[e.to][e.rev].cap += dmin\n\t\t\t\treturn dmin\n\t\t\t}\n\t\t}\n\t}\n\treturn 0\n}\n\nfunc (d *Dinic) maxFlow(s, t int) int {\n\tflow := 0\n\tfor d.bfs(s, t) {\n\t\tfor i := range d.iter {\n\t\t\td.iter[i] = 0\n\t\t}\n\t\tfor {\n\t\t\tf := d.dfs(s, t, 1<<30)\n\t\t\tif f == 0 {\n\t\t\t\tbreak\n\t\t\t}\n\t\t\tflow += f\n\t\t}\n\t}\n\treturn flow\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n, m int\n\tfmt.Fscan(in, &n, &m)\n\n\ttotal := n * m\n\tif total == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\n\t// Node indexing:\n\t// 0..total-1 : cells\n\t// total : stay node\n\t// total+1 : source\n\t// total+2 : sink\n\tstayNode := total\n\tsource := total + 1\n\tsink := total + 2\n\tN := total + 3\n\n\tdinic := NewDinic(N)\n\n\tid := func(i, j int) int {\n\t\treturn i*m + j\n\t}\n\n\t// Build bipartite graph: (i+j)%2 == 0 -> left side, others right side\n\tfor i := 0; i < n; i++ {\n\t\tfor j := 0; j < m; j++ {\n\t\t\tu := id(i, j)\n\t\t\tif (i+j)%2 == 0 {\n\t\t\t\t// left side\n\t\t\t\tdinic.addEdge(source, u, 1)\n\t\t\t\t// edges to neighbors\n\t\t\t\tdirs := [][2]int{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}\n\t\t\t\tfor _, d := range dirs {\n\t\t\t\t\tni, nj := i+d[0], j+d[1]\n\t\t\t\t\tif ni >= 0 && ni < n && nj >= 0 && nj < m {\n\t\t\t\t\t\tv := id(ni, nj)\n\t\t\t\t\t\tdinic.addEdge(u, v, 1)\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\t// edge to stay node\n\t\t\t\tdinic.addEdge(u, stayNode, 1)\n\t\t\t} else {\n\t\t\t\t// right side\n\t\t\t\tdinic.addEdge(u, sink, 1)\n\t\t\t}\n\t\t}\n\t}\n\n\t// stay node to sink\n\tdinic.addEdge(stayNode, sink, total)\n\n\tmaxFlow := dinic.maxFlow(source, sink)\n\t// Maximum number of spider-free cells = total - maximum matching size\n\tfmt.Println(total - maxFlow)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n, m int\n\tfmt.Fscan(in, &n, &m)\n\tN := n * m\n\n\ttype Edge struct {\n\t\tto   int\n\t\trev  int\n\t\tcap  int\n\t}\n\tgraph := make([][]Edge, N+2)\n\tS := N\n\tT := N + 1\n\n\taddEdge := func(u, v, c int) {\n\t\tgraph[u] = append(graph[u], Edge{v, len(graph[v]), c})\n\t\tgraph[v] = append(graph[v], Edge{u, len(graph[u]) - 1, 0})\n\t}\n\n\tid := func(i, j int) int {\n\t\treturn i*m + j\n\t}\n\n\tdirs := [][2]int{{0, 0}, {1, 0}, {-1, 0}, {0, 1}, {0, -1}}\n\n\tfor i := 0; i < n; i++ {\n\t\tfor j := 0; j < m; j++ {\n\t\t\tv := id(i, j)\n\t\t\tif (i+j)%2 == 0 {\n\t\t\t\taddEdge(S, v, 1)\n\t\t\t\tfor _, d := range dirs {\n\t\t\t\t\tni, nj := i+d[0], j+d[1]\n\t\t\t\t\tif ni >= 0 && ni < n && nj >= 0 && nj < m {\n\t\t\t\t\t\tu := id(ni, nj)\n\t\t\t\t\t\taddEdge(v, u, 1)\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t} else {\n\t\t\t\taddEdge(v, T, 1)\n\t\t\t}\n\t\t}\n\t}\n\n\tlevel := make([]int, N+2)\n\tit := make([]int, N+2)\n\n\tvar bfs func() bool\n\tbfs = func() bool {\n\t\tfor i := range level {\n\t\t\tlevel[i] = -1\n\t\t}\n\t\tqueue := []int{S}\n\t\tlevel[S] = 0\n\t\tfor len(queue) > 0 {\n\t\t\tv := queue[0]\n\t\t\tqueue = queue[1:]\n\t\t\tfor _, e := range graph[v] {\n\t\t\t\tif e.cap > 0 && level[e.to] < 0 {\n\t\t\t\t\tlevel[e.to] = level[v] + 1\n\t\t\t\t\tqueue = append(queue, e.to)\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\treturn level[T] >= 0\n\t}\n\n\tvar dfs func(int, int) int\n\tdfs = func(v, f int) int {\n\t\tif v == T {\n\t\t\treturn f\n\t\t}\n\t\tfor ; it[v] < len(graph[v]); it[v]++ {\n\t\t\te := &graph[v][it[v]]\n\t\t\tif e.cap > 0 && level[v] < level[e.to] {\n\t\t\t\td := dfs(e.to, min(f, e.cap))\n\t\t\t\tif d > 0 {\n\t\t\t\t\te.cap -= d\n\t\t\t\t\tgraph[e.to][e.rev].cap += d\n\t\t\t\t\treturn d\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\treturn 0\n\t}\n\n\tflow := 0\n\tfor bfs() {\n\t\tfor i := range it {\n\t\t\tit[i] = 0\n\t\t}\n\t\tfor {\n\t\t\tf := dfs(S, 1<<30)\n\t\t\tif f == 0 {\n\t\t\t\tbreak\n\t\t\t}\n\t\t\tflow += f\n\t\t}\n\t}\n\n\tfmt.Println(N - flow)\n}\n\nfunc min(a, b int) int {\n\tif a < b {\n\t\treturn a\n\t}\n\treturn b\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n, m int\n\tfmt.Fscan(in, &n, &m)\n\tN := n * m\n\n\t// Map cell (i,j) to index\n\tid := func(i, j int) int {\n\t\treturn i*m + j\n\t}\n\n\t// Precompute neighbors for each cell\n\ttype Cell struct{ x, y int }\n\tcells := make([]Cell, N)\n\tfor i := 0; i < n; i++ {\n\t\tfor j := 0; j < m; j++ {\n\t\t\tcells[id(i, j)] = Cell{i, j}\n\t\t}\n\t}\n\n\tneighbors := make([][]int, N)\n\tfor idx := 0; idx < N; idx++ {\n\t\ti, j := cells[idx].x, cells[idx].y\n\t\tns := []int{idx} // staying\n\t\tif i > 0 {\n\t\t\tns = append(ns, id(i-1, j))\n\t\t}\n\t\tif i+1 < n {\n\t\t\tns = append(ns, id(i+1, j))\n\t\t}\n\t\tif j > 0 {\n\t\t\tns = append(ns, id(i, j-1))\n\t\t}\n\t\tif j+1 < m {\n\t\t\tns = append(ns, id(i, j+1))\n\t\t}\n\t\tneighbors[idx] = ns\n\t}\n\n\tbest := 0\n\t// Enumerate all assignments: for each cell choose one neighbor index\n\t// We encode assignment as mixed radix counter: for cell i, base = len(neighbors[i])\n\t// We'll iterate via recursion or iterative increment.\n\n\t// Precompute bases\n\tbases := make([]int, N)\n\tfor i := 0; i < N; i++ {\n\t\tbases[i] = len(neighbors[i])\n\t}\n\n\tassign := make([]int, N) // current choice indices\n\n\tfor {\n\t\t// compute occupied cells bitmask\n\t\tvar mask uint64 = 0\n\t\tfor i := 0; i < N; i++ {\n\t\t\tdest := neighbors[i][assign[i]]\n\t\t\tmask |= 1 << uint(dest)\n\t\t}\n\t\t// count bits\n\t\toccupied := bitsCount(mask)\n\t\tfree := N - occupied\n\t\tif free > best {\n\t\t\tbest = free\n\t\t}\n\n\t\t// increment mixed radix counter\n\t\tpos := 0\n\t\tfor pos < N {\n\t\t\tassign[pos]++\n\t\t\tif assign[pos] < bases[pos] {\n\t\t\t\tbreak\n\t\t\t}\n\t\t\tassign[pos] = 0\n\t\t\tpos++\n\t\t}\n\t\tif pos == N {\n\t\t\tbreak\n\t\t}\n\t}\n\n\tfmt.Println(best)\n}\n\nfunc bitsCount(x uint64) int {\n\t// builtin if available; otherwise manual\n\t// Go has bits.OnesCount64, but to avoid importing math/bits, implement simple popcount\n\tx = x - ((x >> 1) & 0x5555555555555555)\n\tx = (x & 0x3333333333333333) + ((x >> 2) & 0x3333333333333333)\n\tx = (x + (x >> 4)) & 0x0f0f0f0f0f0f0f0f\n\tx = x + (x >> 8)\n\tx = x + (x >> 16)\n\tx = x + (x >> 32)\n\treturn int(x & 0x7f)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 7318,
+            "prompt_tokens": 348,
+            "total_tokens": 7666,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 3,
+                "engine_ttft_ms": 309,
+                "engine_ttlt_ms": 21489,
+                "pre_inference_ms": 164,
+                "service_tbt_ms": 3,
+                "service_ttft_ms": 605,
+                "service_ttlt_ms": 21780,
+                "total_duration_ms": 21625,
+                "user_visible_ttft_ms": 440
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Go to solve this programming problem:\nDescription: Little Petya loves training spiders. Petya has a board n\u2009\u00d7\u2009m in size. Each cell of the board initially has a spider sitting on it. After one second Petya chooses a certain action for each spider, and all of them humbly perform its commands. There are 5 possible commands: to stay idle or to move from current cell to some of the four side-neighboring cells (that is, one command for each of the four possible directions). Petya gives the commands so that no spider leaves the field. It is allowed for spiders to pass through each other when they crawl towards each other in opposite directions. All spiders crawl simultaneously and several spiders may end up in one cell. Petya wants to know the maximum possible number of spider-free cells after one second.\nInput Specification: The first line contains two space-separated integers n and m (1\u2009\u2264\u2009n,\u2009m\u2009\u2264\u200940,\u2009n\u00b7m\u2009\u2264\u200940) \u2014 the board sizes.\nOutput Specification: In the first line print the maximum number of cells without spiders.\n\nSample Input:\n1 1\nSample Output:\n0\n\nSample Input:\n2 3\nSample Output:\n4\n\nNotes: NoteIn the first sample the only possible answer is:sIn the second sample one of the possible solutions is: rdlruls denotes command \"stay idle\", l, r, d, u denote commands \"crawl left\", \"crawl right\", \"crawl down\", \"crawl up\", correspondingly.\nTake input from standard input and output to standard output\nProvide the Go code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "097674b4dd696b30e102938f71dd39b9",
+        "difficulty": 2100,
+        "prob_desc_sample_inputs": [
+            "1 1",
+            "2 3"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "bitmasks",
+            "dp",
+            "dsu"
+        ],
+        "prob_desc_output_spec": "In the first line print the maximum number of cells without spiders.",
+        "prob_desc_input_spec": "The first line contains two space-separated integers n and m (1\u2009\u2264\u2009n,\u2009m\u2009\u2264\u200940,\u2009n\u00b7m\u2009\u2264\u200940) \u2014 the board sizes.",
+        "lang_cluster": "Go",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first sample the only possible answer is:sIn the second sample one of the possible solutions is: rdlruls denotes command \"stay idle\", l, r, d, u denote commands \"crawl left\", \"crawl right\", \"crawl down\", \"crawl up\", correspondingly.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Little Petya loves training spiders. Petya has a board n\u2009\u00d7\u2009m in size. Each cell of the board initially has a spider sitting on it. After one second Petya chooses a certain action for each spider, and all of them humbly perform its commands. There are 5 possible commands: to stay idle or to move from current cell to some of the four side-neighboring cells (that is, one command for each of the four possible directions). Petya gives the commands so that no spider leaves the field. It is allowed for spiders to pass through each other when they crawl towards each other in opposite directions. All spiders crawl simultaneously and several spiders may end up in one cell. Petya wants to know the maximum possible number of spider-free cells after one second.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1315051200",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "0",
+            "4"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"1 1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 3\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"4 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"4 2\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"4 3\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"4 4\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1 40\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"1 2\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"1 3\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"1 4\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"1 5\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"1 6\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"1 7\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"1 8\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"1 9\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"1 10\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"1 11\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"1 12\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"1 13\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"1 14\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"1 15\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"1 16\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"1 17\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"1 18\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1 19\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1 20\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"1 21\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"1 22\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"1 23\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"1 24\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"1 25\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"1 26\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"1 27\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"1 28\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"1 29\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"1 30\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"1 31\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"1 32\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"1 33\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"1 34\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"1 35\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"1 36\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"1 37\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"1 38\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"1 39\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"2 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"2 2\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"2 4\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"2 5\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"2 6\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"2 7\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"2 8\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"2 9\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"2 10\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"2 11\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"2 12\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"2 13\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"2 14\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"2 15\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"2 16\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"2 17\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"2 18\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"2 19\\r\\n\", \"output\": [\"28\"]}, {\"input\": \"2 20\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"3 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"3 2\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"3 3\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"3 4\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"3 5\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"3 6\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"3 7\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"3 8\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"3 9\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"3 10\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"3 11\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"3 12\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"3 13\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"4 5\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"4 6\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"4 7\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"4 8\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"4 9\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"4 10\\r\\n\", \"output\": [\"30\"]}, {\"input\": \"5 1\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"5 2\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"5 3\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"5 4\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"5 5\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"5 6\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"5 7\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"5 8\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"6 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"6 2\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"6 3\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"6 4\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"6 5\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"6 6\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"7 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7 2\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"7 3\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 4\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"7 5\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"8 1\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"8 2\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"8 3\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"8 4\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"8 5\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"9 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"9 2\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"9 3\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"9 4\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"10 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"10 2\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"10 3\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"10 4\\r\\n\", \"output\": [\"30\"]}, {\"input\": \"11 1\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"11 2\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"11 3\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"12 1\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"12 2\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"12 3\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"13 1\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"13 2\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"13 3\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"14 1\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"14 2\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"15 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"15 2\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"16 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"16 2\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"17 1\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"17 2\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"18 1\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"18 2\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"19 1\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"19 2\\r\\n\", \"output\": [\"28\"]}, {\"input\": \"20 1\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"20 2\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"21 1\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"22 1\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"23 1\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"24 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"25 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"26 1\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"27 1\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"28 1\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"29 1\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"30 1\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"31 1\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"32 1\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"33 1\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"34 1\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"35 1\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"36 1\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"37 1\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"38 1\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"39 1\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"40 1\\r\\n\", \"output\": [\"26\"]}]"
+    }
+}

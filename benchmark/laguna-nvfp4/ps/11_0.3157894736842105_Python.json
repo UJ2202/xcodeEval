@@ -1,0 +1,393 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-9a9266d9c2055782",
+        "created": 1787079601,
+        "model": "laguna-nvfp4",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.27.1-tp2-af6339fc",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```python\nimport sys\nfrom itertools import product\n\ndef main():\n    n, m = map(int, sys.stdin.readline().split())\n    edges = []\n    for _ in range(m):\n        a, b = map(int, sys.stdin.readline().split())\n        edges.append((a, b))\n    \n    max_dominoes = 0\n    \n    # Iterate over all possible assignments of numbers (1-6) to each vertex\n    for assignment in product(range(1,7), repeat=n):\n        domino_set = set()\n        for a, b in edges:\n            u = a - 1\n            v = b - 1\n            x = assignment[u]\n            y = assignment[v]\n            domino = (min(x, y), max(x, y))\n            domino_set.add(domino)\n        current = len(domino_set)\n        if current > max_dominoes:\n            max_dominoes = current\n    \n    print(max_dominoes)\n\nif __name__ == \"__main__\":\n    main()\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "```python\nimport sys\nfrom itertools import product\n\ndef main():\n    n, m = map(int, sys.stdin.readline().split())\n    edges = []\n    for _ in range(m):\n        a, b = map(int, sys.stdin.readline().split())\n        edges.append((a-1, b-1))  # converting to 0-based\n    \n    max_dominoes = 0\n    \n    # Generate all possible assignments of numbers to vertices (each vertex can have 0-6, but 0 means not used)\n    # Wait, actually, the numbers on the domino halves must be the same for all edges directed to a vertex. So each vertex has a value (from 0 to 6), where 0 means the vertex is not used (no domino halves directed to it). But if a vertex has a value, then all domino halves directed to it must have that value.\n    # So for each vertex, we can assign a value from 0 to 6. 0 means the vertex is not part of any domino.\n    # Then, for each edge, we can choose to place a domino or not. If we place it, we choose a direction (a->b or b->a), and the domino's two numbers must be the value of a and the value of b (in some order). Also, the domino (min(a_val, b_val), max(a_val, b_val)) must be unique and not used elsewhere.\n    \n    # So the approach is:\n    # 1. Assign to each vertex a value from 0 to 6 (0 means not used).\n    # 2. For each edge, decide whether to place a domino on it. If placed, choose direction and check that the domino is valid and not used.\n    # 3. Maximize the number of dominoes placed.\n    \n    # Since n is up to 7, the number of vertex assignments is 7^7 = 823543, which is manageable.\n    # For each assignment, we can compute the maximum number of dominoes that can be placed.\n    \n    # But even 823k is a lot if for each we have to do something expensive. Let's think of a better way.\n    \n    # Alternative approach: For each possible vertex labeling (each vertex has a value 0-6), compute the maximum matching of dominoes that can be placed on edges, considering the constraints.\n    \n    # For a given vertex labeling (v1, v2, ..., vn), where vi is the value assigned to vertex i (0 means not used):\n    # For each edge (u, w), if we place a domino on it, the domino must be (min(vu, vw), max(vu, vw)), and vu and vw must be non-zero. Also, each domino can be used at most once.\n    # So the problem reduces to: given the vertex labels, count how many edges can have their domino (min, max) used exactly once.\n    \n    # So for each vertex labeling, we can:\n    # - For each edge, compute the domino (a, b) where a <= b, if both vertices are non-zero.\n    # - Count the number of edges that have the same domino, and for each domino, we can use at most one edge.\n    # - The total is the number of dominoes that have at least one edge.\n    \n    # Wait, no. For a given labeling, each edge (u, w) where vu and vw are non-zero gives a domino (min(vu, vw), max(vu, vw)). We can select a subset of these edges such that each domino is used at most once. The maximum number is the number of distinct dominoes that appear in the edges (since we can pick one edge for each domino).\n    \n    # So for a given labeling, the maximum number of dominoes is the number of distinct dominoes (a, b) where a <= b, such that there exists at least one edge (u, w) with vu = a, vw = b (or vice versa), and both vu and vw are non-zero.\n    \n    # Wait, no. Because for a domino (a, b), we can choose any one edge that corresponds to it. So the maximum is the number of distinct dominoes that are covered by at least one edge in the labeling.\n    \n    # So for each vertex labeling, the score is the number of distinct dominoes (a, b) with a <= b, such that there exists an edge (u, w) where (vu, vw) is (a, b) or (b, a), and both vu and vw are non-zero.\n    \n    # Therefore, the algorithm is:\n    # Iterate over all possible vertex labelings (each vertex can be 0-6).\n    # For each labeling, compute the set of dominoes that are \"active\" (i.e., there's at least one edge that can use them).\n    # The score is the size of this set.\n    # Keep track of the maximum score.\n    \n    # But 7^7 is 823,543. For each, we need to process m edges. m can be up to 21. So total operations are around 823,543 * 21 = ~17 million, which should be manageable.\n    \n    # Let's proceed with this approach.\n    \n    # Generate all possible labelings. Each vertex can be 0-6.\n    # But 0 means the vertex is not used. So for an edge to be usable, both endpoints must have non-zero labels.\n    \n    # To optimize, we can note that if a vertex has label 0, it can't contribute to any domino. So we can skip labelings where too many vertices are 0.\n    \n    # But even without optimization, let's try to code it.\n    \n    # We can represent the labeling as a list of length n, where each element is 0-6.\n    \n    # For each labeling:\n    #   dominoes_used = set()\n    #   for each edge (u, w):\n    #       a = labeling[u]\n    #       b = labeling[w]\n    #       if a == 0 or b == 0:\n    #           continue\n    #       domino = (min(a, b), max(a, b))\n    #       dominoes_used.add(domino)\n    #   current_score = len(dominoes_used)\n    #   max_dominoes = max(max_dominoes, current_score)\n    \n    # This is the core of the algorithm.\n    \n    # Now, generating all labelings. Since n is up to 7, and each has 7 choices (0-6), it's 7^7 = 823,543.\n    \n    # We can use itertools.product to generate all possible labelings.\n    \n    from itertools import product\n    \n    max_dominoes = 0\n    \n    for labeling in product(range(7), repeat=n):\n        dominoes = set()\n        for u, w in edges:\n            a = labeling[u]\n            b = labeling[w]\n            if a == 0 or b == 0:\n                continue\n            domino = (min(a, b), max(a, b))\n            dominoes.add(domino)\n        current = len(dominoes)\n        if current > max_dominoes:\n            max_dominoes = current\n    \n    print(max_dominoes)\n\nif __name__ == \"__main__\":\n    main()\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```python\nimport sys\nfrom itertools import product\n\ndef main():\n    n, m = map(int, sys.stdin.readline().split())\n    edges = []\n    for _ in range(m):\n        a, b = map(int, sys.stdin.readline().split())\n        edges.append((a-1, b-1))  # convert to 0-based\n    \n    max_dominoes = 0\n    \n    # Try all possible labelings of vertices (each label is 1-6)\n    for labels in product(range(1,7), repeat=n):\n        domino_set = set()\n        valid = True\n        for (u, v) in edges:\n            a = labels[u]\n            b = labels[v]\n            if a > b:\n                a, b = b, a\n            domino = (a, b)\n            if domino in domino_set:\n                valid = False\n                break\n            domino_set.add(domino)\n        if valid:\n            if len(domino_set) > max_dominoes:\n                max_dominoes = len(domino_set)\n    \n    print(max_dominoes)\n\nif __name__ == \"__main__\":\n    main()\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```python\nimport sys\nfrom itertools import product\n\ndef main():\n    n, m = map(int, sys.stdin.readline().split())\n    edges = []\n    for _ in range(m):\n        a, b = map(int, sys.stdin.readline().split())\n        edges.append((a-1, b-1))  # 0-based\n\n    max_dominoes = 0\n\n    # Generate all possible assignments of numbers to vertices (each vertex can be 0-6)\n    # But since dominoes have a and b between 1-6, we can use 0-6 (0 unused)\n    # Wait, the domino halves must have the same number directed to the same vertex.\n    # So each vertex is assigned a number (from 1-6), and for each edge, the domino must be (u_val, v_val) where u_val <= v_val or v_val <= u_val.\n    # Wait, the domino is placed on the edge, with one half towards each vertex. So for edge u-v, the domino has a and b, where a is the number directed to u, and b to v. But since the domino can be placed in either direction, the domino can be (a, b) or (b, a). However, the domino must be unique. So for each edge, the domino used is the pair (min(a, b), max(a, b)), and we can only use each such pair once.\n\n    # So the approach is: assign to each vertex a value (from 1 to 6). For each edge, the domino is (u_val, v_val). We need to count how many unique dominoes are used, and find the maximum over all possible vertex assignments.\n\n    # Since n is up to 7, and each vertex can have 6 values, total possibilities are 6^7 = 279,936. That's manageable.\n\n    # So iterate over all possible assignments of values to vertices (each from 1-6)\n    # For each assignment, compute the set of dominoes used (as sorted tuples)\n    # The size of this set is the number of dominoes used. Keep track of the maximum.\n\n    # To optimize, we can represent the assignment as a list of length n, each element 1-6.\n\n    # Generate all possible assignments\n    for assignment in product(range(1,7), repeat=n):\n        domino_set = set()\n        for u, v in edges:\n            a = assignment[u]\n            b = assignment[v]\n            domino = (min(a, b), max(a, b))\n            domino_set.add(domino)\n        current = len(domino_set)\n        if current > max_dominoes:\n            max_dominoes = current\n\n    print(max_dominoes)\n\nif __name__ == \"__main__\":\n    main()\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```python\nimport sys\nfrom itertools import product\n\ndef main():\n    n, m = map(int, sys.stdin.readline().split())\n    edges = []\n    for _ in range(m):\n        a, b = map(int, sys.stdin.readline().split())\n        edges.append((a-1, b-1))  # convert to 0-based\n    \n    max_dominoes = 0\n    \n    # Iterate over all possible assignments of values to vertices (each vertex can be 0-6, but 0 is unused)\n    # Wait, the domino values are 1-6. So each vertex must be assigned a value between 1 and 6.\n    # So the possible assignments are tuples of length n, each element 1-6.\n    for assignment in product(range(1,7), repeat=n):\n        domino_set = set()\n        valid = True\n        for a, b in edges:\n            u = assignment[a]\n            v = assignment[b]\n            if u == v:\n                # The domino would be (u, u), which is allowed (since a <= b)\n                domino = (u, v)\n            else:\n                domino = (min(u, v), max(u, v))\n            if domino in domino_set:\n                valid = False\n                break\n            domino_set.add(domino)\n        if valid:\n            if len(domino_set) > max_dominoes:\n                max_dominoes = len(domino_set)\n    \n    print(max_dominoes)\n\nif __name__ == \"__main__\":\n    main()\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```python\nimport sys\nfrom itertools import product\n\ndef main():\n    n, m = map(int, sys.stdin.readline().split())\n    edges = []\n    for _ in range(m):\n        a, b = map(int, sys.stdin.readline().split())\n        edges.append((a-1, b-1))  # 0-based\n    \n    max_dominoes = 0\n\n    # Iterate over all possible assignments of numbers (0-6) to each vertex\n    for assignment in product(range(7), repeat=n):\n        # For each edge, compute the domino (a, b) where a <= b\n        domino_set = set()\n        valid = True\n        for u, v in edges:\n            a = assignment[u]\n            b = assignment[v]\n            if a > b:\n                a, b = b, a\n            domino_set.add((a, b))\n        # The maximum number of dominoes is the size of the set\n        if len(domino_set) > max_dominoes:\n            max_dominoes = len(domino_set)\n    \n    print(max_dominoes)\n\nif __name__ == \"__main__\":\n    main()\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```python\nimport sys\nfrom itertools import product\n\ndef main():\n    n, m = map(int, sys.stdin.readline().split())\n    edges = []\n    for _ in range(m):\n        a, b = map(int, sys.stdin.readline().split())\n        edges.append((a-1, b-1))  # Convert to 0-based indices\n    \n    max_dominoes = 0\n    \n    # Try all possible assignments of numbers (1-6) to each vertex\n    for assignment in product(range(1,7), repeat=n):\n        domino_set = set()\n        valid = True\n        for (u, v) in edges:\n            a = assignment[u]\n            b = assignment[v]\n            if a > b:\n                a, b = b, a\n            domino = (a, b)\n            if domino in domino_set:\n                valid = False\n                break\n            domino_set.add(domino)\n        if valid:\n            max_dominoes = max(max_dominoes, len(domino_set))\n    \n    print(max_dominoes)\n\nif __name__ == \"__main__\":\n    main()\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```python\nimport sys\nfrom itertools import product\n\ndef main():\n    n, m = map(int, sys.stdin.readline().split())\n    edges = []\n    for _ in range(m):\n        a, b = map(int, sys.stdin.readline().split())\n        edges.append((a-1, b-1))  # converting to 0-based\n    \n    max_dominoes = 0\n    # Each vertex can be assigned a number from 0 to 6 (since dominoes have 0-6 dots)\n    # Wait, wait. Wait the dominoes have numbers from 1 to 6. Wait, the problem says:\n    # \"For every a and b such that 1 \u2264 a \u2264 b \u2264 6, there is exactly one domino...\"\n    # So the domino halves can have numbers from 1 to 6.\n    # So each vertex must be assigned a value between 1 and 6.\n    # So the possible assignments are tuples of length n, each element in 1..6\n    # So total possibilities are 6^n, which for n=7 is 6^7 = 279,936. That's manageable.\n    \n    # Iterate over all possible assignments of numbers to vertices (1-6)\n    for assignment in product(range(1,7), repeat=n):\n        domino_set = set()\n        count = 0\n        valid = True\n        for (u, v) in edges:\n            a = assignment[u]\n            b = assignment[v]\n            # The domino is (min(a,b), max(a,b))\n            domino = (min(a, b), max(a, b))\n            if domino in domino_set:\n                valid = False\n                break\n            domino_set.add(domino)\n            count += 1\n        if valid and count > max_dominoes:\n            max_dominoes = count\n    print(max_dominoes)\n\nif __name__ == \"__main__\":\n    main()\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 8,
+                "message": {
+                    "content": "```python\nimport sys\n\ndef main():\n    n, m = map(int, sys.stdin.readline().split())\n    edges = []\n    for _ in range(m):\n        a, b = map(int, sys.stdin.readline().split())\n        edges.append((a-1, b-1))  # convert to 0-based\n    \n    max_dominoes = 0\n    \n    # Try all possible assignments of numbers to vertices (each vertex can have 0-6)\n    # Since n is up to 7, we need to try all possible combinations of numbers for each vertex\n    # But this is 7^7 = 823543 possibilities, which is manageable\n    \n    # However, we can optimize by noting that the number assigned to a vertex must be between 0 and 6\n    # and that for each edge, the domino (a, b) where a <= b must be used\n    \n    # Let's try all possible assignments using backtracking\n    # For each vertex, try assigning a number from 0 to 6\n    # Then check if the dominoes used are unique\n    \n    # But this is still 7^7 which is too much\n    \n    # Alternative approach: since the dominoes are pairs (a, b) with a <= b,\n    # and we need to assign a number to each vertex such that for each edge,\n    # the pair (number at u, number at v) forms a valid domino,\n    # and all dominoes used are distinct.\n    \n    # Let's think of it as: assign a number to each vertex (0-6),\n    # then for each edge, the domino is (min(u_num, v_num), max(u_num, v_num)),\n    # and we need to count how many unique dominoes we can use.\n    \n    # The maximum number of dominoes is the maximum over all assignments of the number of unique dominoes.\n    \n    # Since n is at most 7, we can try all possible assignments.\n    # But 7^7 is 823543, and for each assignment, we need to process m edges.\n    # This might be feasible.\n    \n    # Let's implement this with itertools.product\n    \n    from itertools import product\n    \n    for assignment in product(range(7), repeat=n):\n        dominoes = set()\n        for u, v in edges:\n            a = assignment[u]\n            b = assignment[v]\n            domino = (min(a, b), max(a, b))\n            dominoes.add(domino)\n        max_dominoes = max(max_dominoes, len(dominoes))\n    \n    print(max_dominoes)\n\nif __name__ == \"__main__\":\n    main()\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 9,
+                "message": {
+                    "content": "```python\nimport sys\nfrom itertools import product\n\ndef main():\n    n, m = map(int, sys.stdin.readline().split())\n    edges = []\n    for _ in range(m):\n        a, b = map(int, sys.stdin.readline().split())\n        edges.append((a-1, b-1))  # converting to 0-based\n    \n    # Generate all possible domino types (a, b) where a <= b\n    dominoes = []\n    for a in range(1, 7):\n        for b in range(a, 7):\n            dominoes.append((a, b))\n    \n    max_count = 0\n    \n    # Try all possible assignments of numbers to vertices (each vertex gets a number from 1-6)\n    for vertex_labels in product(range(1,7), repeat=n):\n        used_dominoes = set()\n        count = 0\n        valid = True\n        for (u, v) in edges:\n            a = vertex_labels[u]\n            b = vertex_labels[v]\n            if a > b:\n                a, b = b, a\n            domino = (a, b)\n            if domino not in used_dominoes:\n                used_dominoes.add(domino)\n                count += 1\n        if count > max_count:\n            max_count = count\n    \n    print(max_count)\n\nif __name__ == \"__main__\":\n    main()\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 10,
+                "message": {
+                    "content": "```python\nimport sys\nfrom itertools import product\n\ndef main():\n    n, m = map(int, sys.stdin.readline().split())\n    edges = []\n    for _ in range(m):\n        a, b = map(int, sys.stdin.readline().split())\n        edges.append((a-1, b-1))  # convert to 0-based\n    \n    max_dominoes = 0\n    \n    # Generate all possible assignments of numbers (1-6) to each vertex\n    for assignment in product(range(1,7), repeat=n):\n        domino_set = set()\n        count = 0\n        valid = True\n        for (u, v) in edges:\n            a = assignment[u]\n            b = assignment[v]\n            if a > b:\n                a, b = b, a\n            domino = (a, b)\n            if domino in domino_set:\n                valid = False\n                break\n            domino_set.add(domino)\n            count += 1\n        if valid and count > max_dominoes:\n            max_dominoes = count\n    \n    print(max_dominoes)\n\nif __name__ == \"__main__\":\n    main()\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 11,
+                "message": {
+                    "content": "```python\nimport sys\nfrom itertools import product\n\ndef main():\n    n, m = map(int, sys.stdin.readline().split())\n    edges = []\n    for _ in range(m):\n        a, b = map(int, sys.stdin.readline().split())\n        edges.append((a-1, b-1))  # 0-based\n    \n    max_dominoes = 0\n    \n    # Try all possible assignments of values to vertices (each vertex can have a value from 0 to 6)\n    # 0 means the vertex is not assigned any value (but in our case, every vertex must have a value)\n    # Wait, no. The problem states that for each vertex, all domino halves directed towards it must have the same number of dots.\n    # So each vertex must be assigned a value (the number of dots that all incoming domino halves must have)\n    # So we need to assign a value (from 1 to 6) to each vertex, then for each edge, check if the domino (u_val, v_val) exists and hasn't been used yet.\n    # But since dominoes are unique and can be used at most once, we need to track which dominoes are used.\n    \n    # However, since n is up to 7, trying all possible assignments (6^7 = 279,936) is feasible.\n    # For each assignment, we can collect all dominoes used and count how many unique ones are used.\n    \n    for assignment in product(range(1, 7), repeat=n):\n        used = set()\n        count = 0\n        valid = True\n        for u, v in edges:\n            a = assignment[u]\n            b = assignment[v]\n            domino = (min(a, b), max(a, b))\n            if domino not in used:\n                used.add(domino)\n                count += 1\n            else:\n                # This domino is already used, so we can't use it again\n                # But we can skip this edge (not place a domino on it)\n                pass\n        if count > max_dominoes:\n            max_dominoes = count\n    \n    print(max_dominoes)\n\nif __name__ == \"__main__\":\n    main()\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 12,
+                "message": {
+                    "content": "```python\nimport sys\nfrom itertools import product\n\ndef main():\n    n, m = map(int, sys.stdin.readline().split())\n    edges = []\n    for _ in range(m):\n        a, b = map(int, sys.stdin.readline().split())\n        edges.append((a-1, b-1))  # Convert to 0-based indices\n    \n    max_dominoes = 0\n    \n    # Iterate over all possible assignments of numbers (0-6) to each vertex\n    for assignment in product(range(7), repeat=n):\n        domino_set = set()\n        valid = True\n        for u, v in edges:\n            a = assignment[u]\n            b = assignment[v]\n            if a == b:\n                valid = False\n                break\n            domino = (min(a, b), max(a, b))\n            if domino in domino_set:\n                valid = False\n                break\n            domino_set.add(domino)\n        if valid and len(domino_set) > max_dominoes:\n            max_dominoes = len(domino_set)\n    \n    print(max_dominoes)\n\nif __name__ == \"__main__\":\n    main()\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 13,
+                "message": {
+                    "content": "```python\nimport sys\nfrom itertools import product\n\ndef main():\n    n, m = map(int, sys.stdin.readline().split())\n    edges = []\n    for _ in range(m):\n        a, b = map(int, sys.stdin.readline().split())\n        edges.append((a-1, b-1))  # convert to 0-based\n    \n    max_dominoes = 0\n    \n    # Iterate over all possible assignments of numbers (1-6) to each vertex\n    for assignment in product(range(1,7), repeat=n):\n        domino_set = set()\n        count = 0\n        for (u, v) in edges:\n            a = assignment[u]\n            b = assignment[v]\n            domino = (min(a, b), max(a, b))\n            if domino not in domino_set:\n                domino_set.add(domino)\n                count += 1\n        if count > max_dominoes:\n            max_dominoes = count\n    \n    print(max_dominoes)\n\nif __name__ == \"__main__\":\n    main()\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 14,
+                "message": {
+                    "content": "```python\nimport sys\nfrom itertools import product\n\ndef main():\n    n, m = map(int, sys.stdin.readline().split())\n    edges = []\n    for _ in range(m):\n        a, b = map(int, sys.stdin.readline().split())\n        edges.append((a-1, b-1))  # Convert to 0-based indices\n\n    max_dominoes = 0\n\n    # Iterate over all possible assignments of numbers (1-6) to each vertex\n    for assignment in product(range(1,7), repeat=n):\n        domino_set = set()\n        for a, b in edges:\n            u = assignment[a]\n            v = assignment[b]\n            # The domino is represented as a tuple (min, max) to handle direction\n            domino = (min(u, v), max(u, v))\n            domino_set.add(domino)\n        current = len(domino_set)\n        if current > max_dominoes:\n            max_dominoes = current\n\n    print(max_dominoes)\n\nif __name__ == \"__main__\":\n    main()\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 15,
+                "message": {
+                    "content": "```python\nimport sys\nfrom itertools import product\n\ndef main():\n    n, m = map(int, sys.stdin.readline().split())\n    edges = []\n    for _ in range(m):\n        a, b = map(int, sys.stdin.readline().split())\n        edges.append((a-1, b-1))  # converting to 0-based\n    \n    max_dominoes = 0\n    # Each vertex can be assigned a value from 0 to 6 (since dominoes have up to 6 dots)\n    # We need to try all possible assignments of values to vertices\n    # The value for each vertex is between 0 and 6 (inclusive)\n    # 0 means no domino is placed on edges connected to this vertex\n    # Wait, no. The problem states that when placing a domino on an edge, each half must face a vertex.\n    # The constraint is that all halves facing the same vertex must have the same number of dots.\n    # So each vertex must have a fixed number of dots assigned to it (the number that all incoming domino halves must have).\n    # If a vertex has no dominoes facing it, then it can be assigned any value (but that doesn't affect anything).\n    # So the assignment is a list of values for each vertex, where each value is between 0 and 6.\n    # But 0 is not a valid domino value. Wait, dominoes have values from 1 to 6.\n    # So each vertex must be assigned a value from 1 to 6, or unassigned (but if unassigned, no domino can be placed on edges connected to it).\n    # Hmm, this complicates things. Let me think again.\n    \n    # Actually, the problem says that when placing a domino on an edge, you choose its direction.\n    # So for edge (u, v), you can place a domino with a on u's side and b on v's side, or vice versa.\n    # The constraint is that for all dominoes placed, the side facing any vertex must have the same number.\n    # So for each vertex, all domino halves facing it must have the same value.\n    # Therefore, we can assign a value to each vertex (from 1 to 6), and then for each edge, we can place a domino if the values of its two vertices form a valid domino (a <= b or b <= a, but since dominoes are unordered, we just need the pair to exist).\n    # Also, each domino can be used at most once.\n    \n    # So the approach is:\n    # 1. Assign a value (from 1 to 6) to each vertex.\n    # 2. For each edge, check if the values of its two vertices form a valid domino (i.e., the pair (min, max) exists in the domino set).\n    # 3. Count how many unique dominoes are used.\n    # 4. The maximum over all possible assignments is the answer.\n    \n    # But since n can be up to 7, and each vertex has 6 possible values, the total number of assignments is 6^7 = 279,936, which is manageable.\n    \n    # However, we also need to track which dominoes are used to ensure we don't use the same one twice.\n    # Wait, no. The problem says \"at most one domino of each type\". So for each domino type (a, b) where a <= b, we can use it at most once.\n    # So when assigning values to vertices, for each edge, if the values of its endpoints form a domino (a, b) with a <= b, then we can use that domino, but only once.\n    # So the problem reduces to: find an assignment of values to vertices such that the number of distinct dominoes (a, b) with a <= b used across all edges is maximized, with each domino used at most once.\n    \n    # So the steps are:\n    # For each possible assignment of values to vertices (each from 1 to 6):\n    #   Create a set of dominoes used.\n    #   For each edge (u, v):\n    #     a = assignment[u]\n    #     b = assignment[v]\n    #     if a > b:\n    #       a, b = b, a\n    #     if a != b:  # because dominoes have a <= b, and a can equal b only if it's a double\n    #       domino = (a, b)\n    #     else:\n    #       domino = (a, a)\n    #     if domino is in the domino set (which it always is, since all (a, b) with a <= b are present):\n    #       add domino to the set\n    #   The number of dominoes used is the size of the set.\n    #   Update max_dominoes if this is larger.\n    \n    # Wait, but the domino set includes all (a, b) with 1 <= a <= b <= 6. So any pair (a, b) where a <= b is a valid domino.\n    # So for each edge, if the values of its endpoints are a and b (after sorting), then the domino (a, b) is used.\n    # But we can only use each domino once. So if two edges have the same (a, b) pair, we can only count one of them.\n    \n    # Therefore, for a given assignment, the maximum number of dominoes we can place is the number of distinct (a, b) pairs (with a <= b) generated by the edges.\n    \n    # So the algorithm is:\n    # Try all possible assignments of values (1-6) to each vertex.\n    # For each assignment, compute the set of dominoes (a, b) with a <= b for each edge.\n    # The size of this set is the number of dominoes that can be placed.\n    # Find the maximum such size over all assignments.\n    \n    # Now, the question is how to efficiently iterate over all possible assignments.\n    \n    # Since n is up to 7, and each vertex has 6 choices, 6^7 = 279,936 assignments. For each assignment, we process m edges (up to 21), so total operations are around 279,936 * 21 \u2248 5.8 million, which should be manageable.\n    \n    # Let's implement this.\n    \n    # Generate all possible assignments using itertools.product\n    from itertools import product\n    \n    max_count = 0\n    # Each vertex can be assigned a value from 1 to 6\n    for assignment in product(range(1, 7), repeat=n):\n        dominoes_used = set()\n        for u, v in edges:\n            a = assignment[u]\n            b = assignment[v]\n            if a > b:\n                a, b = b, a\n            dominoes_used.add((a, b))\n        count = len(dominoes_used)\n        if count > max_count:\n            max_count = count\n    print(max_count)\n\nif __name__ == \"__main__\":\n    main()\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 16,
+                "message": {
+                    "content": "```python\nimport sys\nfrom itertools import product\n\ndef main():\n    n, m = map(int, sys.stdin.readline().split())\n    edges = []\n    for _ in range(m):\n        a, b = map(int, sys.stdin.readline().split())\n        edges.append((a, b))\n    \n    max_dominoes = 0\n    # Try all possible assignments of numbers to vertices\n    for assignment in product(range(1, 7), repeat=n):\n        used = set()\n        count = 0\n        valid = True\n        for a, b in edges:\n            u = assignment[a-1]\n            v = assignment[b-1]\n            domino = (min(u, v), max(u, v))\n            if domino not in used:\n                used.add(domino)\n                count += 1\n        if count > max_dominoes:\n            max_dominoes = count\n    print(max_dominoes)\n\nif __name__ == \"__main__\":\n    main()\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 17,
+                "message": {
+                    "content": "```python\nimport sys\nfrom itertools import product\n\ndef main():\n    n, m = map(int, sys.stdin.readline().split())\n    edges = []\n    for _ in range(m):\n        a, b = map(int, sys.stdin.readline().split())\n        edges.append((a-1, b-1))  # converting to 0-based\n    \n    max_dominoes = 0\n    \n    # Try all possible assignments of numbers to vertices (each vertex can be assigned 0-6)\n    # But since dominoes have a and b where 1<=a<=b<=6, the numbers on the domino halves are 1-6\n    # So the vertex assignments must be in 1-6\n    # Wait, the problem says that each half of domino directed to a vertex must have the same number of dots.\n    # So for each vertex, all incoming domino halves must have the same number.\n    # Therefore, each vertex is assigned a number (the number of dots on all incoming halves).\n    # The domino on edge (u, v) must have numbers equal to the assignments of u and v.\n    # But since dominoes are unordered pairs (a, b) where a <= b, we need to consider both directions.\n    \n    # So for each vertex assignment (c_0, c_1, ..., c_{n-1}) where each c_i is in 1..6,\n    # we can determine which dominoes are used.\n    # For each edge (u, v), if c_u and c_v form a valid domino (i.e., min(c_u, c_v) and max(c_u, c_v)),\n    # then we can use that domino.\n    # We need to count how many unique dominoes are used, and find the maximum over all vertex assignments.\n    \n    # Since n is up to 7, and each vertex can be assigned 6 values, total assignments are 6^7 = 279,936 which is manageable.\n    \n    for assignment in product(range(1,7), repeat=n):\n        used = set()\n        count = 0\n        for u, v in edges:\n            a = assignment[u]\n            b = assignment[v]\n            domino = (min(a, b), max(a, b))\n            if domino not in used:\n                used.add(domino)\n                count += 1\n        if count > max_dominoes:\n            max_dominoes = count\n    \n    print(max_dominoes)\n\nif __name__ == \"__main__\":\n    main()\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 18,
+                "message": {
+                    "content": "```python\nimport sys\nfrom itertools import product\n\ndef main():\n    n, m = map(int, sys.stdin.readline().split())\n    edges = []\n    for _ in range(m):\n        a, b = map(int, sys.stdin.readline().split())\n        edges.append((a, b))\n    \n    max_dominoes = 0\n    # Iterate over all possible assignments of numbers (1-6) to each vertex\n    for assignment in product(range(1,7), repeat=n):\n        # For each edge, compute the domino (a, b) where a <= b\n        dominoes = set()\n        valid = True\n        for (a, b) in edges:\n            u = assignment[a-1]\n            v = assignment[b-1]\n            if u > v:\n                u, v = v, u\n            domino = (u, v)\n            if domino in dominoes:\n                valid = False\n                break\n            dominoes.add(domino)\n        if valid:\n            if len(dominoes) > max_dominoes:\n                max_dominoes = len(dominoes)\n    print(max_dominoes)\n\nif __name__ == \"__main__\":\n    main()\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 19,
+                "message": {
+                    "content": "```python\nimport sys\nfrom itertools import product\n\ndef main():\n    n, m = map(int, sys.stdin.readline().split())\n    edges = []\n    for _ in range(m):\n        a, b = map(int, sys.stdin.readline().split())\n        edges.append((a-1, b-1))  # Convert to 0-based indices\n\n    max_dominoes = 0\n\n    # Iterate over all possible assignments of numbers (1-6) to each vertex\n    for assignment in product(range(1,7), repeat=n):\n        # For each edge, determine the domino (a, b) where a <= b\n        domino_set = set()\n        for u, v in edges:\n            a = assignment[u]\n            b = assignment[v]\n            if a > b:\n                a, b = b, a\n            domino_set.add((a, b))\n        current = len(domino_set)\n        if current > max_dominoes:\n            max_dominoes = current\n\n    print(max_dominoes)\n\nif __name__ == \"__main__\":\n    main()\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 9544,
+            "prompt_tokens": 753,
+            "total_tokens": 10297
+        },
+        "prompt": "Write a program in Python to solve this programming problem:\nDescription: Anadi has a set of dominoes. Every domino has two parts, and each part contains some dots. For every $$$a$$$ and $$$b$$$ such that $$$1 \\leq a \\leq b \\leq 6$$$, there is exactly one domino with $$$a$$$ dots on one half and $$$b$$$ dots on the other half. The set contains exactly $$$21$$$ dominoes. Here is an exact illustration of his set:  Also, Anadi has an undirected graph without self-loops and multiple edges. He wants to choose some dominoes and place them on the edges of this graph. He can use at most one domino of each type. Each edge can fit at most one domino. It's not necessary to place a domino on each edge of the graph.When placing a domino on an edge, he also chooses its direction. In other words, one half of any placed domino must be directed toward one of the endpoints of the edge and the other half must be directed toward the other endpoint. There's a catch: if there are multiple halves of dominoes directed toward the same vertex, each of these halves must contain the same number of dots.How many dominoes at most can Anadi place on the edges of his graph?\nInput Specification: The first line contains two integers $$$n$$$ and $$$m$$$ ($$$1 \\leq n \\leq 7$$$, $$$0 \\leq m \\leq \\frac{n\\cdot(n-1)}{2}$$$) \u2014 the number of vertices and the number of edges in the graph. The next $$$m$$$ lines contain two integers each. Integers in the $$$i$$$-th line are $$$a_i$$$ and $$$b_i$$$ ($$$1 \\leq a, b \\leq n$$$, $$$a \\neq b$$$) and denote that there is an edge which connects vertices $$$a_i$$$ and $$$b_i$$$. The graph might be disconnected. It's however guaranteed that the graph doesn't contain any self-loops, and that there is at most one edge between any pair of vertices.\nOutput Specification: Output one integer which denotes the maximum number of dominoes which Anadi can place on the edges of the graph.\n\nSample Input:\n4 4\n1 2\n2 3\n3 4\n4 1\nSample Output:\n4\n\nSample Input:\n7 0\nSample Output:\n0\n\nSample Input:\n3 1\n1 3\nSample Output:\n1\n\nSample Input:\n7 21\n1 2\n1 3\n1 4\n1 5\n1 6\n1 7\n2 3\n2 4\n2 5\n2 6\n2 7\n3 4\n3 5\n3 6\n3 7\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7\nSample Output:\n16\n\nNotes: NoteHere is an illustration of Anadi's graph from the first sample test:  And here is one of the ways to place a domino on each of its edges:  Note that each vertex is faced by the halves of dominoes with the same number of dots. For instance, all halves directed toward vertex $$$1$$$ have three dots.\nTake input from standard input and output to standard output\nProvide the Python code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "11e6559cfb71b8f6ca88242094b17a2b",
+        "difficulty": 1700,
+        "prob_desc_sample_inputs": [
+            "4 4\n1 2\n2 3\n3 4\n4 1",
+            "7 0",
+            "3 1\n1 3",
+            "7 21\n1 2\n1 3\n1 4\n1 5\n1 6\n1 7\n2 3\n2 4\n2 5\n2 6\n2 7\n3 4\n3 5\n3 6\n3 7\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "brute force",
+            "graphs"
+        ],
+        "prob_desc_output_spec": "Output one integer which denotes the maximum number of dominoes which Anadi can place on the edges of the graph.",
+        "prob_desc_input_spec": "The first line contains two integers $$$n$$$ and $$$m$$$ ($$$1 \\leq n \\leq 7$$$, $$$0 \\leq m \\leq \\frac{n\\cdot(n-1)}{2}$$$) \u2014 the number of vertices and the number of edges in the graph. The next $$$m$$$ lines contain two integers each. Integers in the $$$i$$$-th line are $$$a_i$$$ and $$$b_i$$$ ($$$1 \\leq a, b \\leq n$$$, $$$a \\neq b$$$) and denote that there is an edge which connects vertices $$$a_i$$$ and $$$b_i$$$. The graph might be disconnected. It's however guaranteed that the graph doesn't contain any self-loops, and that there is at most one edge between any pair of vertices.",
+        "lang_cluster": "Python",
+        "source_code": "",
+        "prob_desc_notes": "NoteHere is an illustration of Anadi's graph from the first sample test:  And here is one of the ways to place a domino on each of its edges:  Note that each vertex is faced by the halves of dominoes with the same number of dots. For instance, all halves directed toward vertex $$$1$$$ have three dots.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Anadi has a set of dominoes. Every domino has two parts, and each part contains some dots. For every $$$a$$$ and $$$b$$$ such that $$$1 \\leq a \\leq b \\leq 6$$$, there is exactly one domino with $$$a$$$ dots on one half and $$$b$$$ dots on the other half. The set contains exactly $$$21$$$ dominoes. Here is an exact illustration of his set:  Also, Anadi has an undirected graph without self-loops and multiple edges. He wants to choose some dominoes and place them on the edges of this graph. He can use at most one domino of each type. Each edge can fit at most one domino. It's not necessary to place a domino on each edge of the graph.When placing a domino on an edge, he also chooses its direction. In other words, one half of any placed domino must be directed toward one of the endpoints of the edge and the other half must be directed toward the other endpoint. There's a catch: if there are multiple halves of dominoes directed toward the same vertex, each of these halves must contain the same number of dots.How many dominoes at most can Anadi place on the edges of his graph?",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1569143100",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "4",
+            "0",
+            "1",
+            "16"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"4 4\\r\\n1 2\\r\\n2 3\\r\\n3 4\\r\\n4 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 1\\r\\n1 3\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 21\\r\\n1 2\\r\\n1 3\\r\\n1 4\\r\\n1 5\\r\\n1 6\\r\\n1 7\\r\\n2 3\\r\\n2 4\\r\\n2 5\\r\\n2 6\\r\\n2 7\\r\\n3 4\\r\\n3 5\\r\\n3 6\\r\\n3 7\\r\\n4 5\\r\\n4 6\\r\\n4 7\\r\\n5 6\\r\\n5 7\\r\\n6 7\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"4 4\\r\\n4 2\\r\\n2 3\\r\\n3 4\\r\\n2 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"5 7\\r\\n4 3\\r\\n3 2\\r\\n1 4\\r\\n5 3\\r\\n5 2\\r\\n4 5\\r\\n1 5\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"6 9\\r\\n2 5\\r\\n3 6\\r\\n1 2\\r\\n1 4\\r\\n2 6\\r\\n6 1\\r\\n3 4\\r\\n1 3\\r\\n5 3\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"7 5\\r\\n5 6\\r\\n3 7\\r\\n7 2\\r\\n4 2\\r\\n1 4\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"7 14\\r\\n7 3\\r\\n2 4\\r\\n2 1\\r\\n2 5\\r\\n5 3\\r\\n6 7\\r\\n4 7\\r\\n5 4\\r\\n7 5\\r\\n4 3\\r\\n4 1\\r\\n6 1\\r\\n6 3\\r\\n3 1\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 15\\r\\n4 6\\r\\n7 3\\r\\n3 1\\r\\n6 5\\r\\n2 7\\r\\n3 6\\r\\n7 6\\r\\n2 6\\r\\n7 5\\r\\n3 5\\r\\n5 4\\r\\n4 7\\r\\n2 1\\r\\n2 4\\r\\n2 3\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"7 18\\r\\n1 5\\r\\n5 7\\r\\n1 3\\r\\n1 6\\r\\n4 5\\r\\n3 7\\r\\n6 7\\r\\n4 7\\r\\n2 7\\r\\n1 2\\r\\n7 1\\r\\n5 6\\r\\n6 2\\r\\n4 2\\r\\n5 3\\r\\n3 6\\r\\n4 6\\r\\n4 3\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 14\\r\\n2 7\\r\\n5 7\\r\\n3 4\\r\\n4 2\\r\\n2 3\\r\\n4 1\\r\\n6 5\\r\\n4 7\\r\\n6 2\\r\\n6 1\\r\\n5 3\\r\\n5 1\\r\\n7 6\\r\\n3 1\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 11\\r\\n4 7\\r\\n6 4\\r\\n5 1\\r\\n1 4\\r\\n5 4\\r\\n1 2\\r\\n3 4\\r\\n4 2\\r\\n6 1\\r\\n3 1\\r\\n7 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"7 18\\r\\n3 2\\r\\n5 3\\r\\n6 7\\r\\n7 3\\r\\n5 4\\r\\n4 6\\r\\n2 4\\r\\n7 1\\r\\n5 6\\r\\n5 2\\r\\n5 1\\r\\n3 4\\r\\n7 4\\r\\n6 1\\r\\n3 6\\r\\n7 2\\r\\n1 3\\r\\n1 2\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 17\\r\\n1 7\\r\\n5 6\\r\\n6 3\\r\\n1 2\\r\\n1 6\\r\\n3 4\\r\\n6 7\\r\\n4 5\\r\\n1 3\\r\\n1 5\\r\\n4 1\\r\\n5 2\\r\\n3 5\\r\\n4 6\\r\\n7 5\\r\\n7 2\\r\\n6 2\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"7 10\\r\\n3 6\\r\\n6 1\\r\\n4 6\\r\\n1 7\\r\\n7 4\\r\\n5 3\\r\\n5 6\\r\\n6 7\\r\\n7 5\\r\\n5 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"1 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 1\\r\\n2 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"3 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 2\\r\\n2 3\\r\\n1 3\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"3 3\\r\\n1 2\\r\\n2 3\\r\\n1 3\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"4 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"4 2\\r\\n2 4\\r\\n1 3\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"4 6\\r\\n2 1\\r\\n1 4\\r\\n2 4\\r\\n3 1\\r\\n3 2\\r\\n3 4\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"5 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 3\\r\\n5 1\\r\\n1 4\\r\\n5 4\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"5 10\\r\\n1 2\\r\\n3 4\\r\\n1 3\\r\\n2 3\\r\\n5 4\\r\\n5 1\\r\\n4 1\\r\\n5 3\\r\\n5 2\\r\\n2 4\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"6 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6 3\\r\\n4 2\\r\\n5 4\\r\\n4 3\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"6 6\\r\\n4 3\\r\\n4 6\\r\\n1 2\\r\\n4 5\\r\\n6 3\\r\\n3 2\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"6 15\\r\\n4 3\\r\\n2 1\\r\\n3 6\\r\\n1 3\\r\\n4 1\\r\\n2 3\\r\\n3 5\\r\\n4 5\\r\\n6 1\\r\\n2 5\\r\\n1 5\\r\\n2 6\\r\\n6 4\\r\\n5 6\\r\\n4 2\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"6 12\\r\\n2 1\\r\\n4 3\\r\\n1 5\\r\\n6 4\\r\\n6 2\\r\\n3 6\\r\\n1 6\\r\\n2 4\\r\\n1 4\\r\\n2 5\\r\\n5 4\\r\\n1 3\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 1\\r\\n5 3\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 2\\r\\n5 1\\r\\n3 5\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"7 3\\r\\n1 5\\r\\n5 7\\r\\n2 7\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"7 4\\r\\n3 7\\r\\n7 5\\r\\n1 3\\r\\n1 6\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7 6\\r\\n3 5\\r\\n7 1\\r\\n3 7\\r\\n5 4\\r\\n7 4\\r\\n3 6\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"7 7\\r\\n2 5\\r\\n6 1\\r\\n5 4\\r\\n7 2\\r\\n3 2\\r\\n4 1\\r\\n7 3\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"7 8\\r\\n4 1\\r\\n5 7\\r\\n6 4\\r\\n7 1\\r\\n6 3\\r\\n3 4\\r\\n3 1\\r\\n6 7\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"7 9\\r\\n2 6\\r\\n7 4\\r\\n2 5\\r\\n2 7\\r\\n4 2\\r\\n3 5\\r\\n5 6\\r\\n6 7\\r\\n7 3\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"7 11\\r\\n2 4\\r\\n1 3\\r\\n5 2\\r\\n2 7\\r\\n1 4\\r\\n4 3\\r\\n2 1\\r\\n7 6\\r\\n3 2\\r\\n7 4\\r\\n4 5\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"7 12\\r\\n6 3\\r\\n3 5\\r\\n7 5\\r\\n1 5\\r\\n1 7\\r\\n7 6\\r\\n4 1\\r\\n2 1\\r\\n1 6\\r\\n5 6\\r\\n3 4\\r\\n4 2\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 13\\r\\n6 5\\r\\n5 7\\r\\n4 2\\r\\n7 2\\r\\n4 1\\r\\n6 7\\r\\n4 3\\r\\n1 6\\r\\n2 5\\r\\n5 4\\r\\n2 1\\r\\n6 4\\r\\n6 2\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 16\\r\\n3 5\\r\\n1 3\\r\\n3 7\\r\\n4 2\\r\\n1 4\\r\\n1 6\\r\\n7 6\\r\\n5 1\\r\\n7 2\\r\\n4 3\\r\\n3 6\\r\\n2 3\\r\\n2 5\\r\\n4 5\\r\\n2 6\\r\\n5 7\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 17\\r\\n4 6\\r\\n1 7\\r\\n7 5\\r\\n3 7\\r\\n7 2\\r\\n2 5\\r\\n6 7\\r\\n1 3\\r\\n5 1\\r\\n6 2\\r\\n4 2\\r\\n3 2\\r\\n1 2\\r\\n5 3\\r\\n4 5\\r\\n3 4\\r\\n1 6\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 19\\r\\n6 1\\r\\n6 4\\r\\n6 5\\r\\n1 7\\r\\n2 7\\r\\n3 5\\r\\n7 6\\r\\n2 4\\r\\n5 7\\r\\n3 4\\r\\n6 2\\r\\n4 1\\r\\n5 1\\r\\n4 7\\r\\n3 2\\r\\n4 5\\r\\n3 1\\r\\n2 5\\r\\n6 3\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 20\\r\\n4 7\\r\\n1 4\\r\\n2 3\\r\\n4 3\\r\\n3 7\\r\\n7 5\\r\\n4 5\\r\\n1 2\\r\\n6 7\\r\\n3 1\\r\\n3 5\\r\\n1 5\\r\\n1 7\\r\\n2 6\\r\\n6 4\\r\\n5 2\\r\\n5 6\\r\\n6 3\\r\\n1 6\\r\\n2 7\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 21\\r\\n3 5\\r\\n7 2\\r\\n2 3\\r\\n6 5\\r\\n5 2\\r\\n4 7\\r\\n2 6\\r\\n2 4\\r\\n6 7\\r\\n5 1\\r\\n1 4\\r\\n4 5\\r\\n5 7\\r\\n4 6\\r\\n3 1\\r\\n1 2\\r\\n3 4\\r\\n7 1\\r\\n3 7\\r\\n6 1\\r\\n3 6\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 12\\r\\n3 4\\r\\n5 4\\r\\n1 7\\r\\n7 3\\r\\n2 5\\r\\n3 2\\r\\n1 4\\r\\n5 6\\r\\n6 1\\r\\n6 3\\r\\n2 1\\r\\n5 7\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 7\\r\\n7 6\\r\\n4 2\\r\\n3 1\\r\\n4 7\\r\\n6 3\\r\\n2 5\\r\\n1 5\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"7 6\\r\\n7 5\\r\\n5 2\\r\\n1 5\\r\\n5 4\\r\\n3 5\\r\\n6 5\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"7 15\\r\\n5 1\\r\\n3 2\\r\\n2 5\\r\\n3 5\\r\\n6 1\\r\\n4 3\\r\\n6 2\\r\\n4 5\\r\\n7 5\\r\\n3 6\\r\\n3 1\\r\\n7 3\\r\\n4 6\\r\\n6 5\\r\\n6 7\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 18\\r\\n3 7\\r\\n3 2\\r\\n2 1\\r\\n1 7\\r\\n5 1\\r\\n3 4\\r\\n5 6\\r\\n4 2\\r\\n6 2\\r\\n1 4\\r\\n2 5\\r\\n6 3\\r\\n3 1\\r\\n6 7\\r\\n6 1\\r\\n7 2\\r\\n6 4\\r\\n3 5\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 19\\r\\n1 2\\r\\n7 3\\r\\n3 4\\r\\n4 7\\r\\n3 6\\r\\n7 5\\r\\n6 2\\r\\n4 6\\r\\n6 7\\r\\n5 2\\r\\n3 2\\r\\n6 5\\r\\n4 1\\r\\n2 4\\r\\n4 5\\r\\n6 1\\r\\n3 1\\r\\n1 7\\r\\n5 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 16\\r\\n3 2\\r\\n6 3\\r\\n6 1\\r\\n5 6\\r\\n7 5\\r\\n5 2\\r\\n6 2\\r\\n2 1\\r\\n5 4\\r\\n4 1\\r\\n7 2\\r\\n1 5\\r\\n2 4\\r\\n7 3\\r\\n1 7\\r\\n6 7\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 12\\r\\n4 1\\r\\n6 4\\r\\n3 4\\r\\n3 1\\r\\n2 4\\r\\n7 5\\r\\n5 4\\r\\n2 1\\r\\n6 7\\r\\n2 3\\r\\n7 4\\r\\n6 5\\r\\n\", \"output\": [\"11\"]}]"
+    }
+}

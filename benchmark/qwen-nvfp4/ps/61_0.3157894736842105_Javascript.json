@@ -1,0 +1,391 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-ba4282bf12bcccba",
+        "created": 1787080770,
+        "model": "qwen-nvfp4",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.27.1-d7a14dad",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nlet lines = [];\nrl.on('line', (line) => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0].trim());\n    const s = lines[1].trim();\n\n    // We need to count the number of contiguous substrings that return to origin.\n    // A substring from i to j (inclusive) returns to origin if the net displacement is (0,0).\n    // Let prefix[i] be the position after executing the first i commands (0-indexed, prefix[0] = (0,0)).\n    // Then substring from i to j-1 (0-indexed, length j-i) returns to origin if prefix[j] == prefix[i].\n    // So we need to count pairs (i, j) with 0 <= i < j <= n such that prefix[i] == prefix[j].\n    // This is equivalent to counting the number of pairs of equal prefix positions.\n\n    const posMap = new Map();\n    let x = 0, y = 0;\n    // Start with prefix[0] = (0,0)\n    posMap.set(`${x},${y}`, 1);\n\n    for (let i = 0; i < n; i++) {\n        const cmd = s[i];\n        if (cmd === 'U') y++;\n        else if (cmd === 'D') y--;\n        else if (cmd === 'R') x++;\n        else if (cmd === 'L') x--;\n\n        const key = `${x},${y}`;\n        const count = posMap.get(key) || 0;\n        posMap.set(key, count + 1);\n    }\n\n    // For each position, if it appears k times, the number of pairs is k*(k-1)/2.\n    let result = 0;\n    for (const count of posMap.values()) {\n        result += count * (count - 1) / 2;\n    }\n\n    console.log(result);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0].trim());\n    const s = lines[1].trim();\n    \n    // We need to count the number of contiguous substrings that return to the start.\n    // A substring from index i to j (inclusive) returns to start if the net displacement is (0,0).\n    // Let prefix[i] be the position after executing the first i commands (0-indexed, prefix[0] = (0,0)).\n    // Then substring from i to j-1 (0-indexed commands) has net displacement prefix[j] - prefix[i].\n    // So we need prefix[j] == prefix[i] for i < j.\n    // The substring is commands[i] to commands[j-1], which is non-empty if i < j.\n    // So we need to count pairs (i, j) with 0 <= i < j <= n such that prefix[i] == prefix[j].\n    \n    // Compute prefix positions\n    let x = 0, y = 0;\n    const prefix = new Array(n + 1);\n    prefix[0] = [0, 0];\n    \n    for (let i = 0; i < n; i++) {\n        const cmd = s[i];\n        if (cmd === 'U') y++;\n        else if (cmd === 'D') y--;\n        else if (cmd === 'R') x++;\n        else if (cmd === 'L') x--;\n        prefix[i + 1] = [x, y];\n    }\n    \n    // Count pairs (i, j) with i < j and prefix[i] == prefix[j]\n    // Use a map to store the count of each position seen so far\n    const posCount = new Map();\n    posCount.set(\"0,0\", 1); // prefix[0]\n    \n    let count = 0;\n    for (let j = 1; j <= n; j++) {\n        const key = `${prefix[j][0]},${prefix[j][1]}`;\n        if (posCount.has(key)) {\n            count += posCount.get(key);\n        }\n        posCount.set(key, (posCount.get(key) || 0) + 1);\n    }\n    \n    console.log(count);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0].trim());\n    const s = lines[1].trim();\n    \n    // We need to count the number of contiguous substrings that return to the starting position.\n    // This is equivalent to counting pairs of indices (i, j) with i < j such that the prefix sum at i equals the prefix sum at j.\n    // Let prefix[0] = (0, 0)\n    // prefix[i] = (x_i, y_i) after executing the first i commands.\n    // A substring from index i to j-1 (0-indexed, commands s[i] to s[j-1]) returns to start if prefix[j] == prefix[i].\n    // So we need to count pairs (i, j) with 0 <= i < j <= n such that prefix[i] == prefix[j].\n    \n    // Since n <= 200, we can use a map to count occurrences of each prefix position.\n    // For each prefix position, if it appears k times, it contributes C(k, 2) = k*(k-1)/2 pairs.\n    \n    const prefixMap = new Map();\n    let x = 0, y = 0;\n    \n    // prefix[0]\n    const key0 = `${x},${y}`;\n    prefixMap.set(key0, (prefixMap.get(key0) || 0) + 1);\n    \n    for (let i = 0; i < n; i++) {\n        const cmd = s[i];\n        if (cmd === 'U') y++;\n        else if (cmd === 'D') y--;\n        else if (cmd === 'R') x++;\n        else if (cmd === 'L') x--;\n        \n        const key = `${x},${y}`;\n        prefixMap.set(key, (prefixMap.get(key) || 0) + 1);\n    }\n    \n    let count = 0;\n    for (const [key, freq] of prefixMap) {\n        count += freq * (freq - 1) / 2;\n    }\n    \n    console.log(count);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0].trim());\n    const s = lines[1].trim();\n    \n    // We need to count the number of contiguous substrings that return to the starting position.\n    // A substring from index i to j (inclusive) returns to start if the net displacement is zero.\n    // We can use prefix sums. Let prefix[i] be the position after executing the first i commands.\n    // prefix[0] = (0, 0)\n    // prefix[i] = (x_i, y_i)\n    // A substring from i to j (0-indexed, commands i to j-1) has net displacement prefix[j] - prefix[i].\n    // We want prefix[j] == prefix[i] for i < j.\n    // So we need to count pairs (i, j) with i < j such that prefix[i] == prefix[j].\n    \n    // Let's compute prefix positions.\n    const prefix = new Array(n + 1);\n    prefix[0] = { x: 0, y: 0 };\n    \n    for (let i = 0; i < n; i++) {\n        const prev = prefix[i];\n        let x = prev.x;\n        let y = prev.y;\n        switch (s[i]) {\n            case 'U': y++; break;\n            case 'D': y--; break;\n            case 'L': x--; break;\n            case 'R': x++; break;\n        }\n        prefix[i + 1] = { x, y };\n    }\n    \n    // Now count pairs (i, j) with i < j and prefix[i] == prefix[j].\n    // We can use a map to store the count of each position seen so far.\n    const map = new Map();\n    let count = 0;\n    \n    // Start with prefix[0]\n    const key0 = `${prefix[0].x},${prefix[0].y}`;\n    map.set(key0, 1);\n    \n    for (let j = 1; j <= n; j++) {\n        const key = `${prefix[j].x},${prefix[j].y}`;\n        if (map.has(key)) {\n            count += map.get(key);\n        }\n        map.set(key, (map.get(key) || 0) + 1);\n    }\n    \n    console.log(count);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0].trim());\n    const s = lines[1].trim();\n    \n    // We need to count the number of contiguous substrings that return to the start.\n    // A substring from index i to j (inclusive) returns to start if the net displacement is (0,0).\n    // Let prefix[i] be the position after executing commands 0 to i-1.\n    // prefix[0] = (0,0)\n    // prefix[i+1] = prefix[i] + move(s[i])\n    // A substring from i to j (0-indexed, inclusive) has net displacement prefix[j+1] - prefix[i].\n    // We want prefix[j+1] == prefix[i].\n    // So we need to count pairs (i, j) such that 0 <= i <= j < n and prefix[i] == prefix[j+1].\n    // Let's define an array of prefix positions: P[0], P[1], ..., P[n]\n    // P[0] = (0,0)\n    // P[k] = position after first k commands.\n    // We need to count pairs (i, j) with 0 <= i < j <= n such that P[i] == P[j].\n    // Because the substring from i to j-1 (0-indexed commands) corresponds to P[j] - P[i] = 0.\n    // The substring is non-empty, so i < j.\n    \n    const positions = [];\n    let x = 0, y = 0;\n    positions.push([x, y]);\n    \n    for (let i = 0; i < n; i++) {\n        const c = s[i];\n        if (c === 'U') y++;\n        else if (c === 'D') y--;\n        else if (c === 'R') x++;\n        else if (c === 'L') x--;\n        positions.push([x, y]);\n    }\n    \n    // Now count pairs (i, j) with i < j and positions[i] == positions[j]\n    // We can use a map to store counts of each position as we iterate.\n    const posCount = new Map();\n    let count = 0;\n    \n    for (let i = 0; i <= n; i++) {\n        const key = positions[i][0] + ',' + positions[i][1];\n        if (posCount.has(key)) {\n            count += posCount.get(key);\n        }\n        posCount.set(key, (posCount.get(key) || 0) + 1);\n    }\n    \n    console.log(count);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0].trim());\n    const s = lines[1].trim();\n\n    // We need to count the number of contiguous substrings that return to origin.\n    // A substring from index i to j (inclusive) returns to origin if the net displacement is (0,0).\n    // Let's define prefix sums:\n    // Let x[i] be the x-coordinate after executing commands 0 to i-1.\n    // Let y[i] be the y-coordinate after executing commands 0 to i-1.\n    // x[0] = 0, y[0] = 0.\n    // For command at index k (0-indexed):\n    //   'R': x[k+1] = x[k] + 1\n    //   'L': x[k+1] = x[k] - 1\n    //   'U': y[k+1] = y[k] + 1\n    //   'D': y[k+1] = y[k] - 1\n    //\n    // A substring from i to j (0-indexed, inclusive) corresponds to executing commands s[i], s[i+1], ..., s[j].\n    // The net displacement is (x[j+1] - x[i], y[j+1] - y[i]).\n    // We want x[j+1] - x[i] = 0 and y[j+1] - y[i] = 0.\n    // So x[j+1] = x[i] and y[j+1] = y[i].\n    //\n    // Let's create an array of prefix positions: pos[0] = (0,0), pos[1] = (x1, y1), ..., pos[n] = (xn, yn).\n    // We need to count pairs (i, j) such that 0 <= i < j <= n and pos[i] == pos[j].\n    // Note: The substring is non-empty, so i < j. The substring starts at index i and ends at index j-1.\n    //\n    // So we can use a map to count the frequency of each (x, y) position in the prefix array.\n    // For each position (x, y) that appears k times, the number of pairs is k * (k - 1) / 2.\n\n    const prefixX = new Array(n + 1);\n    const prefixY = new Array(n + 1);\n    prefixX[0] = 0;\n    prefixY[0] = 0;\n\n    for (let i = 0; i < n; i++) {\n        prefixX[i + 1] = prefixX[i];\n        prefixY[i + 1] = prefixY[i];\n        switch (s[i]) {\n            case 'R':\n                prefixX[i + 1] += 1;\n                break;\n            case 'L':\n                prefixX[i + 1] -= 1;\n                break;\n            case 'U':\n                prefixY[i + 1] += 1;\n                break;\n            case 'D':\n                prefixY[i + 1] -= 1;\n                break;\n        }\n    }\n\n    const map = new Map();\n    for (let i = 0; i <= n; i++) {\n        const key = `${prefixX[i]},${prefixY[i]}`;\n        if (map.has(key)) {\n            map.set(key, map.get(key) + 1);\n        } else {\n            map.set(key, 1);\n        }\n    }\n\n    let count = 0;\n    for (const countOfPos of map.values()) {\n        count += (countOfPos * (countOfPos - 1)) / 2;\n    }\n\n    console.log(count);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0]);\n    const s = lines[1].trim();\n    \n    // We need to count the number of contiguous substrings that return to the starting position.\n    // This is equivalent to counting pairs of indices (i, j) with i < j such that the prefix sum at i equals the prefix sum at j.\n    // Let prefix[i] be the position after executing the first i commands (prefix[0] = (0,0)).\n    // A substring from index i to j-1 (0-indexed, length j-i) returns to start if prefix[j] == prefix[i].\n    // So we need to count pairs (i, j) with 0 <= i < j <= n such that prefix[i] == prefix[j].\n    \n    // Compute prefix positions\n    let x = 0, y = 0;\n    const prefixes = new Map();\n    // prefix[0] is (0,0)\n    prefixes.set('0,0', 1);\n    \n    for (let i = 0; i < n; i++) {\n        const c = s[i];\n        if (c === 'U') y++;\n        else if (c === 'D') y--;\n        else if (c === 'R') x++;\n        else if (c === 'L') x--;\n        \n        const key = `${x},${y}`;\n        const count = prefixes.get(key) || 0;\n        prefixes.set(key, count + 1);\n    }\n    \n    // For each position, if it appears k times, the number of pairs is k*(k-1)/2\n    let result = 0;\n    for (const count of prefixes.values()) {\n        result += count * (count - 1) / 2;\n    }\n    \n    console.log(result);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nlet lines = [];\nrl.on('line', (line) => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0].trim());\n    const s = lines[1].trim();\n\n    // We need to count the number of contiguous substrings that return to the start.\n    // A substring from index i to j (inclusive) returns to start if the net displacement is (0,0).\n    // Let prefix[i] be the position after executing commands 0 to i-1.\n    // prefix[0] = (0,0)\n    // prefix[i+1] = prefix[i] + move(s[i])\n    // A substring from i to j (0-indexed, inclusive) corresponds to prefix[j+1] - prefix[i] = (0,0)\n    // So we need prefix[j+1] == prefix[i].\n    // We need to count pairs (i, j) such that 0 <= i < j+1 <= n and prefix[i] == prefix[j+1].\n    // Let k = j+1, so 0 <= i < k <= n and prefix[i] == prefix[k].\n    // So we need to count pairs (i, k) with 0 <= i < k <= n such that prefix[i] == prefix[k].\n\n    // Compute prefix positions\n    const prefix = new Array(n + 1);\n    prefix[0] = [0, 0];\n    for (let i = 0; i < n; i++) {\n        const [x, y] = prefix[i];\n        let nx = x, ny = y;\n        switch (s[i]) {\n            case 'U': ny++; break;\n            case 'D': ny--; break;\n            case 'R': nx++; break;\n            case 'L': nx--; break;\n        }\n        prefix[i + 1] = [nx, ny];\n    }\n\n    // Now count pairs (i, k) with i < k and prefix[i] == prefix[k]\n    // We can use a map to store the count of each position seen so far.\n    const posCount = new Map();\n    let count = 0;\n\n    // Initialize with prefix[0]\n    posCount.set(`${prefix[0][0]},${prefix[0][1]}`, 1);\n\n    for (let k = 1; k <= n; k++) {\n        const key = `${prefix[k][0]},${prefix[k][1]}`;\n        const prevCount = posCount.get(key) || 0;\n        count += prevCount;\n        posCount.set(key, prevCount + 1);\n    }\n\n    console.log(count);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 8,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0].trim());\n    const s = lines[1].trim();\n\n    // We need to count the number of contiguous substrings that return to origin.\n    // A substring from index i to j (inclusive) returns to origin if the net displacement is (0,0).\n    // Let prefix[i] be the position after executing the first i commands (prefix[0] = (0,0)).\n    // Then substring from i to j-1 (0-indexed, commands i to j-1) returns to origin if prefix[j] == prefix[i].\n    // So we need to count pairs (i, j) with i < j such that prefix[i] == prefix[j].\n\n    const prefix = new Map();\n    let x = 0, y = 0;\n    // prefix[0] = (0,0)\n    prefix.set('0,0', 1);\n\n    let count = 0;\n\n    for (let i = 0; i < n; i++) {\n        const cmd = s[i];\n        if (cmd === 'U') y++;\n        else if (cmd === 'D') y--;\n        else if (cmd === 'R') x++;\n        else if (cmd === 'L') x--;\n\n        const key = `${x},${y}`;\n        const prevCount = prefix.get(key) || 0;\n        count += prevCount;\n        prefix.set(key, prevCount + 1);\n    }\n\n    console.log(count);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 9,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0].trim());\n    const commands = lines[1].trim();\n    \n    // Map from (x, y) to count of times we've seen this position\n    const posCount = new Map();\n    posCount.set('0,0', 1);\n    \n    let x = 0, y = 0;\n    let count = 0;\n    \n    for (let i = 0; i < n; i++) {\n        const cmd = commands[i];\n        if (cmd === 'U') y++;\n        else if (cmd === 'D') y--;\n        else if (cmd === 'R') x++;\n        else if (cmd === 'L') x--;\n        \n        const key = `${x},${y}`;\n        const prevCount = posCount.get(key) || 0;\n        count += prevCount;\n        posCount.set(key, prevCount + 1);\n    }\n    \n    console.log(count);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 10,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0].trim());\n    const s = lines[1].trim();\n    \n    // We need to count the number of contiguous substrings that return to the start.\n    // A substring from index i to j (inclusive) returns to start if the net displacement is zero.\n    // Let's use prefix sums.\n    // Let prefix[i] be the position after executing the first i commands (0-indexed, so prefix[0] = (0,0)).\n    // Then substring from i to j-1 (0-indexed) has displacement prefix[j] - prefix[i].\n    // We want prefix[j] == prefix[i] for i < j.\n    // So we need to count pairs (i, j) with 0 <= i < j <= n such that prefix[i] == prefix[j].\n    \n    const map = new Map();\n    let x = 0, y = 0;\n    // prefix[0] = (0, 0)\n    map.set(`${x},${y}`, 1);\n    \n    let count = 0;\n    \n    for (let i = 0; i < n; i++) {\n        const c = s[i];\n        if (c === 'U') y++;\n        else if (c === 'D') y--;\n        else if (c === 'R') x++;\n        else if (c === 'L') x--;\n        \n        const key = `${x},${y}`;\n        const prevCount = map.get(key) || 0;\n        count += prevCount;\n        map.set(key, prevCount + 1);\n    }\n    \n    console.log(count);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 11,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nlet lines = [];\nrl.on('line', (line) => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0].trim());\n    const s = lines[1].trim();\n\n    // We need to count the number of contiguous substrings that return to origin.\n    // A substring from index i to j (inclusive) returns to origin if the net displacement is (0,0).\n    // Let prefix[i] be the displacement after executing the first i commands (0-indexed, prefix[0] = (0,0)).\n    // Then the displacement of substring from i to j is prefix[j+1] - prefix[i].\n    // We want prefix[j+1] - prefix[i] = (0,0) => prefix[j+1] = prefix[i].\n    // So we need to count pairs (i, j) such that 0 <= i < j+1 <= n and prefix[i] = prefix[j+1].\n    // Let k = j+1, so we need 0 <= i < k <= n and prefix[i] = prefix[k].\n    // This is equivalent to counting pairs (i, k) with i < k and prefix[i] = prefix[k].\n\n    const prefix = new Map();\n    // prefix[0] = (0,0)\n    prefix.set(\"0,0\", 1);\n\n    let x = 0, y = 0;\n    let count = 0;\n\n    for (let i = 0; i < n; i++) {\n        const c = s[i];\n        if (c === 'U') y++;\n        else if (c === 'D') y--;\n        else if (c === 'R') x++;\n        else if (c === 'L') x--;\n\n        const key = `${x},${y}`;\n        const prevCount = prefix.get(key) || 0;\n        count += prevCount;\n        prefix.set(key, prevCount + 1);\n    }\n\n    console.log(count);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 12,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nlet lines = [];\nrl.on('line', (line) => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0].trim());\n    const s = lines[1].trim();\n\n    // We need to count the number of contiguous substrings that return to origin.\n    // A substring from index i to j (inclusive) returns to origin if the net displacement is (0,0).\n    // Let prefix[i] be the displacement after executing the first i commands (prefix[0] = (0,0)).\n    // Then substring from i to j (0-indexed, commands i to j-1) has displacement prefix[j] - prefix[i].\n    // We want prefix[j] - prefix[i] = (0,0) => prefix[j] = prefix[i].\n    // So we need to count pairs (i, j) with 0 <= i < j <= n such that prefix[i] = prefix[j].\n    // Note: the substring is non-empty, so i < j.\n\n    // Compute prefix displacements\n    const prefixes = new Map();\n    // Map from \"x,y\" to count of occurrences\n    let x = 0, y = 0;\n    prefixes.set(`${x},${y}`, 1); // prefix[0]\n\n    for (let i = 0; i < n; i++) {\n        const c = s[i];\n        if (c === 'U') y++;\n        else if (c === 'D') y--;\n        else if (c === 'R') x++;\n        else if (c === 'L') x--;\n        const key = `${x},${y}`;\n        const count = prefixes.get(key) || 0;\n        prefixes.set(key, count + 1);\n    }\n\n    // For each unique position, if it appears k times, the number of pairs is k*(k-1)/2\n    let result = 0;\n    for (const count of prefixes.values()) {\n        result += count * (count - 1) / 2;\n    }\n\n    console.log(result);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 13,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nlet lines = [];\nrl.on('line', (line) => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0]);\n    const s = lines[1].trim();\n    \n    // We need to count the number of contiguous substrings that return to origin.\n    // A substring from index i to j (inclusive) returns to origin if the net displacement is (0,0).\n    // Let prefix[i] be the position after executing the first i commands (prefix[0] = (0,0)).\n    // Then substring from i to j (0-indexed, commands i to j-1) has displacement prefix[j] - prefix[i].\n    // We want prefix[j] == prefix[i] for i < j.\n    // So we need to count pairs (i, j) with i < j such that prefix[i] == prefix[j].\n    \n    // prefix[0] = (0, 0)\n    // prefix[k] for k from 1 to n\n    \n    // We can use a map to store the count of each prefix position.\n    // For each j from 1 to n, the number of valid i (i < j) is the count of prefix[i] == prefix[j] for i in [0, j-1].\n    \n    const map = new Map();\n    // Start with prefix[0] = (0, 0)\n    map.set(\"0,0\", 1);\n    \n    let x = 0, y = 0;\n    let count = 0;\n    \n    for (let j = 1; j <= n; j++) {\n        const cmd = s[j - 1];\n        if (cmd === 'U') y++;\n        else if (cmd === 'D') y--;\n        else if (cmd === 'R') x++;\n        else if (cmd === 'L') x--;\n        \n        const key = `${x},${y}`;\n        const prevCount = map.get(key) || 0;\n        count += prevCount;\n        map.set(key, prevCount + 1);\n    }\n    \n    console.log(count);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 14,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nlet lines = [];\nrl.on('line', (line) => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0].trim());\n    const s = lines[1].trim();\n    \n    // We need to count the number of contiguous substrings that return to origin.\n    // A substring from index i to j (inclusive) returns to origin if the net displacement is (0,0).\n    // Let prefix[i] = (x_i, y_i) be the position after executing commands 0 to i-1.\n    // prefix[0] = (0,0)\n    // prefix[i+1] = prefix[i] + move(s[i])\n    // A substring from i to j (0-indexed, inclusive) has net displacement prefix[j+1] - prefix[i].\n    // We want prefix[j+1] == prefix[i].\n    // So we need to count pairs (i, j) such that 0 <= i < j+1 <= n and prefix[i] == prefix[j+1].\n    // Let k = j+1, then 0 <= i < k <= n and prefix[i] == prefix[k].\n    // So we need to count pairs (i, k) with 0 <= i < k <= n such that prefix[i] == prefix[k].\n    \n    // Compute prefix positions\n    const prefix = new Array(n + 1);\n    prefix[0] = { x: 0, y: 0 };\n    for (let i = 0; i < n; i++) {\n        const { x, y } = prefix[i];\n        let nx = x;\n        let ny = y;\n        switch (s[i]) {\n            case 'U': ny++; break;\n            case 'D': ny--; break;\n            case 'L': nx--; break;\n            case 'R': nx++; break;\n        }\n        prefix[i + 1] = { x: nx, y: ny };\n    }\n    \n    // Count occurrences of each position\n    const posCount = new Map();\n    for (let i = 0; i <= n; i++) {\n        const key = `${prefix[i].x},${prefix[i].y}`;\n        posCount.set(key, (posCount.get(key) || 0) + 1);\n    }\n    \n    // For each position that appears c times, the number of pairs (i, k) with i < k is c*(c-1)/2\n    let result = 0;\n    for (const count of posCount.values()) {\n        result += (count * (count - 1)) / 2;\n    }\n    \n    console.log(result);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 15,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0].trim());\n    const s = lines[1].trim();\n\n    // We need to count the number of contiguous substrings that return to origin.\n    // A substring from index i to j (inclusive) returns to origin if the net displacement is (0,0).\n    // Let's define prefix sums:\n    // px[k] = sum of horizontal moves from 0 to k-1 (R=+1, L=-1, U/D=0)\n    // py[k] = sum of vertical moves from 0 to k-1 (U=+1, D=-1, R/L=0)\n    // Then substring from i to j-1 (0-indexed, length j-i) has net displacement (px[j]-px[i], py[j]-py[i]).\n    // We want px[j] == px[i] and py[j] == py[i].\n    // So we need to count pairs (i, j) with 0 <= i < j <= n such that (px[i], py[i]) == (px[j], py[j]).\n\n    // Compute prefix arrays\n    const px = new Array(n + 1).fill(0);\n    const py = new Array(n + 1).fill(0);\n\n    for (let i = 0; i < n; i++) {\n        px[i + 1] = px[i];\n        py[i + 1] = py[i];\n        switch (s[i]) {\n            case 'R':\n                px[i + 1] += 1;\n                break;\n            case 'L':\n                px[i + 1] -= 1;\n                break;\n            case 'U':\n                py[i + 1] += 1;\n                break;\n            case 'D':\n                py[i + 1] -= 1;\n                break;\n        }\n    }\n\n    // Now count pairs (i, j) with i < j and (px[i], py[i]) == (px[j], py[j])\n    // Group indices by their (px, py) value. For each group of size m, the number of pairs is m*(m-1)/2.\n\n    const map = new Map();\n    for (let i = 0; i <= n; i++) {\n        const key = `${px[i]},${py[i]}`;\n        if (!map.has(key)) {\n            map.set(key, 0);\n        }\n        map.set(key, map.get(key) + 1);\n    }\n\n    let count = 0;\n    for (const countInGroup of map.values()) {\n        count += (countInGroup * (countInGroup - 1)) / 2;\n    }\n\n    console.log(count);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 16,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0].trim());\n    const s = lines[1].trim();\n\n    // We need to count the number of contiguous substrings that return to the start.\n    // A substring from index i to j (inclusive) returns to start if the net displacement is (0,0).\n    // Let prefix[i] be the position after executing commands 0 to i-1.\n    // prefix[0] = (0,0)\n    // prefix[i+1] = prefix[i] + move(s[i])\n    // A substring from i to j (0-indexed, inclusive) corresponds to prefix[j+1] - prefix[i] = (0,0)\n    // So we need prefix[j+1] == prefix[i].\n    // We need to count pairs (i, j) with 0 <= i < j+1 <= n, i.e., 0 <= i < k <= n where k = j+1.\n    // So we need to count pairs (i, k) with 0 <= i < k <= n such that prefix[i] == prefix[k].\n\n    // Compute prefix positions\n    let x = 0, y = 0;\n    const prefix = new Array(n + 1);\n    prefix[0] = [0, 0];\n    for (let i = 0; i < n; i++) {\n        const c = s[i];\n        if (c === 'U') y++;\n        else if (c === 'D') y--;\n        else if (c === 'R') x++;\n        else if (c === 'L') x--;\n        prefix[i + 1] = [x, y];\n    }\n\n    // Count occurrences of each position\n    const posCount = new Map();\n    for (let i = 0; i <= n; i++) {\n        const key = prefix[i][0] + ',' + prefix[i][1];\n        if (!posCount.has(key)) {\n            posCount.set(key, 0);\n        }\n        posCount.set(key, posCount.get(key) + 1);\n    }\n\n    // For each position that appears c times, the number of pairs is c * (c - 1) / 2\n    let result = 0;\n    for (const count of posCount.values()) {\n        result += count * (count - 1) / 2;\n    }\n\n    console.log(result);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 17,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nlet lines = [];\nrl.on('line', (line) => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0].trim());\n    const s = lines[1].trim();\n    \n    // We need to count the number of contiguous substrings that return to the start.\n    // A substring from index i to j (inclusive) returns to start if the net displacement is zero.\n    // Let's use prefix sums. Let (x[i], y[i]) be the position after executing commands 0 to i-1.\n    // x[0] = 0, y[0] = 0.\n    // For command at index i (0-based), it affects position for prefix i+1.\n    // So prefix[i] is the position after i commands.\n    // A substring from l to r (0-based indices in s) corresponds to prefix[r+1] - prefix[l] = (0,0)\n    // which means prefix[r+1] == prefix[l].\n    // So we need to count pairs (i, j) with 0 <= i < j <= n such that prefix[i] == prefix[j].\n    // Here i = l, j = r+1.\n    \n    const prefixX = [0];\n    const prefixY = [0];\n    \n    for (let i = 0; i < n; i++) {\n        const c = s[i];\n        const px = prefixX[i];\n        const py = prefixY[i];\n        if (c === 'U') {\n            prefixX.push(px);\n            prefixY.push(py + 1);\n        } else if (c === 'D') {\n            prefixX.push(px);\n            prefixY.push(py - 1);\n        } else if (c === 'R') {\n            prefixX.push(px + 1);\n            prefixY.push(py);\n        } else if (c === 'L') {\n            prefixX.push(px - 1);\n            prefixY.push(py);\n        }\n    }\n    \n    // Now we have prefixX[0..n] and prefixY[0..n]\n    // Count pairs (i, j) with i < j and prefixX[i] == prefixX[j] and prefixY[i] == prefixY[j]\n    \n    // Use a map to store counts of each (x, y) position\n    const posCount = new Map();\n    let count = 0;\n    \n    for (let i = 0; i <= n; i++) {\n        const key = `${prefixX[i]},${prefixY[i]}`;\n        const prevCount = posCount.get(key) || 0;\n        // For each previous occurrence of this position, we can form a valid substring\n        count += prevCount;\n        posCount.set(key, prevCount + 1);\n    }\n    \n    console.log(count);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 18,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nlet lines = [];\nrl.on('line', (line) => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0].trim());\n    const s = lines[1].trim();\n    \n    // We need to count the number of contiguous substrings that sum to (0,0)\n    // Let prefix[i] be the position after executing the first i commands (prefix[0] = (0,0))\n    // A substring from i to j-1 (0-indexed, i < j) sums to (0,0) if prefix[j] == prefix[i]\n    // So we need to count pairs (i, j) with i < j such that prefix[i] == prefix[j]\n    \n    const prefix = new Array(n + 1);\n    prefix[0] = [0, 0];\n    \n    for (let i = 0; i < n; i++) {\n        const [x, y] = prefix[i];\n        let nx = x, ny = y;\n        switch (s[i]) {\n            case 'U': ny++; break;\n            case 'D': ny--; break;\n            case 'R': nx++; break;\n            case 'L': nx--; break;\n        }\n        prefix[i + 1] = [nx, ny];\n    }\n    \n    // Count frequency of each prefix position\n    const freq = new Map();\n    let count = 0;\n    \n    for (let i = 0; i <= n; i++) {\n        const key = `${prefix[i][0]},${prefix[i][1]}`;\n        if (freq.has(key)) {\n            count += freq.get(key);\n            freq.set(key, freq.get(key) + 1);\n        } else {\n            freq.set(key, 1);\n        }\n    }\n    \n    console.log(count);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 19,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0].trim());\n    const s = lines[1].trim();\n\n    // We need to count the number of contiguous substrings that return to the starting position.\n    // This is equivalent to counting pairs of indices (i, j) with i < j such that the net displacement from i to j-1 is zero.\n    // Let prefix[i] be the position after executing the first i commands (prefix[0] = (0,0)).\n    // A substring from index i to j-1 (0-indexed, length j-i) returns to start if prefix[j] == prefix[i].\n    // So we need to count the number of pairs (i, j) with 0 <= i < j <= n such that prefix[i] == prefix[j].\n\n    // Compute prefix positions\n    let x = 0, y = 0;\n    const prefix = new Array(n + 1);\n    prefix[0] = { x: 0, y: 0 };\n    for (let i = 0; i < n; i++) {\n        const cmd = s[i];\n        if (cmd === 'U') y++;\n        else if (cmd === 'D') y--;\n        else if (cmd === 'R') x++;\n        else if (cmd === 'L') x--;\n        prefix[i + 1] = { x, y };\n    }\n\n    // Count occurrences of each position\n    const posCount = new Map();\n    let count = 0;\n    for (let i = 0; i <= n; i++) {\n        const key = `${prefix[i].x},${prefix[i].y}`;\n        if (posCount.has(key)) {\n            count += posCount.get(key);\n        }\n        posCount.set(key, (posCount.get(key) || 0) + 1);\n    }\n\n    console.log(count);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 11066,
+            "prompt_tokens": 349,
+            "total_tokens": 11415
+        },
+        "prompt": "Write a program in Javascript to solve this programming problem:\nDescription: Calvin the robot lies in an infinite rectangular grid. Calvin's source code contains a list of n commands, each either 'U', 'R', 'D', or 'L'\u00a0\u2014 instructions to move a single square up, right, down, or left, respectively. How many ways can Calvin execute a non-empty contiguous substrings of commands and return to the same square he starts in? Two substrings are considered different if they have different starting or ending indices.\nInput Specification: The first line of the input contains a single positive integer, n (1\u2009\u2264\u2009n\u2009\u2264\u2009200)\u00a0\u2014 the number of commands. The next line contains n characters, each either 'U', 'R', 'D', or 'L'\u00a0\u2014 Calvin's source code.\nOutput Specification: Print a single integer\u00a0\u2014 the number of contiguous substrings that Calvin can execute and return to his starting square.\n\nSample Input:\n6\nURLLDR\nSample Output:\n2\n\nSample Input:\n4\nDLUU\nSample Output:\n0\n\nSample Input:\n7\nRLRLRLR\nSample Output:\n12\n\nNotes: NoteIn the first case, the entire source code works, as well as the \"RL\" substring in the second and third characters.Note that, in the third case, the substring \"LR\" appears three times, and is therefore counted three times to the total result.\nTake input from standard input and output to standard output\nProvide the Javascript code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "7bd5521531950e2de9a7b0904353184d",
+        "difficulty": 1000,
+        "prob_desc_sample_inputs": [
+            "6\nURLLDR",
+            "4\nDLUU",
+            "7\nRLRLRLR"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "brute force",
+            "implementation"
+        ],
+        "prob_desc_output_spec": "Print a single integer\u00a0\u2014 the number of contiguous substrings that Calvin can execute and return to his starting square.",
+        "prob_desc_input_spec": "The first line of the input contains a single positive integer, n (1\u2009\u2264\u2009n\u2009\u2264\u2009200)\u00a0\u2014 the number of commands. The next line contains n characters, each either 'U', 'R', 'D', or 'L'\u00a0\u2014 Calvin's source code.",
+        "lang_cluster": "Javascript",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first case, the entire source code works, as well as the \"RL\" substring in the second and third characters.Note that, in the third case, the substring \"LR\" appears three times, and is therefore counted three times to the total result.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Calvin the robot lies in an infinite rectangular grid. Calvin's source code contains a list of n commands, each either 'U', 'R', 'D', or 'L'\u00a0\u2014 instructions to move a single square up, right, down, or left, respectively. How many ways can Calvin execute a non-empty contiguous substrings of commands and return to the same square he starts in? Two substrings are considered different if they have different starting or ending indices.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1455384900",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "2",
+            "0",
+            "12"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"6\\r\\nURLLDR\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"4\\r\\nDLUU\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7\\r\\nRLRLRLR\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1\\r\\nR\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"100\\r\\nURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDL\\r\\n\", \"output\": [\"1225\"]}, {\"input\": \"200\\r\\nLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR\\r\\n\", \"output\": [\"100\"]}, {\"input\": \"20\\r\\nLDURLDURRLRUDLRRUDLU\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"140\\r\\nDLDLULULDRDDDLLUDRRDLLUULLDDLDLUURLDLDRDUDDLRRDURUUUUURLDUDDLLRRLLDRRRDDDDDUDUULLURRDLDULUDLLUUDRRLUDULUDUDULULUURURRDUURRDLULLURUDDDDRDRDRD\\r\\n\", \"output\": [\"125\"]}, {\"input\": \"194\\r\\nULLLDLLDRUUDURRULLRLUUURDRLLURDUDDUDLULRLDRUDURLDLRDLLLLUDDRRRULULULUDDULRURURLLDLDLDRUDUUDULRULDDRRLRDRULLDRULLLLRRDDLLLLULDRLUULRUUULDUUDLDLDUUUDDLDDRULDRRLUURRULLDULRRDLLRDURDLUUDUDLLUDDULDDD\\r\\n\", \"output\": [\"282\"]}, {\"input\": \"200\\r\\nDDDURLLUUULUDDURRDLLDDLLRLUULUULDDDLRRDLRRDUDURDUDRRLLDRDUDDLDDRDLURRRLLRDRRLLLRDDDRDRRLLRRLULRUULRLDLUDRRRDDUUURLLUDRLDUDRLLRLRRLUDLRULDUDDRRLLRLURDLRUDDDURLRDUDUUURLLULULRDRLDLDRURDDDLLRUDDRDUDDDLRU\\r\\n\", \"output\": [\"408\"]}, {\"input\": \"197\\r\\nDUUDUDUDUDUUDUUDUUUDDDDUUUDUUUDUUUUUDUUUDDUDDDUUDUDDDUUDDUUUUUUUDUDDDDDUUUUUDDDDDDUUUUDDUDDUDDDUDUUUDUUDUDUDUUUDUDDDDUUDDUDDDDUDDDUDUUUDUUDUUUDDDDUUUDUUDDUUUUUDDDDUUDUUDDDDUDDUUDUUUDDDDUDUUUDDDUUDU\\r\\n\", \"output\": [\"1995\"]}, {\"input\": \"200\\r\\nLLLLRLLRLLRRRRLLRRLRRLRRRLLLRRLRRRRLLRRLLRRRLRLRLRRLLRLLRRLLLRRRRLRLLRLLLRLLLRRLLLRLRLRRRRRRRLRRRLRLRLLLLRLRRRRRLRRLRLLLLRLLLRRLRRLLRLRLLLRRLLRRLRRRRRLRLRRLRLLRLLLLRLRRRLRRLRLLRLRRLRRRRRLRRLLLRRRRRLLR\\r\\n\", \"output\": [\"1368\"]}, {\"input\": \"184\\r\\nUUUDDUDDDDDUDDDDUDDUUUUUDDDUUDDUDUUDUUUDDUDDDDDDDDDDUDUDDUUDDDUUDDUDUDDDUUDUDUUUUDDUDUUUDDUDUUUUDUUDDUUDUUUDUDUDDUDUDDDUUDDDDUUUUUDDDUDUDUDUDUDUUUDUDDUUDDUDUUDUDUUUDUUDDDDUDDDDUDUUDUUD\\r\\n\", \"output\": [\"1243\"]}, {\"input\": \"187\\r\\nRLLRLRRLLRRLRRRRLLRLLRLLLLRRRLLLRLLLLRRLRLRRRRRRLLRRLRLLRRRLLRRLLLRRLRRLRLLLLRRRRLRRLLRRLRRRRLLLLRRLRLRLRRRRRLLRLRLRLRLRLRLLLRLLLLLRRRLLRLRRRLLLRRLLLLLRLLRLLLRRRLLLRRLRRRLLLRRLRLLRRLRLRLR\\r\\n\", \"output\": [\"1501\"]}, {\"input\": \"190\\r\\nUULLLUUULLLULLUULUUUUULUUULLULLULUULLUULLUUULULUULLUULLUUULULLLLLLULLLLLULUULLULLULLLUULUULLLUUUULLLLUUULLUUULLLULULUULULLUULULULUUULLUUUULLUUULULUULLLLULLLLLUULLUULULLULUUUUUULULLLULLUULUUU\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"46\\r\\nULUURRRRLDRDRDDDURRRLLLDDULLRRRRRLUDDLRDRULLLL\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"70\\r\\nUUDRLDRDRUDLLURURULRDULRRDULDUDDRUULLDDDDDRLLRDURRDULRDLRUUUDDLRUURRLD\\r\\n\", \"output\": [\"86\"]}, {\"input\": \"198\\r\\nURLLUDRDUUDRDLLRURULLRRLRRUULRLULUUDRRURLRUURRDRUUDRLRURLLULRDDDDDRDDRRRLRUDULLDDLLLUDRLDRUDRDLDUULLUUUULULLRLDDRDURDRURLULDRURLLDDULURULDLUUUUULDLURRLLDLULLDULRUURRLDLLUUURDLDDUDUULRLUDULLULDRDRLRL\\r\\n\", \"output\": [\"160\"]}, {\"input\": \"22\\r\\nDUDDDURURUDURRUDRDULUL\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"200\\r\\nUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUD\\r\\n\", \"output\": [\"10000\"]}, {\"input\": \"4\\r\\nRRDR\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6\\r\\nUULLLL\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2\\r\\nDU\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"6\\r\\nUURRRR\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"101\\r\\nRDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD\\r\\n\", \"output\": [\"0\"]}]"
+    }
+}

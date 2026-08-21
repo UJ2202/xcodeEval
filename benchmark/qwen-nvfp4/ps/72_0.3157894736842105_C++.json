@@ -1,0 +1,390 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-9ed10d1cf2df8ad4",
+        "created": 1787073746,
+        "model": "qwen-nvfp4",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.27.1-d7a14dad",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    int n;\n    std::cin >> n;\n    \n    std::vector<int> a(n);\n    for (int i = 0; i < n; i++) {\n        std::cin >> a[i];\n    }\n    \n    int total_ones = 0;\n    for (int i = 0; i < n; i++) {\n        total_ones += a[i];\n    }\n    \n    // We need to find the best segment [i, j] to flip.\n    // Flipping a segment changes 0s to 1s and 1s to 0s.\n    // The change in the number of ones is: (number of 0s in segment) - (number of 1s in segment)\n    // We want to maximize this change.\n    \n    // Let's define a new array where:\n    // if a[i] == 0, we gain +1 (because flipping 0 to 1 increases ones)\n    // if a[i] == 1, we lose -1 (because flipping 1 to 0 decreases ones)\n    \n    // So we want to find the maximum subarray sum of this transformed array.\n    \n    int max_gain = 0;\n    int current_gain = 0;\n    \n    for (int i = 0; i < n; i++) {\n        int value = (a[i] == 0) ? 1 : -1;\n        current_gain += value;\n        if (current_gain < 0) {\n            current_gain = 0;\n        }\n        if (current_gain > max_gain) {\n            max_gain = current_gain;\n        }\n    }\n    \n    // The maximum number of ones after one flip is total_ones + max_gain\n    // Note: We must do exactly one move. If max_gain is 0, it means we should flip a segment that doesn't change the count (or we can flip a single element that is 1, which would decrease by 1, but wait...).\n    \n    // Actually, let's reconsider. The problem says \"exactly one move\". \n    // If we flip a segment, the change in ones is (zeros_in_segment - ones_in_segment).\n    // We want to maximize total_ones + (zeros_in_segment - ones_in_segment).\n    \n    // The Kadane's algorithm above finds the maximum subarray sum where 0 contributes +1 and 1 contributes -1.\n    // This gives us the maximum possible gain.\n    \n    // However, we must perform exactly one move. If the maximum gain is 0, it means we can't improve the count. But we still have to flip something.\n    // If we flip a segment with equal zeros and ones, the gain is 0.\n    // If all elements are 1, then flipping any segment will decrease the count. The best we can do is flip a single element (gain = -1).\n    // If all elements are 0, then flipping any segment will increase the count. The best is to flip the whole array (gain = n).\n    \n    // Let's check: if max_gain is 0, does that mean we can achieve total_ones + 0?\n    // Yes, if there exists a segment with equal zeros and ones.\n    // But what if no such segment exists?\n    \n    // Actually, the Kadane's algorithm as written finds the maximum subarray sum, allowing empty subarray (sum 0).\n    // But we must choose a non-empty segment.\n    \n    // Let's redo: we need the maximum subarray sum over non-empty subarrays.\n    \n    int max_gain_nonempty = -1000;\n    int current = 0;\n    for (int i = 0; i < n; i++) {\n        int value = (a[i] == 0) ? 1 : -1;\n        current += value;\n        if (current > max_gain_nonempty) {\n            max_gain_nonempty = current;\n        }\n        if (current < 0) {\n            current = 0;\n        }\n    }\n    \n    // Wait, the above still allows resetting to 0, which effectively allows empty subarray.\n    // Let's do it properly for non-empty subarray.\n    \n    max_gain_nonempty = (a[0] == 0) ? 1 : -1;\n    current = max_gain_nonempty;\n    \n    for (int i = 1; i < n; i++) {\n        int value = (a[i] == 0) ? 1 : -1;\n        current = std::max(value, current + value);\n        if (current > max_gain_nonempty) {\n            max_gain_nonempty = current;\n        }\n    }\n    \n    int result = total_ones + max_gain_nonempty;\n    std::cout << result << std::endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    int n;\n    std::cin >> n;\n    \n    std::vector<int> a(n);\n    for (int i = 0; i < n; i++) {\n        std::cin >> a[i];\n    }\n    \n    // Count initial number of ones\n    int initial_ones = 0;\n    for (int i = 0; i < n; i++) {\n        if (a[i] == 1) {\n            initial_ones++;\n        }\n    }\n    \n    // We need to find the maximum gain from flipping a contiguous segment\n    // Flipping a segment: ones become zeros, zeros become ones\n    // Gain = (number of zeros in segment) - (number of ones in segment)\n    // So we want to maximize this gain\n    \n    // Transform: for each element, if it's 0, flipping gives +1 (gain), if it's 1, flipping gives -1 (loss)\n    // So we want to find the maximum subarray sum where:\n    // value[i] = 1 if a[i] == 0, value[i] = -1 if a[i] == 1\n    \n    std::vector<int> values(n);\n    for (int i = 0; i < n; i++) {\n        if (a[i] == 0) {\n            values[i] = 1;\n        } else {\n            values[i] = -1;\n        }\n    }\n    \n    // Find maximum subarray sum using Kadane's algorithm\n    int max_gain = 0;\n    int current_sum = 0;\n    for (int i = 0; i < n; i++) {\n        current_sum = std::max(0, current_sum + values[i]);\n        max_gain = std::max(max_gain, current_sum);\n    }\n    \n    // The answer is initial_ones + max_gain\n    std::cout << initial_ones + max_gain << std::endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    int n;\n    std::cin >> n;\n    \n    std::vector<int> a(n);\n    int total_ones = 0;\n    \n    for (int i = 0; i < n; i++) {\n        std::cin >> a[i];\n        total_ones += a[i];\n    }\n    \n    // We need to find the maximum number of ones after flipping exactly one segment.\n    // Flipping a segment [i, j] changes:\n    // - 0s in the segment become 1s (gain)\n    // - 1s in the segment become 0s (loss)\n    // So the net change is: (number of 0s in segment) - (number of 1s in segment)\n    // We want to maximize: total_ones + (zeros_in_segment - ones_in_segment)\n    // Which is equivalent to maximizing: zeros_in_segment - ones_in_segment\n    \n    // We can transform this into a maximum subarray sum problem.\n    // For each element, if it's 0, flipping it gives +1 (good), if it's 1, flipping it gives -1 (bad).\n    // So we create an array b where b[i] = 1 if a[i] == 0, else -1.\n    // Then we find the maximum subarray sum of b.\n    \n    std::vector<int> b(n);\n    for (int i = 0; i < n; i++) {\n        if (a[i] == 0)\n            b[i] = 1;\n        else\n            b[i] = -1;\n    }\n    \n    // Find maximum subarray sum using Kadane's algorithm\n    int max_sum = b[0];\n    int current_sum = b[0];\n    \n    for (int i = 1; i < n; i++) {\n        current_sum = std::max(b[i], current_sum + b[i]);\n        max_sum = std::max(max_sum, current_sum);\n    }\n    \n    // The answer is total_ones + max_sum\n    // But note: we must flip exactly one segment, so max_sum should be at least -1 (flipping a single 1)\n    // However, since we're looking for maximum, and we can always choose a segment, this is fine.\n    \n    std::cout << total_ones + max_sum << std::endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    vector<int> a(n);\n    int total_ones = 0;\n    \n    for (int i = 0; i < n; i++) {\n        cin >> a[i];\n        total_ones += a[i];\n    }\n    \n    // We need to find the best segment to flip.\n    // Flipping a segment changes 0s to 1s and 1s to 0s.\n    // The change in the number of ones is: (number of 0s in segment) - (number of 1s in segment)\n    // We want to maximize this change.\n    \n    // Let's define a value for each element:\n    // If a[i] is 0, flipping it adds 1 to the count of ones.\n    // If a[i] is 1, flipping it subtracts 1 from the count of ones.\n    // So we can create an array where:\n    //   value[i] = 1 if a[i] == 0\n    //   value[i] = -1 if a[i] == 1\n    \n    // Then we want to find the maximum subarray sum of this value array.\n    // The maximum number of ones after flipping will be: total_ones + max_subarray_sum\n    \n    vector<int> value(n);\n    for (int i = 0; i < n; i++) {\n        if (a[i] == 0) {\n            value[i] = 1;\n        } else {\n            value[i] = -1;\n        }\n    }\n    \n    // Find maximum subarray sum using Kadane's algorithm\n    int max_ending_here = 0;\n    int max_so_far = 0;\n    \n    for (int i = 0; i < n; i++) {\n        max_ending_here = max(0, max_ending_here + value[i]);\n        max_so_far = max(max_so_far, max_ending_here);\n    }\n    \n    // Note: We must do exactly one move, so we need to flip at least one element.\n    // If all values are 1, then flipping any single element will decrease the count by 1.\n    // The maximum subarray sum would be 0 (if we allow empty subarray), but we can't flip nothing.\n    // Actually, with Kadane's as written (starting with 0 and taking max with 0), if all are -1,\n    // max_so_far will be 0. But we must flip at least one element.\n    // So if max_so_far is 0, it means the best we can do is flip a segment that gives 0 change,\n    // but actually if all are 1, flipping any single element gives -1 change.\n    \n    // Let me reconsider: we need to find the maximum subarray sum where the subarray is non-empty.\n    \n    int max_ending_here2 = value[0];\n    int max_so_far2 = value[0];\n    \n    for (int i = 1; i < n; i++) {\n        max_ending_here2 = max(value[i], max_ending_here2 + value[i]);\n        max_so_far2 = max(max_so_far2, max_ending_here2);\n    }\n    \n    int result = total_ones + max_so_far2;\n    \n    cout << result << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    vector<int> a(n);\n    int total_ones = 0;\n    for (int i = 0; i < n; i++) {\n        cin >> a[i];\n        total_ones += a[i];\n    }\n    \n    // We need to find the maximum gain from flipping a contiguous subarray.\n    // Flipping a subarray changes 0s to 1s and 1s to 0s.\n    // The gain for flipping a subarray is: (number of 0s in subarray) - (number of 1s in subarray)\n    // This is equivalent to: sum of (1 - 2*a[i]) for i in the subarray\n    // Let b[i] = 1 - 2*a[i]. If a[i] is 0, b[i] = 1. If a[i] is 1, b[i] = -1.\n    // We want to find the maximum subarray sum of b.\n    \n    vector<int> b(n);\n    for (int i = 0; i < n; i++) {\n        b[i] = 1 - 2 * a[i];\n    }\n    \n    // Find maximum subarray sum using Kadane's algorithm\n    int max_gain = 0;\n    int current_sum = 0;\n    for (int i = 0; i < n; i++) {\n        current_sum = max(0, current_sum + b[i]);\n        max_gain = max(max_gain, current_sum);\n    }\n    \n    // The answer is total_ones + max_gain\n    cout << total_ones + max_gain << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    int n;\n    std::cin >> n;\n    \n    std::vector<int> a(n);\n    for (int i = 0; i < n; i++) {\n        std::cin >> a[i];\n    }\n    \n    // Count initial number of ones\n    int initial_ones = 0;\n    for (int i = 0; i < n; i++) {\n        if (a[i] == 1) {\n            initial_ones++;\n        }\n    }\n    \n    // We need to find the maximum gain from flipping a contiguous subarray\n    // Flipping a subarray: ones become zeros, zeros become ones\n    // Gain = (number of zeros in subarray) - (number of ones in subarray)\n    // We want to maximize this gain\n    \n    // Convert to a problem: for each element, if it's 0, flipping gives +1 gain\n    // if it's 1, flipping gives -1 gain\n    // So we want to find the maximum subarray sum of the transformed array\n    \n    std::vector<int> transformed(n);\n    for (int i = 0; i < n; i++) {\n        if (a[i] == 0) {\n            transformed[i] = 1;\n        } else {\n            transformed[i] = -1;\n        }\n    }\n    \n    // Find maximum subarray sum (Kadane's algorithm)\n    int max_gain = 0;\n    int current_sum = 0;\n    for (int i = 0; i < n; i++) {\n        current_sum = std::max(0, current_sum + transformed[i]);\n        max_gain = std::max(max_gain, current_sum);\n    }\n    \n    // The answer is initial_ones + max_gain\n    std::cout << initial_ones + max_gain << std::endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    vector<int> a(n);\n    int totalOnes = 0;\n    for (int i = 0; i < n; i++) {\n        cin >> a[i];\n        if (a[i] == 1) {\n            totalOnes++;\n        }\n    }\n    \n    // We need to find the maximum gain from flipping a contiguous subarray.\n    // Flipping a subarray changes 0s to 1s and 1s to 0s.\n    // The change in the number of ones is: (number of 0s in subarray) - (number of 1s in subarray)\n    // We want to maximize this gain.\n    \n    // Let's define a new array where:\n    // If a[i] is 0, flipping it gives +1 (gain)\n    // If a[i] is 1, flipping it gives -1 (loss)\n    // So we want to find the maximum subarray sum of this transformed array.\n    \n    vector<int> transformed(n);\n    for (int i = 0; i < n; i++) {\n        if (a[i] == 0) {\n            transformed[i] = 1;\n        } else {\n            transformed[i] = -1;\n        }\n    }\n    \n    // Find maximum subarray sum using Kadane's algorithm\n    int maxGain = 0;\n    int currentSum = 0;\n    for (int i = 0; i < n; i++) {\n        currentSum += transformed[i];\n        if (currentSum > maxGain) {\n            maxGain = currentSum;\n        }\n        if (currentSum < 0) {\n            currentSum = 0;\n        }\n    }\n    \n    // The maximum number of ones after exactly one move is totalOnes + maxGain\n    // Note: maxGain can be 0 if all elements are 1 (flipping any segment would decrease ones),\n    // but we must do exactly one move. However, if we flip a segment of length 0? No, i <= j, so at least one element.\n    // But wait, if all are 1s, flipping any segment will reduce the count. But the problem says \"exactly one move\".\n    // Let's re-read: \"he chooses two indices i and j (1 \u2264 i \u2264 j \u2264 n)\". So we must flip at least one element.\n    // If all are 1s, the best we can do is flip a single element, which gives totalOnes - 1.\n    // But our Kadane's algorithm with maxGain initialized to 0 would give 0, which is wrong in that case.\n    \n    // Let's reconsider. We must pick a non-empty subarray.\n    // So we need to find the maximum subarray sum where the subarray is non-empty.\n    \n    // Let's redo Kadane's for non-empty subarray.\n    int maxGainNonEmpty = transformed[0];\n    int currentSumNonEmpty = transformed[0];\n    for (int i = 1; i < n; i++) {\n        currentSumNonEmpty = max(transformed[i], currentSumNonEmpty + transformed[i]);\n        if (currentSumNonEmpty > maxGainNonEmpty) {\n            maxGainNonEmpty = currentSumNonEmpty;\n        }\n    }\n    \n    // The answer is totalOnes + maxGainNonEmpty\n    cout << totalOnes + maxGainNonEmpty << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    int n;\n    std::cin >> n;\n    \n    std::vector<int> a(n);\n    for (int i = 0; i < n; i++) {\n        std::cin >> a[i];\n    }\n    \n    // Count initial number of ones\n    int initial_ones = 0;\n    for (int i = 0; i < n; i++) {\n        if (a[i] == 1) {\n            initial_ones++;\n        }\n    }\n    \n    // We need to find the maximum gain from flipping a contiguous subarray.\n    // Flipping a subarray changes 0s to 1s and 1s to 0s.\n    // The change in the number of ones = (number of 0s in subarray) - (number of 1s in subarray)\n    // = (length of subarray - number of 1s in subarray) - (number of 1s in subarray)\n    // = length - 2 * (number of 1s in subarray)\n    \n    // Alternatively, we can think of it as:\n    // For each element, if it's 0, flipping it gives +1 to the count of ones.\n    // If it's 1, flipping it gives -1 to the count of ones.\n    // So we want to find the maximum sum subarray where:\n    // value[i] = 1 if a[i] == 0, -1 if a[i] == 1\n    \n    // Use Kadane's algorithm to find the maximum subarray sum\n    int max_gain = 0;\n    int current_gain = 0;\n    \n    for (int i = 0; i < n; i++) {\n        int val = (a[i] == 0) ? 1 : -1;\n        current_gain = std::max(val, current_gain + val);\n        max_gain = std::max(max_gain, current_gain);\n    }\n    \n    // The maximum number of ones after one flip is initial_ones + max_gain\n    // Note: max_gain is at least 0 (we can always choose a subarray that doesn't decrease the count, or even an empty one conceptually, but since we must flip exactly one non-empty subarray, we need to be careful)\n    \n    // Actually, the problem says we must choose i and j with 1 <= i <= j <= n, so the subarray is non-empty.\n    // But Kadane's algorithm as written above allows current_gain to be reset to val, which handles the case where starting fresh is better.\n    // However, if all elements are 1, then flipping any subarray will decrease the count. In that case, we must flip at least one element, so the best we can do is flip a single 1, which gives -1 gain.\n    // Let's check: if all are 1, initial_ones = n. The values are all -1. Kadane's would give max_gain = -1 (the maximum single element).\n    // So initial_ones + max_gain = n - 1, which is correct.\n    \n    // But wait, what if max_gain is negative? That's fine, we still have to do the flip.\n    \n    int result = initial_ones + max_gain;\n    \n    std::cout << result << std::endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 8,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    int n;\n    std::cin >> n;\n    \n    std::vector<int> a(n);\n    for (int i = 0; i < n; i++) {\n        std::cin >> a[i];\n    }\n    \n    // Count initial number of ones\n    int initial_ones = 0;\n    for (int i = 0; i < n; i++) {\n        if (a[i] == 1) {\n            initial_ones++;\n        }\n    }\n    \n    // We need to find the best segment [i, j] to flip\n    // Flipping a segment changes 0s to 1s and 1s to 0s\n    // The change in number of ones = (number of 0s in segment) - (number of 1s in segment)\n    // We want to maximize this change\n    \n    // Let's define a value for each position:\n    // If a[i] == 0, flipping it adds 1 to the count of ones -> contribution +1\n    // If a[i] == 1, flipping it subtracts 1 from the count of ones -> contribution -1\n    \n    // So we want to find the maximum subarray sum where:\n    // value[i] = 1 if a[i] == 0, -1 if a[i] == 1\n    \n    std::vector<int> values(n);\n    for (int i = 0; i < n; i++) {\n        if (a[i] == 0) {\n            values[i] = 1;\n        } else {\n            values[i] = -1;\n        }\n    }\n    \n    // Find maximum subarray sum using Kadane's algorithm\n    // But we must flip exactly one segment, so the segment must be non-empty\n    int max_gain = values[0];\n    int current_max = values[0];\n    \n    for (int i = 1; i < n; i++) {\n        current_max = std::max(values[i], current_max + values[i]);\n        max_gain = std::max(max_gain, current_max);\n    }\n    \n    int result = initial_ones + max_gain;\n    \n    std::cout << result << std::endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 9,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    vector<int> a(n);\n    int total_ones = 0;\n    \n    for (int i = 0; i < n; i++) {\n        cin >> a[i];\n        total_ones += a[i];\n    }\n    \n    // We need to find the maximum gain from flipping a contiguous subarray.\n    // Flipping a subarray changes 0s to 1s and 1s to 0s.\n    // The gain for flipping a subarray is: (number of 0s in subarray) - (number of 1s in subarray)\n    // We want to maximize this gain.\n    \n    // Let's transform the problem: for each element, if it's 0, flipping it gives +1 gain, if it's 1, flipping it gives -1 gain.\n    // So we create an array b where b[i] = 1 if a[i] == 0, else -1.\n    // Then we need to find the maximum subarray sum in b.\n    \n    vector<int> b(n);\n    for (int i = 0; i < n; i++) {\n        if (a[i] == 0)\n            b[i] = 1;\n        else\n            b[i] = -1;\n    }\n    \n    // Find maximum subarray sum using Kadane's algorithm\n    int max_gain = 0;\n    int current_sum = 0;\n    \n    for (int i = 0; i < n; i++) {\n        current_sum = max(0, current_sum + b[i]);\n        max_gain = max(max_gain, current_sum);\n    }\n    \n    // The answer is total_ones + max_gain\n    cout << total_ones + max_gain << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 10,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    int n;\n    std::cin >> n;\n    \n    std::vector<int> a(n);\n    int total_ones = 0;\n    \n    for (int i = 0; i < n; i++) {\n        std::cin >> a[i];\n        if (a[i] == 1) {\n            total_ones++;\n        }\n    }\n    \n    // We need to find the maximum gain from flipping a contiguous subarray.\n    // Flipping a subarray changes 0s to 1s and 1s to 0s.\n    // The net change in the number of ones is: (number of 0s in subarray) - (number of 1s in subarray)\n    // We want to maximize this net change.\n    \n    // Let's define a new array where:\n    // If a[i] is 0, flipping it gives +1 (gain)\n    // If a[i] is 1, flipping it gives -1 (loss)\n    // So we want to find the maximum subarray sum in this transformed array.\n    \n    int max_gain = 0;\n    int current_gain = 0;\n    \n    for (int i = 0; i < n; i++) {\n        int value = (a[i] == 0) ? 1 : -1;\n        current_gain = std::max(value, current_gain + value);\n        max_gain = std::max(max_gain, current_gain);\n    }\n    \n    // The maximum number of ones after one flip is total_ones + max_gain\n    std::cout << total_ones + max_gain << std::endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 11,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    int n;\n    std::cin >> n;\n    \n    std::vector<int> a(n);\n    int total_ones = 0;\n    for (int i = 0; i < n; i++) {\n        std::cin >> a[i];\n        total_ones += a[i];\n    }\n    \n    // We need to find the maximum gain from flipping a contiguous subarray.\n    // Flipping a subarray changes 0s to 1s and 1s to 0s.\n    // The gain is: (number of 0s in subarray) - (number of 1s in subarray)\n    // Which is equivalent to: sum of (1 - 2*a[i]) for i in subarray\n    // Let's define b[i] = 1 - 2*a[i]. If a[i] is 0, b[i] = 1. If a[i] is 1, b[i] = -1.\n    // We want to find the maximum subarray sum of b.\n    \n    int max_gain = 0; // At least we can flip a segment with 0 gain (e.g., single element that's already 1, gain = -1, but we can also choose not to gain... wait, we must flip exactly one segment)\n    // Actually, we must flip exactly one non-empty segment.\n    // So we need the maximum subarray sum. It could be negative, but we have to do it.\n    // However, if all are 1s, flipping any segment will reduce the count. The best is to flip the smallest possible segment (length 1) to minimize loss.\n    \n    // Let's use Kadane's algorithm to find the maximum subarray sum.\n    int current_sum = 0;\n    int best_sum = -1000000; // Initialize to a very small number\n    \n    for (int i = 0; i < n; i++) {\n        int val = 1 - 2 * a[i];\n        current_sum = std::max(val, current_sum + val);\n        best_sum = std::max(best_sum, current_sum);\n    }\n    \n    // The maximum number of ones after flipping is total_ones + best_sum\n    int result = total_ones + best_sum;\n    \n    std::cout << result << std::endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 12,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    \n    vector<int> a(n);\n    int total_ones = 0;\n    \n    for (int i = 0; i < n; i++) {\n        cin >> a[i];\n        if (a[i] == 1) {\n            total_ones++;\n        }\n    }\n    \n    // We need to find the maximum number of ones after flipping exactly one contiguous subarray.\n    // Let's think about it this way:\n    // Initially, we have total_ones ones.\n    // When we flip a subarray [i, j]:\n    // - The 1s in that subarray become 0s (so we lose those ones)\n    // - The 0s in that subarray become 1s (so we gain those ones)\n    // So the change in the number of ones is: (number of 0s in [i,j]) - (number of 1s in [i,j])\n    // Which is equivalent to: (length of [i,j]) - 2 * (number of 1s in [i,j])\n    \n    // We want to maximize: total_ones + (zeros_in_subarray - ones_in_subarray)\n    // Which is: total_ones + (subarray_length - 2 * ones_in_subarray)\n    \n    // Alternatively, we can transform the problem:\n    // Let's assign a value to each element:\n    // If a[i] == 1, flipping it changes the count by -1 (1 becomes 0)\n    // If a[i] == 0, flipping it changes the count by +1 (0 becomes 1)\n    // So we want to find a contiguous subarray that maximizes the sum of these values.\n    \n    // Let b[i] = 1 if a[i] == 0, and -1 if a[i] == 1\n    // Then we want to find the maximum subarray sum of b.\n    // The answer will be total_ones + max_subarray_sum(b)\n    \n    // But wait, we must flip exactly one subarray. The subarray must have at least one element.\n    // So we need to find the maximum subarray sum where the subarray is non-empty.\n    \n    vector<int> b(n);\n    for (int i = 0; i < n; i++) {\n        if (a[i] == 0) {\n            b[i] = 1;\n        } else {\n            b[i] = -1;\n        }\n    }\n    \n    // Find maximum subarray sum (Kadane's algorithm)\n    int max_ending_here = b[0];\n    int max_so_far = b[0];\n    \n    for (int i = 1; i < n; i++) {\n        max_ending_here = max(b[i], max_ending_here + b[i]);\n        max_so_far = max(max_so_far, max_ending_here);\n    }\n    \n    int result = total_ones + max_so_far;\n    \n    cout << result << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 13,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    int n;\n    std::cin >> n;\n    \n    std::vector<int> a(n);\n    for (int i = 0; i < n; i++) {\n        std::cin >> a[i];\n    }\n    \n    // Count initial number of ones\n    int initial_ones = 0;\n    for (int i = 0; i < n; i++) {\n        if (a[i] == 1) {\n            initial_ones++;\n        }\n    }\n    \n    // We need to find the maximum gain from flipping a contiguous subarray\n    // Flipping a subarray: ones become zeros, zeros become ones\n    // The change in number of ones = (zeros in subarray) - (ones in subarray)\n    // = (length of subarray) - 2 * (ones in subarray)\n    \n    // We can transform this to a maximum subarray sum problem\n    // Let's define an array where:\n    // if a[i] == 0, flipping it gives +1 (gain)\n    // if a[i] == 1, flipping it gives -1 (loss)\n    // So we want to find the maximum subarray sum of this transformed array\n    \n    int max_gain = 0; // At least we can flip a segment that gives 0 gain (or we might have to flip something)\n    // Actually, we must flip exactly one segment, so we need to find the best segment\n    \n    // Use Kadane's algorithm to find maximum subarray sum\n    int current_sum = 0;\n    int best_sum = -1000000; // Initialize to a very small number\n    \n    for (int i = 0; i < n; i++) {\n        int value = (a[i] == 0) ? 1 : -1;\n        current_sum = std::max(value, current_sum + value);\n        best_sum = std::max(best_sum, current_sum);\n    }\n    \n    // The maximum number of ones after one flip is initial_ones + best_sum\n    int result = initial_ones + best_sum;\n    \n    std::cout << result << std::endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 14,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    int n;\n    std::cin >> n;\n    \n    std::vector<int> a(n);\n    int total_ones = 0;\n    for (int i = 0; i < n; i++) {\n        std::cin >> a[i];\n        total_ones += a[i];\n    }\n    \n    // We need to find the maximum gain from flipping a contiguous subarray.\n    // Flipping a segment: \n    // - Each 1 in the segment becomes 0 (lose 1)\n    // - Each 0 in the segment becomes 1 (gain 1)\n    // So the net change for a segment is: (number of 0s in segment) - (number of 1s in segment)\n    // Which is equivalent to: sum of (1 - 2*a[i]) for i in segment\n    // Let b[i] = 1 - 2*a[i]. If a[i] is 0, b[i] = 1. If a[i] is 1, b[i] = -1.\n    // We want to find the maximum subarray sum of b.\n    \n    int max_gain = 0; // At least we can choose a segment that gives 0 gain (or we must flip at least one element, but if all are 1, flipping any single element gives -1, so we need to handle this)\n    // Actually, we must do exactly one move, so we must flip at least one element.\n    // But note: if we flip a segment, the gain can be negative. We want the maximum possible number of ones.\n    // So we want to maximize: total_ones + gain\n    // Where gain = (zeros in segment) - (ones in segment)\n    \n    // Use Kadane's algorithm to find maximum subarray sum of b.\n    int current_sum = 0;\n    int max_subarray_sum = 0;\n    // But we must flip at least one element, so the segment length must be at least 1.\n    // Kadane's algorithm typically allows empty subarray (sum 0), but here we need at least one element.\n    // So we initialize max_subarray_sum to b[0] and current_sum to b[0].\n    \n    for (int i = 0; i < n; i++) {\n        int b = 1 - 2 * a[i];\n        if (i == 0) {\n            current_sum = b;\n            max_subarray_sum = b;\n        } else {\n            current_sum = std::max(b, current_sum + b);\n            max_subarray_sum = std::max(max_subarray_sum, current_sum);\n        }\n    }\n    \n    int result = total_ones + max_subarray_sum;\n    std::cout << result << std::endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 15,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    int n;\n    std::cin >> n;\n    \n    std::vector<int> a(n);\n    for (int i = 0; i < n; i++) {\n        std::cin >> a[i];\n    }\n    \n    // Count initial number of ones\n    int total_ones = 0;\n    for (int i = 0; i < n; i++) {\n        if (a[i] == 1) {\n            total_ones++;\n        }\n    }\n    \n    // We need to find the best segment [i, j] to flip\n    // When we flip a segment, the change in number of ones is:\n    // For each position in the segment:\n    //   if it was 0, it becomes 1 (gain +1)\n    //   if it was 1, it becomes 0 (gain -1)\n    // So we want to maximize the sum of (1 - 2*a[k]) for k in [i, j]\n    // This is equivalent to finding the maximum subarray sum where:\n    //   value = 1 if a[k] == 0, value = -1 if a[k] == 1\n    \n    // Let's create an array b where b[k] = 1 if a[k] == 0, else -1\n    // Then we want to find the maximum subarray sum of b\n    // The answer will be total_ones + max_subarray_sum\n    \n    // But we must do exactly one move, so the segment must have at least one element\n    // Kadane's algorithm for maximum subarray sum\n    \n    int max_ending_here = 0;\n    int max_so_far = 0;\n    bool found_positive = false;\n    \n    for (int i = 0; i < n; i++) {\n        int val = (a[i] == 0) ? 1 : -1;\n        \n        max_ending_here = std::max(val, max_ending_here + val);\n        if (max_ending_here > max_so_far) {\n            max_so_far = max_ending_here;\n        }\n        if (val > 0) {\n            found_positive = true;\n        }\n    }\n    \n    // If all values are 1, then flipping any segment will decrease the count\n    // In that case, we want to minimize the loss, which means flipping the smallest possible segment\n    // The minimum loss is -1 (flipping a single 1)\n    // But wait, if max_so_far is negative, we still need to pick the least negative\n    \n    // Actually, let me reconsider. If all are 1, then b is all -1.\n    // The maximum subarray sum would be -1 (a single element).\n    // So total_ones + (-1) = n - 1, which is correct.\n    \n    // But what if n=1 and a[0]=1? Then max_so_far = -1, answer = 1 + (-1) = 0. Correct.\n    \n    // What if n=1 and a[0]=0? Then b[0]=1, max_so_far=1, answer = 0 + 1 = 1. Correct.\n    \n    int result = total_ones + max_so_far;\n    \n    std::cout << result << std::endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 16,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<int> a(n);\n    int total_ones = 0;\n    for (int i = 0; i < n; i++) {\n        cin >> a[i];\n        total_ones += a[i];\n    }\n    \n    // We need to find the maximum gain from flipping a contiguous subarray.\n    // Flipping a subarray changes 0s to 1s and 1s to 0s.\n    // The gain for flipping a subarray is: (number of 0s in subarray) - (number of 1s in subarray)\n    // This is equivalent to: for each element, if it's 0, we gain +1; if it's 1, we lose -1.\n    // So we can transform the array: b[i] = (a[i] == 0) ? 1 : -1\n    // Then we want to find the maximum subarray sum of b.\n    \n    vector<int> b(n);\n    for (int i = 0; i < n; i++) {\n        b[i] = (a[i] == 0) ? 1 : -1;\n    }\n    \n    // Find maximum subarray sum using Kadane's algorithm\n    int max_ending_here = 0;\n    int max_so_far = 0;\n    for (int i = 0; i < n; i++) {\n        max_ending_here = max(0, max_ending_here + b[i]);\n        max_so_far = max(max_so_far, max_ending_here);\n    }\n    \n    cout << total_ones + max_so_far << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 17,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<int> a(n);\n    for (int i = 0; i < n; i++) {\n        cin >> a[i];\n    }\n    \n    int totalOnes = 0;\n    for (int i = 0; i < n; i++) {\n        if (a[i] == 1) totalOnes++;\n    }\n    \n    int maxGain = 0;\n    int currentGain = 0;\n    \n    for (int i = 0; i < n; i++) {\n        // If we flip a[i], the change in number of ones is:\n        // if a[i] == 0, it becomes 1, so gain +1\n        // if a[i] == 1, it becomes 0, so gain -1\n        int gain = (a[i] == 0) ? 1 : -1;\n        currentGain += gain;\n        if (currentGain < 0) currentGain = 0;\n        maxGain = max(maxGain, currentGain);\n    }\n    \n    cout << totalOnes + maxGain << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 18,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<int> a(n);\n    int totalOnes = 0;\n    for (int i = 0; i < n; i++) {\n        cin >> a[i];\n        totalOnes += a[i];\n    }\n\n    // We need to find the maximum gain from flipping a contiguous subarray.\n    // Flipping a 0 to 1 gives +1, flipping a 1 to 0 gives -1.\n    // So we want to find the maximum subarray sum where 0 -> 1, 1 -> -1.\n    // Let's create an array b where b[i] = 1 if a[i] == 0, else -1.\n    // Then find max subarray sum of b.\n\n    vector<int> b(n);\n    for (int i = 0; i < n; i++) {\n        if (a[i] == 0) b[i] = 1;\n        else b[i] = -1;\n    }\n\n    // Kadane's algorithm to find max subarray sum\n    int maxGain = b[0];\n    int current = b[0];\n    for (int i = 1; i < n; i++) {\n        current = max(b[i], current + b[i]);\n        maxGain = max(maxGain, current);\n    }\n\n    cout << totalOnes + maxGain << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 19,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<int> a(n);\n    int total_ones = 0;\n    for (int i = 0; i < n; i++) {\n        cin >> a[i];\n        total_ones += a[i];\n    }\n    \n    // We need to find the maximum gain from flipping a contiguous subarray.\n    // Flipping a subarray: 0s become 1s (gain +1 each), 1s become 0s (loss -1 each).\n    // So for each element, the \"gain\" is +1 if it's 0, -1 if it's 1.\n    // We want to find the maximum subarray sum of these gains.\n    \n    int max_gain = 0;\n    int current_gain = 0;\n    \n    for (int i = 0; i < n; i++) {\n        int gain = (a[i] == 0) ? 1 : -1;\n        current_gain = max(gain, current_gain + gain);\n        max_gain = max(max_gain, current_gain);\n    }\n    \n    cout << total_ones + max_gain << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 11335,
+            "prompt_tokens": 493,
+            "total_tokens": 11828
+        },
+        "prompt": "Write a program in C++ to solve this programming problem:\nDescription: Iahub got bored, so he invented a game to be played on paper. He writes n integers a1,\u2009a2,\u2009...,\u2009an. Each of those integers can be either 0 or 1. He's allowed to do exactly one move: he chooses two indices i and j (1\u2009\u2264\u2009i\u2009\u2264\u2009j\u2009\u2264\u2009n) and flips all values ak for which their positions are in range [i,\u2009j] (that is i\u2009\u2264\u2009k\u2009\u2264\u2009j). Flip the value of x means to apply operation x\u2009=\u20091 - x.The goal of the game is that after exactly one move to obtain the maximum number of ones. Write a program to solve the little game of Iahub.\nInput Specification: The first line of the input contains an integer n (1\u2009\u2264\u2009n\u2009\u2264\u2009100). In the second line of the input there are n integers: a1,\u2009a2,\u2009...,\u2009an. It is guaranteed that each of those n values is either 0 or 1.\nOutput Specification: Print an integer \u2014 the maximal number of 1s that can be obtained after exactly one move. \n\nSample Input:\n5\n1 0 0 1 0\nSample Output:\n4\n\nSample Input:\n4\n1 0 0 1\nSample Output:\n4\n\nNotes: NoteIn the first case, flip the segment from 2 to 5 (i\u2009=\u20092,\u2009j\u2009=\u20095). That flip changes the sequence, it becomes: [1 1 1 0 1]. So, it contains four ones. There is no way to make the whole sequence equal to [1 1 1 1 1].In the second case, flipping only the second and the third element (i\u2009=\u20092,\u2009j\u2009=\u20093) will turn all numbers into 1.\nTake input from standard input and output to standard output\nProvide the C++ code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "9b543e07e805fe1dd8fa869d5d7c8b99",
+        "difficulty": 1200,
+        "prob_desc_sample_inputs": [
+            "5\n1 0 0 1 0",
+            "4\n1 0 0 1"
+        ],
+        "prob_desc_time_limit": "1 second",
+        "tags": [
+            "brute force",
+            "dp",
+            "implementation"
+        ],
+        "prob_desc_output_spec": "Print an integer \u2014 the maximal number of 1s that can be obtained after exactly one move. ",
+        "prob_desc_input_spec": "The first line of the input contains an integer n (1\u2009\u2264\u2009n\u2009\u2264\u2009100). In the second line of the input there are n integers: a1,\u2009a2,\u2009...,\u2009an. It is guaranteed that each of those n values is either 0 or 1.",
+        "lang_cluster": "C++",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first case, flip the segment from 2 to 5 (i\u2009=\u20092,\u2009j\u2009=\u20095). That flip changes the sequence, it becomes: [1 1 1 0 1]. So, it contains four ones. There is no way to make the whole sequence equal to [1 1 1 1 1].In the second case, flipping only the second and the third element (i\u2009=\u20092,\u2009j\u2009=\u20093) will turn all numbers into 1.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Iahub got bored, so he invented a game to be played on paper. He writes n integers a1,\u2009a2,\u2009...,\u2009an. Each of those integers can be either 0 or 1. He's allowed to do exactly one move: he chooses two indices i and j (1\u2009\u2264\u2009i\u2009\u2264\u2009j\u2009\u2264\u2009n) and flips all values ak for which their positions are in range [i,\u2009j] (that is i\u2009\u2264\u2009k\u2009\u2264\u2009j). Flip the value of x means to apply operation x\u2009=\u20091 - x.The goal of the game is that after exactly one move to obtain the maximum number of ones. Write a program to solve the little game of Iahub.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1372941000",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "4",
+            "4"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"5\\r\\n1 0 0 1 0\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"4\\r\\n1 0 0 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"1\\r\\n1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"1\\r\\n0\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"8\\r\\n1 0 0 0 1 0 0 0\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"18\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"23\\r\\n1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"100\\r\\n0 1 0 1 1 1 0 1 0 1 0 0 1 1 1 1 0 0 1 1 1 1 1 1 1 0 0 1 1 1 0 1 1 0 0 0 1 1 1 1 0 0 1 1 1 0 0 1 1 0 1 1 1 0 0 0 1 0 0 0 0 0 1 1 0 0 1 1 1 1 1 1 1 1 0 1 1 1 0 1 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 0 1\\r\\n\", \"output\": [\"70\"]}, {\"input\": \"100\\r\\n0 1 1 0 1 0 0 1 0 0 0 1 1 0 0 0 1 1 1 0 1 0 0 0 0 0 1 0 1 0 1 0 1 0 1 0 0 0 1 0 0 0 0 0 1 1 0 1 0 1 0 1 1 1 0 1 0 1 1 0 0 1 1 0 0 1 1 1 0 0 1 0 0 1 1 0 1 0 0 1 1 0 1 0 0 1 1 0 0 0 0 1 0 0 0 0 1 1 1 1\\r\\n\", \"output\": [\"60\"]}, {\"input\": \"18\\r\\n0 1 0 1 0 1 0 1 0 1 1 0 1 1 0 1 1 0\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"25\\r\\n0 1 0 0 0 0 0 1 0 1 0 1 0 0 0 0 1 1 1 0 0 1 1 0 1\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"55\\r\\n0 0 1 1 0 0 0 1 0 1 1 0 1 1 1 0 1 1 1 1 1 0 0 1 0 0 1 0 1 1 0 0 1 0 1 1 0 1 1 1 1 0 1 1 0 0 0 0 1 1 0 1 1 1 1\\r\\n\", \"output\": [\"36\"]}, {\"input\": \"75\\r\\n1 1 0 1 0 1 1 0 0 0 0 0 1 1 1 1 1 0 1 0 1 0 0 0 0 1 1 1 0 1 0 0 1 1 0 1 0 0 1 1 0 1 0 1 0 1 0 0 0 0 1 0 0 1 1 1 0 0 1 0 1 1 0 0 0 0 1 1 0 0 0 1 0 0 0\\r\\n\", \"output\": [\"44\"]}, {\"input\": \"100\\r\\n0 0 1 0 1 0 0 1 1 0 1 1 0 1 0 1 1 0 0 0 0 0 1 0 0 1 1 0 0 0 1 0 0 1 1 0 0 1 1 1 0 0 0 0 1 0 1 1 1 0 0 1 0 1 1 1 1 1 1 1 0 1 0 1 0 0 1 0 1 1 1 0 0 0 0 1 0 1 1 0 0 1 1 0 1 1 1 1 0 1 1 1 0 0 1 1 0 1 0 1\\r\\n\", \"output\": [\"61\"]}, {\"input\": \"100\\r\\n0 0 0 1 0 0 0 1 0 1 1 0 1 1 1 1 1 0 1 0 1 1 0 0 1 1 0 1 0 1 0 1 0 1 1 0 1 1 0 0 0 1 1 1 1 0 1 1 0 1 1 1 1 0 1 0 0 1 0 1 0 0 0 0 1 1 0 0 1 0 0 1 1 0 1 1 0 1 0 0 1 1 0 1 1 1 1 0 1 0 0 1 0 1 1 1 0 1 1 0\\r\\n\", \"output\": [\"61\"]}, {\"input\": \"100\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\\r\\n\", \"output\": [\"100\"]}, {\"input\": \"100\\r\\n1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1\\r\\n\", \"output\": [\"99\"]}, {\"input\": \"100\\r\\n0 0 1 1 1 0 1 1 0 0 1 0 1 0 1 0 0 1 0 1 1 0 0 1 1 1 1 1 1 0 1 0 0 1 0 0 0 0 1 1 1 0 1 1 1 0 1 1 1 0 0 1 0 0 1 1 0 0 0 1 1 1 0 1 1 0 0 0 0 1 0 0 1 0 1 0 0 0 0 0 0 1 1 1 0 1 1 1 0 1 1 1 1 1 0 0 0 0 1 0\\r\\n\", \"output\": [\"61\"]}, {\"input\": \"100\\r\\n0 1 1 1 1 1 1 0 0 0 1 1 0 0 0 1 0 0 0 0 0 0 1 1 1 0 0 0 1 1 1 0 1 0 0 1 1 0 0 0 1 1 1 1 1 1 1 1 1 1 0 0 1 0 1 0 0 0 0 1 0 1 0 1 0 0 1 0 1 0 1 1 0 0 0 0 0 1 1 1 0 1 1 0 1 1 0 0 0 1 0 1 1 0 0 0 0 0 0 1\\r\\n\", \"output\": [\"59\"]}, {\"input\": \"99\\r\\n1 1 0 0 0 1 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 0 1 1 0 0 0 0 0 0 1 1 0 0 1 0 1 1 1 0 0 0 0 0 1 0 0 0 0 0 0 1 0 1 1 0 1 0 0 1 1 0 1 0 0 0 1 1 1 1 0 1 1 1 0 0 1 1 0 0 0 0 1 0 0 0 0 0 1 0 1 1 1\\r\\n\", \"output\": [\"61\"]}, {\"input\": \"2\\r\\n1 1\\r\\n\", \"output\": [\"1\"]}]"
+    }
+}

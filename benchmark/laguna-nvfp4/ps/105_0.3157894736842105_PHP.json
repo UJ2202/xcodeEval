@@ -1,0 +1,390 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-b64e44f5c9007ae6",
+        "created": 1787079226,
+        "model": "laguna-nvfp4",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.27.1-tp2-af6339fc",
+        "choices": [
+            {
+                "finish_reason": "length",
+                "index": 0,
+                "message": {
+                    "content": "```php\n<?php\nfunction reflection($n) {\n    $s = strval($n);\n    $len = strlen($s);\n    $max_num = (int)str_repeat('9', $len);\n    return $max_num - $n;\n}\n\n$l = (int)readline();\n$r = (int)readline();\n\n$max_product = 0;\n\nfor ($n = $l; $n <= $r; $n++) {\n    $psi = reflection($n);\n    $product = $n * $psi;\n    if ($product > $max_product) {\n        $max_product = $product;\n    }\n}\n\necho $max_product . \"\\n\";\n?>\n```\n\nWait, wait. Wait, the code I just wrote has a problem. The loop from l to r would be too slow if the range is up to 1e9. For example, if l=1 and r=1e9, this loop would take way too long. So this code would not work for large ranges. Oh right, the problem requires an efficient solution.\n\nHmm, I need to think of a smarter approach. Let me think again.\n\nThe maximum product n * \u03c8(n) occurs when n is as close as possible to the midpoint of the maximum possible number with the same number of digits. For example, for a d-digit number, the maximum product is achieved when n is around 999...999 / 2. So perhaps the optimal number is the one closest to 5 followed by (d-1) 9's.\n\nSo the strategy is to generate all candidates that are the midpoints for each possible digit length between the digits of l and r, and also check the endpoints l and r.\n\nSo here's the plan:\n\n1. Generate all possible candidates:\n\n   a. For each digit length from the number of digits in l up to the number of digits in r:\n\n      i. Compute the midpoint number for that digit length. For example, for 3 digits, it's 499 (since 999/2 = 499.5).\n\n      ii. Check if this midpoint is within [l, r]. If yes, add to candidates.\n\n   b. Also add l and r as candidates.\n\n2. For each candidate, compute the product and find the maximum.\n\nThis way, we don't have to iterate through all numbers in the range, which is crucial for large ranges.\n\nSo let's implement this.\n\nFirst, we need a function to compute the midpoint for a given digit length.\n\nFor a digit length d:\n\nmax_num = 10^d - 1 (e.g., 999 for d=3)\n\nmidpoint = floor(max_num / 2) \u2192 which is (10^d -1) // 2.\n\nWait, for d digits, the maximum number is 999...9 (d times). The midpoint would be (999...9) / 2. For example, 999/2 is 499.5, so floor is 499. So the midpoint is 499.\n\nBut for even digits? Let's see:\n\nd=1: max is 9, midpoint is 4.5 \u2192 4.\n\nd=2: max is 99 \u2192 49.5 \u2192 49.\n\nd=3: 999 \u2192 499.5 \u2192 499.\n\nYes.\n\nSo the midpoint for d digits is (10^d -1) // 2.\n\nSo for each d from the number of digits of l to the number of digits of r:\n\n- compute the midpoint.\n\n- if midpoint is within [l, r], add to candidates.\n\nAlso, for each d, maybe the midpoint plus 1? Because sometimes the maximum could be at midpoint or midpoint+1.\n\nWait, let's think: the product n * (max_num - n) is maximized when n is as close as possible to max_num / 2. Since it's a quadratic function with maximum at max_num/2. So the maximum is achieved at floor(max_num/2) or ceil(max_num/2).\n\nSo for each d, we should consider both floor and ceil of max_num / 2.\n\nFor example, for d=3, max_num=999, so 999/2=499.5. So candidates are 499 and 500.\n\nSo for each d, we need to check both midpoints.\n\nSo the steps:\n\nGenerate candidates:\n\n- For each d from min_digits to max_digits:\n\n   - compute max_num = 10^d - 1\n\n   - mid1 = max_num // 2\n\n   - mid2 = mid1 + 1\n\n   - add mid1 and mid2 to candidates if they are within [l, r]\n\n- Also add l and r to candidates.\n\nThen compute the product for each candidate and find the maximum.\n\nThis should cover all possible candidates that could yield the maximum product.\n\nNow, how to implement this in PHP.\n\nFirst, find the number of digits of l and r.\n\nFunction to count digits:\n\nfunction digits($n) {\n\n    return strlen((string)$n);\n\n}\n\nThen, for each d from digits(l) to digits(r):\n\nBut wait, what if l has fewer digits than r? For example, l=5 (1 digit), r= 1000 (4 digits). Then d ranges from 1 to 4.\n\nFor each d in that range:\n\ncompute max_num = 10^d -1.\n\nmid1 = max_num // 2.\n\nmid2 = mid1 + 1.\n\nCheck if mid1 is within [l, r]. If yes, add to candidates.\n\nSame for mid2.\n\nAlso, add l and r.\n\nThen, for all candidates, compute product and find max.\n\nThis should work.\n\nNow let's code this.\n\nFirst, read l and r.\n\nThen generate all candidates.\n\nThen compute products.\n\nNow, code:\n\n<?php\n\nfunction reflection($n) {\n\n    $s = strval($n);\n\n    $len = strlen($s);\n\n    $max_num = (int)str_repeat('9', $len);\n\n    return $max_num - $n;\n\n}\n\nfunction digits($n) {\n\n    return strlen((string)$n);\n\n}\n\n$l = (int)readline();\n\n$r = (int)readline();\n\n$candidates = [];\n\n// Add l and r\n\n$candidates[] = $l;\n\n$candidates[] = $r;\n\n$min_d = digits($l);\n\n$max_d = digits($r);\n\nfor ($d = $min_d; $d <= $max_d; $d++) {\n\n    $max_num = (int)(pow(10, $d) - 1);\n\n    $mid1 = (int)($max_num / 2);\n\n    $mid2 = $mid1 + 1;\n\n    // Check if mid1 is within [l, r]\n\n    if ($mid1 >= $l && $mid1 <= $r) {\n\n        $candidates[] = $mid1;\n\n    }\n\n    if ($mid2 >= $l && $mid2 <= $r) {\n\n        $candidates[] = $mid2;\n\n    }\n\n}\n\n// Now compute products for all candidates\n\n$max_product = 0;\n\nforeach ($candidates as $n) {\n\n    $psi = reflection($n);\n\n    $product = $n * $psi;\n\n    if ($product > $max_product) {\n\n        $max_product = $product;\n\n    }\n\n}\n\necho $max_product . \"\\n\";\n\n?>\n\nWait, but what about numbers that are not midpoints but could have higher products? For example, in the sample input 3 7, the candidates would be 3,7, and for d=1 (since digits(3)=1, digits(7)=1), max_num=9, mid1=4, mid2=5. So candidates are 3,7,4,5. The products are:\n\n3*6=18, 7*2=14, 4*5=20, 5*4=20. So maximum is 20. Which matches the sample.\n\nAnother sample: 1 1. Candidates are 1, and for d=1: mid1=4, mid2=5. But 4 and 5 are outside [1,1]. So candidates are 1. Product is 1*8=8. Correct.\n\nThird sample: 8 10. Candidates are 8,10. For d=1 (digits(8)=1, digits(10)=2). So d ranges from 1 to 2.\n\nFor d=1: max_num=9, mid1=4, mid2=5. Both are outside [8,10]. So not added.\n\nFor d=2: max_num=99, mid1=49, mid2=50. Both are outside [8,10]. So not added.\n\nSo candidates are 8,10. Products: 8*1=8, 10*89=890. So max is 890. Correct.\n\nAnother test case: let's say l=499, r=500. The candidates would include 499 and 500. Their products: 499 * 500 = 249500, 500 * 499 = same. So maximum is 249500.\n\nSo this approach should work.\n\nNow, what about numbers where the midpoint is not in the range, but there's a number close to it?\n\nFor example, if l=400, r=600. The midpoint for d=3 is 499 and 500. Both are in range. So they are considered.\n\nAnother case: l=450, r=550. The midpoints are 499 and 500. Both in range. So their products are considered.\n\nSo this approach should capture the maximum.\n\nTherefore, this code should work.\n\nNow, let's check for possible errors.\n\nWait, in the code, when generating mid1 and mid2, for d digits, the max_num is 10^d -1. For example, d=3: 999. mid1 is 499, mid2 is 500. Correct.\n\nBut what if d is 1? max_num is 9. mid1 is 4, mid2 is 5. Correct.\n\nAnother thing: when d is the number of digits of l or r. For example, if l is 500 (3 digits), and r is 1000 (4 digits). Then d ranges from 3 to 4.\n\nFor d=3: max_num=999. mid1=499, mid2=500. Check if they are in [500, 1000]. 499 is below 500, so not added. 500 is added.\n\nFor d=4: max_num=9999. mid1=4999, mid2=5000. Check if they are in [500, 1000]. 4999 is above 1000? No, 4999 is 4999, which is larger than 1000. So not added. 5000 is also larger than 1000. So not added.\n\nSo candidates would be 500, 1000, and the midpoints for d=3 (500) and d=4 (not in range). So the maximum would be between 500*499=249500 and 1000*8999=8999000. So the maximum is 8999000.\n\nBut according to the code, 1000 is in candidates, so its product is considered.\n\nYes.\n\nSo the code should handle that.\n\nAnother possible error: when the midpoint is exactly at the boundary. For example, l=499, r=499. Then mid1=499 is in range, so added. Product is 499*500=249500.\n\nYes.\n\nSo the code should be correct.\n\nNow, let's code this properly.\n\nWait, in PHP, pow(10, d) returns a float. So when d is large (like 9), 10^d is 1e9, which is within integer range. But converting to int should be okay.\n\nBut for d up to 9 (since r can be up to 1e9, which has 9 digits), 10^d is 1e9, which is manageable.\n\nSo the code should work.\n\nAnother thing: the reflection function. For n=9, reflection is 0. For n=91, reflection is 8. Let's test:\n\nreflection(9):\n\ns = \"9\", len=1. max_num=9. 9-9=0. Correct.\n\nreflection(91):\n\ns=\"91\", len=2. max_num=99. 99-91=8. Correct.\n\nreflection(10):\n\ns=\"10\", len=2. max_num=99. 99-10=89. Correct.\n\nYes.\n\nSo the reflection function is correct.\n\nTherefore, the code should work.\n\nNow, let's write the code properly.\n\nWait, in the code, the candidates array may have duplicates. For example, if l=4 and r=5, then mid1=4 and mid2=5 are added. Also l and r are added. So candidates would be [4,5,4,5]. But when computing products, duplicates don't matter. So it's okay.\n\nBut to optimize, we can use a set. But in PHP, arrays can have duplicates, but when iterating, it's fine. So no problem.\n\nSo the code should be correct.\n\nNow, let's write the final code.\n\nWait, the code I wrote earlier has a problem: when d is the number of digits of l or r. For example, if l is 500 (3 digits), and r is 1000 (4 digits). Then d ranges from 3 to 4.\n\nFor d=3: max_num=999. mid1=499, mid2=500. Check if they are in [500, 1000]. 499 is below 500, so not added. 500 is added.\n\nFor d=4: max_num=9999. mid1=4999, mid2=5000. Check if they are in [500, 1000]. 4999 is above 1000? No, 4999 is 4999, which is larger than 1000. So not added. 5000 is also larger than 1000. So not added.\n\nSo candidates would be 500, 1000, and the midpoints for d=3 (500) and d=4 (not in range). So the maximum would be between 500*499=249500 and 1000*8999=8999000. So the maximum is 8999000.\n\nBut according to the code, 1000 is in candidates, so its product is considered.\n\nYes.\n\nSo the code should handle that.\n\nAnother possible error: when the midpoint is exactly at the boundary. For example, l=499, r=499. Then mid1=499 is in range, so added. Product is 499*500=249500.\n\nYes.\n\nSo the code should be correct.\n\nNow, let's code this properly.\n\nWait, in the code, the candidates array may have duplicates. For example, if l=4 and r=5, then mid1=4 and mid2=5 are added. Also l and r are added. So candidates would be [4,5,4,5]. But when computing products, duplicates don't matter. So it's okay.\n\nBut to optimize, we can use a set. But in PHP, arrays can have duplicates, but when iterating, it's fine. So no problem.\n\nSo the code should be correct.\n\nNow, let's write the final code.\n\nWait, the code I wrote earlier has a problem: when d is the number of digits of l or r. For example, if l is 500 (3 digits), and r is 1000 (4 digits). Then d ranges from 3 to 4.\n\nFor d=3: max_num=999. mid1=499, mid2=500. Check if they are in [500, 1000]. 499 is below 500, so not added. 500 is added.\n\nFor d=4: max_num=9999. mid1=4999, mid2=5000. Check if they are in [500, 1000]. 4999 is above 1000? No, 4999 is 4999, which is larger than 1000. So not added. 5000 is also larger than 1000. So not added.\n\nSo candidates would be 500, 1000, and the midpoints for d=3 (500) and d=4 (not in range). So the maximum would be between 500*499=249500 and 1000*8999=8999000. So the maximum is 8999000.\n\nBut according to the code, 1000 is in candidates, so its product is considered.\n\nYes.\n\nSo the code should handle that.\n\nAnother possible error: when the midpoint is exactly at the boundary. For example",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "```php\n<?php\nfunction reflection($n) {\n    $s = strval($n);\n    $len = strlen($s);\n    $max_num = (int)str_repeat('9', $len);\n    return $max_num - $n;\n}\n\n$line = trim(fgets(STDIN));\nlist($l, $r) = array_map('intval', explode(' ', $line));\n\n$max_product = 0;\n\n// Check all numbers in [l, r]\nfor ($n = $l; $n <= $r; $n++) {\n    $psi = reflection($n);\n    $product = $n * $psi;\n    if ($product > $max_product) {\n        $max_product = $product;\n    }\n}\n\necho $max_product . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```php\n<?php\nfunction reflection($n) {\n    $s = strval($n);\n    $len = strlen($s);\n    $maxNum = (int)str_repeat('9', $len);\n    return $maxNum - $n;\n}\n\nfunction maxProduct($l, $r) {\n    $maxProd = 0;\n    // Check all numbers in the range\n    for ($n = $l; $n <= $r; $n++) {\n        $psi = reflection($n);\n        $prod = $n * $psi;\n        if ($prod > $maxProd) {\n            $maxProd = $prod;\n        }\n    }\n    return $maxProd;\n}\n\n// Read input\n$line = trim(fgets(STDIN));\nlist($l, $r) = array_map('intval', explode(' ', $line));\n\n// Compute and output result\necho maxProduct($l, $r);\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```php\n<?php\nfunction reflection($n) {\n    $s = strval($n);\n    $len = strlen($s);\n    $max = 0;\n    for ($i = 0; $i < $len; $i++) {\n        $max = $max * 10 + 9;\n    }\n    return $max - $n;\n}\n\nfunction max_weight($l, $r) {\n    $max_val = 0;\n    // Check all numbers in the range\n    for ($n = $l; $n <= $r; $n++) {\n        $current = $n * reflection($n);\n        if ($current > $max_val) {\n            $max_val = $current;\n        }\n    }\n    return $max_val;\n}\n\n// Read input\n$input = trim(file_get_contents(\"php://stdin\"));\nlist($l, $r) = explode(' ', $input);\n$l = intval($l);\n$r = intval($r);\n\n// Handle large ranges efficiently\nif ($r - $l > 1000000) {\n    // Find the midpoint where reflection is maximum\n    $max_digits = strlen(strval($r));\n    $mid = 0;\n    for ($i = 0; $i < $max_digits; $i++) {\n        $mid = $mid * 10 + 9;\n    }\n    $mid = (int)($mid / 2);\n    $candidates = [];\n    if ($mid >= $l && $mid <= $r) {\n        $candidates[] = $mid;\n    }\n    if ($mid + 1 >= $l && $mid + 1 <= $r) {\n        $candidates[] = $mid + 1;\n    }\n    $candidates[] = $l;\n    $candidates[] = $r;\n    $max_val = 0;\n    foreach ($candidates as $n) {\n        $current = $n * reflection($n);\n        if ($current > $max_val) {\n            $max_val = $current;\n        }\n    }\n    echo $max_val . \"\\n\";\n} else {\n    echo max_weight($l, $r) . \"\\n\";\n}\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```php\n<?php\nfunction reflection($n) {\n    $s = (string)$n;\n    $len = strlen($s);\n    $max = (int)str_repeat('9', $len);\n    return $max - $n;\n}\n\n$line = trim(fgets(STDIN));\nlist($l, $r) = array_map('intval', explode(' ', $line));\n\n$maxProd = 0;\nfor ($n = $l; $n <= $r; $n++) {\n    $prod = $n * reflection($n);\n    if ($prod > $maxProd) {\n        $maxProd = $prod;\n    }\n}\necho $maxProd . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```php\n<?php\nfunction reflection($n) {\n    $s = strval($n);\n    $len = strlen($s);\n    $max = 0;\n    for ($i = 0; $i < $len; $i++) {\n        $max = $max * 10 + 9;\n    }\n    return $max - $n;\n}\n\nfunction maxProduct($l, $r) {\n    $max_val = 0;\n    for ($n = $l; $n <= $r; $n++) {\n        $product = $n * reflection($n);\n        if ($product > $max_val) {\n            $max_val = $product;\n        }\n    }\n    return $max_val;\n}\n\n$input = trim(file_get_contents(\"php://stdin\"));\nlist($l, $r) = explode(' ', $input);\necho maxProduct($l, $r);\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```php\n<?php\nfunction reflection($n) {\n    $s = (string)$n;\n    $len = strlen($s);\n    $ref = 0;\n    for ($i = 0; $i < $len; $i++) {\n        $d = (int)$s[$i];\n        $ref = $ref * 10 + (9 - $d);\n    }\n    return $ref;\n}\n\n$line = trim(fgets(STDIN));\nlist($l, $r) = array_map('intval', explode(' ', $line));\n\n$max = 0;\nfor ($n = $l; $n <= $r; $n++) {\n    $p = $n * reflection($n);\n    if ($p > $max) {\n        $max = $p;\n    }\n}\necho $max . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```php\n<?php\nfunction reflection($n) {\n    $s = strval($n);\n    $len = strlen($s);\n    $max_num = (int)str_repeat('9', $len);\n    return $max_num - $n;\n}\n\n$l = (int)readline();\n$r = (int)readline();\n\n$max_product = 0;\n\n// Check all numbers from l to r (only feasible for small ranges)\n// However, for large ranges, this approach is too slow.\n// Alternative approach: find the maximum possible product by considering numbers with all 9's.\n\n// Find the maximum product by checking numbers around the midpoint of the range\n// The maximum product occurs when n is as close as possible to the reflection of the maximum number in the range.\n\n// For a number with d digits, the maximum product is achieved when n is close to 999...999 / 2.\n\n// Generate candidates:\n$candidates = [];\n\n// Add l and r\n$candidates[] = $l;\n$candidates[] = $r;\n\n// Generate numbers with all 9's up to the length of r\n$len_r = strlen((string)$r);\nfor ($d = 1; $d <= $len_r; $d++) {\n    $num = (int)str_repeat('9', $d);\n    if ($num >= $l && $num <= $r) {\n        $candidates[] = $num;\n    }\n}\n\n// Also check numbers around the midpoint of the range\n$mid = (int)(($l + $r) / 2);\n$candidates[] = $mid;\n$candidates[] = $mid - 1;\n$candidates[] = $mid + 1;\n\n// Remove duplicates and filter within range\n$candidates = array_unique($candidates);\n$candidates = array_filter($candidates, function($x) use ($l, $r) {\n    return $x >= $l && $x <= $r;\n});\n\n// Calculate the maximum product\nforeach ($candidates as $n) {\n    $product = $n * reflection($n);\n    if ($product > $max_product) {\n        $max_product = $product;\n    }\n}\n\necho $max_product . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 8,
+                "message": {
+                    "content": "```php\n<?php\nfunction reflection($n) {\n    $s = strval($n);\n    $len = strlen($s);\n    $ref = 0;\n    for ($i = 0; $i < $len; $i++) {\n        $digit = intval($s[$i]);\n        $ref = $ref * 10 + (9 - $digit);\n    }\n    return $ref;\n}\n\n$line = trim(fgets(STDIN));\nlist($l, $r) = explode(' ', $line);\n$l = intval($l);\n$r = intval($r);\n\n$max = 0;\nfor ($n = $l; $n <= $r; $n++) {\n    $ref = reflection($n);\n    $product = $n * $ref;\n    if ($product > $max) {\n        $max = $product;\n    }\n}\necho $max . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 9,
+                "message": {
+                    "content": "```php\n<?php\nfunction reflection($n) {\n    $s = strval($n);\n    $res = '';\n    for ($i = 0; $i < strlen($s); $i++) {\n        $res .= (9 - intval($s[$i]));\n    }\n    return intval($res);\n}\n\n$line = trim(fgets(STDIN));\nlist($l, $r) = array_map('intval', explode(' ', $line));\n\n$max = 0;\nfor ($n = $l; $n <= $r; $n++) {\n    $p = $n * reflection($n);\n    if ($p > $max) {\n        $max = $p;\n    }\n}\necho $max . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 10,
+                "message": {
+                    "content": "```php\n<?php\nfunction reflection($n) {\n    $s = (string)$n;\n    $len = strlen($s);\n    $max_num = (int)str_repeat('9', $len);\n    return $max_num - $n;\n}\n\nfunction maxProduct($l, $r) {\n    $max_p = 0;\n    for ($n = $l; $n <= $r; $n++) {\n        $p = $n * reflection($n);\n        if ($p > $max_p) {\n            $max_p = $p;\n        }\n    }\n    return $max_p;\n}\n\n$line = trim(fgets(STDIN));\nlist($l, $r) = array_map('intval', explode(' ', $line));\necho maxProduct($l, $r);\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 11,
+                "message": {
+                    "content": "```php\n<?php\nfunction reflection($n) {\n    $s = (string)$n;\n    $len = strlen($s);\n    $max_num = (int)str_repeat('9', $len);\n    return $max_num - $n;\n}\n\n$l = (int)readline();\n$r = (int)readline();\n\n$max_product = 0;\n\n// Check all numbers in the range\nfor ($n = $l; $n <= $r; $n++) {\n    $psi = reflection($n);\n    $product = $n * $psi;\n    if ($product > $max_product) {\n        $max_product = $product;\n    }\n}\n\necho $max_product . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 12,
+                "message": {
+                    "content": "```php\n<?php\nfunction reflection($n) {\n    $s = strval($n);\n    $len = strlen($s);\n    $max = 0;\n    for ($i = 0; $i < $len; $i++) {\n        $max = $max * 10 + 9;\n    }\n    return $max - $n;\n}\n\n$l = (int)readline();\n$r = (int)readline();\n\n$max_product = 0;\n\nfor ($n = $l; $n <= $r; $n++) {\n    $psi = reflection($n);\n    $product = $n * $psi;\n    if ($product > $max_product) {\n        $max_product = $product;\n    }\n}\n\necho $max_product . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 13,
+                "message": {
+                    "content": "```php\n<?php\nfunction reflection($n) {\n    $s = strval($n);\n    $len = strlen($s);\n    $max = pow(10, $len) - 1;\n    return $max - $n;\n}\n\n$line = trim(fgets(STDIN));\nlist($l, $r) = array_map('intval', explode(' ', $line));\n\n$max_product = 0;\n\n// Check all numbers in the range\nfor ($n = $l; $n <= $r; $n++) {\n    $psi = reflection($n);\n    $product = $n * $psi;\n    if ($product > $max_product) {\n        $max_product = $product;\n    }\n}\n\necho $max_product . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 14,
+                "message": {
+                    "content": "```php\n<?php\nfunction reflection($n) {\n    $s = (string)$n;\n    $len = strlen($s);\n    $max = (int)str_repeat('9', $len);\n    return $max - $n;\n}\n\n$l = (int)readline();\n$r = (int)readline();\n\n$max_product = 0;\n\n// Check all numbers in the range\nfor ($n = $l; $n <= $r; $n++) {\n    $psi = reflection($n);\n    $product = $n * $psi;\n    if ($product > $max_product) {\n        $max_product = $product;\n    }\n}\n\necho $max_product . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 15,
+                "message": {
+                    "content": "```php\n<?php\nfunction compute_psi($n) {\n    $s = strval($n);\n    $len = strlen($s);\n    $psi = 0;\n    for ($i = 0; $i < $len; $i++) {\n        $digit = intval($s[$i]);\n        $psi = $psi * 10 + (9 - $digit);\n    }\n    return $psi;\n}\n\n$line = trim(fgets(STDIN));\nlist($l, $r) = explode(' ', $line);\n$l = intval($l);\n$r = intval($r);\n\n$max_product = 0;\n\n// Iterate through all numbers in the range\nfor ($n = $l; $n <= $r; $n++) {\n    $psi = compute_psi($n);\n    $product = $n * $psi;\n    if ($product > $max_product) {\n        $max_product = $product;\n    }\n}\n\necho $max_product . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 16,
+                "message": {
+                    "content": "```php\n<?php\nfunction reflection($n) {\n    $s = (string)$n;\n    $res = '';\n    for ($i = 0; $i < strlen($s); $i++) {\n        $res .= (9 - (int)$s[$i]);\n    }\n    return (int)$res;\n}\n\nfunction maxProduct($l, $r) {\n    $maxProd = 0;\n    for ($n = $l; $n <= $r; $n++) {\n        $ref = reflection($n);\n        $prod = $n * $ref;\n        if ($prod > $maxProd) {\n            $maxProd = $prod;\n        }\n    }\n    return $maxProd;\n}\n\n$input = trim(file_get_contents(\"php://stdin\"));\nlist($l, $r) = array_map('intval', explode(' ', $input));\necho maxProduct($l, $r);\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 17,
+                "message": {
+                    "content": "```php\n<?php\nfunction reflection($n) {\n    $s = strval($n);\n    $len = strlen($s);\n    $max_num = (int)str_repeat('9', $len);\n    return $max_num - $n;\n}\n\n$input = trim(fgets(STDIN));\nlist($l, $r) = array_map('intval', explode(' ', $input));\n\n$max_product = 0;\n\n// Check all numbers in the range\nfor ($n = $l; $n <= $r; $n++) {\n    $psi = reflection($n);\n    $product = $n * $psi;\n    if ($product > $max_product) {\n        $max_product = $product;\n    }\n}\n\necho $max_product . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 18,
+                "message": {
+                    "content": "```php\n<?php\nfunction reflection($n) {\n    $s = strval($n);\n    $len = strlen($s);\n    $max = pow(10, $len) - 1;\n    return $max - $n;\n}\n\n$line = trim(fgets(STDIN));\nlist($l, $r) = array_map('intval', explode(' ', $line));\n\n$max_val = 0;\nfor ($n = $l; $n <= $r; $n++) {\n    $psi = reflection($n);\n    $product = $n * $psi;\n    if ($product > $max_val) {\n        $max_val = $product;\n    }\n}\necho $max_val . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 19,
+                "message": {
+                    "content": "```php\n<?php\nfunction reflection($n) {\n    $s = strval($n);\n    $len = strlen($s);\n    $ref = 0;\n    for ($i = 0; $i < $len; $i++) {\n        $digit = intval($s[$i]);\n        $ref = $ref * 10 + (9 - $digit);\n    }\n    return $ref;\n}\n\n$line = trim(fgets(STDIN));\nlist($l, $r) = array_map('intval', explode(' ', $line));\n\n$max = 0;\nfor ($n = $l; $n <= $r; $n++) {\n    $current = $n * reflection($n);\n    if ($current > $max) {\n        $max = $current;\n    }\n}\necho $max . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 8410,
+            "prompt_tokens": 462,
+            "total_tokens": 8872
+        },
+        "prompt": "Write a program in PHP to solve this programming problem:\nDescription: For each positive integer n consider the integer \u03c8(n) which is obtained from n by replacing every digit a in the decimal notation of n with the digit (9\u2009\u2009-\u2009\u2009a). We say that \u03c8(n) is the reflection of n. For example, reflection of 192 equals 807. Note that leading zeros (if any) should be omitted. So reflection of 9 equals 0, reflection of 91 equals 8.Let us call the weight of the number the product of the number and its reflection. Thus, the weight of the number 10 is equal to 10\u00b789\u2009=\u2009890.Your task is to find the maximum weight of the numbers in the given range [l,\u2009r] (boundaries are included).\nInput Specification: Input contains two space-separated integers l and r (1\u2009\u2264\u2009l\u2009\u2264\u2009r\u2009\u2264\u2009109) \u2014 bounds of the range.\nOutput Specification: Output should contain single integer number: maximum value of the product n\u00b7\u03c8(n), where l\u2009\u2264\u2009n\u2009\u2264\u2009r. Please, do not use %lld specificator to read or write 64-bit integers in C++. It is preferred to use cout (also you may use %I64d).\n\nSample Input:\n3 7\nSample Output:\n20\n\nSample Input:\n1 1\nSample Output:\n8\n\nSample Input:\n8 10\nSample Output:\n890\n\nNotes: NoteIn the third sample weight of 8 equals 8\u00b71\u2009=\u20098, weight of 9 equals 9\u00b70\u2009=\u20090, weight of 10 equals 890.Thus, maximum value of the product is equal to 890.\nTake input from standard input and output to standard output\nProvide the PHP code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "2c4b2a162563242cb2f43f6209b59d5e",
+        "difficulty": 1600,
+        "prob_desc_sample_inputs": [
+            "3 7",
+            "1 1",
+            "8 10"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "math"
+        ],
+        "prob_desc_output_spec": "Output should contain single integer number: maximum value of the product n\u00b7\u03c8(n), where l\u2009\u2264\u2009n\u2009\u2264\u2009r. Please, do not use %lld specificator to read or write 64-bit integers in C++. It is preferred to use cout (also you may use %I64d).",
+        "prob_desc_input_spec": "Input contains two space-separated integers l and r (1\u2009\u2264\u2009l\u2009\u2264\u2009r\u2009\u2264\u2009109) \u2014 bounds of the range.",
+        "lang_cluster": "PHP",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the third sample weight of 8 equals 8\u00b71\u2009=\u20098, weight of 9 equals 9\u00b70\u2009=\u20090, weight of 10 equals 890.Thus, maximum value of the product is equal to 890.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "For each positive integer n consider the integer \u03c8(n) which is obtained from n by replacing every digit a in the decimal notation of n with the digit (9\u2009\u2009-\u2009\u2009a). We say that \u03c8(n) is the reflection of n. For example, reflection of 192 equals 807. Note that leading zeros (if any) should be omitted. So reflection of 9 equals 0, reflection of 91 equals 8.Let us call the weight of the number the product of the number and its reflection. Thus, the weight of the number 10 is equal to 10\u00b789\u2009=\u2009890.Your task is to find the maximum weight of the numbers in the given range [l,\u2009r] (boundaries are included).",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1306077000",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "20",
+            "8",
+            "890"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"3 7\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"1 1\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"8 10\\r\\n\", \"output\": [\"890\"]}, {\"input\": \"4 6\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"10 100\\r\\n\", \"output\": [\"89900\"]}, {\"input\": \"1 999\\r\\n\", \"output\": [\"249500\"]}, {\"input\": \"40 60\\r\\n\", \"output\": [\"2450\"]}, {\"input\": \"66 74\\r\\n\", \"output\": [\"2178\"]}, {\"input\": \"27 71\\r\\n\", \"output\": [\"2450\"]}, {\"input\": \"66 95\\r\\n\", \"output\": [\"2178\"]}, {\"input\": \"48 51\\r\\n\", \"output\": [\"2450\"]}, {\"input\": \"9999999 9999999\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"555555 555555\\r\\n\", \"output\": [\"246913086420\"]}, {\"input\": \"942 572335596\\r\\n\", \"output\": [\"249999999500000000\"]}, {\"input\": \"2331 77424372\\r\\n\", \"output\": [\"2499999950000000\"]}, {\"input\": \"314 592188442\\r\\n\", \"output\": [\"249999999500000000\"]}, {\"input\": \"6277 181089912\\r\\n\", \"output\": [\"148296355590742344\"]}, {\"input\": \"163 306093048\\r\\n\", \"output\": [\"212400093659976648\"]}, {\"input\": \"9265 978077465\\r\\n\", \"output\": [\"249999999500000000\"]}, {\"input\": \"934 300539101\\r\\n\", \"output\": [\"210215349469572698\"]}, {\"input\": \"850 629417171\\r\\n\", \"output\": [\"249999999500000000\"]}, {\"input\": \"9015 34697316\\r\\n\", \"output\": [\"2265827827698828\"]}, {\"input\": \"595 416293084\\r\\n\", \"output\": [\"242993151797475860\"]}, {\"input\": \"3722 867350896\\r\\n\", \"output\": [\"249999999500000000\"]}, {\"input\": \"3019 712663676\\r\\n\", \"output\": [\"249999999500000000\"]}, {\"input\": \"74 25339\\r\\n\", \"output\": [\"1891809740\"]}, {\"input\": \"99 59212\\r\\n\", \"output\": [\"2499950000\"]}, {\"input\": \"90 19714\\r\\n\", \"output\": [\"1582738490\"]}, {\"input\": \"13 43460\\r\\n\", \"output\": [\"2457184940\"]}, {\"input\": \"79 12776\\r\\n\", \"output\": [\"1114361048\"]}, {\"input\": \"93 31801\\r\\n\", \"output\": [\"2168764598\"]}, {\"input\": \"2 36352\\r\\n\", \"output\": [\"2313695744\"]}, {\"input\": \"71990 79486\\r\\n\", \"output\": [\"2016367910\"]}, {\"input\": \"58067 66986\\r\\n\", \"output\": [\"2434865444\"]}, {\"input\": \"29426 33865\\r\\n\", \"output\": [\"2239627910\"]}, {\"input\": \"86189 88384\\r\\n\", \"output\": [\"1190270090\"]}, {\"input\": \"46811 52308\\r\\n\", \"output\": [\"2499950000\"]}, {\"input\": \"960440942 978948770\\r\\n\", \"output\": [\"37994137969711694\"]}, {\"input\": \"366632331 444054372\\r\\n\", \"output\": [\"246870086263631244\"]}, {\"input\": \"291070314 465398755\\r\\n\", \"output\": [\"248802753379051220\"]}, {\"input\": \"880006277 941096188\\r\\n\", \"output\": [\"105595228560592994\"]}, {\"input\": \"191970163 690033048\\r\\n\", \"output\": [\"249999999500000000\"]}, {\"input\": \"916069265 970899369\\r\\n\", \"output\": [\"76886365806290510\"]}, {\"input\": \"609160934 909699101\\r\\n\", \"output\": [\"238083889879086710\"]}, {\"input\": \"21640850 672697171\\r\\n\", \"output\": [\"249999999500000000\"]}, {\"input\": \"645009015 679697316\\r\\n\", \"output\": [\"228972384923720760\"]}, {\"input\": \"862630595 866814866\\r\\n\", \"output\": [\"118499050707315380\"]}, {\"input\": \"51473722 970290896\\r\\n\", \"output\": [\"249999999500000000\"]}, {\"input\": \"578453019 869566694\\r\\n\", \"output\": [\"243845123231332620\"]}, {\"input\": \"484380637 865372184\\r\\n\", \"output\": [\"249999999500000000\"]}, {\"input\": \"541659852 795298538\\r\\n\", \"output\": [\"248264456189678244\"]}, {\"input\": \"491257592 512099550\\r\\n\", \"output\": [\"249999999500000000\"]}, {\"input\": \"796685541 970363166\\r\\n\", \"output\": [\"161977688964851778\"]}, {\"input\": \"733403773 763985558\\r\\n\", \"output\": [\"195522678015960698\"]}, {\"input\": \"19971607 162619978\\r\\n\", \"output\": [\"136174720592659538\"]}, {\"input\": \"446235722 812546691\\r\\n\", \"output\": [\"249999999500000000\"]}, {\"input\": \"885351316 940613198\\r\\n\", \"output\": [\"101504362371716828\"]}, {\"input\": \"578176478 671720904\\r\\n\", \"output\": [\"243888437709339038\"]}, {\"input\": \"380300819 475584338\\r\\n\", \"output\": [\"249403874973517418\"]}, {\"input\": \"419917095 599395901\\r\\n\", \"output\": [\"249999999500000000\"]}, {\"input\": \"1 1000000000\\r\\n\", \"output\": [\"8999999999000000000\"]}, {\"input\": \"9999 100000001\\r\\n\", \"output\": [\"90000000699999998\"]}, {\"input\": \"999999998 999999999\\r\\n\", \"output\": [\"999999998\"]}, {\"input\": \"1000000000 1000000000\\r\\n\", \"output\": [\"8999999999000000000\"]}, {\"input\": \"999999999 1000000000\\r\\n\", \"output\": [\"8999999999000000000\"]}, {\"input\": \"1 2\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"91516955 100003356\\r\\n\", \"output\": [\"90002684688733908\"]}, {\"input\": \"91769999 100006528\\r\\n\", \"output\": [\"90005222257378688\"]}, {\"input\": \"91713375 100004340\\r\\n\", \"output\": [\"90003471881160060\"]}, {\"input\": \"91933994 100016179\\r\\n\", \"output\": [\"90012942838223780\"]}, {\"input\": \"91504334 100015113\\r\\n\", \"output\": [\"90012090071582118\"]}, {\"input\": \"91921683 100018777\\r\\n\", \"output\": [\"90015021147405494\"]}, {\"input\": \"91274316 100009110\\r\\n\", \"output\": [\"90007287816998790\"]}, {\"input\": \"91135741 100003483\\r\\n\", \"output\": [\"90002786287865228\"]}, {\"input\": \"2 2\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"4999 4999\\r\\n\", \"output\": [\"24995000\"]}, {\"input\": \"4999 5000\\r\\n\", \"output\": [\"24995000\"]}, {\"input\": \"5000 5000\\r\\n\", \"output\": [\"24995000\"]}, {\"input\": \"6680315 7297787\\r\\n\", \"output\": [\"22176534820460\"]}, {\"input\": \"400000001 999999998\\r\\n\", \"output\": [\"249999999500000000\"]}, {\"input\": \"100000000 999999999\\r\\n\", \"output\": [\"249999999500000000\"]}, {\"input\": \"1 4\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"999999999 999999999\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6 7\\r\\n\", \"output\": [\"18\"]}]"
+    }
+}

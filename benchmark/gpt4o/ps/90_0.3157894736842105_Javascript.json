@@ -1,0 +1,350 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEI52dl0Q5gYNTpvOrBa6WSpKQrTu",
+        "created": 1787074800,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "const fs = require('fs');\n\nfunction isLucky(x) {\n    while (x > 0) {\n        const d = x % 10;\n        if (d !== 4 && d !== 7) return false;\n        x = Math.floor(x / 10);\n    }\n    return true;\n}\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(BigInt);\nif (input.length < 2) process.exit(0);\nlet [nBig, kBig] = input;\nlet n = Number(nBig); // n <= 1e9 but we will cap later\nlet k = kBig; // BigInt\n\n// Precompute lucky indices up to n (but we will only need up to some limit)\nfunction genLucky(limit) {\n    const res = [];\n    function dfs(cur) {\n        if (cur > limit) return;\n        if (cur !== 0) res.push(cur);\n        dfs(cur * 10 + 4);\n        dfs(cur * 10 + 7);\n    }\n    dfs(0);\n    res.sort((a, b) => a - b);\n    return res;\n}\n\n// Factorials up to 20 with BigInt\nconst fact = [1n];\nfor (let i = 1; i <= 20; i++) fact[i] = fact[i - 1] * BigInt(i);\n\n// If n > 20, prefix is fixed; only last m = min(20, n) positions vary\nlet m = n > 20 ? 20 : n;\nlet fixed = n - m;\n\n// Check if k-th permutation exists\nif (k > fact[m]) {\n    console.log(-1);\n    process.exit(0);\n}\n\n// Generate lucky indices up to n\nconst luckyIdx = genLucky(n);\n\n// We only need to explicitly build the last m elements of the permutation\n// The prefix is [1..fixed] in order.\nlet perm = new Array(m);\nlet used = new Array(m + 1).fill(false); // for numbers [n-m+1 .. n], index by offset 1..m\n\n// Build k-th permutation (1-based k) of last m numbers [n-m+1 .. n]\nlet kRemaining = k - 1n; // 0-based\nfor (let pos = 0; pos < m; pos++) {\n    let blockSize = fact[m - 1 - pos];\n    let idx = kRemaining / blockSize; // BigInt\n    kRemaining = kRemaining % blockSize;\n\n    // find idx-th unused number among last m numbers\n    let cnt = -1n;\n    let chosen = -1;\n    for (let i = 1; i <= m; i++) {\n        if (!used[i]) {\n            cnt++;\n            if (cnt === idx) {\n                used[i] = true;\n                chosen = i;\n                break;\n            }\n        }\n    }\n    perm[pos] = (n - m) + chosen; // actual value\n}\n\n// Now count positions i where i and a[i] are lucky\nlet ans = 0;\nlet idxPtr = 0;\n\n// For positions in prefix [1..fixed], a[i] = i\nwhile (idxPtr < luckyIdx.length && luckyIdx[idxPtr] <= fixed) {\n    let i = luckyIdx[idxPtr];\n    if (isLucky(i)) ans++; // a[i]=i\n    idxPtr++;\n}\n\n// For positions in suffix [fixed+1 .. n], use perm\nfor (; idxPtr < luckyIdx.length; idxPtr++) {\n    let i = luckyIdx[idxPtr];\n    if (i > n) break;\n    let val;\n    if (i <= fixed) {\n        val = i;\n    } else {\n        let pos = i - fixed - 1; // 0-based in perm\n        val = perm[pos];\n    }\n    if (isLucky(val)) ans++;\n}\n\nconsole.log(ans.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(BigInt);\nif (input.length < 2) process.exit(0);\nlet n = input[0];\nlet k = input[1];\n\nfunction isLucky(x) {\n    while (x > 0n) {\n        let d = x % 10n;\n        if (d !== 4n && d !== 7n) return false;\n        x /= 10n;\n    }\n    return true;\n}\n\n// Generate lucky numbers up to n\nlet lucky = [];\nfunction genLucky(cur) {\n    if (cur > n) return;\n    if (cur !== 0n) lucky.push(cur);\n    genLucky(cur * 10n + 4n);\n    genLucky(cur * 10n + 7n);\n}\ngenLucky(0n);\nlucky.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));\n\n// Precompute factorials up to 20\nconst MAXF = 20;\nlet fact = [1n];\nfor (let i = 1; i <= MAXF; i++) {\n    fact.push(fact[i - 1] * BigInt(i));\n}\n\n// If n > 20, first part is fixed\nlet nNum = Number(n);\nlet prefixLen = Math.max(0, nNum - MAXF);\nlet suffixLen = nNum - prefixLen;\n\nif (suffixLen < 0) suffixLen = 0;\n\nif (suffixLen > 0) {\n    if (k > fact[suffixLen]) {\n        console.log(-1);\n        process.exit(0);\n    }\n}\n\nlet perm = new Array(nNum + 1);\nfor (let i = 1; i <= prefixLen; i++) perm[i] = BigInt(i);\n\n// Build k-th permutation of last suffixLen numbers\nif (suffixLen > 0) {\n    let start = BigInt(prefixLen + 1);\n    let nums = [];\n    for (let i = 0; i < suffixLen; i++) nums.push(start + BigInt(i));\n\n    let kk = k - 1n;\n    for (let pos = 0; pos < suffixLen; pos++) {\n        let f = fact[suffixLen - 1 - pos];\n        let idx = kk / f;\n        kk = kk % f;\n        let chosen = nums[Number(idx)];\n        nums.splice(Number(idx), 1);\n        perm[prefixLen + 1 + pos] = chosen;\n    }\n}\n\nlet luckySet = new Set(lucky.map(x => x.toString()));\nlet ans = 0;\nfor (let i = 1; i <= nNum; i++) {\n    let idxStr = BigInt(i).toString();\n    if (!luckySet.has(idxStr)) continue;\n    let val = perm[i];\n    if (val !== undefined && luckySet.has(val.toString())) ans++;\n}\n\nconsole.log(ans.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "const fs = require('fs');\n\nfunction isLucky(x) {\n    while (x > 0) {\n        const d = x % 10;\n        if (d !== 4 && d !== 7) return false;\n        x = Math.floor(x / 10);\n    }\n    return true;\n}\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(BigInt);\nif (input.length < 2) process.exit(0);\nlet [nBig, kBig] = input;\nlet n = Number(nBig);\n\n// Precompute factorials up to 20 (since 20! fits in JS BigInt range we need)\nconst MAX_FACT = 20;\nlet fact = [1n];\nfor (let i = 1; i <= MAX_FACT; i++) {\n    fact[i] = fact[i - 1] * BigInt(i);\n}\n\n// If n > 20, prefix is fixed, only last m = min(20, n) positions permuted\nlet m = n > MAX_FACT ? MAX_FACT : n;\nlet fixedPrefix = n - m;\n\n// Check if k-th permutation exists\nif (kBig > fact[m]) {\n    console.log(\"-1\");\n    process.exit(0);\n}\n\n// Build the last m elements' k-th permutation (1-based k)\nlet k = kBig - 1n; // make it 0-based\nlet available = [];\nfor (let i = n - m + 1; i <= n; i++) available.push(i);\n\nlet permTail = [];\nfor (let i = m; i >= 1; i--) {\n    let f = fact[i - 1];\n    let idx = k / f;\n    k = k % f;\n    let pos = Number(idx);\n    permTail.push(available[pos]);\n    available.splice(pos, 1);\n}\n\n// Count lucky positions\nlet ans = 0;\n\n// For positions 1..fixedPrefix, a[i] = i\nfor (let i = 1; i <= fixedPrefix; i++) {\n    if (isLucky(i) && isLucky(i)) ans++;\n}\n\n// For positions fixedPrefix+1..n\nfor (let i = 0; i < m; i++) {\n    let pos = fixedPrefix + 1 + i;\n    let val = permTail[i];\n    if (isLucky(pos) && isLucky(val)) ans++;\n}\n\nconsole.log(ans.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```javascript\n// Solution for the \"Lucky Permutation\" problem in JavaScript (Node.js)\n\nconst fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(BigInt);\nif (input.length < 2) process.exit(0);\n\nlet n = input[0]; // BigInt\nlet k = input[1]; // BigInt\n\n// Convert BigInt to Number safely when needed (for small ranges)\nfunction toNumber(bi) {\n    return Number(bi.toString());\n}\n\n// Check if a number is lucky (contains only digits 4 and 7)\nfunction isLucky(x) {\n    while (x > 0) {\n        const d = x % 10;\n        if (d !== 4 && d !== 7) return false;\n        x = Math.floor(x / 10);\n    }\n    return true;\n}\n\n// Precompute factorials up to 20! (since 20! fits in 64-bit and is enough)\nconst MAX_FACT = 20;\nlet fact = [1n];\nfor (let i = 1; i <= MAX_FACT; i++) {\n    fact[i] = fact[i - 1] * BigInt(i);\n}\n\n// If n is large, we only care about the last up to 20 positions\n// because permutations beyond 20 elements are too many to enumerate.\nlet limit = 0;\nif (n <= BigInt(MAX_FACT)) {\n    limit = toNumber(n);\n} else {\n    limit = MAX_FACT;\n}\n\n// Check if k-th permutation exists for the last 'limit' elements\nif (k > fact[limit]) {\n    console.log(-1);\n    process.exit(0);\n}\n\n// Generate all lucky indices up to n\nlet luckyIndices = [];\n(function generateLucky(cur) {\n    if (cur > n) return;\n    if (cur !== 0n) luckyIndices.push(cur);\n    generateLucky(cur * 10n + 4n);\n    generateLucky(cur * 10n + 7n);\n})(0n);\n\n// Sort lucky indices\nluckyIndices.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));\n\n// We will build the k-th permutation for the last 'limit' elements:\n// positions: posStart..n (1-based), where posStart = n - limit + 1\n// elements:  n-limit+1 .. n\nlet posStart = n - BigInt(limit) + 1n;\n\n// Prepare the list of elements for the last 'limit' positions\nlet elements = [];\nfor (let i = 0; i < limit; i++) {\n    elements.push(posStart + BigInt(i));\n}\n\n// k is 1-based; convert to 0-based index\nlet kk = k - 1n;\n\n// Build the k-th permutation of 'elements' in lexicographic order\nlet perm = new Array(limit);\nfor (let i = 0; i < limit; i++) {\n    let blockSize = fact[limit - 1 - i];\n    let idx = kk / blockSize;\n    kk = kk % blockSize;\n    let index = Number(idx); // idx is small enough\n    perm[i] = elements[index];\n    elements.splice(index, 1);\n}\n\n// Now count positions i such that i and a[i] are lucky.\n// For positions < posStart, the permutation is identity: a[i] = i.\nlet ans = 0;\n\n// Count for prefix positions (1 .. posStart-1)\nfor (let i = 0n; i < luckyIndices.length; i++) {\n    let idx = luckyIndices[i];\n    if (idx >= posStart) break;\n    // a[idx] = idx\n    // idx is lucky by construction; check if a[idx] is lucky (same number)\n    if (isLucky(Number(idx))) ans++;\n}\n\n// Count for suffix positions (posStart .. n)\nfor (let i = 0; i < limit; i++) {\n    let pos = posStart + BigInt(i);\n    // Check if position is lucky\n    if (!isLucky(Number(pos))) continue;\n    // Check if value at this position is lucky\n    if (isLucky(Number(perm[i]))) ans++;\n}\n\nconsole.log(ans.toString());\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "const fs = require('fs');\n\nfunction isLucky(x) {\n    while (x > 0) {\n        const d = x % 10;\n        if (d !== 4 && d !== 7) return false;\n        x = Math.floor(x / 10);\n    }\n    return true;\n}\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(BigInt);\nif (input.length < 2) process.exit(0);\nlet [nBig, kBig] = input;\nconst n = Number(nBig); // n <= 1e9 but we will cap effective n\nlet k = kBig - 1n; // 0-based index\n\n// Precompute lucky indices up to n (but we only need up to 1e5 effectively)\nlet luckyIndices = [];\nfunction genLucky(cur) {\n    if (cur > n) return;\n    if (cur !== 0) luckyIndices.push(cur);\n    genLucky(cur * 10 + 4);\n    genLucky(cur * 10 + 7);\n}\ngenLucky(0);\nluckyIndices.sort((a, b) => Number(a - b));\n\n// If n is large, only last up to 15 positions matter (since 15! > 1e12)\nconst MAX_TAIL = 15;\nlet m = n;\nif (n > MAX_TAIL) m = MAX_TAIL;\nlet start = n - m + 1;\n\n// Precompute factorials up to 15\nlet fact = [1n];\nfor (let i = 1; i <= MAX_TAIL; i++) {\n    fact[i] = fact[i - 1] * BigInt(i);\n}\n\nif (kBig === 0n) {\n    // k must be at least 1\n    console.log(-1);\n    process.exit(0);\n}\n\nif (k >= fact[m]) {\n    console.log(-1);\n    process.exit(0);\n}\n\n// Build the k-th permutation of the tail [start..n]\nlet tail = [];\nfor (let i = start; i <= n; i++) tail.push(i);\n\nlet permTail = [];\nlet kk = k;\nfor (let i = m; i >= 1; i--) {\n    let f = fact[i - 1];\n    let idx = Number(kk / f);\n    kk = kk % f;\n    permTail.push(tail[idx]);\n    tail.splice(idx, 1);\n}\n\n// Build full permutation conceptually: first part is 1..start-1, second is permTail\n// Count positions i where i and a[i] are lucky.\nlet ans = 0;\nfor (let idx of luckyIndices) {\n    if (idx > n) break;\n    let val;\n    if (idx < start) {\n        val = idx;\n    } else {\n        let pos = idx - start;\n        val = permTail[pos];\n    }\n    if (isLucky(val)) ans++;\n}\n\nconsole.log(ans.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "const fs = require('fs');\n\nfunction isLucky(x) {\n    while (x > 0) {\n        const d = x % 10;\n        if (d !== 4 && d !== 7) return false;\n        x = Math.floor(x / 10);\n    }\n    return true;\n}\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(BigInt);\nif (input.length < 2) process.exit(0);\nlet [nBig, kBig] = input;\nconst n = Number(nBig); // n <= 1e9 but we will only use up to 20\nlet k = kBig - 1n; // zero-based\n\n// Precompute lucky indices up to n\nlet luckyIndices = [];\nfor (let i = 1; i <= n; i++) {\n    if (isLucky(i)) luckyIndices.push(i);\n}\n\n// If n > 20, we only permute last m = min(20, n) elements\nconst MAXM = 20;\nlet m = n <= MAXM ? n : MAXM;\nlet prefixLen = n - m;\n\n// Check if k-th permutation exists: m! > k\nlet fact = [1n];\nfor (let i = 1; i <= m; i++) {\n    fact[i] = fact[i - 1] * BigInt(i);\n}\nif (k < 0n || k >= fact[m]) {\n    console.log(-1);\n    process.exit(0);\n}\n\n// Build the k-th permutation of last m numbers: [prefixLen+1 .. n]\nlet available = [];\nfor (let x = prefixLen + 1; x <= n; x++) available.push(x);\n\nlet perm = new Array(m);\nfor (let i = 0; i < m; i++) {\n    let f = fact[m - 1 - i];\n    let idx = Number(k / f);\n    k = k % f;\n    perm[i] = available[idx];\n    available.splice(idx, 1);\n}\n\n// Count positions i where i and a[i] are lucky\nlet ans = 0;\n\n// For i <= prefixLen: a[i] = i\nfor (let i = 0; i < luckyIndices.length; i++) {\n    let idx = luckyIndices[i];\n    if (idx <= prefixLen) {\n        // a[idx] = idx\n        if (isLucky(idx)) ans++;\n    } else if (idx <= n) {\n        // in perm part\n        let pos = idx - prefixLen - 1; // 0-based in perm\n        let val = perm[pos];\n        if (isLucky(val)) ans++;\n    }\n}\n\nconsole.log(ans.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(BigInt);\nif (input.length < 2) process.exit(0);\nlet n = input[0];\nlet k = input[1];\n\nfunction isLucky(x) {\n    while (x > 0n) {\n        let d = x % 10n;\n        if (d !== 4n && d !== 7n) return false;\n        x /= 10n;\n    }\n    return true;\n}\n\n// Generate all lucky numbers up to n\nfunction genLucky(limit) {\n    let res = [];\n    function dfs(cur) {\n        if (cur > limit) return;\n        if (cur !== 0n) res.push(cur);\n        dfs(cur * 10n + 4n);\n        dfs(cur * 10n + 7n);\n    }\n    dfs(0n);\n    res.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));\n    return res;\n}\n\nconst MAX_FACT = 20n; // 20! fits in JS BigInt safely for our purpose\nlet fact = [1n];\nfor (let i = 1n; i <= MAX_FACT; i++) fact.push(fact[Number(i - 1n)] * i);\n\n// If n is large, only last up to 20 elements matter for permutation generation\nlet limit = 20n;\nlet start = 1n;\nif (n > limit) start = n - limit + 1n;\nlet m = n - start + 1n; // size of tail we permute\n\n// Check if k-th permutation exists\nlet totalPerm;\nif (m <= MAX_FACT) totalPerm = fact[Number(m)];\nelse totalPerm = BigInt('1000000000000000000'); // huge, more than any k (k<=1e9)\nif (k > totalPerm) {\n    console.log(-1);\n    process.exit(0);\n}\n\n// Build the tail permutation (positions start..n)\nlet tailSize = Number(m);\nlet available = [];\nfor (let i = 0n; i < m; i++) available.push(start + i);\n\nlet permTail = new Array(tailSize);\nlet kk = k - 1n; // zero-based\nfor (let i = 0; i < tailSize; i++) {\n    let remaining = BigInt(tailSize - 1 - i);\n    let blockSize = remaining <= MAX_FACT ? fact[Number(remaining)] : BigInt('1000000000000000000');\n    let idx = 0;\n    if (blockSize > 0n) {\n        idx = Number(kk / blockSize);\n        kk = kk % blockSize;\n    }\n    permTail[i] = available[idx];\n    available.splice(idx, 1);\n}\n\n// Count lucky positions\nlet luckyPositions = genLucky(n);\nlet ans = 0;\nfor (let lp of luckyPositions) {\n    if (lp < 1n || lp > n) continue;\n    let val;\n    if (lp < start) {\n        val = lp; // prefix is identity\n    } else {\n        let idx = Number(lp - start);\n        val = permTail[idx];\n    }\n    if (isLucky(val)) ans++;\n}\n\nconsole.log(ans.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "const fs = require('fs');\n\nfunction isLucky(x) {\n    while (x > 0) {\n        const d = x % 10;\n        if (d !== 4 && d !== 7) return false;\n        x = Math.floor(x / 10);\n    }\n    return true;\n}\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(BigInt);\nif (input.length < 2) process.exit(0);\nlet n = input[0];\nlet k = input[1];\n\nconst MAX_FACT = 20n; // we only need factorials up to 20\nlet fact = [1n];\nfor (let i = 1n; i <= MAX_FACT; i++) {\n    fact.push(fact[Number(i - 1n)] * i);\n}\n\nif (n <= MAX_FACT) {\n    // full permutation generation\n    let nn = Number(n);\n    let kk = k - 1n;\n    if (kk >= fact[nn]) {\n        console.log(-1);\n        process.exit(0);\n    }\n    let nums = [];\n    for (let i = 1; i <= nn; i++) nums.push(i);\n    let perm = new Array(nn);\n    for (let pos = 0; pos < nn; pos++) {\n        let blockSize = fact[nn - pos - 1];\n        let idx = Number(kk / blockSize);\n        kk = kk % blockSize;\n        perm[pos] = nums[idx];\n        nums.splice(idx, 1);\n    }\n    let ans = 0;\n    for (let i = 0; i < nn; i++) {\n        let idx = i + 1;\n        if (isLucky(idx) && isLucky(perm[i])) ans++;\n    }\n    console.log(ans);\n} else {\n    // prefix fixed, only last 20 positions permuted\n    let nn = Number(n);\n    let tailLen = Number(MAX_FACT);\n    let prefixLen = nn - tailLen;\n    let kk = k - 1n;\n    if (kk >= fact[tailLen]) {\n        console.log(-1);\n        process.exit(0);\n    }\n\n    // count lucky positions in prefix where value equals index\n    let ans = 0;\n    for (let i = 1; i <= prefixLen; i++) {\n        if (isLucky(i) && isLucky(i)) ans++;\n    }\n\n    // build tail numbers\n    let nums = [];\n    for (let i = prefixLen + 1; i <= nn; i++) nums.push(i);\n    let permTail = new Array(tailLen);\n    for (let pos = 0; pos < tailLen; pos++) {\n        let blockSize = fact[tailLen - pos - 1];\n        let idx = Number(kk / blockSize);\n        kk = kk % blockSize;\n        permTail[pos] = nums[idx];\n        nums.splice(idx, 1);\n    }\n\n    // check lucky positions in tail\n    for (let i = 0; i < tailLen; i++) {\n        let idx = prefixLen + 1 + i;\n        if (isLucky(idx) && isLucky(permTail[i])) ans++;\n    }\n\n    console.log(ans);\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 5547,
+            "prompt_tokens": 467,
+            "total_tokens": 6014,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 4,
+                "engine_ttft_ms": 312,
+                "engine_ttlt_ms": 24043,
+                "pre_inference_ms": 204,
+                "service_tbt_ms": 4,
+                "service_ttft_ms": 628,
+                "service_ttlt_ms": 24328,
+                "total_duration_ms": 24133,
+                "user_visible_ttft_ms": 424
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Javascript to solve this programming problem:\nDescription: Petya loves lucky numbers. Everybody knows that lucky numbers are positive integers whose decimal representation contains only the lucky digits 4 and 7. For example, numbers 47, 744, 4 are lucky and 5, 17, 467 are not.One day Petya dreamt of a lexicographically k-th permutation of integers from 1 to n. Determine how many lucky numbers in the permutation are located on the positions whose indexes are also lucky numbers.\nInput Specification: The first line contains two integers n and k (1\u2009\u2264\u2009n,\u2009k\u2009\u2264\u2009109) \u2014 the number of elements in the permutation and the lexicographical number of the permutation.\nOutput Specification: If the k-th permutation of numbers from 1 to n does not exist, print the single number \"-1\" (without the quotes). Otherwise, print the answer to the problem: the number of such indexes i, that i and ai are both lucky numbers.\n\nSample Input:\n7 4\nSample Output:\n1\n\nSample Input:\n4 7\nSample Output:\n1\n\nNotes: NoteA permutation is an ordered set of n elements, where each integer from 1 to n occurs exactly once. The element of permutation in position with index i is denoted as ai (1\u2009\u2264\u2009i\u2009\u2264\u2009n). Permutation a is lexicographically smaller that permutation b if there is such a i (1\u2009\u2264\u2009i\u2009\u2264\u2009n), that ai\u2009&lt;\u2009bi, and for any j (1\u2009\u2264\u2009j\u2009&lt;\u2009i) aj\u2009=\u2009bj. Let's make a list of all possible permutations of n elements and sort it in the order of lexicographical increasing. Then the lexicographically k-th permutation is the k-th element of this list of permutations.In the first sample the permutation looks like that:1 2 3 4 6 7 5The only suitable position is 4.In the second sample the permutation looks like that:2 1 3 4The only suitable position is 4.\nTake input from standard input and output to standard output\nProvide the Javascript code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "cb2aa02772f95fefd1856960b6ceac4c",
+        "difficulty": 1900,
+        "prob_desc_sample_inputs": [
+            "7 4",
+            "4 7"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "brute force",
+            "combinatorics",
+            "number theory"
+        ],
+        "prob_desc_output_spec": "If the k-th permutation of numbers from 1 to n does not exist, print the single number \"-1\" (without the quotes). Otherwise, print the answer to the problem: the number of such indexes i, that i and ai are both lucky numbers.",
+        "prob_desc_input_spec": "The first line contains two integers n and k (1\u2009\u2264\u2009n,\u2009k\u2009\u2264\u2009109) \u2014 the number of elements in the permutation and the lexicographical number of the permutation.",
+        "lang_cluster": "Javascript",
+        "source_code": "",
+        "prob_desc_notes": "NoteA permutation is an ordered set of n elements, where each integer from 1 to n occurs exactly once. The element of permutation in position with index i is denoted as ai (1\u2009\u2264\u2009i\u2009\u2264\u2009n). Permutation a is lexicographically smaller that permutation b if there is such a i (1\u2009\u2264\u2009i\u2009\u2264\u2009n), that ai\u2009&lt;\u2009bi, and for any j (1\u2009\u2264\u2009j\u2009&lt;\u2009i) aj\u2009=\u2009bj. Let's make a list of all possible permutations of n elements and sort it in the order of lexicographical increasing. Then the lexicographically k-th permutation is the k-th element of this list of permutations.In the first sample the permutation looks like that:1 2 3 4 6 7 5The only suitable position is 4.In the second sample the permutation looks like that:2 1 3 4The only suitable position is 4.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Petya loves lucky numbers. Everybody knows that lucky numbers are positive integers whose decimal representation contains only the lucky digits 4 and 7. For example, numbers 47, 744, 4 are lucky and 5, 17, 467 are not.One day Petya dreamt of a lexicographically k-th permutation of integers from 1 to n. Determine how many lucky numbers in the permutation are located on the positions whose indexes are also lucky numbers.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1319727600",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "1",
+            "1"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"7 4\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"4 7\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"7 5040\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10 1023\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 7477\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"10 10000\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"3 7\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"27 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"40 8544\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"47 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"47 8547744\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"50 1000000000\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"64 87\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"98 854555\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"100 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"9985 5888454\\r\\n\", \"output\": [\"30\"]}, {\"input\": \"1 1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"1 2\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"2 1000000000\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"10 1000000000\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"20 1000000000\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"777777 1\\r\\n\", \"output\": [\"126\"]}, {\"input\": \"777777 2\\r\\n\", \"output\": [\"125\"]}, {\"input\": \"777474 10000\\r\\n\", \"output\": [\"120\"]}, {\"input\": \"1000000000 1\\r\\n\", \"output\": [\"1022\"]}, {\"input\": \"777777777 5\\r\\n\", \"output\": [\"1021\"]}, {\"input\": \"777777777 1\\r\\n\", \"output\": [\"1022\"]}, {\"input\": \"777477774 1\\r\\n\", \"output\": [\"989\"]}, {\"input\": \"444747744 1000000000\\r\\n\", \"output\": [\"554\"]}, {\"input\": \"475 88555458\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"12 855448\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"20 1000000000\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"47 99998544\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"49 1000000000\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"854459 95554455\\r\\n\", \"output\": [\"126\"]}, {\"input\": \"77777779 1000000000\\r\\n\", \"output\": [\"508\"]}, {\"input\": \"77 47\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"6999 85488877\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"7479 58884598\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"1000000000 1000000000\\r\\n\", \"output\": [\"1022\"]}, {\"input\": \"7 1000\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 124\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 2048\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 3001\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 127\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 980\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 5000\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 4095\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"7 3856\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 5032\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 4999\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 3\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"2 4\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"7 985\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"4 25\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"6 121\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"11 39916801\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"29 1000000000\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"10 4589\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10 100000\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10 98564\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"10 100000009\\r\\n\", \"output\": [\"-1\"]}]"
+    }
+}

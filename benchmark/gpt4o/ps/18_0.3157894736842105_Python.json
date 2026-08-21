@@ -1,0 +1,352 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEIE8jTqU82jDm211dsNlABMy1Lng",
+        "created": 1787075364,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "import sys\nfrom math import gcd\n\ndef mod_pow(a, e, mod):\n    res = 1\n    a %= mod\n    while e:\n        if e & 1:\n            res = res * a % mod\n        a = a * a % mod\n        e >>= 1\n    return res\n\ndef main():\n    a, b, p, x = map(int, sys.stdin.readline().split())\n    # Precompute discrete log table for a^k mod p\n    # Since p is prime, order of a divides p-1, but we just store all k in [0, p-2]\n    val_to_k = {}\n    cur = 1\n    for k in range(p - 1):\n        if cur not in val_to_k:\n            val_to_k[cur] = k\n        cur = cur * a % p\n\n    total = 0\n    # For each residue r = n mod (p-1)\n    for r in range(p - 1):\n        ar = mod_pow(a, r, p)\n        # Need n * a^n \u2261 b (mod p)\n        # Let n = t*(p-1) + r, then a^n = a^r (since a^{p-1} \u2261 1)\n        # So (t*(p-1) + r) * a^r \u2261 b (mod p)\n        # Let c = a^r mod p. We need m * c \u2261 b (mod p), where m \u2261 n (mod p)\n        # So m \u2261 b * c^{-1} (mod p)\n        if ar == 0:\n            continue\n        inv_ar = pow(ar, p - 2, p)\n        m = b * inv_ar % p\n\n        # We need n \u2261 r (mod p-1) and n \u2261 m (mod p)\n        # Solve by CRT\n        # n = r + (p-1)*t\n        # r + (p-1)*t \u2261 m (mod p)\n        # (p-1)*t \u2261 m - r (mod p)\n        # Let A = p-1, B = m - r (mod p)\n        A = p - 1\n        B = (m - r) % p\n        g = gcd(A, p)\n        if B % g != 0:\n            continue\n        A1 = A // g\n        p1 = p // g\n        B1 = B // g\n        # A1 * t \u2261 B1 (mod p1), gcd(A1, p1) = 1\n        invA1 = pow(A1, p1 - 2, p1)\n        t0 = (B1 * invA1) % p1\n        n0 = r + A * t0\n        if n0 <= 0:\n            # shift by lcm = A * p1\n            lcm = A * p1\n            k = (-n0 + lcm - 1) // lcm\n            n0 += k * lcm\n        if n0 > x:\n            continue\n        lcm = A * p1\n        total += 1 + (x - n0) // lcm\n\n    print(total)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "import sys\nfrom collections import defaultdict\n\ndef mod_pow(a, e, mod):\n    res = 1\n    while e:\n        if e & 1:\n            res = res * a % mod\n        a = a * a % mod\n        e >>= 1\n    return res\n\ndef main():\n    a, b, p, x = map(int, sys.stdin.readline().split())\n\n    # Precompute discrete log table for a^k mod p\n    # Since p is prime and 1 <= a < p, a is invertible; order divides p-1\n    log_table = {}\n    cur = 1\n    for k in range(p - 1):\n        if cur not in log_table:\n            log_table[cur] = k\n        cur = cur * a % p\n\n    # Precompute count of t in [0, p-1] with t \u2261 n mod p and n a^n \u2261 b (mod p)\n    cnt = [0] * p\n    for t in range(p):\n        # Need a^t * a^k \u2261 b  => a^k \u2261 b * a^{-t}\n        inv_at = mod_pow(a, (p - 1 - t) % (p - 1), p)\n        target = b * inv_at % p\n        if target in log_table:\n            k = log_table[target]\n            n = t + k * p\n            if n % p == t and n * mod_pow(a, n, p) % p == b % p:\n                cnt[t] += 1\n\n    # Count n in [1, x] by residue class t = n mod p\n    total = 0\n    for t in range(p):\n        if cnt[t] == 0:\n            continue\n        # n = t + m*p, n >= 1\n        if t == 0:\n            first = p\n        else:\n            first = t\n        if first > x:\n            continue\n        max_m = (x - first) // p\n        total += cnt[t] * (max_m + 1)\n\n    print(total)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "import sys\nfrom collections import defaultdict\n\ndef mod_pow(a, e, mod):\n    res = 1\n    while e > 0:\n        if e & 1:\n            res = res * a % mod\n        a = a * a % mod\n        e >>= 1\n    return res\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    a, b, p, x = map(int, data)\n\n    # Precompute a^k for k = 0..p-2\n    pow_a = [1] * (p - 1)\n    for k in range(1, p - 1):\n        pow_a[k] = pow_a[k - 1] * a % p\n\n    # Precompute modular inverses of a^k\n    inv_pow_a = [1] * (p - 1)\n    for k in range(p - 1):\n        inv_pow_a[k] = mod_pow(pow_a[k], p - 2, p)\n\n    # For each residue r = n mod p, we know n \u2261 r (mod p)\n    # Equation: n * a^n \u2261 b (mod p)\n    # Let n = r + t*p, then modulo p: r * a^n \u2261 b\n    # So a^n \u2261 b * inv(r) (mod p), and n \u2261 discrete_log_a(b * inv(r)) (mod p-1)\n    # Precompute mapping from value of a^k to k\n    val_to_k = {}\n    for k in range(p - 1):\n        val_to_k[pow_a[k]] = k\n\n    ans = 0\n    for r in range(1, p + 1):\n        # r is n mod p\n        inv_r = mod_pow(r, p - 2, p)\n        target = b * inv_r % p\n        if target not in val_to_k:\n            continue\n        k = val_to_k[target]  # n \u2261 k (mod p-1)\n\n        # Solve n \u2261 r (mod p) and n \u2261 k (mod p-1)\n        # Since p and p-1 are coprime, use CRT\n        # n = r + p * t\n        # r + p*t \u2261 k (mod p-1) => p*t \u2261 k - r (mod p-1)\n        # p \u2261 1 (mod p-1), so t \u2261 k - r (mod p-1)\n        t0 = (k - r) % (p - 1)\n        n0 = r + p * t0\n\n        if n0 > x:\n            continue\n\n        # All solutions: n = n0 + l * p*(p-1)\n        step = p * (p - 1)\n        cnt = 1 + (x - n0) // step\n        ans += cnt\n\n    print(ans)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "import sys\nfrom collections import defaultdict\n\ndef mod_pow(a, e, mod):\n    res = 1\n    while e:\n        if e & 1:\n            res = res * a % mod\n        a = a * a % mod\n        e >>= 1\n    return res\n\ndef main():\n    a, b, p, x = map(int, sys.stdin.readline().split())\n    # Precompute a^k for k in [0, p-2]\n    apow = [1] * (p - 1)\n    for k in range(1, p - 1):\n        apow[k] = apow[k - 1] * a % p\n\n    # Precompute inverse of a^{p-1} = a^{-1} mod p\n    inv_a = mod_pow(a, p - 2, p)\n\n    # For each y in [1, p-1], compute k such that a^k \u2261 b * inv(y) (mod p)\n    # Using discrete log via baby-step giant-step\n    # Precompute baby steps: a^j for j in [0, m-1]\n    m = int(p ** 0.5) + 1\n    baby = {}\n    cur = 1\n    for j in range(m):\n        if cur not in baby:\n            baby[cur] = j\n        cur = cur * a % p\n    factor = mod_pow(a, p - 1 - m, p)  # a^{-m}\n\n    inv_y = [0] * p\n    for y in range(1, p):\n        inv_y[y] = mod_pow(y, p - 2, p)\n\n    # For each residue r = a^k, we want n \u2261 r^{-1} * b (mod p)\n    # But we will count using mapping from y to k where a^k \u2261 b * inv(y)\n    count = 0\n    for y in range(1, p):\n        target = b * inv_y[y] % p\n        # Solve a^k \u2261 target (mod p)\n        # BSGS\n        value = target\n        found_k = None\n        for i in range(m + 1):\n            if value in baby:\n                k = i * m + baby[value]\n                if k < p - 1:\n                    found_k = k\n                    break\n            value = value * factor % p\n        if found_k is None:\n            continue\n        k = found_k\n        # For this y, all n such that n \u2261 y (mod p) and n \u2261 k (mod p-1)\n        # n = y + t*p, 1 <= n <= x\n        # Need y + t*p \u2261 k (mod p-1)\n        # Let t*p \u2261 k - y (mod p-1)\n        # Since gcd(p, p-1) = 1, t \u2261 (k - y) * inv_p (mod p-1)\n        inv_p = mod_pow(p % (p - 1), p - 2, p - 1)\n        rhs = (k - y) % (p - 1)\n        t0 = rhs * inv_p % (p - 1)\n        # All t = t0 + s*(p-1)\n        # n = y + p*(t0 + s*(p-1)) <= x\n        base = y + p * t0\n        if base > x:\n            continue\n        max_s = (x - base) // (p * (p - 1))\n        count += max_s + 1\n\n    print(count)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "import sys\nfrom collections import defaultdict\n\ndef main():\n    a, b, p, x = map(int, sys.stdin.readline().split())\n\n    # Precompute powers of a modulo p\n    pow_a = [1] * p\n    for i in range(1, p):\n        pow_a[i] = pow_a[i - 1] * a % p\n\n    # Precompute modular inverses of 1..p-1 using Fermat's little theorem\n    inv = [0] * p\n    inv[1] = 1\n    for i in range(2, p):\n        inv[i] = p - p // i * inv[p % i] % p\n\n    # Count solutions for each residue r = n mod p\n    cnt = defaultdict(int)\n    for r in range(1, p):\n        # We need n * a^n \u2261 b (mod p)\n        # Let n \u2261 r (mod p), and a^n \u2261 a^r * (a^p)^k \u2261 a^r * a^k (mod p) since a^p \u2261 a (mod p)\n        # So equation becomes (r + k*p) * a^{r+k} \u2261 b (mod p)\n        # But a^{r+k} \u2261 a^r * a^k (mod p), and k*p \u2261 0 (mod p), so:\n        # r * a^r * a^k \u2261 b (mod p)\n        # a^k \u2261 b * inv[r * a^r] (mod p)\n        denom = r * pow_a[r] % p\n        if denom == 0:\n            continue\n        target = b * inv[denom] % p\n        # Find k such that a^k \u2261 target (mod p)\n        # Since k ranges 0..p-2, we can precompute discrete log table for a^k\n        # But we instead build a map of value -> k on the fly once.\n        # To avoid rebuilding, we construct it outside loop.\n        cnt[target] += 1\n\n    # Build discrete log table: val -> k where a^k \u2261 val (mod p)\n    log_table = {}\n    cur = 1\n    for k in range(p - 1):\n        if cur not in log_table:\n            log_table[cur] = k\n        cur = cur * a % p\n\n    ans = 0\n    # For each residue r, count valid n = r + t*p <= x\n    for r in range(1, p):\n        denom = r * pow_a[r] % p\n        if denom == 0:\n            continue\n        target = b * inv[denom] % p\n        if target not in log_table:\n            continue\n        k = log_table[target]\n        # n \u2261 r (mod p) and exponent index k corresponds to some n pattern,\n        # but due to construction, each r with matching target contributes\n        # all n = r + t*p within [1, x]\n        if r > x:\n            continue\n        ans += (x - r) // p + 1\n\n    print(ans)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "import sys\nimport math\n\ndef mod_pow(a, e, mod):\n    res = 1\n    a %= mod\n    while e > 0:\n        if e & 1:\n            res = res * a % mod\n        a = a * a % mod\n        e >>= 1\n    return res\n\ndef mod_inv(a, mod):\n    return mod_pow(a, mod - 2, mod)\n\ndef baby_step_giant_step(a, p):\n    # returns dict: value -> smallest exponent k with a^k = value\n    m = int(math.isqrt(p)) + 1\n    table = {}\n    cur = 1\n    for j in range(m):\n        if cur not in table:\n            table[cur] = j\n        cur = cur * a % p\n    factor = mod_inv(mod_pow(a, m, p), p)\n    cur = 1\n    for i in range(m + 1):\n        if cur in table:\n            j = table[cur]\n            k = i * m + j\n            if k < p - 1:\n                # store minimal exponent\n                val = mod_pow(a, k, p)\n                if val not in table or k < table[val]:\n                    table[val] = k\n        cur = cur * factor % p\n    return table\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    a, b, p, x = map(int, data)\n    phi = p - 1\n    # precompute discrete log table: value -> exponent k with a^k = value\n    log_table = baby_step_giant_step(a, p)\n\n    # precompute a^t for t in [0, phi-1]\n    pow_a = [1] * phi\n    for t in range(1, phi):\n        pow_a[t] = pow_a[t - 1] * a % p\n\n    inv_a = mod_inv(a, p)\n\n    ans = 0\n    for t in range(phi):\n        val = b * inv_a % p\n        val = val * pow_a[t] % p\n        if val not in log_table:\n            continue\n        k = log_table[val]\n        if k > phi - 1:\n            continue\n        n0 = k + 1\n        if n0 <= 0:\n            continue\n        if n0 > x:\n            continue\n        # n \u2261 n0 (mod phi)\n        if n0 < 1:\n            n0 += ((1 - n0 + phi - 1) // phi) * phi\n        if n0 > x:\n            continue\n        cnt = (x - n0) // phi + 1\n        ans += cnt\n\n    print(ans)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "import sys\nfrom collections import defaultdict\n\ndef mod_pow(a, e, mod):\n    res = 1\n    while e:\n        if e & 1:\n            res = res * a % mod\n        a = a * a % mod\n        e >>= 1\n    return res\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    a, b, p, x = map(int, data)\n\n    # Precompute discrete log table for a^k mod p\n    # Since p is prime and 1 <= a < p, a is invertible; we use baby-step giant-step.\n    m = int(p ** 0.5) + 1\n    baby = {}\n    cur = 1\n    for j in range(m):\n        if cur not in baby:\n            baby[cur] = j\n        cur = cur * a % p\n\n    am_inv = mod_pow(a, p - 1 - m % (p - 1), p)  # a^{-m} mod p using Fermat\n    giant = 1\n    dlog = {}\n    for i in range(m + 1):\n        if giant in baby:\n            k = i * m + baby[giant]\n            if k < p - 1:\n                dlog[giant] = k\n        giant = giant * am_inv % p\n\n    # Precompute modular inverses of 1..p-1\n    inv = [0] * p\n    inv[1] = 1\n    for i in range(2, p):\n        inv[i] = p - p // i * inv[p % i] % p\n\n    # Precompute a^n for n = 0..p-2\n    pow_a = [1] * (p - 1)\n    for n in range(1, p - 1):\n        pow_a[n] = pow_a[n - 1] * a % p\n\n    # For each residue r = n mod (p-1), count n in [1,x] with that residue\n    cnt_r = [0] * (p - 1)\n    full_cycles = x // (p - 1)\n    rem = x % (p - 1)\n    for r in range(1, p - 1):\n        cnt_r[r] = full_cycles + (1 if r <= rem else 0)\n\n    ans = 0\n    for r in range(1, p - 1):\n        val = pow_a[r]\n        if val == 0:\n            continue\n        t = b * inv[val] % p\n        if t in dlog:\n            k = dlog[t]\n            # n \u2261 r (mod p-1), n \u2261 k (mod p)\n            # Solve via CRT\n            # n = r + (p-1)*s\n            # r + (p-1)*s \u2261 k (mod p)\n            # (p-1)*s \u2261 k - r (mod p)\n            # -1 * s \u2261 k - r (mod p) => s \u2261 r - k (mod p)\n            s0 = (r - k) % p\n            n0 = r + (p - 1) * s0\n            if n0 <= x and n0 >= 1:\n                # All solutions: n = n0 + l * lcm(p, p-1) = n0 + l * p*(p-1)\n                step = p * (p - 1)\n                max_l = (x - n0) // step\n                ans += max_l + 1\n\n    print(ans)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "import sys\nfrom collections import defaultdict\n\ndef mod_pow(a, e, mod):\n    res = 1\n    while e:\n        if e & 1:\n            res = res * a % mod\n        a = a * a % mod\n        e >>= 1\n    return res\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    a, b, p, x = map(int, data)\n\n    # Precompute discrete log table for a^k mod p\n    # We need values for k in [0, p-2]\n    val_to_k = {}\n    cur = 1\n    for k in range(p - 1):\n        if cur not in val_to_k:\n            val_to_k[cur] = k\n        cur = cur * a % p\n\n    # Precompute modular inverse of p modulo (p-1)\n    # Since p and p-1 are coprime, inverse exists\n    inv_p = pow(p, -1, p - 1)\n\n    ans = 0\n    # Iterate over residue r = n mod p\n    for r in range(1, p + 1):\n        # We need a^n \u2261 b * inv_r (mod p)\n        inv_r = pow(r, p - 2, p)\n        target = b * inv_r % p\n        if target not in val_to_k:\n            continue\n        k = val_to_k[target]  # n \u2261 k (mod p-1)\n\n        # Solve n \u2261 r (mod p), n \u2261 k (mod p-1)\n        # n = r + p * t\n        # r + p*t \u2261 k (mod p-1) => p*t \u2261 k - r (mod p-1)\n        # t \u2261 (k - r) * inv_p (mod p-1)\n        t0 = (k - r) * inv_p % (p - 1)\n        n0 = r + p * t0\n        if n0 > x:\n            continue\n        # All solutions: n = n0 + l * p*(p-1)\n        step = p * (p - 1)\n        cnt = 1 + (x - n0) // step\n        ans += cnt\n\n    print(ans)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 5279,
+            "prompt_tokens": 294,
+            "total_tokens": 5573,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 1,
+                "engine_ttft_ms": 41,
+                "engine_ttlt_ms": 5378,
+                "pre_inference_ms": 160,
+                "service_tbt_ms": 1,
+                "service_ttft_ms": 299,
+                "service_ttlt_ms": 5618,
+                "total_duration_ms": 5508,
+                "user_visible_ttft_ms": 140
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Python to solve this programming problem:\nDescription: Given an integer $$$x$$$. Your task is to find out how many positive integers $$$n$$$ ($$$1 \\leq n \\leq x$$$) satisfy $$$$$$n \\cdot a^n \\equiv b \\quad (\\textrm{mod}\\;p),$$$$$$ where $$$a, b, p$$$ are all known constants.\nInput Specification: The only line contains four integers $$$a,b,p,x$$$ ($$$2 \\leq p \\leq 10^6+3$$$, $$$1 \\leq a,b &lt; p$$$, $$$1 \\leq x \\leq 10^{12}$$$). It is guaranteed that $$$p$$$ is a prime.\nOutput Specification: Print a single integer: the number of possible answers $$$n$$$.\n\nSample Input:\n2 3 5 8\nSample Output:\n2\n\nSample Input:\n4 6 7 13\nSample Output:\n1\n\nSample Input:\n233 233 10007 1\nSample Output:\n1\n\nNotes: NoteIn the first sample, we can see that $$$n=2$$$ and $$$n=8$$$ are possible answers.\nTake input from standard input and output to standard output\nProvide the Python code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "4b9f470e5889da29affae6376f6c9f6a",
+        "difficulty": 2100,
+        "prob_desc_sample_inputs": [
+            "2 3 5 8",
+            "4 6 7 13",
+            "233 233 10007 1"
+        ],
+        "prob_desc_time_limit": "3 seconds",
+        "tags": [
+            "math",
+            "chinese remainder theorem",
+            "number theory"
+        ],
+        "prob_desc_output_spec": "Print a single integer: the number of possible answers $$$n$$$.",
+        "prob_desc_input_spec": "The only line contains four integers $$$a,b,p,x$$$ ($$$2 \\leq p \\leq 10^6+3$$$, $$$1 \\leq a,b &lt; p$$$, $$$1 \\leq x \\leq 10^{12}$$$). It is guaranteed that $$$p$$$ is a prime.",
+        "lang_cluster": "Python",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first sample, we can see that $$$n=2$$$ and $$$n=8$$$ are possible answers.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Given an integer $$$x$$$. Your task is to find out how many positive integers $$$n$$$ ($$$1 \\leq n \\leq x$$$) satisfy $$$$$$n \\cdot a^n \\equiv b \\quad (\\textrm{mod}\\;p),$$$$$$ where $$$a, b, p$$$ are all known constants.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1517403900",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "2",
+            "1",
+            "1"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"2 3 5 8\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"4 6 7 13\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"233 233 10007 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"338792 190248 339821 152634074578\\r\\n\", \"output\": [\"449263\"]}, {\"input\": \"629260 663548 739463 321804928248\\r\\n\", \"output\": [\"434818\"]}, {\"input\": \"656229 20757 818339 523535590429\\r\\n\", \"output\": [\"639482\"]}, {\"input\": \"1000002 1000002 1000003 1000000000000\\r\\n\", \"output\": [\"999998\"]}, {\"input\": \"345 2746 1000003 5000000\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"802942 824238 836833 605503824329\\r\\n\", \"output\": [\"723664\"]}, {\"input\": \"1 1 2 880336470888\\r\\n\", \"output\": [\"440168235444\"]}, {\"input\": \"2 2 3 291982585081\\r\\n\", \"output\": [\"97327528361\"]}, {\"input\": \"699601 39672 1000003 391631540387\\r\\n\", \"output\": [\"391905\"]}, {\"input\": \"9 1 11 792412106895\\r\\n\", \"output\": [\"72037464262\"]}, {\"input\": \"85 535 541 680776274925\\r\\n\", \"output\": [\"1258366493\"]}, {\"input\": \"3153 4504 7919 903755230811\\r\\n\", \"output\": [\"114124839\"]}, {\"input\": \"10021 18448 20719 509684975746\\r\\n\", \"output\": [\"24599907\"]}, {\"input\": \"66634 64950 66889 215112576953\\r\\n\", \"output\": [\"3215965\"]}, {\"input\": \"585128 179390 836839 556227387547\\r\\n\", \"output\": [\"664796\"]}, {\"input\": \"299973 381004 1000003 140225320941\\r\\n\", \"output\": [\"140481\"]}, {\"input\": \"941641 359143 1000003 851964325687\\r\\n\", \"output\": [\"851984\"]}, {\"input\": \"500719 741769 1000003 596263138944\\r\\n\", \"output\": [\"596056\"]}, {\"input\": \"142385 83099 1000003 308002143690\\r\\n\", \"output\": [\"307937\"]}, {\"input\": \"891986 300056 999983 445202944465\\r\\n\", \"output\": [\"445451\"]}, {\"input\": \"620328 378284 999983 189501757723\\r\\n\", \"output\": [\"189574\"]}, {\"input\": \"524578 993938 999979 535629124351\\r\\n\", \"output\": [\"535377\"]}, {\"input\": \"419620 683571 999979 243073161801\\r\\n\", \"output\": [\"243611\"]}, {\"input\": \"339138 549930 999883 962863668031\\r\\n\", \"output\": [\"962803\"]}, {\"input\": \"981603 635385 999233 143056117417\\r\\n\", \"output\": [\"143126\"]}, {\"input\": \"416133 340425 998561 195227456237\\r\\n\", \"output\": [\"195090\"]}, {\"input\": \"603835 578057 996323 932597132292\\r\\n\", \"output\": [\"936103\"]}, {\"input\": \"997998 999323 1000003 999968459613\\r\\n\", \"output\": [\"999964\"]}, {\"input\": \"997642 996418 999983 999997055535\\r\\n\", \"output\": [\"1000007\"]}, {\"input\": \"812415 818711 820231 999990437063\\r\\n\", \"output\": [\"1219017\"]}, {\"input\": \"994574 993183 1000003 999974679059\\r\\n\", \"output\": [\"999965\"]}, {\"input\": \"999183 998981 999979 999970875649\\r\\n\", \"output\": [\"999996\"]}, {\"input\": \"1 1 2 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"699601 39672 1000003 1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"4 1 5 15\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"912896 91931 999983 236754\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"154814 35966 269041 1234567\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"1 2 5 470854713201\\r\\n\", \"output\": [\"94170942640\"]}, {\"input\": \"3 27 29 968042258975\\r\\n\", \"output\": [\"33380767549\"]}, {\"input\": \"473 392 541 108827666667\\r\\n\", \"output\": [\"201160200\"]}, {\"input\": \"8 27 29 193012366642\\r\\n\", \"output\": [\"6655598851\"]}, {\"input\": \"1302 504 1987 842777827450\\r\\n\", \"output\": [\"424145863\"]}, {\"input\": \"693528 398514 1000003 1000000000000\\r\\n\", \"output\": [\"999995\"]}, {\"input\": \"533806 514846 1000003 999999999999\\r\\n\", \"output\": [\"999997\"]}, {\"input\": \"812509 699256 1000003 999999999999\\r\\n\", \"output\": [\"999997\"]}, {\"input\": \"28361 465012 1000003 1000000000000\\r\\n\", \"output\": [\"999996\"]}, {\"input\": \"28361 465012 1000003 12693229\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"28361 465012 1000003 13271836\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"28361 465012 1000003 13271835\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"28361 465012 1000003 13421000\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"28361 465012 1000003 19609900\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"28361 465012 1000003 12693228\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"1 1 2 1000000000000\\r\\n\", \"output\": [\"500000000000\"]}, {\"input\": \"1 1000002 1000003 1000000000000\\r\\n\", \"output\": [\"999997\"]}, {\"input\": \"1 44444 1000003 999999999998\\r\\n\", \"output\": [\"999997\"]}, {\"input\": \"2 1000002 1000003 1000000000000\\r\\n\", \"output\": [\"1000001\"]}, {\"input\": \"2 23333 1000003 1000000000000\\r\\n\", \"output\": [\"999999\"]}]"
+    }
+}

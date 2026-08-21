@@ -1,0 +1,389 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-8d7d55c02c93578d",
+        "created": 1787076280,
+        "model": "qwen-nvfp4",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.27.1-d7a14dad",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n\t\"strings\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tline, _ := reader.ReadString('\\n')\n\ts := strings.TrimSpace(line)\n\n\tn := len(s)\n\tif n == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\n\t// Count the number of maximal runs with even length\n\tcount := 0\n\ti := 0\n\tfor i < n {\n\t\tj := i\n\t\tfor j < n && s[j] == s[i] {\n\t\t\tj++\n\t\t}\n\t\trunLen := j - i\n\t\tif runLen%2 == 0 {\n\t\t\tcount++\n\t\t}\n\t\ti = j\n\t}\n\n\tfmt.Println(count)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n\t\"strings\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tline, _, _ := reader.ReadLine()\n\ts := strings.TrimSpace(string(line))\n\n\tn := len(s)\n\tif n == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\n\t// Group into runs\n\tvar runs []int\n\ti := 0\n\tfor i < n {\n\t\tj := i\n\t\tfor j < n && s[j] == s[i] {\n\t\t\tj++\n\t\t}\n\t\truns = append(runs, j-i)\n\t\ti = j\n\t}\n\n\t// We need to make all runs have odd length.\n\t// We can insert characters. Inserting a character into a run of length L:\n\t// - If we insert a character of the same type, the run becomes L+1.\n\t// - If we insert a character of a different type, it splits the run into two runs.\n\t//   For example, inserting 'X' (different from the run char) into a run of 'A's of length L\n\t//   gives two runs: one of 'A's of some length and one of 'A's of some length, with 'X' in between.\n\t//   Actually, inserting a different character splits the run into two runs of the original character.\n\t//   The total length of the two runs is L, and we added 1 character (the different one).\n\t//   So we have two runs of lengths a and b where a + b = L, and the inserted character forms its own run of length 1 (which is odd).\n\t//   We need both a and b to be odd. So L = a + b must be even (odd + odd = even).\n\t//   If L is even, we can split it into two odd parts (e.g., 1 and L-1, both odd if L is even).\n\t//   If L is odd, we cannot split it into two odd parts because odd + odd = even, but L is odd.\n\t//   So if L is odd, we cannot use this strategy to fix it by splitting.\n\t//\n\t// Alternatively, we can insert a character of the same type to make the run L+1.\n\t// If L is even, L+1 is odd, so that works with 1 insertion.\n\t// If L is odd, L+1 is even, which doesn't help.\n\t//\n\t// Let's think more carefully.\n\t// For a run of length L:\n\t// - If L is odd: it's already good. We don't need to do anything to this run, but we need to be careful about interactions with adjacent runs.\n\t// - If L is even: we need to fix it.\n\t//   Option 1: Insert one character of the same type. The run becomes L+1 (odd). Cost: 1.\n\t//   Option 2: Insert one character of a different type. This splits the run into two runs of the original character.\n\t//   The two runs have lengths a and b with a + b = L. We need a and b to be odd.\n\t//   This is possible if and only if L is even (which it is). So we can do this with 1 insertion.\n\t//   But wait, the inserted character itself forms a run of length 1 (odd), so that's fine.\n\t//   So both options cost 1 insertion for an even run.\n\t//\n\t// However, we need to consider that inserting a character might affect adjacent runs.\n\t// Actually, the problem is simpler than I thought. Let me reconsider.\n\t//\n\t// The key insight: we can always fix an even-length run with exactly 1 insertion.\n\t// But we need to check if there's a way to fix multiple runs with fewer insertions.\n\t//\n\t// Actually, let's think about it differently. Each insertion can affect at most two runs (if inserted between two runs) or one run (if inserted within a run).\n\t//\n\t// Let me reconsider the problem. The runs are maximal sequences of consecutive identical characters.\n\t// When we insert a character, we might:\n\t// 1. Insert within a run: this either extends the run (if same char) or splits it (if different char).\n\t// 2. Insert between two runs: this creates a new run of length 1 (the inserted char) and doesn't change the lengths of the adjacent runs.\n\t//\n\t// Wait, if we insert between two runs of the same character, they would merge. But the runs are maximal, so adjacent runs have different characters.\n\t// So inserting between two runs always creates a new run of length 1 (odd) and doesn't change the adjacent runs.\n\t//\n\t// So the strategy is:\n\t// - For each run of even length, we need to fix it.\n\t// - We can fix it by inserting 1 character within the run (either same or different type).\n\t// - But we need to make sure that after all insertions, all runs have odd length.\n\t//\n\t// Let's think about it greedily. Process the runs from left to right.\n\t// For each run:\n\t// - If it's odd, leave it as is.\n\t// - If it's even, we need to insert 1 character. We can insert a character of the same type to make it odd.\n\t//   This doesn't affect the next run.\n\t//\n\t// But wait, what if we insert a different character? Then we split the even run into two odd runs, and the inserted character is a run of length 1 (odd).\n\t// This also works and costs 1 insertion.\n\t//\n\t// So it seems like each even run requires exactly 1 insertion, and they are independent.\n\t//\n\t// Let me verify with the examples.\n\t// Example 1: \"GTTAAAG\"\n\t// Runs: G(1), TT(2), AAA(3), G(1)\n\t// Even runs: TT(2) -> 1 insertion. Total: 1. Matches.\n\t//\n\t// Example 2: \"AACCAACCAAAAC\"\n\t// Let's find the runs:\n\t// AA(2), CC(2), AA(2), CC(2), AAAA(4), C(1)\n\t// Wait, let me re-examine: \"AACCAACCAAAAC\"\n\t// A A C C A A C C A A A A C\n\t// Runs: AA(2), CC(2), AA(2), CC(2), AAAA(4), C(1)\n\t// Even runs: 2, 2, 2, 2, 4 -> 5 even runs.\n\t// If each requires 1 insertion, total = 5. Matches.\n\t//\n\t// So the answer is simply the number of runs with even length.\n\n\tcount := 0\n\tfor _, r := range runs {\n\t\tif r%2 == 0 {\n\t\t\tcount++\n\t\t}\n\t}\n\n\tfmt.Println(count)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n\t\"strings\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tline, _ := reader.ReadString('\\n')\n\ts := strings.TrimSpace(line)\n\n\tn := len(s)\n\tif n == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\n\t// Count the number of even-length runs\n\t// We need to find the minimum insertions to make all runs odd length.\n\t// \n\t// Key insight: We can break a run of even length by inserting a character \n\t// that is different from the run's character. This splits the run into two \n\t// parts. But we need to be careful about how insertions affect adjacent runs.\n\t//\n\t// Actually, let's think differently. \n\t// A run of length L:\n\t// - If L is odd, it's fine.\n\t// - If L is even, we need to fix it.\n\t//\n\t// One way to fix an even-length run of character c is to insert a character \n\t// different from c somewhere in the middle. This splits the run into two runs.\n\t// For example, \"AAAA\" (length 4, even). Insert 'T' in the middle: \"AAATTA\" -> \n\t// runs: \"AAA\" (odd), \"T\" (odd), \"A\" (odd). That works with 1 insertion.\n\t//\n\t// But wait, what if we have consecutive even runs? Like \"AATT\" -> runs \"AA\" and \"TT\".\n\t// If we insert between the two A's: \"ATAA\" -> runs \"A\", \"T\", \"AA\" -> still have \"AA\" which is even.\n\t// Hmm, let me reconsider.\n\t//\n\t// Let's think about it more carefully. \n\t// Actually, the key observation is:\n\t// - Each even-length run needs at least one insertion to fix.\n\t// - But one insertion can potentially fix two adjacent even runs if we insert at the boundary.\n\t//\n\t// Wait, let's look at the examples:\n\t// \"GTTAAAG\": runs are G(1), TT(2), AAA(3), G(1). Only TT is even. Answer is 1.\n\t// \"AACCAACCAAAAC\": Let's parse this.\n\t// A A C C A A C C A A A A C\n\t// Runs: AA(2), CC(2), AA(2), CC(2), AAAA(4), C(1)\n\t// Even runs: AA, CC, AA, CC, AAAA -> 5 even runs. Answer is 5.\n\t//\n\t// So it seems like each even run requires exactly 1 insertion. Let me verify.\n\t//\n\t// Consider \"AATT\": runs AA(2), TT(2). Two even runs.\n\t// If we insert between the A's: \"ATAA\" -> A(1), T(1), AA(2) -> still one even run.\n\t// If we insert between the two runs (between last A and first T): \"AATTT\" -> AA(2), TTT(3) -> still one even run.\n\t// If we insert in the middle of AA: \"ATAA\" -> same as above.\n\t// If we insert in the middle of TT: \"AATTT\" -> same.\n\t// What if we insert a character that breaks both? Like insert 'G' between A and T: \"AAGTT\" -> AA(2), G(1), TT(2). Still two even runs.\n\t// Hmm, so it seems like each even run needs its own insertion.\n\t//\n\t// Let me try \"AATT\" with 2 insertions:\n\t// Insert 'G' in middle of AA and 'G' in middle of TT: \"AGATGT\" -> A(1), G(1), A(1), T(1), G(1), T(1). All odd! So 2 insertions work.\n\t// Can we do it with 1? \n\t// \"AATT\" -> insert one char. Possible positions: before A, between A's, between A and T, between T's, after T.\n\t// - Before A: \"XAATT\" -> X(1), AA(2), TT(2) -> 2 even runs\n\t// - Between A's: \"AXATT\" -> A(1), X(1), A(1), TT(2) -> 1 even run\n\t// - Between A and T: \"AAXTT\" -> AA(2), X(1), TT(2) -> 2 even runs  \n\t// - Between T's: \"AATXT\" -> AA(2), T(1), X(1), T(1) -> 1 even run\n\t// - After T: \"AATTX\" -> AA(2), TT(2), X(1) -> 2 even runs\n\t// So minimum is 2. Which equals the number of even runs.\n\t//\n\t// Let me try another: \"AAAA\" (one run of length 4).\n\t// Insert one char in middle: \"AAATA\" -> AAA(3), T(1), A(1). All odd! So 1 insertion for 1 even run.\n\t//\n\t// So the answer is simply the count of even-length runs.\n\t//\n\t// Let me verify with the second example:\n\t// \"AACCAACCAAAAC\"\n\t// A A C C A A C C A A A A C\n\t// Runs: AA(2), CC(2), AA(2), CC(2), AAAA(4), C(1)\n\t// Even runs: 5. Answer: 5. Matches!\n\t//\n\t// So the solution is to count the number of maximal runs that have even length.\n\n\tcount := 0\n\ti := 0\n\tfor i < n {\n\t\tj := i\n\t\tfor j < n && s[j] == s[i] {\n\t\t\tj++\n\t\t}\n\t\trunLen := j - i\n\t\tif runLen%2 == 0 {\n\t\t\tcount++\n\t\t}\n\t\ti = j\n\t}\n\n\tfmt.Println(count)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n\t\"strings\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tline, _, _ := reader.ReadLine()\n\ts := strings.TrimSpace(string(line))\n\n\tn := len(s)\n\tif n == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\n\t// Count the number of runs with even length\n\tcount := 0\n\ti := 0\n\tfor i < n {\n\t\tj := i\n\t\tfor j < n && s[j] == s[i] {\n\t\t\tj++\n\t\t}\n\t\trunLen := j - i\n\t\tif runLen%2 == 0 {\n\t\t\tcount++\n\t\t}\n\t\ti = j\n\t}\n\n\tfmt.Println(count)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tline, _ := reader.ReadString('\\n')\n\t\n\t// Remove newline\n\tfor len(line) > 0 && (line[len(line)-1] == '\\n' || line[len(line)-1] == '\\r') {\n\t\tline = line[:len(line)-1]\n\t}\n\t\n\ts := line\n\tn := len(s)\n\t\n\tif n == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\t\n\t// Traverse the string and find runs of consecutive identical characters\n\t// For each run of even length, we need to insert 1 character to make it odd\n\t// But we need to be careful: inserting a character can split a run into two runs\n\t// Actually, the key insight is: for each maximal run of even length, we need exactly 1 insertion\n\t// to make it odd. But wait - we need to think more carefully.\n\t\n\t// Let's think about it differently. We process the string left to right.\n\t// When we encounter a run of length L:\n\t// - If L is odd, no insertion needed for this run.\n\t// - If L is even, we need to insert 1 character somewhere in this run to break it.\n\t//   But inserting a character of a different type splits the run into two parts.\n\t//   For example, \"TT\" -> insert 'A' between them: \"TAT\" which has runs \"T\", \"A\", \"T\" all odd.\n\t//   Or insert same type: \"TTT\" which is odd.\n\t//   So 1 insertion per even-length run suffices.\n\t\n\t// However, we need to verify that this greedy approach works.\n\t// Let's count the number of runs with even length.\n\t\n\tcount := 0\n\ti := 0\n\tfor i < n {\n\t\tj := i\n\t\tfor j < n && s[j] == s[i] {\n\t\t\tj++\n\t\t}\n\t\trunLen := j - i\n\t\tif runLen % 2 == 0 {\n\t\t\tcount++\n\t\t}\n\t\ti = j\n\t}\n\t\n\tfmt.Println(count)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tline, _ := reader.ReadString('\\n')\n\t// Remove newline\n\tfor len(line) > 0 && (line[len(line)-1] == '\\n' || line[len(line)-1] == '\\r') {\n\t\tline = line[:len(line)-1]\n\t}\n\n\ts := line\n\tn := len(s)\n\n\tif n == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\n\t// Count the number of even-length runs\n\t// We need to make all runs have odd length.\n\t// The key insight: we can insert characters to break up even-length runs.\n\t// For each maximal run of identical characters:\n\t// - If the run length is odd, it's already fine.\n\t// - If the run length is even, we need to insert at least one character to break it into two odd-length runs.\n\t//   But wait, inserting a character in the middle of a run of even length L:\n\t//   If we insert a different character, we split the run into two parts.\n\t//   For example, \"TT\" (length 2, even). Insert 'A' in between: \"TAT\". Now we have runs \"T\", \"A\", \"T\" - all odd.\n\t//   So one insertion fixes one even-length run.\n\t//   \n\t// However, we need to be careful: could inserting a character affect adjacent runs?\n\t// No, because we're inserting a different character, so it creates a new run of length 1 (odd) and splits the original run.\n\t//\n\t// But what if we insert the same character? That would just extend the run, which doesn't help.\n\t// So we always insert a different character.\n\t//\n\t// Therefore, the minimum number of insertions is simply the count of even-length maximal runs.\n\n\tcount := 0\n\ti := 0\n\tfor i < n {\n\t\tj := i\n\t\tfor j < n && s[j] == s[i] {\n\t\t\tj++\n\t\t}\n\t\trunLen := j - i\n\t\tif runLen%2 == 0 {\n\t\t\tcount++\n\t\t}\n\t\ti = j\n\t}\n\n\tfmt.Println(count)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"strings\"\n)\n\nfunc main() {\n\tvar s string\n\tfmt.Scan(&s)\n\n\tn := len(s)\n\tif n == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\n\t// Count the number of maximal runs of even length\n\t// We need to find minimum insertions to make all runs odd length.\n\t// \n\t// Key insight: We can insert characters to break up even-length runs.\n\t// For a run of length L:\n\t// - If L is odd, no insertion needed for this run.\n\t// - If L is even, we need to insert at least 1 character to split it into two odd-length runs.\n\t//   But we need to be careful: inserting a character might affect adjacent runs.\n\t//\n\t// Actually, let's think more carefully.\n\t// When we insert a character into a run of identical characters, we can choose what character to insert.\n\t// If we insert a different character, we split the run into two parts.\n\t// If we insert the same character, the run just gets longer.\n\t//\n\t// The optimal strategy: for each maximal run of even length, we can insert one character (different from the run's character) somewhere in the middle to split it into two odd-length runs. This uses 1 insertion per even run.\n\t//\n\t// But wait - could inserting one character fix multiple even runs? No, because runs are separated by different characters.\n\t//\n\t// However, we also need to consider that after insertion, new runs might form. But if we insert a character different from the current run's character, we create a new run of length 1 (odd) and split the original even run into two parts. If the original run has even length L, we can split it into two odd parts (e.g., L=4 -> 1+3 or 3+1, both odd). So 1 insertion per even run suffices.\n\t//\n\t// Let's verify with examples:\n\t// GTTAAAG: runs are G(1), TT(2), AAA(3), G(1). One even run (TT). Answer: 1. \u2713\n\t// AACCAACCAAAAC: Let's find runs:\n\t// A(2), C(2), A(2), C(2), AAA(3), C(1)\n\t// Wait, let me re-parse: A-A-C-C-A-A-C-C-A-A-A-A-C\n\t// Runs: AA(2), CC(2), AA(2), CC(2), AAAA(4), C(1)\n\t// Even runs: AA, CC, AA, CC, AAAA -> 5 even runs. Answer: 5. \u2713\n\t//\n\t// So the answer is simply the count of maximal runs with even length.\n\n\tcount := 0\n\ti := 0\n\tfor i < n {\n\t\tj := i\n\t\tfor j < n && s[j] == s[i] {\n\t\t\tj++\n\t\t}\n\t\trunLen := j - i\n\t\tif runLen%2 == 0 {\n\t\t\tcount++\n\t\t}\n\t\ti = j\n\t}\n\n\tfmt.Println(count)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n\t\"strings\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tline, _, _ := reader.ReadLine()\n\ts := strings.TrimSpace(string(line))\n\n\tn := len(s)\n\tif n == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\n\t// Count the number of even-length runs\n\tcount := 0\n\ti := 0\n\tfor i < n {\n\t\tj := i\n\t\tfor j < n && s[j] == s[i] {\n\t\t\tj++\n\t\t}\n\t\trunLen := j - i\n\t\tif runLen%2 == 0 {\n\t\t\tcount++\n\t\t}\n\t\ti = j\n\t}\n\n\tfmt.Println(count)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 8,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tline, _ := reader.ReadString('\\n')\n\t// Remove newline\n\tfor len(line) > 0 && (line[len(line)-1] == '\\n' || line[len(line)-1] == '\\r') {\n\t\tline = line[:len(line)-1]\n\t}\n\ts := line\n\n\tn := len(s)\n\tif n == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\n\t// Count the number of maximal runs with even length\n\t// We need to find the minimum insertions to make all runs odd length.\n\t// \n\t// Key insight: Inserting a character can affect at most two adjacent runs.\n\t// Specifically, if we have a run of even length, we can insert a character \n\t// (different from the run's character) inside it to split it into two odd-length runs.\n\t// For example, \"TT\" -> \"TAT\" (insert 'A' in the middle), now we have runs \"T\", \"A\", \"T\" all odd.\n\t// \n\t// But wait, we need to be careful. Let's think about it differently.\n\t// \n\t// Actually, the standard approach for this problem is:\n\t// Traverse the string and count runs. For each run of even length, we need at least one insertion.\n\t// But can one insertion fix two adjacent even runs? \n\t// Consider \"AATT\". Runs: \"AA\" (even), \"TT\" (even). \n\t// If we insert between them: \"AATXTT\" where X is not A or T. Now runs: \"AA\", \"X\", \"TT\". Still two even runs.\n\t// If we insert inside \"AA\": \"AXAT T\" -> \"AXATT\". Runs: \"A\", \"X\", \"A\", \"TT\". \"TT\" is still even.\n\t// If we insert inside \"TT\": \"AA T X T\" -> \"AATXT\". Runs: \"AA\", \"T\", \"X\", \"T\". \"AA\" is still even.\n\t// So it seems like each even run requires its own insertion.\n\t// \n\t// Let's verify with the examples.\n\t// Example 1: \"GTTAAAG\"\n\t// Runs: \"G\"(1, odd), \"TT\"(2, even), \"AAA\"(3, odd), \"G\"(1, odd).\n\t// One even run. Answer: 1. Correct.\n\t// \n\t// Example 2: \"AACCAACCAAAAC\"\n\t// Let's break it down:\n\t// A A C C A A C C A A A A C\n\t// Runs:\n\t// \"AA\" (2, even)\n\t// \"CC\" (2, even)\n\t// \"AA\" (2, even)\n\t// \"CC\" (2, even)\n\t// \"AAAA\" (4, even)\n\t// \"C\" (1, odd)\n\t// Total even runs: 5. Answer: 5. Correct.\n\t// \n\t// So the answer is simply the count of maximal runs with even length.\n\n\tcount := 0\n\ti := 0\n\tfor i < n {\n\t\tj := i\n\t\tfor j < n && s[j] == s[i] {\n\t\t\tj++\n\t\t}\n\t\trunLength := j - i\n\t\tif runLength%2 == 0 {\n\t\t\tcount++\n\t\t}\n\t\ti = j\n\t}\n\n\tfmt.Println(count)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 9,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\ts, _ := reader.ReadString('\\n')\n\t// Remove newline\n\tfor len(s) > 0 && (s[len(s)-1] == '\\n' || s[len(s)-1] == '\\r') {\n\t\ts = s[:len(s)-1]\n\t}\n\n\tn := len(s)\n\tif n == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\n\t// Count the length of each maximal run of consecutive identical characters\n\t// For each run of length L:\n\t//   If L is odd, no insertion needed.\n\t//   If L is even, we need to insert 1 character to split it into two odd runs.\n\t//   But wait: inserting a character in the middle of a run of even length L\n\t//   splits it into two runs. If we insert a character different from the run's character,\n\t//   we get two runs of length L/2 each. If L/2 is odd, that's fine. If L/2 is even, we still have even runs.\n\t//   \n\t// Let's think more carefully.\n\t// A run of length L (even). We can insert characters anywhere in the run.\n\t// The key insight: we want all maximal runs to have odd length.\n\t// \n\t// Consider a run of length L. We can insert k characters into this run (or at its boundaries).\n\t// Actually, insertions can also be between runs, which would merge or split runs.\n\t//\n\t// Let's think about it differently. The problem is equivalent to: given a string, what is the minimum number of insertions so that every maximal run has odd length?\n\t//\n\t// Key observation: Inserting a character inside a run of identical characters of length L:\n\t//   - If we insert a character different from the run's character, the run is split into two runs.\n\t//   - If we insert a character same as the run's character, the run just gets longer.\n\t//\n\t// So the optimal strategy for a run of even length L is to insert one character (different from the run's character) somewhere in the middle, splitting it into two runs. But we need both resulting runs to have odd length.\n\t//   - If L is even, L = 2k. Splitting into two runs of lengths a and b where a + b = 2k - 1 (since we inserted one different char, the original L chars are split into two groups, and the inserted char forms its own run of length 1).\n\t//   Wait, if we insert a different character, the original run of L chars is split into two runs of lengths a and b (a + b = L), and the inserted character forms a run of length 1.\n\t//   So we need a and b to be odd. Since a + b = L (even), if a is odd then b is odd. So we just need to split L into two odd parts. This is possible if L >= 2. For L = 2, we split into 1 and 1. For L = 4, we can split into 1 and 3 or 3 and 1.\n\t//   So one insertion is enough for any even-length run? Let's verify.\n\t//   L = 2: insert between the two chars. Now we have run of 1, run of 1 (the inserted char), run of 1. All odd. Yes.\n\t//   L = 4: insert after the 2nd char. Now we have run of 2, run of 1 (inserted), run of 2. But 2 is even! That's not good.\n\t//   So we need to be more careful.\n\t//\n\t// Let's reconsider. If we have a run of length L (even), and we insert one character of a different type at position i (0-indexed, 0 <= i < L), then:\n\t//   - The first part has length i\n\t//   - The inserted character has length 1\n\t//   - The second part has length L - 1 - i\n\t//   We need i to be odd and L - 1 - i to be odd.\n\t//   i odd and L - 1 - i odd means L - 1 is even, which is true since L is even.\n\t//   So we need i to be odd. For L = 4, i can be 1. Then first part = 1 (odd), second part = 4 - 1 - 1 = 2 (even). Not good.\n\t//   Wait, L - 1 - i = 4 - 1 - 1 = 2. That's even. So that doesn't work.\n\t//   \n\t//   Let me re-examine. If we insert a different character, the original L characters are split into two groups. The first group has length i, the second group has length L - i. The inserted character is between them.\n\t//   So the runs are: i, 1, L - i.\n\t//   We need i odd, 1 odd (always), and L - i odd.\n\t//   i odd and L - i odd implies L is even, which is true.\n\t//   For L = 4: i = 1, L - i = 3. Both odd. So runs are 1, 1, 3. All odd. \n\t//   I made an arithmetic error earlier. L - i = 4 - 1 = 3, not 4 - 1 - 1.\n\t//   \n\t//   So for any even L >= 2, we can choose i = 1 (odd), and L - i = L - 1 (odd since L is even). So one insertion suffices for each even-length run.\n\t//\n\t// But wait, what if inserting a character affects adjacent runs? For example, if we have \"AATT\", the runs are \"AA\" (length 2) and \"TT\" (length 2). If we insert a 'G' between the two A's, we get \"AGATT\". Runs: \"A\", \"G\", \"A\", \"TT\". Now \"TT\" is still even. We need another insertion for \"TT\". Total 2 insertions.\n\t//\n\t// What if we insert between the A's and T's? \"AATG T\" -> \"AATGT\". Runs: \"AA\", \"T\", \"G\", \"T\". \"AA\" is still even.\n\t//\n\t// So it seems like each even-length run requires at least one insertion, and insertions for different runs don't interfere with each other (as long as we insert within the run itself).\n\t//\n\t// Let's verify with the examples.\n\t// Example 1: \"GTTAAAG\"\n\t// Runs: \"G\" (1, odd), \"TT\" (2, even), \"AAA\" (3, odd), \"G\" (1, odd).\n\t// One even run, so 1 insertion. Output: 1. Correct.\n\t//\n\t// Example 2: \"AACCAACCAAAAC\"\n\t// Let's find the runs:\n\t// A A C C A A C C A A A A C\n\t// \"AA\" (2), \"CC\" (2), \"AA\" (2), \"CC\" (2), \"AAAA\" (4), \"C\" (1)\n\t// Even runs: 4 runs of length 2, 1 run of length 4. Total 5 even runs.\n\t// So 5 insertions. Output: 5. Correct.\n\t//\n\t// So the answer is simply the number of maximal runs with even length.\n\n\tcount := 0\n\ti := 0\n\tfor i < n {\n\t\tj := i\n\t\tfor j < n && s[j] == s[i] {\n\t\t\tj++\n\t\t}\n\t\tlength := j - i\n\t\tif length%2 == 0 {\n\t\t\tcount++\n\t\t}\n\t\ti = j\n\t}\n\n\tfmt.Println(count)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 10,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tline, _ := reader.ReadString('\\n')\n\t// Remove newline\n\tfor len(line) > 0 && (line[len(line)-1] == '\\n' || line[len(line)-1] == '\\r') {\n\t\tline = line[:len(line)-1]\n\t}\n\n\ts := line\n\tn := len(s)\n\n\tif n == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\n\t// Find all maximal runs\n\tcount := 0\n\ti := 0\n\tfor i < n {\n\t\tj := i\n\t\tfor j < n && s[j] == s[i] {\n\t\t\tj++\n\t\t}\n\t\trunLen := j - i\n\t\tif runLen%2 == 0 {\n\t\t\tcount++\n\t\t}\n\t\ti = j\n\t}\n\n\tfmt.Println(count)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 11,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"strings\"\n)\n\nfunc main() {\n\tvar s string\n\tfmt.Scan(&s)\n\n\tn := len(s)\n\tif n == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\n\t// Count the number of maximal runs of even length\n\t// We need to find the minimum number of insertions to make all runs have odd length.\n\t// \n\t// Key insight: Inserting a character into a run of even length can split it into two runs.\n\t// If we insert a character different from the run's character, a run of length L (even) \n\t// becomes two runs: one of length i and one of length L-i, where i is the position of insertion.\n\t// We need both i and L-i to be odd. Since L is even, i and L-i have the same parity.\n\t// So we need i to be odd and L-i to be odd, which means i must be odd.\n\t// \n\t// Actually, let's think more carefully. The problem is about making ALL runs have odd length.\n\t// \n\t// Let's consider the runs in the original string. Each run has a character and a length.\n\t// If a run has odd length, it's fine as is (unless affected by insertions from adjacent runs).\n\t// If a run has even length, we need to fix it.\n\t//\n\t// The key observation: We can insert characters to split runs. The minimum number of insertions\n\t// needed is related to the number of even-length runs. But we need to be careful because\n\t// inserting a character might merge with adjacent runs or create new even runs.\n\t//\n\t// Actually, a simpler approach: \n\t// For each maximal run of even length, we need at least one insertion to make it odd.\n\t// But one insertion can potentially fix two adjacent even runs if we insert a character\n\t// that is different from both, splitting the boundary.\n\t//\n\t// Wait, let's reconsider. Let's just count the even-length runs and see if we can do better.\n\t//\n\t// Actually, the standard solution for this problem is:\n\t// Count the number of maximal consecutive identical character sequences that have even length.\n\t// The answer is the number of such sequences.\n\t//\n\t// Why? Because for each even-length run, we need at least one insertion. And we can always\n\t// fix each even-length run independently with one insertion (by inserting a different character\n\t// in the middle, splitting it into two odd-length runs). Insertions for different runs don't\n\t// interfere with each other in a way that requires more insertions.\n\t//\n\t// Let's verify with the examples:\n\t// \"GTTAAAG\": runs are G(1), TT(2), AAA(3), G(1). One even run (TT). Answer: 1. \u2713\n\t// \"AACCAACCAAAAC\": Let's find the runs:\n\t// AA(2), CC(2), AA(2), CC(2), AAAA(4), C(1)\n\t// Even runs: AA, CC, AA, CC, AAAA = 5 even runs. Answer: 5. \u2713\n\t//\n\t// So the answer is simply the count of maximal runs with even length.\n\n\tcount := 0\n\ti := 0\n\tfor i < n {\n\t\tj := i\n\t\tfor j < n && s[j] == s[i] {\n\t\t\tj++\n\t\t}\n\t\tlength := j - i\n\t\tif length%2 == 0 {\n\t\t\tcount++\n\t\t}\n\t\ti = j\n\t}\n\n\tfmt.Println(count)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 12,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\ts, _ := reader.ReadString('\\n')\n\t// Remove newline\n\tfor len(s) > 0 && (s[len(s)-1] == '\\n' || s[len(s)-1] == '\\r') {\n\t\ts = s[:len(s)-1]\n\t}\n\n\tn := len(s)\n\tif n == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\n\t// Count the length of each maximal run\n\tcount := 0\n\ti := 0\n\tfor i < n {\n\t\tj := i\n\t\tfor j < n && s[j] == s[i] {\n\t\t\tj++\n\t\t}\n\t\trunLen := j - i\n\t\tif runLen%2 == 0 {\n\t\t\tcount++\n\t\t}\n\t\ti = j\n\t}\n\n\tfmt.Println(count)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 13,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\ts, _ := reader.ReadString('\\n')\n\t// Remove newline\n\tfor len(s) > 0 && (s[len(s)-1] == '\\n' || s[len(s)-1] == '\\r') {\n\t\ts = s[:len(s)-1]\n\t}\n\n\tn := len(s)\n\tif n == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\n\t// Count runs of consecutive identical characters\n\tcount := 0\n\ti := 0\n\tfor i < n {\n\t\tj := i\n\t\tfor j < n && s[j] == s[i] {\n\t\t\tj++\n\t\t}\n\t\trunLength := j - i\n\t\tif runLength%2 == 0 {\n\t\t\tcount++\n\t\t}\n\t\ti = j\n\t}\n\n\tfmt.Println(count)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 14,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\ts, _ := reader.ReadString('\\n')\n\t// Remove trailing newline\n\tfor len(s) > 0 && (s[len(s)-1] == '\\n' || s[len(s)-1] == '\\r') {\n\t\ts = s[:len(s)-1]\n\t}\n\n\tn := len(s)\n\tif n == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\n\t// Count runs of consecutive identical characters\n\tcount := 0\n\ti := 0\n\tfor i < n {\n\t\tj := i\n\t\tfor j < n && s[j] == s[i] {\n\t\t\tj++\n\t\t}\n\t\trunLen := j - i\n\t\tif runLen%2 == 0 {\n\t\t\tcount++\n\t\t}\n\t\ti = j\n\t}\n\n\tfmt.Println(count)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 15,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\ts, _ := reader.ReadString('\\n')\n\t// Remove newline\n\tfor len(s) > 0 && (s[len(s)-1] == '\\n' || s[len(s)-1] == '\\r') {\n\t\ts = s[:len(s)-1]\n\t}\n\n\tn := len(s)\n\tif n == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\n\t// Count the lengths of maximal runs of consecutive identical characters\n\truns := make([]int, 0)\n\tcount := 1\n\tfor i := 1; i < n; i++ {\n\t\tif s[i] == s[i-1] {\n\t\t\tcount++\n\t\t} else {\n\t\t\truns = append(runs, count)\n\t\t\tcount = 1\n\t\t}\n\t}\n\truns = append(runs, count)\n\n\t// For each run, if its length is even, we need to insert at least one character\n\t// to break it into two odd-length runs (or make it odd).\n\t// The minimum number of insertions is the count of even-length runs.\n\t// Wait, let me think more carefully.\n\t// If a run has even length L, inserting one character of a different type in the middle\n\t// splits it into two runs of length L/2 and L/2. If L/2 is odd, then both are odd.\n\t// If L/2 is even, then we still have even runs.\n\t// Actually, the simplest way: for any even-length run, we can insert one character\n\t// (of a different type) anywhere in the run to split it into two parts.\n\t// We want both parts to be odd. So we need to split L into two odd numbers.\n\t// L is even, so L = a + b where a and b are odd. This is always possible with one insertion.\n\t// For example, L=2: insert between the two chars -> 1 and 1 (both odd).\n\t// L=4: insert after 1st char -> 1 and 3 (both odd). Or after 3rd -> 3 and 1.\n\t// So one insertion per even-length run suffices.\n\t// But wait, could inserting one character fix multiple even runs? No, because runs are separated by different characters.\n\t// Could we do better by inserting characters that affect adjacent runs? No, because inserting a character\n\t// of the same type as the run would just extend the run, making it odd if it was even.\n\t// Actually, if we insert a character of the SAME type into an even-length run, the run becomes odd-length.\n\t// That's one insertion per even run.\n\t// Is it possible to fix two even runs with one insertion? No, because they are separated by at least one different character.\n\t// So the answer is simply the number of even-length runs.\n\n\tanswer := 0\n\tfor _, r := range runs {\n\t\tif r%2 == 0 {\n\t\t\tanswer++\n\t\t}\n\t}\n\n\tfmt.Println(answer)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 16,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n\t\"strings\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tline, _ := reader.ReadString('\\n')\n\ts := strings.TrimSpace(line)\n\n\tn := len(s)\n\tif n == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\n\t// Count the number of maximal runs of even length\n\t// We need to insert characters to make all runs odd.\n\t// The key insight: inserting a character inside a run of even length can split it into two odd runs.\n\t// But we need to be careful about interactions between adjacent runs.\n\t\n\t// Actually, let's think about this more carefully.\n\t// A run of length L:\n\t// - If L is odd, it's fine.\n\t// - If L is even, we need to fix it.\n\t// \n\t// One way to fix an even run of length L is to insert one character somewhere inside it,\n\t// splitting it into two parts. If we insert a character different from the run's character,\n\t// we get two runs: one of length i and one of length L-i-1 (where i is the position before insertion).\n\t// We need both i and L-i-1 to be odd.\n\t// i + (L-i-1) = L-1, which is odd (since L is even). So if one is odd, the other is even.\n\t// Wait, that's not right. We need both to be odd.\n\t// i odd and L-i-1 odd means i + (L-i-1) = L-1 must be even. But L-1 is odd. Contradiction.\n\t// So we can't split an even run into two odd runs by inserting one different character.\n\t// \n\t// What if we insert the same character? Then the run stays as one run of length L+1, which is odd.\n\t// So inserting one same character into an even run makes it odd. That costs 1 insertion.\n\t//\n\t// But wait, what if we have consecutive even runs? For example, \"AATT\" -> runs \"AA\" and \"TT\".\n\t// If we insert an 'A' in the first run: \"AAA\" and \"TT\" -> still \"TT\" is even.\n\t// If we insert a 'T' in the second run: \"AA\" and \"TTT\" -> still \"AA\" is even.\n\t// \n\t// Actually, let's reconsider. The problem is about maximal sequences of consecutive identical nucleotides.\n\t// \n\t// Let me think of a different approach. We can use dynamic programming.\n\t// \n\t// Actually, there's a simpler observation. Let's look at the runs.\n\t// For each run of length L:\n\t// - If L is odd, no insertion needed for this run in isolation.\n\t// - If L is even, we need at least 1 insertion to make it odd (by adding the same character).\n\t// \n\t// But insertions can affect neighboring runs. However, if we insert a character of the same type into a run,\n\t// it just extends that run. It doesn't affect neighboring runs.\n\t// \n\t// So the minimum number of insertions is simply the number of runs with even length?\n\t// \n\t// Let's verify with the examples.\n\t// Example 1: \"GTTAAAG\"\n\t// Runs: \"G\"(1), \"TT\"(2), \"AAA\"(3), \"G\"(1)\n\t// Even runs: \"TT\" -> count = 1. Output: 1. Correct.\n\t// \n\t// Example 2: \"AACCAACCAAAAC\"\n\t// Runs: \"AA\"(2), \"CC\"(2), \"AA\"(2), \"CC\"(2), \"AAA\"(3), \"A\"(1), \"C\"(1)\n\t// Wait, let me re-parse: A-A-C-C-A-A-C-C-A-A-A-A-C\n\t// \"AA\"(2), \"CC\"(2), \"AA\"(2), \"CC\"(2), \"AAAA\"(4), \"C\"(1)\n\t// Even runs: \"AA\", \"CC\", \"AA\", \"CC\", \"AAAA\" -> count = 5. Output: 5. Correct.\n\t// \n\t// So the answer is simply the count of runs with even length.\n\n\tcount := 0\n\ti := 0\n\tfor i < n {\n\t\tj := i\n\t\tfor j < n && s[j] == s[i] {\n\t\t\tj++\n\t\t}\n\t\trunLen := j - i\n\t\tif runLen%2 == 0 {\n\t\t\tcount++\n\t\t}\n\t\ti = j\n\t}\n\n\tfmt.Println(count)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 17,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n\t\"strings\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tline, _ := reader.ReadString('\\n')\n\ts := strings.TrimSpace(line)\n\n\tn := len(s)\n\tif n == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\n\t// Count runs of consecutive identical characters\n\tcount := 0\n\ti := 0\n\tfor i < n {\n\t\tj := i\n\t\tfor j < n && s[j] == s[i] {\n\t\t\tj++\n\t\t}\n\t\trunLen := j - i\n\t\tif runLen%2 == 0 {\n\t\t\tcount++\n\t\t}\n\t\ti = j\n\t}\n\n\tfmt.Println(count)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 18,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n\t\"strings\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tline, _ := reader.ReadString('\\n')\n\ts := strings.TrimSpace(line)\n\n\tn := len(s)\n\tif n == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\n\t// We need to find the minimum number of insertions to make all runs of identical characters have odd length.\n\t// A run is a maximal sequence of consecutive identical characters.\n\t// If a run has even length, we need to insert at least one character to break it into two runs, both of which must have odd length.\n\t// Inserting a character of a different type in the middle of an even-length run splits it into two runs.\n\t// For example, \"TT\" (length 2) -> insert 'A' to get \"TAT\" which has runs \"T\", \"A\", \"T\" all odd.\n\t// Or insert 'T' to get \"TTT\" which is a run of length 3 (odd).\n\t// Actually, inserting any character (same or different) into an even-length run will fix it with 1 insertion.\n\t// But we need to be careful: if we insert a character of the same type, the run becomes odd length.\n\t// If we insert a different character, the even run is split into two runs. For the original even length L,\n\t// if we insert at position k (0-indexed, 0 <= k < L), we get two runs of length k+1 and L-k-1.\n\t// We need both to be odd. So k+1 odd and L-k-1 odd.\n\t// L is even. L-k-1 = L - (k+1). If k+1 is odd, then L - (k+1) is even - odd = odd. So both are odd.\n\t// So any insertion position works for a single even run.\n\t\n\t// However, we need to consider that insertions might affect adjacent runs. But since we're only inserting,\n\t// and we want minimum insertions, we can process each run independently.\n\t// Why? Because inserting a character inside a run doesn't affect other runs.\n\t// If we insert a character of a different type, it creates a new run of length 1 (odd) and splits the original run.\n\t// If we insert a character of the same type, the run just gets longer by 1, becoming odd.\n\t\n\t// So for each run of even length, we need exactly 1 insertion.\n\t// For each run of odd length, we need 0 insertions.\n\t\n\t// Wait, is that always true? Let's think.\n\t// Consider \"AATT\". Runs: \"AA\" (even), \"TT\" (even). We need 2 insertions.\n\t// Insert in \"AA\": \"AATA\" -> runs \"A\", \"A\", \"TA\"? No, \"AATA\" has runs \"AA\" still? No.\n\t// Let's be precise. Original: A A T T\n\t// Insert 'A' after first A: A A A T T -> runs \"AAA\" (odd), \"TT\" (even). Still need to fix \"TT\".\n\t// Insert 'T' after first T: A A T T T -> runs \"AA\" (even), \"TTT\" (odd). Still need to fix \"AA\".\n\t// So we need 2 insertions total.\n\t\n\t// What if we insert a different character?\n\t// \"AATT\" -> insert 'G' between the two A's: A G A T T -> runs \"A\", \"G\", \"A\", \"TT\". \"TT\" is still even.\n\t// So we still need to fix \"TT\". Total 2 insertions.\n\t\n\t// So it seems each even-length run requires exactly 1 insertion, and these insertions are independent.\n\t\n\t// Let's verify with the examples.\n\t// Example 1: \"GTTAAAG\"\n\t// Runs: \"G\" (1, odd), \"TT\" (2, even), \"AAA\" (3, odd), \"G\" (1, odd).\n\t// One even run, so 1 insertion. Output: 1. Correct.\n\t\n\t// Example 2: \"AACCAACCAAAAC\"\n\t// Let's find the runs:\n\t// A A -> \"AA\" (2, even)\n\t// C C -> \"CC\" (2, even)\n\t// A A -> \"AA\" (2, even)\n\t// C C -> \"CC\" (2, even)\n\t// A A A A -> \"AAAA\" (4, even)\n\t// C -> \"C\" (1, odd)\n\t// Wait, let me re-parse \"AACCAACCAAAAC\"\n\t// A A C C A A C C A A A A C\n\t// Runs:\n\t// \"AA\" (2, even)\n\t// \"CC\" (2, even)\n\t// \"AA\" (2, even)\n\t// \"CC\" (2, even)\n\t// \"AAAA\" (4, even)\n\t// \"C\" (1, odd)\n\t// Total even runs: 5. So 5 insertions. Output: 5. Correct.\n\t\n\t// So the algorithm is:\n\t// 1. Traverse the string and identify all maximal runs.\n\t// 2. Count how many runs have even length.\n\t// 3. The answer is the count of even-length runs.\n\t\n\tcount := 0\n\ti := 0\n\tfor i < n {\n\t\tj := i\n\t\tfor j < n && s[j] == s[i] {\n\t\t\tj++\n\t\t}\n\t\trunLength := j - i\n\t\tif runLength % 2 == 0 {\n\t\t\tcount++\n\t\t}\n\t\ti = j\n\t}\n\t\n\tfmt.Println(count)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 19,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n\t\"strings\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tline, _ := reader.ReadString('\\n')\n\ts := strings.TrimSpace(line)\n\n\tn := len(s)\n\tif n == 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\n\t// Count the runs of consecutive identical characters\n\t// For each run of length L:\n\t// - If L is odd, no insertion needed\n\t// - If L is even, we need to insert 1 character to break it into two odd-length runs\n\t//   But wait, inserting a character in the middle of a run of even length L:\n\t//   If we insert a different character, we split the run into two parts.\n\t//   Actually, let's think more carefully.\n\t//\n\t// A run of length L (even):\n\t// We can insert characters to make all resulting runs odd.\n\t// The minimum number of insertions for a single run of even length L is 1.\n\t// Why? Because if we insert one character (different from the run character) in the middle,\n\t// we split the run into two runs. But we need both to be odd.\n\t// If L is even, say L=2k. If we insert 1 char, we get two runs. Their lengths sum to L=2k.\n\t// For both to be odd, we need one to be odd and the other odd, but odd+odd=even, so that works.\n\t// But can we always do it with 1 insertion? \n\t// Example: \"TT\" (L=2). Insert one char between: \"T?T\". Now we have runs \"T\", \"?\", \"T\". All odd. Yes.\n\t// Example: \"AAAA\" (L=4). Insert one char: \"AA?AA\". Runs: \"AA\", \"?\", \"AA\". \"AA\" has length 2 (even). Not good.\n\t// So 1 insertion is not always enough for L=4.\n\t//\n\t// Let's reconsider. For a run of length L:\n\t// We need to partition the L identical characters into groups separated by inserted characters,\n\t// such that each group has odd length.\n\t// The minimum number of inserted characters needed is the minimum number of \"breaks\" we need.\n\t// If L is odd, 0 breaks needed.\n\t// If L is even, we need at least 1 break. But 1 break splits L into two parts. \n\t// For both parts to be odd, we need L = odd + odd = even. That works for any even L? \n\t// Wait, if L=4, we can split into 1+3 or 3+1. Both odd. So 1 insertion works.\n\t// \"AAAA\" -> \"A?AAA\" or \"AAA?A\". Yes, 1 insertion.\n\t//\n\t// So for each run of even length, we need exactly 1 insertion.\n\t//\n\t// But wait, what if adjacent runs interact? No, because we're only inserting within a run,\n\t// and the inserted character is different from the run character, so it forms its own run of length 1 (odd).\n\t// The neighboring runs (before and after the original run) are unaffected in their character type.\n\t//\n\t// Actually, let me reconsider the problem. The runs are maximal sequences of consecutive identical nucleotides.\n\t// When we insert a character, it could potentially merge with adjacent runs if it's the same character.\n\t// But we can always choose to insert a character different from the current run's character.\n\t// So the inserted character will form a new run of length 1 (odd), and split the original run.\n\t//\n\t// Therefore, the answer is simply the count of runs with even length.\n\n\tcount := 0\n\ti := 0\n\tfor i < n {\n\t\tj := i\n\t\tfor j < n && s[j] == s[i] {\n\t\t\tj++\n\t\t}\n\t\trunLen := j - i\n\t\tif runLen%2 == 0 {\n\t\t\tcount++\n\t\t}\n\t\ti = j\n\t}\n\n\tfmt.Println(count)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 13923,
+            "prompt_tokens": 488,
+            "total_tokens": 14411
+        },
+        "prompt": "Write a program in Go to solve this programming problem:\nDescription: You will receive 3 points for solving this problem.Manao is designing the genetic code for a new type of algae to efficiently produce fuel. Specifically, Manao is focusing on a stretch of DNA that encodes one protein. The stretch of DNA is represented by a string containing only the characters 'A', 'T', 'G' and 'C'.Manao has determined that if the stretch of DNA contains a maximal sequence of consecutive identical nucleotides that is of even length, then the protein will be nonfunctional. For example, consider a protein described by DNA string \"GTTAAAG\". It contains four maximal sequences of consecutive identical nucleotides: \"G\", \"TT\", \"AAA\", and \"G\". The protein is nonfunctional because sequence \"TT\" has even length.Manao is trying to obtain a functional protein from the protein he currently has. Manao can insert additional nucleotides into the DNA stretch. Each additional nucleotide is a character from the set {'A', 'T', 'G', 'C'}. Manao wants to determine the minimum number of insertions necessary to make the DNA encode a functional protein.\nInput Specification: The input consists of a single line, containing a string s of length n (1\u2009\u2264\u2009n\u2009\u2264\u2009100). Each character of s will be from the set {'A', 'T', 'G', 'C'}. This problem doesn't have subproblems. You will get 3 points for the correct submission.\nOutput Specification: The program should print on one line a single integer representing the minimum number of 'A', 'T', 'G', 'C' characters that are required to be inserted into the input string in order to make all runs of identical characters have odd length.\n\nSample Input:\nGTTAAAG\nSample Output:\n1\n\nSample Input:\nAACCAACCAAAAC\nSample Output:\n5\n\nNotes: NoteIn the first example, it is sufficient to insert a single nucleotide of any type between the two 'T's in the sequence to restore the functionality of the protein.\nTake input from standard input and output to standard output\nProvide the Go code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "8b26ca1ca2b28166c3d25dceb1f3d49f",
+        "difficulty": null,
+        "prob_desc_sample_inputs": [
+            "GTTAAAG",
+            "AACCAACCAAAAC"
+        ],
+        "prob_desc_time_limit": "1 second",
+        "tags": [
+            "implementation",
+            "two pointers"
+        ],
+        "prob_desc_output_spec": "The program should print on one line a single integer representing the minimum number of 'A', 'T', 'G', 'C' characters that are required to be inserted into the input string in order to make all runs of identical characters have odd length.",
+        "prob_desc_input_spec": "The input consists of a single line, containing a string s of length n (1\u2009\u2264\u2009n\u2009\u2264\u2009100). Each character of s will be from the set {'A', 'T', 'G', 'C'}. This problem doesn't have subproblems. You will get 3 points for the correct submission.",
+        "lang_cluster": "Go",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first example, it is sufficient to insert a single nucleotide of any type between the two 'T's in the sequence to restore the functionality of the protein.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "You will receive 3 points for solving this problem.Manao is designing the genetic code for a new type of algae to efficiently produce fuel. Specifically, Manao is focusing on a stretch of DNA that encodes one protein. The stretch of DNA is represented by a string containing only the characters 'A', 'T', 'G' and 'C'.Manao has determined that if the stretch of DNA contains a maximal sequence of consecutive identical nucleotides that is of even length, then the protein will be nonfunctional. For example, consider a protein described by DNA string \"GTTAAAG\". It contains four maximal sequences of consecutive identical nucleotides: \"G\", \"TT\", \"AAA\", and \"G\". The protein is nonfunctional because sequence \"TT\" has even length.Manao is trying to obtain a functional protein from the protein he currently has. Manao can insert additional nucleotides into the DNA stretch. Each additional nucleotide is a character from the set {'A', 'T', 'G', 'C'}. Manao wants to determine the minimum number of insertions necessary to make the DNA encode a functional protein.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1392573600",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "1",
+            "5"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"GTTAAAG\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"AACCAACCAAAAC\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"GTGAATTTCC\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"CAGGGGGCCGCCCATGAAAAAAACCCGGCCCCTTGGGAAAACTTGGGTTA\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"CCCTTCACCCGGATCCAAATCCCTTAGAAATAATCCCCGACGGCGTTGTATCACCTCTGCACTTGTTAGTAAGGTCAGGCGTCCATTACGGAAGAACGTA\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"GCATTACATGGGGGGGTCCTACGAGCCCGGCATCCCGGAAACTAGCCGGTTAATTTGGTTTAAACCCTCCCACCCCGGATTGTAACCCCCCTCATTGGTT\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"TTCCCAGAGAAAAAAAGGGGCCCAAATGCCCTAAAAACCCCCTTTGCCCCCCAACCCCTTTTTAAAATAAAAAGGGGCCCATTCCCTTAAAAATTTTTTG\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"AGCCGCCCCCCCAAAAAAGGGGGAAAAAAAAAAAAAAAAAAAAACTTTTGGAAACCCCCCCCTTTTTTTTTTTTTTTTTTTTTTTTTGGGGAAGGGGGGG\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"AAAAAAAAAAAAAAAAAATTTTTTTTTTTTTTTTGGGGGGGGGGGGGGGGGGGGGGGTTTTTTTTTTTTTTGGGGGGGGGGGGGGGGGGGGAAAAATTTT\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"AACCGGTTAACCGGTTAACCGGTTAACCGGTTAACCGGTTAACCGGTTAACCGGTTAACCGGTTAACCGGTTAACCGGTTAACCGGTTAACCGGTTCCGG\\r\\n\", \"output\": [\"50\"]}, {\"input\": \"A\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"TTT\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"G\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"T\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"C\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"AA\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"GGG\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"AAG\\r\\n\", \"output\": [\"1\"]}]"
+    }
+}

@@ -1,0 +1,392 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-a418632e54efe7e8",
+        "created": 1787073179,
+        "model": "qwen-nvfp4",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.27.1-d7a14dad",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <algorithm>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string a;\n    cin >> a;\n    \n    // For each digit, we need to find the optimal replacement\n    // The idea is that for each digit d, we can replace it with a sequence of digits\n    // such that the product of factorials of the new digits equals d!\n    // and the resulting number (when all digits are sorted in descending order) is maximized.\n    \n    // Let's think about which digits can be broken down:\n    // 0! = 1, 1! = 1 -> these don't contribute to the product, and we can't use 0 or 1 in output\n    // 2! = 2 -> keep as 2\n    // 3! = 6 -> keep as 3\n    // 4! = 24 = 4! = 2*2*3*1*1... wait, let's think differently.\n    \n    // Actually, the key insight is:\n    // We want to maximize the number x such that product of factorials of digits of x equals product of factorials of digits of a.\n    // \n    // Let's consider what each digit contributes:\n    // 0! = 1\n    // 1! = 1\n    // 2! = 2\n    // 3! = 6\n    // 4! = 24\n    // 5! = 120\n    // 6! = 720\n    // 7! = 5040\n    // 8! = 40320\n    // 9! = 362880\n    //\n    // We need to find digits (from 2-9) whose factorial product equals the given product.\n    // To maximize the number, we want as many digits as possible, and larger digits should come first.\n    //\n    // Let's see if we can decompose:\n    // 4! = 24 = 4! ... but also 4! = 2 * 2 * 3 * 1 * 1 * 1 * 1 * 1 * 1... no.\n    // Actually, 4! = 24. Can we write 24 as a product of factorials of digits 2-9?\n    // 4! = 24. What about using smaller digits? \n    // 2! * 2! * 3! = 2 * 2 * 6 = 24. So 4 can be replaced by 3, 2, 2.\n    // But wait, we want to maximize the number. Comparing \"4\" vs \"322\": \n    // As a number, 4 is a single digit, 322 is three digits. 322 > 4.\n    // So replacing 4 with 322 gives a larger number.\n    //\n    // Similarly:\n    // 6! = 720. Can we decompose? \n    // 6! = 720. 5! = 120, so 6! = 6 * 5! = 6 * 120. But 6 is not a factorial of a single digit in a useful way... \n    // Wait, 6! = 720. Let's see: 3! * 4! * 5! = 6 * 24 * 120 = 17280, too big.\n    // 6! = 720. 5! = 120, 720/120 = 6. 6 = 3! So 6! = 5! * 3!. So 6 can be replaced by 5, 3.\n    // Comparing \"6\" vs \"53\": 53 > 6. So replace 6 with 53.\n    //\n    // 8! = 40320. 8! = 8 * 7! = 8 * 5040. 8 = 2^3. Hmm.\n    // 8! = 40320. 7! = 5040, 40320/5040 = 8. 8 = 2*2*2. But we need factorials.\n    // 2! = 2, so 8 = 2! * 2! * 2!. So 8! = 7! * 2! * 2! * 2!.\n    // So 8 can be replaced by 7, 2, 2, 2.\n    // Comparing \"8\" vs \"7222\": 7222 > 8. So replace 8 with 7222.\n    //\n    // 9! = 362880. 9! = 9 * 8! = 9 * 40320. 9 = 3*3. 3! = 6, not 3.\n    // Wait, 9! = 362880. Let's see: 9! = 9 * 8 * 7! = 9 * 8 * 5040.\n    // 9 = 3*3, 8 = 2*2*2. So 9! = 3*3*2*2*2*7!. But we need factorials of digits.\n    // 3! = 6, 2! = 2. So 3*3*2*2*2 = 72. 7! = 5040. 72 * 5040 = 362880. Yes!\n    // But 3*3*2*2*2 is not directly factorials. We need to express 9! as product of factorials.\n    // 9! = 362880. Let's try: 9! = 9 * 8! = 9 * 40320.\n    // We know 8! = 7! * 2! * 2! * 2!.\n    // So 9! = 9 * 7! * 2! * 2! * 2!.\n    // 9 = 3 * 3. But 3 is not a factorial. 3! = 6.\n    // Hmm, let me reconsider.\n    // 9! = 362880.\n    // 7! = 5040. 362880 / 5040 = 72.\n    // 72 = 6 * 12 = 3! * (4 * 3) ... this is getting complicated.\n    // Let's try: 9! = 9 * 8 * 7 * 6 * 5 * 4 * 3 * 2 * 1\n    // = (9) * (8) * (7!) \n    // 9 = 3 * 3, 8 = 2 * 2 * 2\n    // So 9! = 3 * 3 * 2 * 2 * 2 * 7!\n    // Now, 3 * 3 * 2 * 2 * 2 = 72. Can we write 72 as product of factorials of digits 2-9?\n    // 72 = 6 * 12 = 3! * 12. 12 = 4 * 3. Not helpful.\n    // 72 = 4! * 3 = 24 * 3. No.\n    // 72 = 3! * 3! * 2 = 6 * 6 * 2 = 72. Yes!\n    // So 9! = 3! * 3! * 2! * 7!\n    // So 9 can be replaced by 7, 3, 3, 2.\n    // Comparing \"9\" vs \"7332\": 7332 > 9. So replace 9 with 7332.\n    \n    // So the replacements are:\n    // 0 -> \"\" (contributes 1, no digits)\n    // 1 -> \"\" (contributes 1, no digits)\n    // 2 -> \"2\"\n    // 3 -> \"3\"\n    // 4 -> \"322\" (since 4! = 24 = 3! * 2! * 2!)\n    // 5 -> \"5\"\n    // 6 -> \"53\" (since 6! = 720 = 5! * 3!)\n    // 7 -> \"7\"\n    // 8 -> \"7222\" (since 8! = 40320 = 7! * 2! * 2! * 2!)\n    // 9 -> \"7332\" (since 9! = 362880 = 7! * 3! * 3! * 2!)\n    \n    string result = \"\";\n    for (char c : a) {\n        int d = c - '0';\n        switch (d) {\n            case 0:\n            case 1:\n                break;\n            case 2:\n                result += \"2\";\n                break;\n            case 3:\n                result += \"3\";\n                break;\n            case 4:\n                result += \"322\";\n                break;\n            case 5:\n                result += \"5\";\n                break;\n            case 6:\n                result += \"53\";\n                break;\n            case 7:\n                result += \"7\";\n                break;\n            case 8:\n                result += \"7222\";\n                break;\n            case 9:\n                result += \"7332\";\n                break;\n        }\n    }\n    \n    // Sort in descending order to get the maximum number\n    sort(result.begin(), result.end(), greater<char>());\n    \n    cout << result << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <algorithm>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string a;\n    cin >> a;\n\n    string result = \"\";\n\n    for (char c : a) {\n        int digit = c - '0';\n        switch (digit) {\n            case 0:\n            case 1:\n                // Do nothing\n                break;\n            case 2:\n                result += \"2\";\n                break;\n            case 3:\n                result += \"3\";\n                break;\n            case 4:\n                result += \"3222\";\n                break;\n            case 5:\n                result += \"5\";\n                break;\n            case 6:\n                result += \"53\";\n                break;\n            case 7:\n                result += \"7\";\n                break;\n            case 8:\n                result += \"777\";\n                break;\n            case 9:\n                result += \"7332\";\n                break;\n        }\n    }\n\n    // Sort in descending order to get the maximum number\n    sort(result.begin(), result.end(), greater<char>());\n\n    cout << result << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <algorithm>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string a;\n    cin >> a;\n    \n    string result = \"\";\n    \n    for (char c : a) {\n        int digit = c - '0';\n        switch (digit) {\n            case 0:\n            case 1:\n                // Do nothing\n                break;\n            case 2:\n                result += \"2\";\n                break;\n            case 3:\n                result += \"3\";\n                break;\n            case 4:\n                result += \"3222\";\n                break;\n            case 5:\n                result += \"5\";\n                break;\n            case 6:\n                result += \"53\";\n                break;\n            case 7:\n                result += \"7\";\n                break;\n            case 8:\n                result += \"7222\";\n                break;\n            case 9:\n                result += \"7332\";\n                break;\n        }\n    }\n    \n    // Sort in descending order to get the maximum number\n    sort(result.begin(), result.end(), greater<char>());\n    \n    cout << result << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <algorithm>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string a;\n    cin >> a;\n    \n    string result = \"\";\n    \n    for (char c : a) {\n        int d = c - '0';\n        switch (d) {\n            case 0:\n            case 1:\n                // Do nothing\n                break;\n            case 2:\n                result += \"2\";\n                break;\n            case 3:\n                result += \"3\";\n                break;\n            case 4:\n                result += \"322\";\n                break;\n            case 5:\n                result += \"5\";\n                break;\n            case 6:\n                result += \"53\";\n                break;\n            case 7:\n                result += \"7\";\n                break;\n            case 8:\n                result += \"7222\";\n                break;\n            case 9:\n                result += \"7332\";\n                break;\n        }\n    }\n    \n    // Sort in descending order to get the maximum number\n    sort(result.begin(), result.end(), greater<char>());\n    \n    cout << result << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <algorithm>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string a;\n    cin >> a;\n\n    string result = \"\";\n\n    for (char c : a) {\n        int digit = c - '0';\n        switch (digit) {\n            case 0:\n            case 1:\n                // 0! = 1, 1! = 1, so they don't contribute anything\n                break;\n            case 2:\n                result += \"2\";\n                break;\n            case 3:\n                result += \"3\";\n                break;\n            case 4:\n                // 4! = 24 = 3! * 2 * 2, so replace 4 with 322\n                result += \"322\";\n                break;\n            case 5:\n                result += \"5\";\n                break;\n            case 6:\n                // 6! = 720 = 5! * 3! * 2, so replace 6 with 532\n                result += \"532\";\n                break;\n            case 7:\n                result += \"7\";\n                break;\n            case 8:\n                // 8! = 40320 = 7! * 4 * 3 * 2 * 2 * 2 / ... let's think differently\n                // 8! = 40320\n                // We want to express 8! as product of factorials of digits (2-9)\n                // 8! = 40320\n                // 7! = 5040, 8!/7! = 8 = 4*2 = 3!*2*2/... \n                // Actually: 8! = 40320\n                // Let's factor: 8! = 2^7 * 3^2 * 5\n                // We need to find digits d1, d2, ... such that product of di! = 8!\n                // 7! = 5040 = 2^4 * 3^2 * 5\n                // 8!/7! = 8 = 2^3\n                // So 8! = 7! * 2^3\n                // 2^3 = 2*2*2, but we can use 3! = 6 = 2*3, no that introduces 3\n                // Actually 2^3 = 2*2*2, so three 2's\n                // But wait, we can also use other combinations\n                // Let's check: 8! = 40320\n                // 7! * 2 * 2 * 2 = 5040 * 8 = 40320. Yes!\n                // So 8 -> 7222\n                result += \"7222\";\n                break;\n            case 9:\n                // 9! = 362880\n                // 9! / 7! = 9*8 = 72 = 3! * 2 * 2 * 3 = ... \n                // 9! = 362880\n                // 7! = 5040\n                // 9!/7! = 72 = 8*9 = ... \n                // 72 = 3! * 3! * 2 = 6*6*2 = 72. Yes!\n                // So 9! = 7! * 3! * 3! * 2\n                // So 9 -> 7332\n                result += \"7332\";\n                break;\n        }\n    }\n\n    // Sort in descending order to get the maximum number\n    sort(result.begin(), result.end(), greater<char>());\n\n    cout << result << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <algorithm>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string a;\n    cin >> a;\n    \n    string result = \"\";\n    \n    for (char c : a) {\n        int digit = c - '0';\n        switch (digit) {\n            case 0:\n            case 1:\n                // 0! = 1, 1! = 1, so they don't contribute anything\n                break;\n            case 2:\n                result += \"2\";\n                break;\n            case 3:\n                result += \"3\";\n                break;\n            case 4:\n                // 4! = 24 = 3! * 4, so replace 4 with 3 and 2\n                result += \"32\";\n                break;\n            case 5:\n                result += \"5\";\n                break;\n            case 6:\n                // 6! = 720 = 5! * 3! * 2!\n                result += \"532\";\n                break;\n            case 7:\n                result += \"7\";\n                break;\n            case 8:\n                // 8! = 40320 = 7! * 2! * 2! * 2!\n                result += \"7222\";\n                break;\n            case 9:\n                // 9! = 362880 = 7! * 3! * 3! * 2!\n                result += \"7332\";\n                break;\n        }\n    }\n    \n    // Sort in descending order to get the maximum number\n    sort(result.begin(), result.end(), greater<char>());\n    \n    cout << result << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <algorithm>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string a;\n    cin >> a;\n\n    string result = \"\";\n\n    for (char c : a) {\n        int digit = c - '0';\n        switch (digit) {\n            case 0:\n            case 1:\n                // do nothing\n                break;\n            case 2:\n                result += \"2\";\n                break;\n            case 3:\n                result += \"3\";\n                break;\n            case 4:\n                result += \"322\";\n                break;\n            case 5:\n                result += \"5\";\n                break;\n            case 6:\n                result += \"53\";\n                break;\n            case 7:\n                result += \"7\";\n                break;\n            case 8:\n                result += \"7222\";\n                break;\n            case 9:\n                result += \"7332\";\n                break;\n        }\n    }\n\n    sort(result.begin(), result.end(), greater<char>());\n\n    cout << result << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <algorithm>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string a;\n    cin >> a;\n\n    string result = \"\";\n\n    for (char c : a) {\n        int digit = c - '0';\n        switch (digit) {\n            case 0:\n            case 1:\n                // Do nothing, 0! = 1! = 1, which doesn't contribute to the product\n                break;\n            case 2:\n                result += \"2\";\n                break;\n            case 3:\n                result += \"3\";\n                break;\n            case 4:\n                // 4! = 24 = 3! * 2! * 2!\n                result += \"322\";\n                break;\n            case 5:\n                result += \"5\";\n                break;\n            case 6:\n                // 6! = 720 = 5! * 3!\n                result += \"53\";\n                break;\n            case 7:\n                result += \"7\";\n                break;\n            case 8:\n                // 8! = 40320 = 7! * 3! * 2! * 2!\n                result += \"7322\";\n                break;\n            case 9:\n                // 9! = 362880 = 7! * 3! * 3! * 2!\n                result += \"7332\";\n                break;\n        }\n    }\n\n    // Sort in descending order to get the maximum number\n    sort(result.begin(), result.end(), greater<char>());\n\n    cout << result << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 8,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <algorithm>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string a;\n    cin >> a;\n\n    // For each digit, we need to find which digits (2-9) can replace it\n    // such that the product of factorials remains the same.\n    // We want the maximum number, so we want as many digits as possible,\n    // and the digits should be as large as possible (sorted in descending order).\n\n    // The key insight:\n    // 0! = 1, 1! = 1 -> these don't contribute to the product, so we can ignore them\n    // 2! = 2\n    // 3! = 6\n    // 4! = 24 = 4 * 6 = 2! * 3! -> so 4 can be replaced by 32\n    // 5! = 120 = 5 * 4 * 3 * 2 * 1 = 5! * 2! * 1! -> but we need to express in terms of factorials of digits 2-9\n    //    Actually, 5! = 120. We need digits d1, d2, ... such that d1! * d2! * ... = 120\n    //    5! = 120, so 5 itself works. Can we break it down? 5! = 120 = 5 * 24 = 5 * 4! = 5 * 4 * 6 = 5 * 4 * 3!\n    //    But 4 can be broken into 3*2, so 5! = 5 * 3! * 2! * 2! -> wait, let me think more carefully.\n    //\n    // Let's think about prime factorization:\n    // 2! = 2\n    // 3! = 6 = 2 * 3\n    // 4! = 24 = 2^3 * 3\n    // 5! = 120 = 2^3 * 3 * 5\n    // 6! = 720 = 2^4 * 3^2 * 5\n    // 7! = 5040 = 2^4 * 3^2 * 5 * 7\n    // 8! = 40320 = 2^7 * 3^2 * 5 * 7\n    // 9! = 362880 = 2^7 * 3^4 * 5 * 7\n    //\n    // We want to replace each digit with a multiset of digits (2-9) such that the product of their factorials equals the original factorial.\n    // And we want to maximize the resulting number (as a string of digits, sorted in descending order).\n    //\n    // The optimal replacement for each digit:\n    // 0 -> nothing (0! = 1)\n    // 1 -> nothing (1! = 1)\n    // 2 -> 2\n    // 3 -> 3\n    // 4 -> 3, 2 (since 4! = 24 = 3! * 2! = 6 * 2 = 12... wait, 3! * 2! = 6 * 2 = 12, but 4! = 24. That's not right.)\n    //\n    // Let me recalculate:\n    // 4! = 24\n    // 3! * 2! = 6 * 2 = 12 \u2260 24\n    // So 4 cannot be replaced by 3 and 2.\n    //\n    // Let me reconsider. The problem says f(x) is the product of factorials of digits of x.\n    // So if x has digits d1, d2, ..., dk, then f(x) = d1! * d2! * ... * dk!\n    //\n    // We need f(x) = f(a) where a is the input number.\n    //\n    // For digit 4: 4! = 24. What combination of digits (2-9) gives product of factorials = 24?\n    // 4! = 24. Can we use other digits?\n    // 2! = 2, 3! = 6. 2! * 3! = 12. 2! * 2! * 3! = 24. So 4 can be replaced by 3, 2, 2.\n    // Check: 3! * 2! * 2! = 6 * 2 * 2 = 24 = 4!. Yes!\n    //\n    // For digit 5: 5! = 120.\n    // 5! = 120. Can we break it down?\n    // 5! = 120 = 5 * 24 = 5 * 4! = 5 * 3! * 2! * 2!\n    // But 5 is a prime, and no factorial of a digit 2-9 contains 5 except 5!, 6!, 7!, 8!, 9!.\n    // 5! = 120. 6! = 720 = 6 * 120. So 6! = 6 * 5!.\n    // We need product = 120.\n    // 5! alone = 120. So 5 -> 5.\n    // Can we do better? We want more digits or larger digits.\n    // 120 = 5! . Any other combination?\n    // 3! * 2! * 2! * 2! * 2! = 6 * 2 * 2 * 2 * 2 = 96 \u2260 120\n    // 3! * 3! * 2! = 6 * 6 * 2 = 72 \u2260 120\n    // 4! * 2! = 24 * 2 = 48 \u2260 120\n    // 4! * 3! = 24 * 6 = 144 \u2260 120\n    // So 5 -> 5 seems to be the only option (or 5 itself).\n    //\n    // For digit 6: 6! = 720.\n    // 720 = 6! = 6 * 5! = 6 * 120.\n    // 6 = 3 * 2, so 6! = 3 * 2 * 5! = 3! / 2 * 2 * 5! ... this is getting complicated.\n    // Let's think in terms of prime factors.\n    // 6! = 720 = 2^4 * 3^2 * 5\n    // We need to express this as a product of factorials of digits 2-9.\n    // 5! = 2^3 * 3 * 5\n    // 3! = 2 * 3\n    // 2! = 2\n    // 5! * 3! * 2! = (2^3 * 3 * 5) * (2 * 3) * 2 = 2^5 * 3^2 * 5 = 32 * 9 * 5 = 1440 \u2260 720\n    // 5! * 3! = (2^3 * 3 * 5) * (2 * 3) = 2^4 * 3^2 * 5 = 16 * 9 * 5 = 720. Yes!\n    // So 6 -> 5, 3. Check: 5! * 3! = 120 * 6 = 720 = 6!. Correct.\n    //\n    // For digit 7: 7! = 5040 = 2^4 * 3^2 * 5 * 7\n    // 7 is prime, only appears in 7!, 8!, 9!.\n    // 7! = 5040. Can we break it down?\n    // 7! = 7 * 6! = 7 * 720.\n    // 7 is a digit, so 7 -> 7.\n    // Can we do better? 7! = 5040.\n    // 7! / 5! = 7 * 6 = 42. 42 = 7 * 6 = 7 * 3 * 2.\n    // So 7! = 7 * 3! * 2! * 5! ... wait, 7 * 3! * 2! * 5! = 7 * 6 * 2 * 120 = 10080 \u2260 5040.\n    // Let me recalculate: 7! = 5040. 5! = 120. 5040 / 120 = 42.\n    // 42 = 7 * 6 = 7 * 3 * 2.\n    // So 7! = 7 * 3 * 2 * 5! = 7 * 3! / 2 * 2 * 5! ... \n    // 3! = 6 = 3 * 2. So 3 * 2 = 3!.\n    // So 7! = 7 * 3! * 5! / 2 ... no, that's not integer division.\n    // 7! = 5040. 5! * 3! * 7 / 2 = 120 * 6 * 7 / 2 = 2520 \u2260 5040.\n    // Let me just check: 7! = 5040.\n    // 7 * 6! = 7 * 720 = 5040. And 6! = 5! * 3! (as we found above).\n    // So 7! = 7 * 5! * 3!.\n    // Check: 7 * 120 * 6 = 5040. Yes!\n    // So 7 -> 7, 5, 3.\n    //\n    // For digit 8: 8! = 40320 = 2^7 * 3^2 * 5 * 7\n    // 8! = 8 * 7! = 8 * 5040.\n    // 8 = 2^3.\n    // 8! = 2^3 * 7! = 2^3 * 7 * 5! * 3!\n    // 2^3 = 2! * 2! * 2!\n    // So 8! = 2! * 2! * 2! * 7 * 5! * 3!\n    // Check: 2 * 2 * 2 * 7 * 120 * 6 = 8 * 7 * 720 = 8 * 5040 = 40320. Yes!\n    // So 8 -> 7, 5, 3, 2, 2, 2.\n    //\n    // For digit 9: 9! = 362880 = 2^7 * 3^4 * 5 * 7\n    // 9! = 9 * 8! = 9 * 40320.\n    // 9 = 3^2.\n    // 9! = 3^2 * 8! = 3^2 * 2^3 * 7 * 5! * 3!\n    // 3^2 * 3! = 3^2 * (2 * 3) = 2 * 3^3.\n    // Hmm, let me think differently.\n    // 9! = 362880.\n    // 9! / 7! = 9 * 8 = 72 = 2^3 * 3^2.\n    // 72 = 3! * 3! * 2! = 6 * 6 * 2 = 72. Yes!\n    // So 9! = 7! * 3! * 3! * 2!\n    // And 7! = 7 * 5! * 3!\n    // So 9! = 7 * 5! * 3! * 3! * 3! * 2!\n    // Check: 7 * 120 * 6 * 6 * 6 * 2 = 7 * 120 * 432 = 7 * 51840 = 362880. Yes!\n    // So 9 -> 7, 5, 3, 3, 3, 2.\n\n    // Summary of replacements:\n    // 0 -> \"\"\n    // 1 -> \"\"\n    // 2 -> \"2\"\n    // 3 -> \"3\"\n    // 4 -> \"322\"  (3! * 2! * 2! = 6 * 2 * 2 = 24 = 4!)\n    // 5 -> \"5\"\n    // 6 -> \"53\"   (5! * 3! = 120 * 6 = 720 = 6!)\n    // 7 -> \"753\"  (7 * 5! * 3! = 7 * 120 * 6 = 5040 = 7!)\n    // 8 -> \"753222\" (7 * 5! * 3! * 2! * 2! * 2! = 7 * 120 * 6 * 2 * 2 * 2 = 40320 = 8!)\n    // 9 -> \"753332\" (7 * 5! * 3! * 3! * 3! * 2! = 7 * 120 * 6 * 6 * 6 * 2 = 362880 = 9!)\n\n    string result = \"\";\n    for (char c : a) {\n        int d = c - '0';\n        switch (d) {\n            case 0: break;\n            case 1: break;\n            case 2: result += \"2\"; break;\n            case 3: result += \"3\"; break;\n            case 4: result += \"322\"; break;\n            case 5: result += \"5\"; break;\n            case 6: result += \"53\"; break;\n            case 7: result += \"753\"; break;\n            case 8: result += \"753222\"; break;\n            case 9: result += \"753332\"; break;\n        }\n    }\n\n    // Sort in descending order to get the maximum number\n    sort(result.begin(), result.end(), greater<char>());\n\n    cout << result << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 9,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <algorithm>\n\nint main() {\n    int n;\n    std::cin >> n;\n    std::string a;\n    std::cin >> a;\n\n    // Count digits\n    int count[10] = {0};\n    for (char c : a) {\n        count[c - '0']++;\n    }\n\n    // For each digit, decompose its factorial into prime factors (digits 2,3,5,7)\n    // 0! = 1, 1! = 1 -> no contribution\n    // 2! = 2\n    // 3! = 6 = 3 * 2\n    // 4! = 24 = 4 * 2 * 3 = 2*2*2*3 -> but we want to represent as digits\n    // Actually, we need to find the maximum number x such that product of factorials of digits of x equals product of factorials of digits of a.\n    // The key insight: we can replace certain digits with combinations of other digits to get a larger number.\n    // Specifically:\n    // 4! = 24 = 4 * 2 * 3, but 4 is not prime. We can write 4! = 2! * 2! * 3! ? No.\n    // Let's think differently. We want to maximize the number x. The digits allowed are 2,3,4,5,6,7,8,9.\n    // But actually, we can use any digit except 0 and 1.\n    // The trick is that some factorials can be decomposed into products of smaller factorials.\n    // For example:\n    // 4! = 24, and 4 = 2*2*3, but we need factorials.\n    // Actually, the standard approach for this problem (Codeforces 515C) is:\n    // Replace each digit with its \"prime factorization\" in terms of digits 2,3,5,7.\n    // Specifically:\n    // 0,1 -> nothing\n    // 2 -> 2\n    // 3 -> 3\n    // 4 -> 2,2,2,3 (since 4! = 24 = 2*2*2*3, and 2! = 2, 3! = 6... wait)\n    \n    // Let me reconsider. The problem says f(x) = product of factorials of digits of x.\n    // We need f(x) = f(a).\n    // To maximize x, we should use as many large digits as possible, and sort them in descending order.\n    // But we can also break down larger digits into smaller ones if it helps? No, we want to maximize x.\n    // Actually, the key is that some digits can be replaced by other digits to get a lexicographically larger number.\n    // For example, 4! = 24. But 4 = 2*2*3. If we use digits 2,2,3 instead of 4, we get 2! * 2! * 3! = 2*2*6 = 24. Same product.\n    // But 432 > 223, so we prefer 4 over 2,2,3.\n    // Wait, but 9! = 362880. Can we decompose 9 into smaller digits?\n    // 9 = 3*3. 9! = 362880. 3! * 3! = 6*6 = 36. Not the same.\n    // So we can't just decompose digits arbitrarily.\n    \n    // The correct approach: \n    // For each digit d in a, we add its factorial's prime factorization to a global count.\n    // Then, we greedily construct the largest number by using digits 9,8,7,6,5,4,3,2 in that order,\n    // checking if the remaining prime factors can form that digit's factorial.\n    \n    // Let's compute the prime factorization of each digit's factorial:\n    // 2! = 2 = 2\n    // 3! = 6 = 2 * 3\n    // 4! = 24 = 2^3 * 3\n    // 5! = 120 = 2^3 * 3 * 5\n    // 6! = 720 = 2^4 * 3^2 * 5\n    // 7! = 5040 = 2^4 * 3^2 * 5 * 7\n    // 8! = 40320 = 2^7 * 3^2 * 5 * 7\n    // 9! = 362880 = 2^7 * 3^4 * 5 * 7\n    \n    // So we count the total prime factors (2,3,5,7) from all digits in a.\n    // Then we try to form the largest number by greedily using digits 9 down to 2.\n    \n    int primes[4] = {0, 0, 0, 0}; // for 2, 3, 5, 7\n    \n    // Factorials' prime factorizations:\n    // digit: {count of 2, count of 3, count of 5, count of 7}\n    int fact[10][4] = {\n        {0, 0, 0, 0}, // 0\n        {0, 0, 0, 0}, // 1\n        {1, 0, 0, 0}, // 2\n        {1, 1, 0, 0}, // 3\n        {3, 1, 0, 0}, // 4\n        {3, 1, 1, 0}, // 5\n        {4, 2, 1, 0}, // 6\n        {4, 2, 1, 1}, // 7\n        {7, 2, 1, 1}, // 8\n        {7, 4, 1, 1}  // 9\n    };\n    \n    for (int i = 0; i < n; i++) {\n        int d = a[i] - '0';\n        for (int j = 0; j < 4; j++) {\n            primes[j] += fact[d][j];\n        }\n    }\n    \n    std::string result;\n    \n    // Try to use digits 9 down to 2\n    for (int d = 9; d >= 2; d--) {\n        while (true) {\n            bool canUse = true;\n            for (int j = 0; j < 4; j++) {\n                if (primes[j] < fact[d][j]) {\n                    canUse = false;\n                    break;\n                }\n            }\n            if (canUse) {\n                result += ('0' + d);\n                for (int j = 0; j < 4; j++) {\n                    primes[j] -= fact[d][j];\n                }\n            } else {\n                break;\n            }\n        }\n    }\n    \n    std::cout << result << std::endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 10,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <algorithm>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string a;\n    cin >> a;\n\n    string result = \"\";\n\n    for (char c : a) {\n        int digit = c - '0';\n        switch (digit) {\n            case 0:\n            case 1:\n                // do nothing\n                break;\n            case 2:\n                result += \"2\";\n                break;\n            case 3:\n                result += \"3\";\n                break;\n            case 4:\n                result += \"322\";\n                break;\n            case 5:\n                result += \"5\";\n                break;\n            case 6:\n                result += \"53\";\n                break;\n            case 7:\n                result += \"7\";\n                break;\n            case 8:\n                result += \"7332\";\n                break;\n            case 9:\n                result += \"73323\";\n                break;\n        }\n    }\n\n    // Sort in descending order to get the maximum number\n    sort(result.begin(), result.end(), greater<char>());\n\n    cout << result << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 11,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <algorithm>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string a;\n    cin >> a;\n\n    string result = \"\";\n\n    for (char c : a) {\n        int digit = c - '0';\n        switch (digit) {\n            case 0:\n            case 1:\n                // Do nothing\n                break;\n            case 2:\n                result += \"2\";\n                break;\n            case 3:\n                result += \"3\";\n                break;\n            case 4:\n                result += \"3222\";\n                break;\n            case 5:\n                result += \"5\";\n                break;\n            case 6:\n                result += \"53\";\n                break;\n            case 7:\n                result += \"7\";\n                break;\n            case 8:\n                result += \"777\";\n                break;\n            case 9:\n                result += \"7332\";\n                break;\n        }\n    }\n\n    sort(result.rbegin(), result.rend());\n\n    cout << result << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 12,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <algorithm>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string a;\n    cin >> a;\n    \n    string result = \"\";\n    \n    for (char c : a) {\n        int digit = c - '0';\n        switch (digit) {\n            case 0:\n            case 1:\n                break;\n            case 2:\n                result += \"2\";\n                break;\n            case 3:\n                result += \"3\";\n                break;\n            case 4:\n                result += \"322\";\n                break;\n            case 5:\n                result += \"5\";\n                break;\n            case 6:\n                result += \"53\";\n                break;\n            case 7:\n                result += \"7\";\n                break;\n            case 8:\n                result += \"7222\";\n                break;\n            case 9:\n                result += \"7332\";\n                break;\n        }\n    }\n    \n    sort(result.rbegin(), result.rend());\n    \n    cout << result << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 13,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <algorithm>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string a;\n    cin >> a;\n\n    string result;\n\n    for (char c : a) {\n        int digit = c - '0';\n        switch (digit) {\n            case 0:\n            case 1:\n                // 0! = 1, 1! = 1, so they don't contribute to the product\n                break;\n            case 2:\n                result += '2';\n                break;\n            case 3:\n                result += '3';\n                break;\n            case 4:\n                // 4! = 24 = 3! * 2 * 2, so replace 4 with 3,2,2\n                result += \"322\";\n                break;\n            case 5:\n                result += '5';\n                break;\n            case 6:\n                // 6! = 720 = 5! * 3! * 2 * 2, so replace 6 with 5,3,2,2\n                result += \"5322\";\n                break;\n            case 7:\n                result += '7';\n                break;\n            case 8:\n                // 8! = 40320 = 7! * 2 * 2 * 2, so replace 8 with 7,2,2,2\n                result += \"7222\";\n                break;\n            case 9:\n                // 9! = 362880 = 7! * 3! * 2 * 2 * 2, so replace 9 with 7,3,2,2,2\n                result += \"73222\";\n                break;\n        }\n    }\n\n    // Sort in descending order to get the maximum number\n    sort(result.begin(), result.end(), greater<char>());\n\n    cout << result << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 14,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <algorithm>\n\nint main() {\n    int n;\n    std::cin >> n;\n    std::string a;\n    std::cin >> a;\n\n    // For each digit, we need to decompose it into digits that maximize the product of factorials\n    // The key insight is:\n    // 0! = 1, 1! = 1, 2! = 2, 3! = 6, 4! = 24, 5! = 120, 6! = 720, 7! = 5040, 8! = 40320, 9! = 362880\n    // We want to find digits d1, d2, ... such that product of (di!) equals product of (digit_i!) for original digits\n    // And the resulting number (formed by digits d1, d2, ...) is maximum (no 0s or 1s)\n    \n    // Strategy: For each digit in the input, replace it with equivalent digits that give the same factorial product\n    // 0 -> nothing (0! = 1, doesn't contribute)\n    // 1 -> nothing (1! = 1, doesn't contribute)\n    // 2 -> 2\n    // 3 -> 3\n    // 4 -> 3, 2, 2 (because 4! = 24 = 3! * 2! * 2! = 6 * 2 * 2)\n    // 5 -> 5\n    // 6 -> 5, 3 (because 6! = 720 = 5! * 3! = 120 * 6)\n    // 7 -> 7\n    // 8 -> 7, 2, 2, 2 (because 8! = 40320 = 7! * 2! * 2! * 2! = 5040 * 2 * 2 * 2)\n    // 9 -> 7, 3, 3 (because 9! = 362880 = 7! * 3! * 3! = 5040 * 6 * 6)\n    \n    std::string result = \"\";\n    for (char c : a) {\n        int digit = c - '0';\n        switch (digit) {\n            case 0:\n            case 1:\n                // contributes nothing\n                break;\n            case 2:\n                result += \"2\";\n                break;\n            case 3:\n                result += \"3\";\n                break;\n            case 4:\n                result += \"322\";\n                break;\n            case 5:\n                result += \"5\";\n                break;\n            case 6:\n                result += \"53\";\n                break;\n            case 7:\n                result += \"7\";\n                break;\n            case 8:\n                result += \"7222\";\n                break;\n            case 9:\n                result += \"733\";\n                break;\n        }\n    }\n    \n    // Sort in descending order to get the maximum number\n    std::sort(result.begin(), result.end(), std::greater<char>());\n    \n    std::cout << result << std::endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 15,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <algorithm>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string a;\n    cin >> a;\n\n    string result = \"\";\n\n    for (char c : a) {\n        int digit = c - '0';\n        switch (digit) {\n            case 0:\n            case 1:\n                // do nothing\n                break;\n            case 2:\n                result += \"2\";\n                break;\n            case 3:\n                result += \"3\";\n                break;\n            case 4:\n                result += \"3222\";\n                break;\n            case 5:\n                result += \"5\";\n                break;\n            case 6:\n                result += \"53\";\n                break;\n            case 7:\n                result += \"7\";\n                break;\n            case 8:\n                result += \"7222\";\n                break;\n            case 9:\n                result += \"7332\";\n                break;\n        }\n    }\n\n    sort(result.begin(), result.end(), greater<char>());\n\n    cout << result << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 16,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <algorithm>\n\nint main() {\n    int n;\n    std::cin >> n;\n    std::string a;\n    std::cin >> a;\n\n    // For each digit, we need to find which digits (2-9) can replace it\n    // such that the product of factorials remains the same.\n    // We want to maximize the resulting number, so we should use as many\n    // high digits as possible, and sort them in descending order.\n    \n    // The key insight: we can decompose each digit's factorial into\n    // factorials of smaller digits.\n    // 0! = 1, 1! = 1 -> ignore (they don't contribute to product)\n    // 2! = 2\n    // 3! = 6 = 3!\n    // 4! = 24 = 4! = 3! * 2! * 2! -> but we want to use digits, so 4! = 4!\n    // Actually, let's think differently.\n    // We want to find digits d1, d2, ..., dk (each in 2-9) such that\n    // product of di! equals product of original digits' factorials.\n    // And we want to maximize the number formed by these digits.\n    \n    // The trick: some factorials can be decomposed into products of other factorials.\n    // 4! = 24 = 3! * 2! * 2! -> but 3*2*2 = 12, not 24. Wait.\n    // 3! = 6, 2! = 2, so 3! * 2! * 2! = 6 * 2 * 2 = 24 = 4!. Yes!\n    // So 4 can be replaced by 3, 2, 2.\n    // 5! = 120. Can we decompose? 5! = 120. \n    // 6! = 720. 7! = 5040. 8! = 40320. 9! = 362880.\n    // Let's check which digits can be decomposed:\n    // 0! = 1 -> skip\n    // 1! = 1 -> skip\n    // 2! = 2 -> prime, keep as 2\n    // 3! = 6 -> prime in terms of factorials? 6 = 3!, can't be broken into smaller factorial products that multiply to 6. Actually 6 = 3! only. Keep as 3.\n    // 4! = 24 = 3! * 2! * 2! -> replace 4 with 3, 2, 2\n    // 5! = 120 -> 120 = 5! only? Let's see: 5! = 120. Can we write 120 as product of factorials of digits 2-9? \n    //   5! = 120. 4! = 24, 3! = 6, 2! = 2. 24*6*2 = 288, no. 24*5 = 120 but 5 is a digit, 5! = 120. So 5! = 5!. Keep as 5.\n    // 6! = 720. 720 = 6! only? 6! = 720. 5! = 120, 720/120 = 6 = 3!. So 6! = 5! * 3! * 2! * 2! * 2! ? Let's check: 120 * 6 * 2 * 2 * 2 = 120 * 48 = 5760, no.\n    //   Actually, 6! = 720. Let's factorize: 720 = 2^4 * 3^2 * 5.\n    //   Factorials: 2! = 2, 3! = 6 = 2*3, 4! = 24 = 2^3*3, 5! = 120 = 2^3*3*5, 6! = 720 = 2^4*3^2*5.\n    //   So 6! = 6! only in terms of single digit factorials? Or can we decompose?\n    //   720 = 5! * 6 = 120 * 6 = 5! * 3! * 2! * 2! * 2! ? 120 * 6 * 2 * 2 * 2 = 120 * 48 = 5760. No.\n    //   720 / 120 = 6. 6 = 3!. So 6! = 5! * 3!. But wait, that's two digits: 5 and 3. 5! * 3! = 120 * 6 = 720 = 6!. Yes!\n    //   So 6 can be replaced by 5, 3.\n    // 7! = 5040. 5040 / 720 = 7. 7 is prime, not a factorial of a digit (except 7! itself). So 7! = 7!. Keep as 7.\n    // 8! = 40320. 40320 / 5040 = 8. 8 = 4! / 3! ? No. 8 = 2^3. 8! = 8! only? Or 8! = 7! * 8. 8 is not a factorial. \n    //   Let's check: 8! = 40320. 7! = 5040. 40320 / 5040 = 8. 8 cannot be written as product of factorials of digits 2-9 (since 2! = 2, 3! = 6, 4! = 24, etc., and 8 = 2*2*2 = 2!*2!*2!, so 8! = 7! * 2! * 2! * 2! ? 5040 * 2 * 2 * 2 = 5040 * 8 = 40320. Yes!\n    //   So 8 can be replaced by 7, 2, 2, 2.\n    // 9! = 362880. 362880 / 40320 = 9. 9 = 3! * 3! / 2! ? No. 9 = 3^2. 9! = 9! only? Or 9! = 8! * 9. 9 = 3! * 3! / 2! ? No. \n    //   Let's check: 9! = 362880. 8! = 40320. 362880 / 40320 = 9. 9 cannot be written as product of factorials of digits 2-9 directly. \n    //   But 9 = 3 * 3. And 3! = 6, not 3. So 9 is not a factorial. \n    //   Actually, we need to check if 9! can be decomposed. 9! = 362880. \n    //   Let's try: 9! = 9 * 8! = 9 * 8!. 9 is not a factorial of a single digit. \n    //   But we can decompose 9 into 3 * 3, and 3 = 3! / 2! ? No, that's not how it works.\n    //   The condition is: product of factorials of the new digits = product of factorials of the original digits.\n    //   So for digit 9, we need digits d1, d2, ... such that d1! * d2! * ... = 9!.\n    //   9! = 362880. \n    //   Let's see if 9! = 9! only. Or can it be decomposed?\n    //   9! = 362880. 8! = 40320. 362880 / 40320 = 9. \n    //   7! = 5040. 362880 / 5040 = 72. 72 = 8 * 9 = 8! / 5040 * 9? This is getting complicated.\n    //   \n    //   Let's use a known result: the optimal decomposition is:\n    //   0 -> \"\"\n    //   1 -> \"\"\n    //   2 -> \"2\"\n    //   3 -> \"3\"\n    //   4 -> \"322\"\n    //   5 -> \"5\"\n    //   6 -> \"53\"\n    //   7 -> \"7\"\n    //   8 -> \"7222\"\n    //   9 -> \"7332\"\n    //   \n    //   Let's verify:\n    //   4! = 24. 3! * 2! * 2! = 6 * 2 * 2 = 24. Correct.\n    //   6! = 720. 5! * 3! = 120 * 6 = 720. Correct.\n    //   8! = 40320. 7! * 2! * 2! * 2! = 5040 * 2 * 2 * 2 = 5040 * 8 = 40320. Correct.\n    //   9! = 362880. 7! * 3! * 3! * 2! = 5040 * 6 * 6 * 2 = 5040 * 72 = 362880. Correct.\n    \n    std::string result = \"\";\n    for (char c : a) {\n        int d = c - '0';\n        switch (d) {\n            case 0:\n            case 1:\n                break;\n            case 2:\n                result += \"2\";\n                break;\n            case 3:\n                result += \"3\";\n                break;\n            case 4:\n                result += \"322\";\n                break;\n            case 5:\n                result += \"5\";\n                break;\n            case 6:\n                result += \"53\";\n                break;\n            case 7:\n                result += \"7\";\n                break;\n            case 8:\n                result += \"7222\";\n                break;\n            case 9:\n                result += \"7332\";\n                break;\n        }\n    }\n    \n    // Sort in descending order to get the maximum number\n    std::sort(result.begin(), result.end(), std::greater<char>());\n    \n    std::cout << result << std::endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 17,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <algorithm>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string a;\n    cin >> a;\n\n    string result = \"\";\n\n    for (char c : a) {\n        int digit = c - '0';\n        switch (digit) {\n            case 0:\n            case 1:\n                // Do nothing, since 0! = 1! = 1 and we don't want 0 or 1 in result\n                break;\n            case 2:\n                result += \"2\";\n                break;\n            case 3:\n                result += \"3\";\n                break;\n            case 4:\n                // 4! = 24 = 3! * 2! * 2!\n                result += \"322\";\n                break;\n            case 5:\n                result += \"5\";\n                break;\n            case 6:\n                // 6! = 720 = 5! * 3!\n                result += \"53\";\n                break;\n            case 7:\n                result += \"7\";\n                break;\n            case 8:\n                // 8! = 40320 = 7! * 2! * 2! * 2!\n                result += \"7222\";\n                break;\n            case 9:\n                // 9! = 362880 = 7! * 3! * 3! * 2!\n                result += \"7332\";\n                break;\n        }\n    }\n\n    // Sort in descending order to get the maximum number\n    sort(result.begin(), result.end(), greater<char>());\n\n    cout << result << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 18,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <algorithm>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string a;\n    cin >> a;\n\n    string result = \"\";\n\n    for (char c : a) {\n        int digit = c - '0';\n        switch (digit) {\n            case 0:\n            case 1:\n                // Do nothing\n                break;\n            case 2:\n                result += \"2\";\n                break;\n            case 3:\n                result += \"3\";\n                break;\n            case 4:\n                result += \"322\";\n                break;\n            case 5:\n                result += \"5\";\n                break;\n            case 6:\n                result += \"53\";\n                break;\n            case 7:\n                result += \"7\";\n                break;\n            case 8:\n                result += \"7222\";\n                break;\n            case 9:\n                result += \"7332\";\n                break;\n        }\n    }\n\n    // Sort in descending order to get the maximum number\n    sort(result.begin(), result.end(), greater<char>());\n\n    cout << result << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 19,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <algorithm>\n\nint main() {\n    int n;\n    std::cin >> n;\n    std::string a;\n    std::cin >> a;\n\n    // For each digit, we need to find the optimal replacement\n    // The idea: for each digit d in a, we want to replace it with digits such that\n    // the product of factorials of the replacement digits equals d!\n    // and the resulting number (when all digits are sorted in descending order) is maximum.\n\n    // Let's think about it differently:\n    // We have a multiset of digits from a. For each digit d, we can \"break\" it into smaller digits\n    // such that the product of factorials of the smaller digits equals d!.\n    // We want to maximize the final number, so we want as many large digits as possible.\n\n    // Key insight: \n    // 0! = 1, 1! = 1 -> these don't contribute to the product, so we can ignore them\n    // 2! = 2\n    // 3! = 6 = 3 * 2 -> but we want to use digits, so 3! = 3! means digit 3\n    // 4! = 24 = 4 * 3 * 2 -> but 4! = 24, and 4 = 4, so we can represent 4! as just digit 4? \n    // Wait, no. The function F(x) is the product of factorials of digits of x.\n    // So if x has digit 4, it contributes 4! = 24.\n    // If we replace digit 4 with digits 3,2,2: 3! * 2! * 2! = 6 * 2 * 2 = 24. Same!\n    // But 322 < 4 in terms of the number we form? No wait, we're forming a number from all digits.\n    // Actually, we want to maximize the entire number. So having more digits can be better if they are large enough.\n    // Let's compare: using digit 4 gives us \"4\". Using digits 3,2,2 gives us \"322\" (sorted descending).\n    // 322 > 4, so it's better to break 4 into 3,2,2.\n\n    // Let's figure out the optimal breakdown for each digit 0-9:\n    // 0: 0! = 1 -> contributes nothing, ignore\n    // 1: 1! = 1 -> contributes nothing, ignore\n    // 2: 2! = 2 -> digit 2\n    // 3: 3! = 6 -> digit 3\n    // 4: 4! = 24 -> 3! * 2! * 2! = 6*2*2=24 -> digits 3,2,2\n    // 5: 5! = 120 -> 5! = 120. Can we break it? 5! = 120. \n    //    Let's see: 5! = 120. What digits can we use? \n    //    5! = 120. 5 is prime in factorial sense? \n    //    5! = 120 = 5 * 4 * 3 * 2 * 1. But we need factorials of digits.\n    //    5! = 120. 5! itself is 120. Can we write 120 as product of factorials of digits?\n    //    5! = 120. 3! = 6, 2! = 2. 6*2*2*2*2 = 96, no.\n    //    Actually, 5! = 120. Let's check: 5! = 120. \n    //    5! = 120. 4! = 24, 3! = 6, 2! = 2.\n    //    120 / 24 = 5. 5 is not a factorial of a single digit (5! = 120, but 5 itself is not a factorial).\n    //    Wait, we need digits d such that d! multiplies to 120.\n    //    5! = 120. So digit 5 works.\n    //    Can we do better? 5! = 120. \n    //    3! * 3! * 2! * 2! * 2! = 6*6*2*2*2 = 288, no.\n    //    4! * 2! * 2! * 2! = 24*2*2*2 = 192, no.\n    //    3! * 2! * 2! * 2! * 2! * 2! = 6*32 = 192, no.\n    //    Actually, 5! = 120. The only way is 5! itself? \n    //    Let's check: 120 = 5! . Is there a combination of smaller factorials?\n    //    120 = 5 * 4 * 3 * 2 * 1. But we need factorials.\n    //    5! = 120. 4! = 24. 120/24 = 5. 5 is not a factorial of a digit (digit 5 gives 120, not 5).\n    //    So 5 must stay as 5.\n    // 6: 6! = 720. 6! = 720. \n    //    6! = 720. 5! = 120. 720/120 = 6. 6 is not a factorial.\n    //    4! = 24. 720/24 = 30. 30 is not a factorial.\n    //    3! = 6. 720/6 = 120 = 5!. So 6! = 5! * 3! ? 120*6=720. Yes!\n    //    So 6 can be replaced by 5 and 3. 53 > 6? As digits in the number, 5 and 3 vs 6. \n    //    If we have a 6, we can replace it with 5 and 3. The number would have digits 5 and 3 instead of 6.\n    //    Since we sort in descending order, having 5 and 3 is better than having 6? \n    //    Wait, we're comparing the final number. If we have other digits, the relative order matters.\n    //    But generally, more digits of higher value is better. 5 and 3 are both >= 3, and we get two digits instead of one.\n    //    Actually, let's just collect all the replacement digits and sort them.\n    // 7: 7! = 5040. 7! = 5040. \n    //    7! = 5040. 6! = 720. 5040/720 = 7. Not a factorial.\n    //    5! = 120. 5040/120 = 42. Not a factorial.\n    //    4! = 24. 5040/24 = 210. Not a factorial.\n    //    3! = 6. 5040/6 = 840. Not a factorial.\n    //    2! = 2. 5040/2 = 2520. Not a factorial.\n    //    So 7 stays as 7.\n    // 8: 8! = 40320. \n    //    8! = 40320. 7! = 5040. 40320/5040 = 8. Not a factorial.\n    //    6! = 720. 40320/720 = 56. Not a factorial.\n    //    5! = 120. 40320/120 = 336. Not a factorial.\n    //    4! = 24. 40320/24 = 1680. Not a factorial.\n    //    3! = 6. 40320/6 = 6720. Not a factorial.\n    //    2! = 2. 40320/2 = 20160. Not a factorial.\n    //    Hmm, let me check: 8! = 40320. \n    //    8! = 8 * 7 * 6 * 5 * 4 * 3 * 2 * 1.\n    //    Can we express this as product of factorials?\n    //    8! = 40320. Let's try: 7! * 8? No, 8 is not a factorial.\n    //    6! * 5! * 3! * 2! * 2! * 2! = 720 * 120 * 6 * 2 * 2 * 2 = 720*120=86400, too big.\n    //    Let me recalculate: 8! = 40320.\n    //    5! = 120, 4! = 24, 3! = 6, 2! = 2.\n    //    40320 / 120 = 336. 336 / 24 = 14. 14 / 6 = 2.33, no.\n    //    40320 / 120 = 336. 336 / 6 = 56. 56 / 2 = 28. 28 / 2 = 14. 14 / 2 = 7. 7 / 2 = 3.5, no.\n    //    Let's try: 8! = 40320. \n    //    7! = 5040. 40320 / 5040 = 8. \n    //    6! = 720. 40320 / 720 = 56.\n    //    5! = 120. 40320 / 120 = 336.\n    //    4! = 24. 40320 / 24 = 1680.\n    //    3! = 6. 40320 / 6 = 6720.\n    //    2! = 2. 40320 / 2 = 20160.\n    //    It seems 8 cannot be broken down. So 8 stays as 8.\n    // 9: 9! = 362880.\n    //    9! = 362880. 8! = 40320. 362880 / 40320 = 9. Not a factorial.\n    //    7! = 5040. 362880 / 5040 = 72. 72 is not a factorial.\n    //    6! = 720. 362880 / 720 = 504. 504 is not a factorial.\n    //    5! = 120. 362880 / 120 = 3024. Not a factorial.\n    //    4! = 24. 362880 / 24 = 15120. Not a factorial.\n    //    3! = 6. 362880 / 6 = 60480. Not a factorial.\n    //    2! = 2. 362880 / 2 = 181440. Not a factorial.\n    //    So 9 stays as 9.\n\n    // Wait, I think I made a mistake. Let me reconsider.\n    // The key is: for each digit d in the input, we replace it with a set of digits such that the product of their factorials equals d!.\n    // And we want to maximize the final number.\n\n    // Let's re-examine:\n    // 4! = 24. 3! * 2! * 2! = 6 * 2 * 2 = 24. So 4 -> 3,2,2.\n    // 6! = 720. 5! * 3! = 120 * 6 = 720. So 6 -> 5,3.\n    // 8! = 40320. Let's check if 8 can be broken. \n    //    8! = 40320. \n    //    7! = 5040. 40320/5040 = 8. \n    //    6! = 720. 40320/720 = 56.\n    //    5! = 120. 40320/120 = 336.\n    //    4! = 24. 40320/24 = 1680.\n    //    3! = 6. 40320/6 = 6720.\n    //    2! = 2. 40320/2 = 20160.\n    //    None of these work directly. But maybe a combination?\n    //    40320 = 8 * 7 * 6 * 5 * 4 * 3 * 2 * 1.\n    //    We need to express 40320 as a product of factorials of digits 2-9.\n    //    40320 / 7! = 8. 8 is not a factorial.\n    //    40320 / 6! = 56. 56 is not a factorial.\n    //    40320 / 5! = 336. 336 is not a factorial.\n    //    40320 / 4! = 1680. 1680 is not a factorial.\n    //    40320 / 3! = 6720. 6720 is not a factorial.\n    //    40320 / 2! = 20160. 20160 is not a factorial.\n    //    So 8 stays as 8.\n    // 9! = 362880.\n    //    9! / 8! = 9. Not a factorial.\n    //    9! / 7! = 72. Not a factorial.\n    //    9! / 6! = 504. Not a factorial.\n    //    9! / 5! = 3024. Not a factorial.\n    //    9! / 4! = 15120. Not a factorial.\n    //    9! / 3! = 60480. Not a factorial.\n    //    9! / 2! = 181440. Not a factorial.\n    //    So 9 stays as 9.\n\n    // So the replacements are:\n    // 0 -> (nothing)\n    // 1 -> (nothing)\n    // 2 -> 2\n    // 3 -> 3\n    // 4 -> 3,2,2\n    // 5 -> 5\n    // 6 -> 5,3\n    // 7 -> 7\n    // 8 -> 8\n    // 9 -> 9\n\n    // Now, for each digit in the input, we add the corresponding replacement digits to a list.\n    // Then we sort the list in descending order and output the number.\n\n    std::string result;\n    for (char c : a) {\n        int d = c - '0';\n        switch (d) {\n            case 0:\n            case 1:\n                // Do nothing\n                break;\n            case 2:\n                result += '2';\n                break;\n            case 3:\n                result += '3';\n                break;\n            case 4:\n                result += \"322\";\n                break;\n            case 5:\n                result += '5';\n                break;\n            case 6:\n                result += \"53\";\n                break;\n            case 7:\n                result += '7';\n                break;\n            case 8:\n                result += '8';\n                break;\n            case 9:\n                result += '9';\n                break;\n        }\n    }\n\n    // Sort in descending order\n    std::sort(result.begin(), result.end(), std::greater<char>());\n\n    std::cout << result << std::endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 20345,
+            "prompt_tokens": 300,
+            "total_tokens": 20645
+        },
+        "prompt": "Write a program in C++ to solve this programming problem:\nDescription: Drazil is playing a math game with Varda.Let's define  for positive integer x as a product of factorials of its digits. For example, .First, they choose a decimal number a consisting of n digits that contains at least one digit larger than 1. This number may possibly start with leading zeroes. Then they should find maximum positive number x satisfying following two conditions:1. x doesn't contain neither digit 0 nor digit 1.2.  = .Help friends find such number.\nInput Specification: The first line contains an integer n (1\u2009\u2264\u2009n\u2009\u2264\u200915) \u2014 the number of digits in a. The second line contains n digits of a. There is at least one digit in a that is larger than 1. Number a may possibly contain leading zeroes.\nOutput Specification: Output a maximum possible integer satisfying the conditions above. There should be no zeroes and ones in this number decimal representation.\n\nSample Input:\n4\n1234\nSample Output:\n33222\n\nSample Input:\n3\n555\nSample Output:\n555\n\nNotes: NoteIn the first case, \nTake input from standard input and output to standard output\nProvide the C++ code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "60dbfc7a65702ae8bd4a587db1e06398",
+        "difficulty": 1400,
+        "prob_desc_sample_inputs": [
+            "4\n1234",
+            "3\n555"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "greedy",
+            "math",
+            "sortings",
+            "dp",
+            "implementation"
+        ],
+        "prob_desc_output_spec": "Output a maximum possible integer satisfying the conditions above. There should be no zeroes and ones in this number decimal representation.",
+        "prob_desc_input_spec": "The first line contains an integer n (1\u2009\u2264\u2009n\u2009\u2264\u200915) \u2014 the number of digits in a. The second line contains n digits of a. There is at least one digit in a that is larger than 1. Number a may possibly contain leading zeroes.",
+        "lang_cluster": "C++",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first case, ",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Drazil is playing a math game with Varda.Let's define  for positive integer x as a product of factorials of its digits. For example, .First, they choose a decimal number a consisting of n digits that contains at least one digit larger than 1. This number may possibly start with leading zeroes. Then they should find maximum positive number x satisfying following two conditions:1. x doesn't contain neither digit 0 nor digit 1.2.  = .Help friends find such number.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1424190900",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "33222",
+            "555"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"4\\r\\n1234\\r\\n\", \"output\": [\"33222\"]}, {\"input\": \"3\\r\\n555\\r\\n\", \"output\": [\"555\"]}, {\"input\": \"15\\r\\n012345781234578\\r\\n\", \"output\": [\"7777553333222222222222\"]}, {\"input\": \"1\\r\\n8\\r\\n\", \"output\": [\"7222\"]}, {\"input\": \"10\\r\\n1413472614\\r\\n\", \"output\": [\"75333332222222\"]}, {\"input\": \"8\\r\\n68931246\\r\\n\", \"output\": [\"77553333332222222\"]}, {\"input\": \"7\\r\\n4424368\\r\\n\", \"output\": [\"75333332222222222\"]}, {\"input\": \"6\\r\\n576825\\r\\n\", \"output\": [\"7755532222\"]}, {\"input\": \"5\\r\\n97715\\r\\n\", \"output\": [\"7775332\"]}, {\"input\": \"3\\r\\n915\\r\\n\", \"output\": [\"75332\"]}, {\"input\": \"2\\r\\n26\\r\\n\", \"output\": [\"532\"]}, {\"input\": \"1\\r\\n4\\r\\n\", \"output\": [\"322\"]}, {\"input\": \"15\\r\\n028745260720699\\r\\n\", \"output\": [\"7777755533333332222222222\"]}, {\"input\": \"13\\r\\n5761790121605\\r\\n\", \"output\": [\"7775555333322\"]}, {\"input\": \"10\\r\\n3312667105\\r\\n\", \"output\": [\"755533332\"]}, {\"input\": \"1\\r\\n7\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"15\\r\\n989898989898989\\r\\n\", \"output\": [\"777777777777777333333333333333322222222222222222222222222222\"]}, {\"input\": \"15\\r\\n000000000000007\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"15\\r\\n999999999999990\\r\\n\", \"output\": [\"77777777777777333333333333333333333333333322222222222222\"]}, {\"input\": \"1\\r\\n2\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"1\\r\\n3\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"1\\r\\n5\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"1\\r\\n6\\r\\n\", \"output\": [\"53\"]}, {\"input\": \"1\\r\\n9\\r\\n\", \"output\": [\"7332\"]}, {\"input\": \"2\\r\\n09\\r\\n\", \"output\": [\"7332\"]}, {\"input\": \"13\\r\\n1337251172966\\r\\n\", \"output\": [\"777555333333222\"]}, {\"input\": \"15\\r\\n987654329876543\\r\\n\", \"output\": [\"777777555533333333332222222222222\"]}, {\"input\": \"9\\r\\n234567899\\r\\n\", \"output\": [\"777755333333322222222\"]}, {\"input\": \"2\\r\\n99\\r\\n\", \"output\": [\"77333322\"]}, {\"input\": \"2\\r\\n66\\r\\n\", \"output\": [\"5533\"]}, {\"input\": \"3\\r\\n999\\r\\n\", \"output\": [\"777333333222\"]}, {\"input\": \"5\\r\\n99999\\r\\n\", \"output\": [\"77777333333333322222\"]}, {\"input\": \"9\\r\\n123456789\\r\\n\", \"output\": [\"77755333332222222\"]}, {\"input\": \"9\\r\\n987654321\\r\\n\", \"output\": [\"77755333332222222\"]}, {\"input\": \"3\\r\\n666\\r\\n\", \"output\": [\"555333\"]}, {\"input\": \"6\\r\\n555777\\r\\n\", \"output\": [\"777555\"]}, {\"input\": \"10\\r\\n1234567899\\r\\n\", \"output\": [\"777755333333322222222\"]}, {\"input\": \"4\\r\\n6666\\r\\n\", \"output\": [\"55553333\"]}, {\"input\": \"4\\r\\n9754\\r\\n\", \"output\": [\"775333222\"]}, {\"input\": \"2\\r\\n95\\r\\n\", \"output\": [\"75332\"]}, {\"input\": \"14\\r\\n11122233344455\\r\\n\", \"output\": [\"55333333222222222\"]}, {\"input\": \"12\\r\\n836544897832\\r\\n\", \"output\": [\"77777553333333222222222222222\"]}]"
+    }
+}

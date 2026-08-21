@@ -1,0 +1,391 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-b41ccf64a516c162",
+        "created": 1787083912,
+        "model": "qwen-nvfp4",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.27.1-d7a14dad",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```php\n<?php\n$n = (int)trim(fgets(STDIN));\n$s = trim(fgets(STDIN));\n\n// We need to count the number of contiguous substrings that return to the start.\n// A substring from index i to j (inclusive) returns to start if the net displacement is (0,0).\n// Let prefix[i] be the position after executing the first i commands (0-indexed, prefix[0] = (0,0)).\n// Then substring from i to j (0-indexed, inclusive) has net displacement prefix[j+1] - prefix[i].\n// We need prefix[j+1] == prefix[i].\n// So we need to count pairs (i, j) with 0 <= i < j+1 <= n such that prefix[i] == prefix[j+1].\n// Let k = j+1, so 0 <= i < k <= n, and prefix[i] == prefix[k].\n// For each position k from 1 to n, we want to count the number of i in [0, k-1] such that prefix[i] == prefix[k].\n\n// Compute prefix positions\n$prefix = array();\n$prefix[0] = array(0, 0);\n$x = 0;\n$y = 0;\nfor ($i = 0; $i < $n; $i++) {\n    $c = $s[$i];\n    if ($c == 'U') $y++;\n    elseif ($c == 'D') $y--;\n    elseif ($c == 'R') $x++;\n    elseif ($c == 'L') $x--;\n    $prefix[$i + 1] = array($x, $y);\n}\n\n// Now count pairs\n$count = 0;\n// Use a map to store how many times each position has been seen\n$seen = array();\n// Start with prefix[0]\n$key0 = \"0,0\";\n$seen[$key0] = 1;\n\nfor ($k = 1; $k <= $n; $k++) {\n    $px = $prefix[$k][0];\n    $py = $prefix[$k][1];\n    $key = $px . \",\" . $py;\n    if (isset($seen[$key])) {\n        $count += $seen[$key];\n    }\n    $seen[$key] = (isset($seen[$key]) ? $seen[$key] : 0) + 1;\n}\n\necho $count . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "```php\n<?php\n$n = (int)trim(fgets(STDIN));\n$commands = trim(fgets(STDIN));\n\n// We need to count the number of contiguous substrings that return to the start.\n// A substring from index i to j (inclusive) returns to start if the net displacement is (0,0).\n// Let prefix[i] be the position after executing commands[0..i-1]. prefix[0] = (0,0).\n// Then substring from i to j (0-indexed, inclusive) has net displacement = prefix[j+1] - prefix[i].\n// We need prefix[j+1] == prefix[i].\n// So we need to count pairs (i, j+1) with i < j+1 such that prefix[i] == prefix[j+1].\n// Let k = j+1, so i < k and prefix[i] == prefix[k].\n// We count the number of pairs (i, k) with 0 <= i < k <= n such that prefix[i] == prefix[k].\n\n// Compute prefix positions\n$prefix = array();\n$prefix[0] = array(0, 0);\n$x = 0;\n$y = 0;\nfor ($i = 0; $i < $n; $i++) {\n    switch ($commands[$i]) {\n        case 'U': $y++; break;\n        case 'D': $y--; break;\n        case 'R': $x++; break;\n        case 'L': $x--; break;\n    }\n    $prefix[$i + 1] = array($x, $y);\n}\n\n// Count occurrences of each prefix position\n$count = array();\nfor ($i = 0; $i <= $n; $i++) {\n    $key = $prefix[$i][0] . \",\" . $prefix[$i][1];\n    if (!isset($count[$key])) {\n        $count[$key] = 0;\n    }\n    $count[$key]++;\n}\n\n// For each position that appears c times, the number of pairs is c*(c-1)/2\n$result = 0;\nforeach ($count as $c) {\n    $result += $c * ($c - 1) / 2;\n}\n\necho $result . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```php\n<?php\n$input = trim(fgets(STDIN));\n$n = (int)$input;\n$commands = trim(fgets(STDIN));\n\n// We need to count the number of contiguous substrings that return to the start.\n// A substring from index i to j (inclusive) returns to start if the net displacement is zero.\n// Let's define prefix sums.\n// Let (x[i], y[i]) be the position after executing commands 0 to i-1 (i commands).\n// x[0] = 0, y[0] = 0.\n// For a substring from index i to j (0-indexed, inclusive), the net displacement is:\n// (x[j+1] - x[i], y[j+1] - y[i])\n// We need x[j+1] == x[i] and y[j+1] == y[i].\n\n// So we can compute the prefix positions and count the number of pairs (i, j) with i < j+1 (i.e., i <= j)\n// such that (x[i], y[i]) == (x[j+1], y[j+1]).\n// Actually, let's re-index. Let prefix[k] be the position after k commands (k from 0 to n).\n// prefix[0] = (0,0)\n// prefix[k] = position after executing commands[0..k-1]\n// A substring from index i to j (0-indexed) corresponds to prefix[j+1] - prefix[i].\n// We need prefix[j+1] == prefix[i].\n// So we need to count pairs (i, j+1) with 0 <= i < j+1 <= n such that prefix[i] == prefix[j+1].\n// Let a = i, b = j+1. Then 0 <= a < b <= n and prefix[a] == prefix[b].\n// So we just need to count the number of pairs (a, b) with a < b and prefix[a] == prefix[b].\n\n// Compute prefix positions\n$prefix = array();\n$prefix[0] = array(0, 0);\n$x = 0;\n$y = 0;\nfor ($k = 0; $k < $n; $k++) {\n    $cmd = $commands[$k];\n    if ($cmd == 'U') {\n        $y++;\n    } else if ($cmd == 'D') {\n        $y--;\n    } else if ($cmd == 'R') {\n        $x++;\n    } else if ($cmd == 'L') {\n        $x--;\n    }\n    $prefix[$k + 1] = array($x, $y);\n}\n\n// Count occurrences of each position\n$count = array();\nfor ($i = 0; $i <= $n; $i++) {\n    $key = $prefix[$i][0] . \",\" . $prefix[$i][1];\n    if (!isset($count[$key])) {\n        $count[$key] = 0;\n    }\n    $count[$key]++;\n}\n\n// For each position that appears c times, the number of pairs is c*(c-1)/2\n$result = 0;\nforeach ($count as $c) {\n    $result += $c * ($c - 1) / 2;\n}\n\necho $result . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```php\n<?php\n$n = (int)trim(fgets(STDIN));\n$s = trim(fgets(STDIN));\n\n// We need to count the number of contiguous substrings that return to start.\n// A substring from index i to j (inclusive) returns to start if the net displacement is zero.\n// Let prefix[i] be the position after executing the first i commands (prefix[0] = (0,0)).\n// Then substring from i to j (0-indexed, commands i..j-1) has net displacement prefix[j] - prefix[i].\n// We need prefix[j] == prefix[i] for i < j.\n// So we need to count pairs (i, j) with 0 <= i < j <= n such that prefix[i] == prefix[j].\n\n// Compute prefix positions\n$prefix = array();\n$prefix[0] = array(0, 0);\n$x = 0;\n$y = 0;\nfor ($i = 0; $i < $n; $i++) {\n    $c = $s[$i];\n    if ($c == 'U') $y++;\n    elseif ($c == 'D') $y--;\n    elseif ($c == 'R') $x++;\n    elseif ($c == 'L') $x--;\n    $prefix[$i + 1] = array($x, $y);\n}\n\n// Count occurrences of each prefix position\n$count = array();\nfor ($i = 0; $i <= $n; $i++) {\n    $key = $prefix[$i][0] . \",\" . $prefix[$i][1];\n    if (!isset($count[$key])) {\n        $count[$key] = 0;\n    }\n    $count[$key]++;\n}\n\n// For each position that appears c times, the number of pairs is c*(c-1)/2\n$result = 0;\nforeach ($count as $c) {\n    $result += $c * ($c - 1) / 2;\n}\n\necho $result . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```php\n<?php\n$input = trim(fgets(STDIN));\n$n = (int)$input;\n$commands = trim(fgets(STDIN));\n\n// We need to count the number of contiguous substrings that return to the starting position.\n// A substring from index i to j (inclusive) returns to start if the net displacement is zero.\n// Let's use prefix sums. Let prefix[i] be the position after executing commands 0 to i-1.\n// prefix[0] = (0, 0)\n// prefix[i+1] = prefix[i] + move(commands[i])\n// A substring from i to j (0-indexed, inclusive) has net displacement prefix[j+1] - prefix[i].\n// This is zero if prefix[j+1] == prefix[i].\n// So we need to count the number of pairs (i, j) with 0 <= i < j+1 <= n such that prefix[i] == prefix[j+1].\n// Let k = j+1, so 0 <= i < k <= n.\n// We need to count pairs (i, k) with 0 <= i < k <= n and prefix[i] == prefix[k].\n\n// Compute prefix positions\n$prefix = array();\n$prefix[0] = array(0, 0);\n$x = 0;\n$y = 0;\nfor ($i = 0; $i < $n; $i++) {\n    $c = $commands[$i];\n    if ($c == 'U') $y++;\n    elseif ($c == 'D') $y--;\n    elseif ($c == 'R') $x++;\n    elseif ($c == 'L') $x--;\n    $prefix[$i + 1] = array($x, $y);\n}\n\n// Count occurrences of each prefix position\n$counts = array();\nfor ($i = 0; $i <= $n; $i++) {\n    $key = $prefix[$i][0] . ',' . $prefix[$i][1];\n    if (!isset($counts[$key])) {\n        $counts[$key] = 0;\n    }\n    $counts[$key]++;\n}\n\n// For each position that appears c times, the number of pairs is c choose 2 = c*(c-1)/2\n$result = 0;\nforeach ($counts as $c) {\n    $result += $c * ($c - 1) / 2;\n}\n\necho $result . \"\\n\";\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```php\n<?php\n$n = (int)trim(fgets(STDIN));\n$s = trim(fgets(STDIN));\n\n// We need to count the number of contiguous substrings [i, j] (0-indexed, inclusive)\n// such that the net displacement is (0, 0).\n// Let prefix[i] be the position after executing commands 0 to i-1.\n// prefix[0] = (0, 0)\n// prefix[i+1] = prefix[i] + move(s[i])\n// A substring from i to j (inclusive) has net displacement prefix[j+1] - prefix[i].\n// We want prefix[j+1] == prefix[i].\n// So we need to count pairs (i, j) with 0 <= i < j+1 <= n such that prefix[i] == prefix[j+1].\n// Let k = j+1, so 0 <= i < k <= n, and prefix[i] == prefix[k].\n// For each position p (from 0 to n), we can count how many previous positions have the same prefix.\n\n$prefixes = [];\n$prefixes[0] = [0, 0];\n\n$x = 0;\n$y = 0;\nfor ($i = 0; $i < $n; $i++) {\n    switch ($s[$i]) {\n        case 'U':\n            $y++;\n            break;\n        case 'D':\n            $y--;\n            break;\n        case 'R':\n            $x++;\n            break;\n        case 'L':\n            $x--;\n            break;\n    }\n    $prefixes[$i + 1] = [$x, $y];\n}\n\n// Now count pairs (i, k) with i < k and prefix[i] == prefix[k]\n// Use a map from \"x,y\" to count of occurrences so far\n$count = [];\n$count[\"0,0\"] = 1; // prefix[0]\n$result = 0;\n\nfor ($k = 1; $k <= $n; $k++) {\n    $key = $prefixes[$k][0] . \",\" . $prefixes[$k][1];\n    if (isset($count[$key])) {\n        $result += $count[$key];\n    }\n    $count[$key] = ($count[$key] ?? 0) + 1;\n}\n\necho $result . \"\\n\";\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```php\n<?php\n$n = (int)trim(fgets(STDIN));\n$s = trim(fgets(STDIN));\n\n// We need to count the number of contiguous substrings [i, j] (0-indexed, inclusive)\n// such that the net displacement is zero.\n// Let prefix[i] be the position after executing commands 0 to i-1.\n// prefix[0] = (0, 0)\n// prefix[i+1] = prefix[i] + move(s[i])\n// A substring from i to j (inclusive) has net displacement zero iff prefix[j+1] == prefix[i].\n// So we need to count pairs (i, j) with 0 <= i < j+1 <= n such that prefix[i] == prefix[j+1].\n// This is equivalent to counting pairs of indices (a, b) with 0 <= a < b <= n such that prefix[a] == prefix[b].\n\n// Compute prefix positions\n$prefix = array();\n$prefix[0] = array(0, 0);\n$x = 0;\n$y = 0;\nfor ($i = 0; $i < $n; $i++) {\n    $c = $s[$i];\n    if ($c === 'U') $y++;\n    elseif ($c === 'D') $y--;\n    elseif ($c === 'R') $x++;\n    elseif ($c === 'L') $x--;\n    $prefix[$i + 1] = array($x, $y);\n}\n\n// Count occurrences of each position\n$count = array();\nfor ($i = 0; $i <= $n; $i++) {\n    $key = $prefix[$i][0] . \",\" . $prefix[$i][1];\n    if (!isset($count[$key])) {\n        $count[$key] = 0;\n    }\n    $count[$key]++;\n}\n\n// For each position that appears k times, the number of pairs is k * (k - 1) / 2\n$result = 0;\nforeach ($count as $k) {\n    $result += $k * ($k - 1) / 2;\n}\n\necho $result . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```php\n<?php\n$input = trim(fgets(STDIN));\n$n = (int)$input;\n$commands = trim(fgets(STDIN));\n\n// We need to count the number of contiguous substrings that return to the starting position.\n// A substring from index i to j (0-indexed, inclusive) returns to start if the net displacement is (0,0).\n// Let prefix[i] be the position after executing commands[0..i-1]. prefix[0] = (0,0).\n// Then substring from i to j-1 (0-indexed) has net displacement prefix[j] - prefix[i].\n// We want prefix[j] == prefix[i] for i < j.\n// So we need to count pairs (i, j) with 0 <= i < j <= n such that prefix[i] == prefix[j].\n\n// Compute prefix positions\n$prefix = array();\n$prefix[0] = array(0, 0);\n$x = 0;\n$y = 0;\nfor ($i = 0; $i < $n; $i++) {\n    $c = $commands[$i];\n    if ($c === 'U') {\n        $y++;\n    } elseif ($c === 'D') {\n        $y--;\n    } elseif ($c === 'R') {\n        $x++;\n    } elseif ($c === 'L') {\n        $x--;\n    }\n    $prefix[$i + 1] = array($x, $y);\n}\n\n// Count occurrences of each prefix position\n$counts = array();\nfor ($i = 0; $i <= $n; $i++) {\n    $key = $prefix[$i][0] . \",\" . $prefix[$i][1];\n    if (!isset($counts[$key])) {\n        $counts[$key] = 0;\n    }\n    $counts[$key]++;\n}\n\n// For each position that appears c times, the number of pairs is c*(c-1)/2\n$result = 0;\nforeach ($counts as $c) {\n    $result += $c * ($c - 1) / 2;\n}\n\necho $result . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 8,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\n$n = (int)trim(fgets(STDIN));\n$s = trim(fgets(STDIN));\n\n// We need to count the number of contiguous substrings that return to the starting position.\n// A substring from index i to j (inclusive) returns to start if the net displacement is (0,0).\n// Let prefix[i] be the position after executing the first i commands (prefix[0] = (0,0)).\n// Then substring from i to j (0-indexed, inclusive) has net displacement prefix[j+1] - prefix[i].\n// We want prefix[j+1] == prefix[i].\n// So we need to count pairs (i, j) with 0 <= i < j+1 <= n such that prefix[i] == prefix[j+1].\n// Let k = j+1, so 0 <= i < k <= n, and prefix[i] == prefix[k].\n// For each distinct position, if it appears c times in the prefix array (of length n+1),\n// then the number of pairs is C(c, 2) = c*(c-1)/2.\n\n// Compute prefix positions\n$prefix = array();\n$prefix[0] = array(0, 0);\n$x = 0;\n$y = 0;\nfor ($i = 0; $i < $n; $i++) {\n    $cmd = $s[$i];\n    if ($cmd === 'U') {\n        $y++;\n    } elseif ($cmd === 'D') {\n        $y--;\n    } elseif ($cmd === 'R') {\n        $x++;\n    } elseif ($cmd === 'L') {\n        $x--;\n    }\n    $prefix[$i + 1] = array($x, $y);\n}\n\n// Count occurrences of each position\n$count = array();\nfor ($i = 0; $i <= $n; $i++) {\n    $key = $prefix[$i][0] . \",\" . $prefix[$i][1];\n    if (!isset($count[$key])) {\n        $count[$key] = 0;\n    }\n    $count[$key]++;\n}\n\n// Sum up C(c, 2) for each position\n$result = 0;\nforeach ($count as $c) {\n    $result += $c * ($c - 1) / 2;\n}\n\necho $result . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 9,
+                "message": {
+                    "content": "```php\n<?php\n$n = (int)trim(fgets(STDIN));\n$s = trim(fgets(STDIN));\n\n// We need to count the number of contiguous substrings [i, j] (0-indexed, inclusive)\n// such that the net displacement is (0, 0).\n// Let prefix[i] be the position after executing the first i commands (prefix[0] = (0,0)).\n// Then substring [i, j] (0-indexed, commands from i to j inclusive) has net displacement\n// prefix[j+1] - prefix[i].\n// We need prefix[j+1] == prefix[i].\n// So we need to count pairs (i, j+1) with i < j+1 such that prefix[i] == prefix[j+1].\n// Let k = j+1, so i < k, and prefix[i] == prefix[k].\n// So we need to count pairs (i, k) with 0 <= i < k <= n such that prefix[i] == prefix[k].\n\n// Compute prefix positions\n$prefix = array();\n$prefix[0] = array(0, 0);\n$x = 0;\n$y = 0;\nfor ($i = 0; $i < $n; $i++) {\n    switch ($s[$i]) {\n        case 'U': $y++; break;\n        case 'D': $y--; break;\n        case 'R': $x++; break;\n        case 'L': $x--; break;\n    }\n    $prefix[$i + 1] = array($x, $y);\n}\n\n// Count occurrences of each position\n$counts = array();\nfor ($i = 0; $i <= $n; $i++) {\n    $key = $prefix[$i][0] . \",\" . $prefix[$i][1];\n    if (!isset($counts[$key])) {\n        $counts[$key] = 0;\n    }\n    $counts[$key]++;\n}\n\n// For each position that appears c times, the number of pairs (i, k) with i < k is c*(c-1)/2\n$result = 0;\nforeach ($counts as $c) {\n    $result += $c * ($c - 1) / 2;\n}\n\necho $result . \"\\n\";\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 10,
+                "message": {
+                    "content": "```php\n<?php\n$n = (int)trim(fgets(STDIN));\n$s = trim(fgets(STDIN));\n\n// Prefix sums: x[i] = total right moves - left moves in first i chars\n// y[i] = total up moves - down moves in first i chars\n// A substring from l to r (0-indexed) returns to start if x[r+1]==x[l] and y[r+1]==y[l]\n\n$x = array_fill(0, $n + 1, 0);\n$y = array_fill(0, $n + 1, 0);\n\nfor ($i = 0; $i < $n; $i++) {\n    $x[$i + 1] = $x[$i];\n    $y[$i + 1] = $y[$i];\n    switch ($s[$i]) {\n        case 'R': $x[$i + 1]++; break;\n        case 'L': $x[$i + 1]--; break;\n        case 'U': $y[$i + 1]++; break;\n        case 'D': $y[$i + 1]--; break;\n    }\n}\n\n// Count pairs (i, j) with i < j such that x[i]==x[j] and y[i]==y[j]\n// Use a map from (x, y) to count of occurrences so far\n$map = [];\n$count = 0;\n\nfor ($i = 0; $i <= $n; $i++) {\n    $key = $x[$i] . \",\" . $y[$i];\n    if (isset($map[$key])) {\n        $count += $map[$key];\n    }\n    if (!isset($map[$key])) {\n        $map[$key] = 1;\n    } else {\n        $map[$key]++;\n    }\n}\n\necho $count . \"\\n\";\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 11,
+                "message": {
+                    "content": "```php\n<?php\n$n = (int)trim(fgets(STDIN));\n$s = trim(fgets(STDIN));\n\n// We need to count the number of contiguous substrings [i, j] such that\n// the net displacement is (0, 0).\n// Let prefix[i] be the position after executing commands from index 0 to i-1.\n// prefix[0] = (0, 0)\n// prefix[i+1] = prefix[i] + move(s[i])\n// A substring from i to j (inclusive) has net displacement prefix[j+1] - prefix[i].\n// We need prefix[j+1] == prefix[i].\n// So we need to count pairs (i, j) with 0 <= i < j+1 <= n such that prefix[i] == prefix[j+1].\n// Let k = j+1, then 0 <= i < k <= n.\n// So we need to count pairs (i, k) with 0 <= i < k <= n such that prefix[i] == prefix[k].\n\n// Compute prefix positions\n$x = 0;\n$y = 0;\n$prefixes = array();\n$prefixes[] = array($x, $y);\n\nfor ($i = 0; $i < $n; $i++) {\n    $c = $s[$i];\n    if ($c == 'U') {\n        $y++;\n    } else if ($c == 'D') {\n        $y--;\n    } else if ($c == 'R') {\n        $x++;\n    } else if ($c == 'L') {\n        $x--;\n    }\n    $prefixes[] = array($x, $y);\n}\n\n// Now count pairs (i, k) with i < k and prefixes[i] == prefixes[k]\n// Use a hash map to count occurrences of each position.\n$counts = array();\n$count = 0;\n\nfor ($k = 0; $k <= $n; $k++) {\n    $px = $prefixes[$k][0];\n    $py = $prefixes[$k][1];\n    $key = $px . \",\" . $py;\n    if (isset($counts[$key])) {\n        $count += $counts[$key];\n        $counts[$key]++;\n    } else {\n        $counts[$key] = 1;\n    }\n}\n\necho $count . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 12,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\n$n = (int)trim(fgets(STDIN));\n$s = trim(fgets(STDIN));\n\n// We need to count the number of contiguous substrings that return to the starting position.\n// A substring from index i to j (inclusive) returns to start if the net displacement is (0,0).\n// Let prefix[i] be the position after executing the first i commands (prefix[0] = (0,0)).\n// Then substring from i to j (0-indexed, i < j) has net displacement prefix[j+1] - prefix[i].\n// So we need prefix[j+1] == prefix[i].\n// Thus, for each pair (i, j) with 0 <= i < j+1 <= n, if prefix[i] == prefix[j+1], we count it.\n// This is equivalent to: for each position k (0 <= k <= n), let count[k] be the number of times prefix value at k appears among indices 0..k-1.\n// Then the total count is the sum over k of count[k].\n\n// Compute prefix positions\n$prefix = array();\n$prefix[0] = array(0, 0);\n$x = 0;\n$y = 0;\nfor ($i = 0; $i < n; $i++) {\n    $c = $s[$i];\n    if ($c === 'U') {\n        $y++;\n    } elseif ($c === 'D') {\n        $y--;\n    } elseif ($c === 'R') {\n        $x++;\n    } elseif ($c === 'L') {\n        $x--;\n    }\n    $prefix[$i + 1] = array($x, $y);\n}\n\n// Count occurrences of each prefix position\n// Use an associative array to count how many times each (x,y) has been seen so far\n$seen = array();\n$seen[0 . \",\" . 0] = 1; // prefix[0] = (0,0)\n$result = 0;\n\nfor ($i = 1; $i <= n; $i++) {\n    $key = $prefix[$i][0] . \",\" . $prefix[$i][1];\n    if (isset($seen[$key])) {\n        $result += $seen[$key];\n    }\n    $seen[$key] = isset($seen[$key]) ? $seen[$key] + 1 : 1;\n}\n\necho $result . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 13,
+                "message": {
+                    "content": "```php\n<?php\n$n = (int)trim(fgets(STDIN));\n$s = trim(fgets(STDIN));\n\n// We need to count the number of contiguous substrings that return to the starting position.\n// A substring from index i to j (inclusive) returns to start if the net displacement is (0,0).\n// Let prefix[i] be the position after executing commands 0 to i-1.\n// Then substring from i to j (0-indexed, inclusive) has net displacement prefix[j+1] - prefix[i].\n// So we need prefix[j+1] == prefix[i].\n// We can use a map to count how many times each prefix position has been seen.\n\n$prefix = array(0 => array(0, 0)); // prefix[0] = (0,0)\n$positions = array();\n$positions[0] = 0;\n$positions[1] = 0;\n\n$count = 0;\n$seen = array();\n// seen[key] = number of times this prefix position has been seen so far\n$seen[serialize(array(0, 0))] = 1;\n\nfor ($i = 0; $i < $n; $i++) {\n    $c = $s[$i];\n    $x = $positions[0];\n    $y = $positions[1];\n    if ($c === 'U') {\n        $y++;\n    } else if ($c === 'D') {\n        $y--;\n    } else if ($c === 'R') {\n        $x++;\n    } else if ($c === 'L') {\n        $x--;\n    }\n    $positions[0] = $x;\n    $positions[1] = $y;\n    \n    $key = serialize(array($x, $y));\n    if (isset($seen[$key])) {\n        $count += $seen[$key];\n    }\n    $seen[$key] = (isset($seen[$key]) ? $seen[$key] : 0) + 1;\n}\n\necho $count . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 14,
+                "message": {
+                    "content": "```php\n<?php\n$n = (int)trim(fgets(STDIN));\n$s = trim(fgets(STDIN));\n\n// We need to count the number of contiguous substrings [i, j] such that\n// the net displacement is (0, 0).\n// Let prefix[i] be the position after executing the first i commands (0-indexed, prefix[0] = (0,0)).\n// Then a substring from i to j-1 (0-indexed, inclusive) has net displacement prefix[j] - prefix[i].\n// We need prefix[j] == prefix[i] for i < j.\n// So we need to count pairs (i, j) with 0 <= i < j <= n such that prefix[i] == prefix[j].\n\n// Compute prefix positions\n$prefix = array();\n$prefix[0] = array(0, 0);\n$x = 0;\n$y = 0;\nfor ($i = 0; $i < $n; $i++) {\n    $c = $s[$i];\n    if ($c == 'U') $y++;\n    else if ($c == 'D') $y--;\n    else if ($c == 'R') $x++;\n    else if ($c == 'L') $x--;\n    $prefix[$i + 1] = array($x, $y);\n}\n\n// Count occurrences of each prefix position\n$count = array();\nfor ($i = 0; $i <= $n; $i++) {\n    $key = $prefix[$i][0] . \",\" . $prefix[$i][1];\n    if (!isset($count[$key])) {\n        $count[$key] = 0;\n    }\n    $count[$key]++;\n}\n\n// For each position that appears k times, the number of pairs is k*(k-1)/2\n$result = 0;\nforeach ($count as $k) {\n    $result += $k * ($k - 1) / 2;\n}\n\necho $result . \"\\n\";\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 15,
+                "message": {
+                    "content": "```php\n<?php\n$n = (int)trim(fgets(STDIN));\n$s = trim(fgets(STDIN));\n\n// We need to count the number of contiguous substrings that return to the start.\n// A substring from index i to j (inclusive) returns to start if the net displacement is (0,0).\n// Let prefix[i] be the position after executing the first i commands (prefix[0] = (0,0)).\n// Then substring from i to j (0-indexed, meaning commands s[i] to s[j]) returns to start\n// if prefix[j+1] == prefix[i].\n// So we need to count pairs (i, j) with 0 <= i < j+1 <= n such that prefix[i] == prefix[j+1].\n// This is equivalent to counting pairs of indices (a, b) with 0 <= a < b <= n such that prefix[a] == prefix[b].\n\n// Compute prefix positions\n$prefix = array();\n$prefix[0] = array(0, 0);\n$x = 0;\n$y = 0;\nfor ($i = 0; $i < $n; $i++) {\n    $c = $s[$i];\n    if ($c === 'U') {\n        $y++;\n    } else if ($c === 'D') {\n        $y--;\n    } else if ($c === 'R') {\n        $x++;\n    } else if ($c === 'L') {\n        $x--;\n    }\n    $prefix[$i + 1] = array($x, $y);\n}\n\n// Count occurrences of each prefix position\n$counts = array();\nfor ($i = 0; $i <= $n; $i++) {\n    $key = $prefix[$i][0] . \",\" . $prefix[$i][1];\n    if (!isset($counts[$key])) {\n        $counts[$key] = 0;\n    }\n    $counts[$key]++;\n}\n\n// For each position that appears k times, the number of pairs is k*(k-1)/2\n$result = 0;\nforeach ($counts as $k) {\n    $result += $k * ($k - 1) / 2;\n}\n\necho $result . \"\\n\";\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 16,
+                "message": {
+                    "content": "```php\n<?php\n$n = (int)trim(fgets(STDIN));\n$s = trim(fgets(STDIN));\n\n// We need to count the number of contiguous substrings that return to the starting position.\n// A substring from index i to j (inclusive) returns to start if the net displacement is (0,0).\n// Let prefix[i] be the position after executing the first i commands (prefix[0] = (0,0)).\n// Then substring from i to j (0-indexed, commands i..j-1) has net displacement prefix[j] - prefix[i].\n// We need prefix[j] == prefix[i] for i < j.\n// So we need to count pairs (i, j) with 0 <= i < j <= n such that prefix[i] == prefix[j].\n\n// Compute prefix positions\n$prefix = array();\n$prefix[0] = array(0, 0);\n$x = 0;\n$y = 0;\nfor ($i = 0; $i < $n; $i++) {\n    $c = $s[$i];\n    if ($c == 'U') $y++;\n    elseif ($c == 'D') $y--;\n    elseif ($c == 'R') $x++;\n    elseif ($c == 'L') $x--;\n    $prefix[$i + 1] = array($x, $y);\n}\n\n// Count occurrences of each prefix position\n$count = array();\nfor ($i = 0; $i <= $n; $i++) {\n    $key = $prefix[$i][0] . \",\" . $prefix[$i][1];\n    if (!isset($count[$key])) {\n        $count[$key] = 0;\n    }\n    $count[$key]++;\n}\n\n// For each position that appears k times, the number of pairs is k*(k-1)/2\n$result = 0;\nforeach ($count as $k) {\n    $result += $k * ($k - 1) / 2;\n}\n\necho $result . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 17,
+                "message": {
+                    "content": "```php\n<?php\n$n = (int)trim(fgets(STDIN));\n$s = trim(fgets(STDIN));\n\n// We need to count the number of contiguous substrings that return to the start.\n// A substring from index i to j (inclusive) returns to start if the net displacement is zero.\n// Let prefix[i] be the position after executing the first i commands (prefix[0] = (0,0)).\n// Then substring from i to j (0-indexed, commands i..j-1) has net displacement prefix[j] - prefix[i].\n// We need prefix[j] == prefix[i].\n// So we need to count pairs (i, j) with 0 <= i < j <= n such that prefix[i] == prefix[j].\n\n// Compute prefix positions\n$prefix = array();\n$prefix[0] = array(0, 0);\n$x = 0;\n$y = 0;\nfor ($i = 1; $i <= $n; $i++) {\n    $c = $s[$i - 1];\n    if ($c == 'U') {\n        $y++;\n    } elseif ($c == 'D') {\n        $y--;\n    } elseif ($c == 'R') {\n        $x++;\n    } elseif ($c == 'L') {\n        $x--;\n    }\n    $prefix[$i] = array($x, $y);\n}\n\n// Count occurrences of each prefix position\n$counts = array();\nfor ($i = 0; $i <= $n; $i++) {\n    $key = $prefix[$i][0] . \",\" . $prefix[$i][1];\n    if (!isset($counts[$key])) {\n        $counts[$key] = 0;\n    }\n    $counts[$key]++;\n}\n\n// For each position that appears k times, the number of pairs is k*(k-1)/2\n$result = 0;\nforeach ($counts as $k) {\n    $result += $k * ($k - 1) / 2;\n}\n\necho $result . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 18,
+                "message": {
+                    "content": "```php\n<?php\n$n = (int)trim(fgets(STDIN));\n$s = trim(fgets(STDIN));\n\n// We need to count the number of contiguous substrings [i, j] (0-indexed, inclusive)\n// such that the net displacement is (0, 0).\n// Let prefix[i] be the position after executing commands 0 to i-1.\n// prefix[0] = (0, 0)\n// prefix[i+1] = prefix[i] + move(s[i])\n// A substring from i to j (inclusive) has net displacement prefix[j+1] - prefix[i].\n// We want prefix[j+1] == prefix[i].\n// So we need to count pairs (i, j) with 0 <= i < j+1 <= n such that prefix[i] == prefix[j+1].\n// Let k = j+1, so 0 <= i < k <= n.\n// We need to count pairs (i, k) with 0 <= i < k <= n and prefix[i] == prefix[k].\n\n// Compute prefix positions\n$prefix = array();\n$prefix[0] = array(0, 0);\n$x = 0;\n$y = 0;\nfor ($i = 0; $i < $n; $i++) {\n    $c = $s[$i];\n    if ($c === 'U') $y++;\n    elseif ($c === 'D') $y--;\n    elseif ($c === 'R') $x++;\n    elseif ($c === 'L') $x--;\n    $prefix[$i + 1] = array($x, $y);\n}\n\n// Count occurrences of each position\n$count = array();\nfor ($i = 0; $i <= $n; $i++) {\n    $key = $prefix[$i][0] . \",\" . $prefix[$i][1];\n    if (!isset($count[$key])) {\n        $count[$key] = 0;\n    }\n    $count[$key]++;\n}\n\n// For each position that appears c times, the number of pairs is C(c, 2) = c*(c-1)/2\n$result = 0;\nforeach ($count as $c) {\n    $result += $c * ($c - 1) / 2;\n}\n\necho $result . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 19,
+                "message": {
+                    "content": "```php\n<?php\n$n = (int)trim(fgets(STDIN));\n$s = trim(fgets(STDIN));\n\n// Use a map to store counts of (x, y) positions\n// We'll use a 2D array or associative array\n$map = [];\n$map['0,0'] = 1; // start at (0,0)\n\n$x = 0;\n$y = 0;\n$count = 0;\n\nfor ($i = 0; $i < $n; $i++) {\n    $c = $s[$i];\n    switch ($c) {\n        case 'U':\n            $y++;\n            break;\n        case 'D':\n            $y--;\n            break;\n        case 'L':\n            $x--;\n            break;\n        case 'R':\n            $x++;\n            break;\n    }\n    \n    $key = \"$x,$y\";\n    if (isset($map[$key])) {\n        $count += $map[$key];\n        $map[$key]++;\n    } else {\n        $map[$key] = 1;\n    }\n}\n\necho $count . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 10135,
+            "prompt_tokens": 349,
+            "total_tokens": 10484
+        },
+        "prompt": "Write a program in PHP to solve this programming problem:\nDescription: Calvin the robot lies in an infinite rectangular grid. Calvin's source code contains a list of n commands, each either 'U', 'R', 'D', or 'L'\u00a0\u2014 instructions to move a single square up, right, down, or left, respectively. How many ways can Calvin execute a non-empty contiguous substrings of commands and return to the same square he starts in? Two substrings are considered different if they have different starting or ending indices.\nInput Specification: The first line of the input contains a single positive integer, n (1\u2009\u2264\u2009n\u2009\u2264\u2009200)\u00a0\u2014 the number of commands. The next line contains n characters, each either 'U', 'R', 'D', or 'L'\u00a0\u2014 Calvin's source code.\nOutput Specification: Print a single integer\u00a0\u2014 the number of contiguous substrings that Calvin can execute and return to his starting square.\n\nSample Input:\n6\nURLLDR\nSample Output:\n2\n\nSample Input:\n4\nDLUU\nSample Output:\n0\n\nSample Input:\n7\nRLRLRLR\nSample Output:\n12\n\nNotes: NoteIn the first case, the entire source code works, as well as the \"RL\" substring in the second and third characters.Note that, in the third case, the substring \"LR\" appears three times, and is therefore counted three times to the total result.\nTake input from standard input and output to standard output\nProvide the PHP code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "7bd5521531950e2de9a7b0904353184d",
+        "difficulty": 1000,
+        "prob_desc_sample_inputs": [
+            "6\nURLLDR",
+            "4\nDLUU",
+            "7\nRLRLRLR"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "brute force",
+            "implementation"
+        ],
+        "prob_desc_output_spec": "Print a single integer\u00a0\u2014 the number of contiguous substrings that Calvin can execute and return to his starting square.",
+        "prob_desc_input_spec": "The first line of the input contains a single positive integer, n (1\u2009\u2264\u2009n\u2009\u2264\u2009200)\u00a0\u2014 the number of commands. The next line contains n characters, each either 'U', 'R', 'D', or 'L'\u00a0\u2014 Calvin's source code.",
+        "lang_cluster": "PHP",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first case, the entire source code works, as well as the \"RL\" substring in the second and third characters.Note that, in the third case, the substring \"LR\" appears three times, and is therefore counted three times to the total result.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Calvin the robot lies in an infinite rectangular grid. Calvin's source code contains a list of n commands, each either 'U', 'R', 'D', or 'L'\u00a0\u2014 instructions to move a single square up, right, down, or left, respectively. How many ways can Calvin execute a non-empty contiguous substrings of commands and return to the same square he starts in? Two substrings are considered different if they have different starting or ending indices.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1455384900",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "2",
+            "0",
+            "12"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"6\\r\\nURLLDR\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"4\\r\\nDLUU\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7\\r\\nRLRLRLR\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1\\r\\nR\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"100\\r\\nURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDL\\r\\n\", \"output\": [\"1225\"]}, {\"input\": \"200\\r\\nLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR\\r\\n\", \"output\": [\"100\"]}, {\"input\": \"20\\r\\nLDURLDURRLRUDLRRUDLU\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"140\\r\\nDLDLULULDRDDDLLUDRRDLLUULLDDLDLUURLDLDRDUDDLRRDURUUUUURLDUDDLLRRLLDRRRDDDDDUDUULLURRDLDULUDLLUUDRRLUDULUDUDULULUURURRDUURRDLULLURUDDDDRDRDRD\\r\\n\", \"output\": [\"125\"]}, {\"input\": \"194\\r\\nULLLDLLDRUUDURRULLRLUUURDRLLURDUDDUDLULRLDRUDURLDLRDLLLLUDDRRRULULULUDDULRURURLLDLDLDRUDUUDULRULDDRRLRDRULLDRULLLLRRDDLLLLULDRLUULRUUULDUUDLDLDUUUDDLDDRULDRRLUURRULLDULRRDLLRDURDLUUDUDLLUDDULDDD\\r\\n\", \"output\": [\"282\"]}, {\"input\": \"200\\r\\nDDDURLLUUULUDDURRDLLDDLLRLUULUULDDDLRRDLRRDUDURDUDRRLLDRDUDDLDDRDLURRRLLRDRRLLLRDDDRDRRLLRRLULRUULRLDLUDRRRDDUUURLLUDRLDUDRLLRLRRLUDLRULDUDDRRLLRLURDLRUDDDURLRDUDUUURLLULULRDRLDLDRURDDDLLRUDDRDUDDDLRU\\r\\n\", \"output\": [\"408\"]}, {\"input\": \"197\\r\\nDUUDUDUDUDUUDUUDUUUDDDDUUUDUUUDUUUUUDUUUDDUDDDUUDUDDDUUDDUUUUUUUDUDDDDDUUUUUDDDDDDUUUUDDUDDUDDDUDUUUDUUDUDUDUUUDUDDDDUUDDUDDDDUDDDUDUUUDUUDUUUDDDDUUUDUUDDUUUUUDDDDUUDUUDDDDUDDUUDUUUDDDDUDUUUDDDUUDU\\r\\n\", \"output\": [\"1995\"]}, {\"input\": \"200\\r\\nLLLLRLLRLLRRRRLLRRLRRLRRRLLLRRLRRRRLLRRLLRRRLRLRLRRLLRLLRRLLLRRRRLRLLRLLLRLLLRRLLLRLRLRRRRRRRLRRRLRLRLLLLRLRRRRRLRRLRLLLLRLLLRRLRRLLRLRLLLRRLLRRLRRRRRLRLRRLRLLRLLLLRLRRRLRRLRLLRLRRLRRRRRLRRLLLRRRRRLLR\\r\\n\", \"output\": [\"1368\"]}, {\"input\": \"184\\r\\nUUUDDUDDDDDUDDDDUDDUUUUUDDDUUDDUDUUDUUUDDUDDDDDDDDDDUDUDDUUDDDUUDDUDUDDDUUDUDUUUUDDUDUUUDDUDUUUUDUUDDUUDUUUDUDUDDUDUDDDUUDDDDUUUUUDDDUDUDUDUDUDUUUDUDDUUDDUDUUDUDUUUDUUDDDDUDDDDUDUUDUUD\\r\\n\", \"output\": [\"1243\"]}, {\"input\": \"187\\r\\nRLLRLRRLLRRLRRRRLLRLLRLLLLRRRLLLRLLLLRRLRLRRRRRRLLRRLRLLRRRLLRRLLLRRLRRLRLLLLRRRRLRRLLRRLRRRRLLLLRRLRLRLRRRRRLLRLRLRLRLRLRLLLRLLLLLRRRLLRLRRRLLLRRLLLLLRLLRLLLRRRLLLRRLRRRLLLRRLRLLRRLRLRLR\\r\\n\", \"output\": [\"1501\"]}, {\"input\": \"190\\r\\nUULLLUUULLLULLUULUUUUULUUULLULLULUULLUULLUUULULUULLUULLUUULULLLLLLULLLLLULUULLULLULLLUULUULLLUUUULLLLUUULLUUULLLULULUULULLUULULULUUULLUUUULLUUULULUULLLLULLLLLUULLUULULLULUUUUUULULLLULLUULUUU\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"46\\r\\nULUURRRRLDRDRDDDURRRLLLDDULLRRRRRLUDDLRDRULLLL\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"70\\r\\nUUDRLDRDRUDLLURURULRDULRRDULDUDDRUULLDDDDDRLLRDURRDULRDLRUUUDDLRUURRLD\\r\\n\", \"output\": [\"86\"]}, {\"input\": \"198\\r\\nURLLUDRDUUDRDLLRURULLRRLRRUULRLULUUDRRURLRUURRDRUUDRLRURLLULRDDDDDRDDRRRLRUDULLDDLLLUDRLDRUDRDLDUULLUUUULULLRLDDRDURDRURLULDRURLLDDULURULDLUUUUULDLURRLLDLULLDULRUURRLDLLUUURDLDDUDUULRLUDULLULDRDRLRL\\r\\n\", \"output\": [\"160\"]}, {\"input\": \"22\\r\\nDUDDDURURUDURRUDRDULUL\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"200\\r\\nUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUD\\r\\n\", \"output\": [\"10000\"]}, {\"input\": \"4\\r\\nRRDR\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6\\r\\nUULLLL\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2\\r\\nDU\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"6\\r\\nUURRRR\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"101\\r\\nRDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD\\r\\n\", \"output\": [\"0\"]}]"
+    }
+}

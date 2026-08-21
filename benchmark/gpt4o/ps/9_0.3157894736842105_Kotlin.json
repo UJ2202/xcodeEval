@@ -1,0 +1,353 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEIJ4kc3WiJHuLGz3pRTl4TNCb0Hj",
+        "created": 1787075670,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport kotlin.math.sqrt\n\nprivate const val MOD: Long = 1000000007L\n\nfun modAdd(a: Long, b: Long): Long {\n    var res = a + b\n    if (res >= MOD) res -= MOD\n    return res\n}\n\nfun modMul(a: Long, b: Long): Long = (a * b) % MOD\n\nfun modPow(base: Long, exp: Long): Long {\n    var b = base % MOD\n    var e = exp\n    var res = 1L\n    while (e > 0) {\n        if ((e and 1L) != 0L) res = modMul(res, b)\n        b = modMul(b, b)\n        e = e shr 1\n    }\n    return res\n}\n\nfun modInv(x: Long): Long = modPow(x, MOD - 2)\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toLong()\n    val k = st.nextToken().toInt()\n\n    // Factorize n (n <= 1e15)\n    var tmp = n\n    val primes = ArrayList<Long>()\n    val exps = ArrayList<Int>()\n    var d = 2L\n    while (d * d <= tmp) {\n        if (tmp % d == 0L) {\n            var cnt = 0\n            while (tmp % d == 0L) {\n                tmp /= d\n                cnt++\n            }\n            primes.add(d)\n            exps.add(cnt)\n        }\n        d += if (d == 2L) 1L else 2L\n    }\n    if (tmp > 1L) {\n        primes.add(tmp)\n        exps.add(1)\n    }\n\n    val invCache = HashMap<Int, Long>()\n\n    fun invInt(x: Int): Long {\n        return invCache.getOrPut(x) { modInv(x.toLong()) }\n    }\n\n    var answer = 1L\n\n    for (idx in primes.indices) {\n        val p = primes[idx]\n        val e = exps[idx]\n\n        // dp[step][exp] for this prime\n        var dp = LongArray(e + 1)\n        dp[e] = 1L\n\n        repeat(k) {\n            val next = LongArray(e + 1)\n            for (exp in 0..e) {\n                val prob = dp[exp]\n                if (prob == 0L) continue\n                val inv = invInt(exp + 1)\n                var curProb = prob\n                for (newExp in 0..exp) {\n                    next[newExp] = (next[newExp] + curProb) % MOD\n                    curProb = modMul(curProb, inv)\n                }\n            }\n            dp = next\n        }\n\n        var expected = 0L\n        var pPow = 1L\n        for (exp in 0..e) {\n            expected = (expected + modMul(dp[exp], pPow)) % MOD\n            pPow = modMul(pPow, p % MOD)\n        }\n\n        answer = modMul(answer, expected)\n    }\n\n    println(answer % MOD)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport kotlin.math.sqrt\n\nprivate const val MOD: Long = 1000000007L\n\nprivate fun modAdd(a: Long, b: Long): Long {\n    var res = a + b\n    if (res >= MOD) res -= MOD\n    return res\n}\n\nprivate fun modMul(a: Long, b: Long): Long {\n    return (a * b) % MOD\n}\n\nprivate fun modPow(base: Long, exp: Long): Long {\n    var b = base % MOD\n    var e = exp\n    var res = 1L\n    while (e > 0) {\n        if ((e and 1L) != 0L) res = modMul(res, b)\n        b = modMul(b, b)\n        e = e shr 1\n    }\n    return res\n}\n\nprivate fun modInv(x: Long): Long = modPow(x, MOD - 2)\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(br.readLine())\n    var n = st.nextToken().toLong()\n    val k = st.nextToken().toInt()\n\n    // Factorize n\n    val primes = ArrayList<Long>()\n    val exps = ArrayList<Int>()\n    var temp = n\n    var d = 2L\n    while (d * d <= temp) {\n        if (temp % d == 0L) {\n            var cnt = 0\n            while (temp % d == 0L) {\n                temp /= d\n                cnt++\n            }\n            primes.add(d)\n            exps.add(cnt)\n        }\n        d += if (d == 2L) 1L else 2L\n    }\n    if (temp > 1L) {\n        primes.add(temp)\n        exps.add(1)\n    }\n\n    val m = primes.size\n    val invCache = HashMap<Int, Long>()\n\n    fun inv(x: Int): Long {\n        return invCache.getOrPut(x) { modInv(x.toLong()) }\n    }\n\n    // For each prime factor, compute DP and expected exponent after k steps\n    var answer = 1L\n    for (idx in 0 until m) {\n        val e = exps[idx]\n        val dp = Array(k + 1) { LongArray(e + 1) }\n        // initial: exponent = e with probability 1\n        dp[0][e] = 1L\n\n        for (step in 0 until k) {\n            for (cur in 0..e) {\n                val prob = dp[step][cur]\n                if (prob == 0L) continue\n                val invCurPlus1 = inv(cur + 1)\n                var sum = 0L\n                var next = 0\n                while (next <= cur) {\n                    dp[step + 1][next] = modAdd(dp[step + 1][next], modMul(prob, invCurPlus1))\n                    next++\n                }\n            }\n        }\n\n        // expected exponent after k steps\n        var expectedExp = 0L\n        for (expVal in 0..e) {\n            if (dp[k][expVal] == 0L) continue\n            expectedExp = (expectedExp + modMul(dp[k][expVal], expVal.toLong())) % MOD\n        }\n\n        val primeMod = primes[idx] % MOD\n        val primePow = modPow(primeMod, expectedExp)\n        answer = modMul(answer, primePow)\n    }\n\n    println(answer % MOD)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport kotlin.math.sqrt\n\nprivate const val MOD: Long = 1_000_000_007L\n\nfun modAdd(a: Long, b: Long): Long {\n    var res = a + b\n    if (res >= MOD) res -= MOD\n    return res\n}\n\nfun modMul(a: Long, b: Long): Long {\n    return (a * b) % MOD\n}\n\nfun modPow(base: Long, exp: Long): Long {\n    var b = base % MOD\n    var e = exp\n    var res = 1L\n    while (e > 0) {\n        if ((e and 1L) != 0L) res = modMul(res, b)\n        b = modMul(b, b)\n        e = e shr 1\n    }\n    return res\n}\n\nfun modInv(x: Long): Long = modPow(x, MOD - 2)\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(br.readLine())\n    var n = st.nextToken().toLong()\n    val k = st.nextToken().toInt()\n\n    // factorize n (n <= 1e15)\n    val primes = ArrayList<Long>()\n    val exps = ArrayList<Int>()\n    var tmp = n\n    var d = 2L\n    while (d * d <= tmp) {\n        if (tmp % d == 0L) {\n            var cnt = 0\n            while (tmp % d == 0L) {\n                tmp /= d\n                cnt++\n            }\n            primes.add(d)\n            exps.add(cnt)\n        }\n        d += if (d == 2L) 1L else 2L\n    }\n    if (tmp > 1L) {\n        primes.add(tmp)\n        exps.add(1)\n    }\n\n    // For each prime factor, compute expected value of p^{exp} after k steps\n    var answer = 1L\n    for (idx in primes.indices) {\n        val p = primes[idx] % MOD\n        val e = exps[idx]\n\n        // dp[t][i] for i in [0..e]\n        var dp = LongArray(e + 1)\n        dp[e] = 1L\n\n        val invCache = LongArray(e + 1)\n        for (i in 0..e) {\n            invCache[i] = modInv((i + 1).toLong())\n        }\n\n        repeat(k) {\n            val prefix = LongArray(e + 1)\n            prefix[0] = dp[0]\n            for (i in 1..e) {\n                prefix[i] = modAdd(prefix[i - 1], dp[i])\n            }\n            val ndp = LongArray(e + 1)\n            for (i in 0..e) {\n                ndp[i] = modMul(prefix[e - i], invCache[e - i])\n            }\n            dp = ndp\n        }\n\n        var expVal = 0L\n        var curPow = 1L\n        for (i in 0..e) {\n            if (i > 0) curPow = modMul(curPow, p)\n            expVal = modAdd(expVal, modMul(dp[i], curPow))\n        }\n        answer = modMul(answer, expVal)\n    }\n\n    println(answer % MOD)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```kotlin\nimport java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport kotlin.system.exitProcess\nimport kotlin.math.sqrt\n\nprivate const val MOD = 1000000007L\n\nprivate fun modAdd(a: Long, b: Long) = (a + b) % MOD\nprivate fun modMul(a: Long, b: Long) = (a * b) % MOD\n\nprivate fun modPow(base: Long, exp: Long): Long {\n    var b = base % MOD\n    var e = exp\n    var res = 1L\n    while (e > 0) {\n        if ((e and 1L) != 0L) res = modMul(res, b)\n        b = modMul(b, b)\n        e = e shr 1\n    }\n    return res\n}\n\nprivate fun modInv(x: Long) = modPow(x, MOD - 2)\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(br.readLine())\n    var n = st.nextToken().toLong()\n    val k = st.nextToken().toInt()\n\n    // Factorize n\n    val primes = ArrayList<Long>()\n    val exps = ArrayList<Int>()\n    var tmp = n\n    var d = 2L\n    while (d * d <= tmp) {\n        if (tmp % d == 0L) {\n            var cnt = 0\n            while (tmp % d == 0L) {\n                tmp /= d\n                cnt++\n            }\n            primes.add(d)\n            exps.add(cnt)\n        }\n        d++\n    }\n    if (tmp > 1L) {\n        primes.add(tmp)\n        exps.add(1)\n    }\n\n    val m = primes.size\n    val invCache = HashMap<Int, Long>() // cache for modular inverses of small ints\n\n    fun invInt(x: Int): Long =\n        invCache.getOrPut(x) { modInv(x.toLong()) }\n\n    // For each prime factor, compute DP\n    var answer = 1L\n    for (idx in 0 until m) {\n        val p = primes[idx] % MOD\n        val e = exps[idx]\n        // dp[step][exp] but we only need previous row\n        var dp = LongArray(e + 1)\n        dp[e] = 1L\n        repeat(k) {\n            val next = LongArray(e + 1)\n            for (exp in 0..e) {\n                val curProb = dp[exp]\n                if (curProb == 0L) continue\n                val cnt = exp + 1\n                val invCnt = invInt(cnt)\n                var prob = curProb\n                // distribute equally to exponents 0..exp\n                // next[j] += curProb / (exp+1)\n                val add = modMul(curProb, invCnt)\n                var j = 0\n                while (j <= exp) {\n                    next[j] = (next[j] + add) % MOD\n                    j++\n                }\n            }\n            dp = next\n        }\n        // expected value for this prime factor: sum exp * p^exp * prob\n        var expVal = 0L\n        var pPow = 1L\n        for (exp in 0..e) {\n            if (exp > 0) pPow = modMul(pPow, p)\n            if (dp[exp] != 0L) {\n                expVal = (expVal + modMul(dp[exp], pPow)) % MOD\n            }\n        }\n        answer = modMul(answer, expVal)\n    }\n\n    println(answer % MOD)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport kotlin.math.sqrt\n\nprivate const val MOD: Long = 1000000007L\n\nfun modAdd(a: Long, b: Long): Long {\n    var res = a + b\n    if (res >= MOD) res -= MOD\n    return res\n}\n\nfun modMul(a: Long, b: Long): Long = (a * b) % MOD\n\nfun modPow(base: Long, exp: Long): Long {\n    var b = base % MOD\n    var e = exp\n    var res = 1L\n    while (e > 0) {\n        if ((e and 1L) != 0L) res = modMul(res, b)\n        b = modMul(b, b)\n        e = e shr 1\n    }\n    return res\n}\n\nfun modInv(x: Long): Long = modPow(x, MOD - 2)\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toLong()\n    val k = st.nextToken().toInt()\n\n    // Factorize n (n <= 1e15)\n    var tmp = n\n    val primes = mutableListOf<Long>()\n    val exps = mutableListOf<Int>()\n    var d = 2L\n    while (d * d <= tmp) {\n        if (tmp % d == 0L) {\n            var cnt = 0\n            while (tmp % d == 0L) {\n                tmp /= d\n                cnt++\n            }\n            primes.add(d)\n            exps.add(cnt)\n        }\n        d += if (d == 2L) 1L else 2L\n    }\n    if (tmp > 1L) {\n        primes.add(tmp)\n        exps.add(1)\n    }\n\n    // Precompute factorials up to max exponent\n    val maxE = exps.maxOrNull() ?: 0\n    val fact = LongArray(maxE + 1)\n    val invFact = LongArray(maxE + 1)\n    fact[0] = 1L\n    for (i in 1..maxE) fact[i] = modMul(fact[i - 1], i.toLong())\n    invFact[maxE] = modInv(fact[maxE])\n    for (i in maxE downTo 1) {\n        invFact[i - 1] = modMul(invFact[i], i.toLong())\n    }\n\n    fun comb(nc: Int, rc: Int): Long {\n        if (rc < 0 || rc > nc) return 0L\n        return modMul(fact[nc], modMul(invFact[rc], invFact[nc - rc]))\n    }\n\n    // Precompute binomial coefficients C(k, t) for t=0..k\n    val Ckt = LongArray(k + 1)\n    for (t in 0..k) {\n        // compute C(k, t) via multiplicative formula\n        var res = 1L\n        var r = t\n        if (r > k - r) r = k - r\n        var num = 1L\n        var den = 1L\n        for (i in 1..r) {\n            num = modMul(num, (k - r + i).toLong())\n            den = modMul(den, i.toLong())\n        }\n        res = modMul(num, modInv(den))\n        Ckt[t] = res\n    }\n\n    var answer = 1L\n\n    for (idx in primes.indices) {\n        val p = primes[idx] % MOD\n        val e = exps[idx]\n\n        // dp[t][j] for t=0..k, j=0..e\n        val dp = Array(k + 1) { LongArray(e + 1) }\n        dp[0][e] = 1L\n\n        for (step in 1..k) {\n            val prev = dp[step - 1]\n            val cur = dp[step]\n            for (j in 0..e) cur[j] = 0L\n            for (j in 0..e) {\n                val valPrev = prev[j]\n                if (valPrev == 0L) continue\n                val inv = modInv((j + 1).toLong())\n                for (x in 0..j) {\n                    cur[x] = modAdd(cur[x], modMul(valPrev, inv))\n                }\n            }\n        }\n\n        // Precompute p^j\n        val powP = LongArray(e + 1)\n        powP[0] = 1L\n        for (j in 1..e) powP[j] = modMul(powP[j - 1], p)\n\n        // Compute E_p(k) = sum_j dp[k][j] * p^j\n        var Ep = 0L\n        for (j in 0..e) {\n            if (dp[k][j] != 0L) {\n                Ep = modAdd(Ep, modMul(dp[k][j], powP[j]))\n            }\n        }\n\n        // Compute E_p(k)^{C(k,t)} product over t\n        // But we already have Ep as expectation after k steps for this prime\n        // Actually we need Ep only once; expectation for full n is product over primes of Ep\n        answer = modMul(answer, Ep)\n    }\n\n    println(answer % MOD)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport kotlin.math.sqrt\n\nprivate const val MOD: Long = 1000000007L\n\nfun modAdd(a: Long, b: Long): Long {\n    var res = a + b\n    if (res >= MOD) res -= MOD\n    return res\n}\n\nfun modMul(a: Long, b: Long): Long = (a * b) % MOD\n\nfun modPow(base: Long, exp: Long): Long {\n    var b = base % MOD\n    var e = exp\n    var res = 1L\n    while (e > 0) {\n        if (e and 1L == 1L) res = modMul(res, b)\n        b = modMul(b, b)\n        e = e shr 1\n    }\n    return res\n}\n\nfun modInv(x: Long): Long = modPow(x, MOD - 2)\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(br.readLine())\n    var n = st.nextToken().toLong()\n    val k = st.nextToken().toInt()\n\n    // factorize n (n <= 1e15)\n    val primes = ArrayList<Long>()\n    val exps = ArrayList<Int>()\n    var tmp = n\n    var d = 2L\n    while (d * d <= tmp) {\n        if (tmp % d == 0L) {\n            var cnt = 0\n            while (tmp % d == 0L) {\n                tmp /= d\n                cnt++\n            }\n            primes.add(d)\n            exps.add(cnt)\n        }\n        d += if (d == 2L) 1L else 2L\n    }\n    if (tmp > 1L) {\n        primes.add(tmp)\n        exps.add(1)\n    }\n\n    val m = primes.size\n    val invCache = LongArray(10005)\n    for (i in 1..10000) invCache[i] = modInv(i.toLong())\n\n    // For each prime factor, compute expected value of its exponent after k steps\n    var answer = 1L\n    for (idx in 0 until m) {\n        val e = exps[idx]\n        val dp = Array(k + 1) { LongArray(e + 1) }\n        // initial: exponent e with probability 1\n        dp[0][e] = 1L\n\n        for (step in 0 until k) {\n            val cur = dp[step]\n            val nxt = dp[step + 1]\n            for (i in 0..e) {\n                val prob = cur[i]\n                if (prob == 0L) continue\n                val cnt = i + 1\n                val invCnt = invCache[cnt]\n                val share = modMul(prob, invCnt)\n                var j = 0\n                while (j <= i) {\n                    nxt[j] = modAdd(nxt[j], share)\n                    j++\n                }\n            }\n        }\n\n        // expected p^exp = sum_j p^j * prob(exp=j)\n        val p = primes[idx] % MOD\n        val powP = LongArray(e + 1)\n        powP[0] = 1L\n        for (i in 1..e) powP[i] = modMul(powP[i - 1], p)\n\n        var expVal = 0L\n        val last = dp[k]\n        for (i in 0..e) {\n            if (last[i] == 0L) continue\n            expVal = modAdd(expVal, modMul(last[i], powP[i]))\n        }\n        answer = modMul(answer, expVal)\n    }\n\n    println(answer % MOD)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport kotlin.math.sqrt\n\nprivate const val MOD: Long = 1_000_000_007L\n\nprivate fun modAdd(a: Long, b: Long): Long {\n    var res = a + b\n    if (res >= MOD) res -= MOD\n    return res\n}\n\nprivate fun modMul(a: Long, b: Long): Long {\n    return (a * b) % MOD\n}\n\nprivate fun modPow(base: Long, exp: Long): Long {\n    var b = base % MOD\n    var e = exp\n    var res = 1L\n    while (e > 0) {\n        if ((e and 1L) != 0L) res = modMul(res, b)\n        b = modMul(b, b)\n        e = e shr 1\n    }\n    return res\n}\n\nprivate fun modInv(a: Long): Long = modPow(a, MOD - 2)\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(br.readLine())\n    var n = st.nextToken().toLong()\n    val k = st.nextToken().toInt()\n\n    // Factorize n\n    val primes = ArrayList<Long>()\n    val exps = ArrayList<Int>()\n    var tmp = n\n    var d = 2L\n    while (d * d <= tmp) {\n        if (tmp % d == 0L) {\n            var cnt = 0\n            while (tmp % d == 0L) {\n                tmp /= d\n                cnt++\n            }\n            primes.add(d)\n            exps.add(cnt)\n        }\n        d++\n    }\n    if (tmp > 1L) {\n        primes.add(tmp)\n        exps.add(1)\n    }\n\n    val m = primes.size\n    val inv = LongArray(51)\n    for (i in 1..50) inv[i] = modInv(i.toLong())\n\n    // For each prime factor, compute DP over exponents\n    val dpPrime = Array(m) { IntArray(exps[it] + 1) }\n    val dpPrimeVal = Array(m) { LongArray(exps[it] + 1) }\n\n    for (idx in 0 until m) {\n        val e = exps[idx]\n        val dp = Array(k + 1) { LongArray(e + 1) }\n        // initial: exponent e with probability 1\n        dp[0][e] = 1L\n        for (step in 0 until k) {\n            for (j in 0..e) {\n                val cur = dp[step][j]\n                if (cur == 0L) continue\n                val waysInv = inv[j + 1]\n                val valToAdd = modMul(cur, waysInv)\n                for (t in 0..j) {\n                    dp[step + 1][t] = modAdd(dp[step + 1][t], valToAdd)\n                }\n            }\n        }\n        // store probabilities and expected p^exp\n        val p = primes[idx] % MOD\n        var pow = 1L\n        for (j in 0..e) {\n            dpPrime[idx][j] = j\n            dpPrimeVal[idx][j] = modMul(dp[k][j], pow)\n            pow = modMul(pow, p)\n        }\n    }\n\n    // Combine primes: expected value = product over primes of expected p^{exp}\n    var ans = 1L\n    for (idx in 0 until m) {\n        var sum = 0L\n        for (j in 0..exps[idx]) {\n            sum = modAdd(sum, dpPrimeVal[idx][j])\n        }\n        ans = modMul(ans, sum)\n    }\n\n    println(ans % MOD)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport kotlin.math.sqrt\n\nprivate const val MOD: Long = 1_000_000_007L\n\nprivate fun modAdd(a: Long, b: Long): Long {\n    var res = a + b\n    if (res >= MOD) res -= MOD\n    return res\n}\n\nprivate fun modMul(a: Long, b: Long): Long {\n    return (a * b) % MOD\n}\n\nprivate fun modPow(base: Long, exp: Long): Long {\n    var b = base % MOD\n    var e = exp\n    var res = 1L\n    while (e > 0) {\n        if ((e and 1L) != 0L) res = modMul(res, b)\n        b = modMul(b, b)\n        e = e shr 1\n    }\n    return res\n}\n\nprivate fun modInv(x: Long): Long = modPow(x, MOD - 2)\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(br.readLine())\n    var n = st.nextToken().toLong()\n    val k = st.nextToken().toInt()\n\n    // Factorize n\n    val primes = ArrayList<Long>()\n    val exps = ArrayList<Int>()\n    var tmp = n\n    var d = 2L\n    while (d * d <= tmp) {\n        if (tmp % d == 0L) {\n            var cnt = 0\n            while (tmp % d == 0L) {\n                tmp /= d\n                cnt++\n            }\n            primes.add(d)\n            exps.add(cnt)\n        }\n        d++\n    }\n    if (tmp > 1L) {\n        primes.add(tmp)\n        exps.add(1)\n    }\n\n    val m = primes.size\n    val invCache = HashMap<Int, Long>() // cache for inverses of small ints\n\n    fun invInt(x: Int): Long {\n        return invCache.getOrPut(x) { modInv(x.toLong()) }\n    }\n\n    // For each prime factor, compute expected value after k steps for p^e\n    var answer = 1L\n    for (idx in 0 until m) {\n        val p = primes[idx] % MOD\n        val e = exps[idx]\n\n        // dp[step][exp] but we only need previous row\n        var dp = LongArray(e + 1)\n        dp[e] = 1L\n\n        for (step in 0 until k) {\n            val prefix = LongArray(e + 2)\n            for (i in 0..e) {\n                prefix[i + 1] = modAdd(prefix[i], dp[i])\n            }\n            val next = LongArray(e + 1)\n            for (i in 0..e) {\n                val sum = prefix[i + 1] // sum_{j=0..i} dp[j]\n                val inv = invInt(i + 1)\n                next[i] = modMul(sum, inv)\n            }\n            dp = next\n        }\n\n        // expected value = sum_{i=0..e} dp[i] * p^i\n        var cur = 0L\n        var pow = 1L\n        for (i in 0..e) {\n            cur = modAdd(cur, modMul(dp[i], pow))\n            pow = modMul(pow, p)\n        }\n        answer = modMul(answer, cur)\n    }\n\n    println(answer % MOD)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 6657,
+            "prompt_tokens": 552,
+            "total_tokens": 7209,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 3,
+                "engine_ttft_ms": 313,
+                "engine_ttlt_ms": 23597,
+                "pre_inference_ms": 184,
+                "service_tbt_ms": 3,
+                "service_ttft_ms": 637,
+                "service_ttlt_ms": 23882,
+                "total_duration_ms": 23706,
+                "user_visible_ttft_ms": 453
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Kotlin to solve this programming problem:\nDescription: Makoto has a big blackboard with a positive integer $$$n$$$ written on it. He will perform the following action exactly $$$k$$$ times:Suppose the number currently written on the blackboard is $$$v$$$. He will randomly pick one of the divisors of $$$v$$$ (possibly $$$1$$$ and $$$v$$$) and replace $$$v$$$ with this divisor. As Makoto uses his famous random number generator (RNG) and as he always uses $$$58$$$ as his generator seed, each divisor is guaranteed to be chosen with equal probability.He now wonders what is the expected value of the number written on the blackboard after $$$k$$$ steps.It can be shown that this value can be represented as $$$\\frac{P}{Q}$$$ where $$$P$$$ and $$$Q$$$ are coprime integers and $$$Q \\not\\equiv 0 \\pmod{10^9+7}$$$. Print the value of $$$P \\cdot Q^{-1}$$$ modulo $$$10^9+7$$$.\nInput Specification: The only line of the input contains two integers $$$n$$$ and $$$k$$$ ($$$1 \\leq n \\leq 10^{15}$$$, $$$1 \\leq k \\leq 10^4$$$).\nOutput Specification: Print a single integer \u2014 the expected value of the number on the blackboard after $$$k$$$ steps as $$$P \\cdot Q^{-1} \\pmod{10^9+7}$$$ for $$$P$$$, $$$Q$$$ defined above.\n\nSample Input:\n6 1\nSample Output:\n3\n\nSample Input:\n6 2\nSample Output:\n875000008\n\nSample Input:\n60 5\nSample Output:\n237178099\n\nNotes: NoteIn the first example, after one step, the number written on the blackboard is $$$1$$$, $$$2$$$, $$$3$$$ or $$$6$$$ \u2014 each occurring with equal probability. Hence, the answer is $$$\\frac{1+2+3+6}{4}=3$$$.In the second example, the answer is equal to $$$1 \\cdot \\frac{9}{16}+2 \\cdot \\frac{3}{16}+3 \\cdot \\frac{3}{16}+6 \\cdot \\frac{1}{16}=\\frac{15}{8}$$$.\nTake input from standard input and output to standard output\nProvide the Kotlin code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "dc466d9c24b7dcb37c0e99337b4124d2",
+        "difficulty": 2200,
+        "prob_desc_sample_inputs": [
+            "6 1",
+            "6 2",
+            "60 5"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "math",
+            "number theory",
+            "probabilities",
+            "dp"
+        ],
+        "prob_desc_output_spec": "Print a single integer \u2014 the expected value of the number on the blackboard after $$$k$$$ steps as $$$P \\cdot Q^{-1} \\pmod{10^9+7}$$$ for $$$P$$$, $$$Q$$$ defined above.",
+        "prob_desc_input_spec": "The only line of the input contains two integers $$$n$$$ and $$$k$$$ ($$$1 \\leq n \\leq 10^{15}$$$, $$$1 \\leq k \\leq 10^4$$$).",
+        "lang_cluster": "Kotlin",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first example, after one step, the number written on the blackboard is $$$1$$$, $$$2$$$, $$$3$$$ or $$$6$$$ \u2014 each occurring with equal probability. Hence, the answer is $$$\\frac{1+2+3+6}{4}=3$$$.In the second example, the answer is equal to $$$1 \\cdot \\frac{9}{16}+2 \\cdot \\frac{3}{16}+3 \\cdot \\frac{3}{16}+6 \\cdot \\frac{1}{16}=\\frac{15}{8}$$$.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Makoto has a big blackboard with a positive integer $$$n$$$ written on it. He will perform the following action exactly $$$k$$$ times:Suppose the number currently written on the blackboard is $$$v$$$. He will randomly pick one of the divisors of $$$v$$$ (possibly $$$1$$$ and $$$v$$$) and replace $$$v$$$ with this divisor. As Makoto uses his famous random number generator (RNG) and as he always uses $$$58$$$ as his generator seed, each divisor is guaranteed to be chosen with equal probability.He now wonders what is the expected value of the number written on the blackboard after $$$k$$$ steps.It can be shown that this value can be represented as $$$\\frac{P}{Q}$$$ where $$$P$$$ and $$$Q$$$ are coprime integers and $$$Q \\not\\equiv 0 \\pmod{10^9+7}$$$. Print the value of $$$P \\cdot Q^{-1}$$$ modulo $$$10^9+7$$$.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1546613100",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "3",
+            "875000008",
+            "237178099"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"6 1\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"6 2\\r\\n\", \"output\": [\"875000008\"]}, {\"input\": \"60 5\\r\\n\", \"output\": [\"237178099\"]}, {\"input\": \"2 4\\r\\n\", \"output\": [\"562500005\"]}, {\"input\": \"12 3\\r\\n\", \"output\": [\"775462970\"]}, {\"input\": \"55 5\\r\\n\", \"output\": [\"789062507\"]}, {\"input\": \"935 9\\r\\n\", \"output\": [\"658825880\"]}, {\"input\": \"1 10000\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"120 1\\r\\n\", \"output\": [\"500000026\"]}, {\"input\": \"1000000000000000 10000\\r\\n\", \"output\": [\"215514159\"]}, {\"input\": \"671058194037157 8673\\r\\n\", \"output\": [\"298638658\"]}, {\"input\": \"900018062553298 4801\\r\\n\", \"output\": [\"345432320\"]}, {\"input\": \"128973636102142 5521\\r\\n\", \"output\": [\"99152648\"]}, {\"input\": \"999999999999993 8123\\r\\n\", \"output\": [\"868053217\"]}, {\"input\": \"260858031033600 9696\\r\\n\", \"output\": [\"692221824\"]}, {\"input\": \"562949953421312 9779\\r\\n\", \"output\": [\"98057767\"]}, {\"input\": \"357933504618282 1649\\r\\n\", \"output\": [\"197730476\"]}, {\"input\": \"586884783199831 5073\\r\\n\", \"output\": [\"883678085\"]}, {\"input\": \"187877211524483 8497\\r\\n\", \"output\": [\"562808746\"]}, {\"input\": \"866421317361600 10000\\r\\n\", \"output\": [\"82212846\"]}, {\"input\": \"782574093100800 9999\\r\\n\", \"output\": [\"293217028\"]}, {\"input\": \"577614211574400 9998\\r\\n\", \"output\": [\"681915605\"]}, {\"input\": \"65214507758400 9997\\r\\n\", \"output\": [\"677959603\"]}, {\"input\": \"963761198400 9996\\r\\n\", \"output\": [\"669401143\"]}, {\"input\": \"5587021440 9995\\r\\n\", \"output\": [\"360750834\"]}, {\"input\": \"17297280 9994\\r\\n\", \"output\": [\"94383698\"]}, {\"input\": \"7560 9993\\r\\n\", \"output\": [\"412712546\"]}, {\"input\": \"120 9992\\r\\n\", \"output\": [\"167656619\"]}, {\"input\": \"1 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"609359740010496 1337\\r\\n\", \"output\": [\"263703037\"]}, {\"input\": \"912750790581630 9876\\r\\n\", \"output\": [\"291557094\"]}, {\"input\": \"617673396283947 7777\\r\\n\", \"output\": [\"488769014\"]}, {\"input\": \"890604418498560 9119\\r\\n\", \"output\": [\"185509970\"]}, {\"input\": \"524288004718592 8888\\r\\n\", \"output\": [\"851726115\"]}, {\"input\": \"999999999999989 8998\\r\\n\", \"output\": [\"391873310\"]}, {\"input\": \"999999999999999 8123\\r\\n\", \"output\": [\"41003922\"]}, {\"input\": \"817237005720659 4233\\r\\n\", \"output\": [\"533017938\"]}, {\"input\": \"1000000007 1\\r\\n\", \"output\": [\"500000004\"]}, {\"input\": \"1000000007 2\\r\\n\", \"output\": [\"750000006\"]}, {\"input\": \"999999999999970 8998\\r\\n\", \"output\": [\"939941657\"]}, {\"input\": \"900000060000001 8123\\r\\n\", \"output\": [\"865356488\"]}, {\"input\": \"999011322032079 4233\\r\\n\", \"output\": [\"546309400\"]}, {\"input\": \"999005327998113 9119\\r\\n\", \"output\": [\"106270540\"]}, {\"input\": \"900000720000023 9876\\r\\n\", \"output\": [\"511266473\"]}]"
+    }
+}

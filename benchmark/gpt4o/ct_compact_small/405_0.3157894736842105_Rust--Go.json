@@ -1,0 +1,314 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EELa8jVVB2TrV9wqVMax2zsrIKdUB",
+        "created": 1787088260,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst MOD uint32 = 1000000007\n\ntype ModInt struct {\n\tv uint32\n}\n\nfunc NewModInt(x uint32) ModInt {\n\treturn ModInt{x % MOD}\n}\n\nfunc (a ModInt) Add(b ModInt) ModInt {\n\td := a.v + b.v\n\tif d >= MOD {\n\t\td -= MOD\n\t}\n\treturn ModInt{d}\n}\n\nfunc (a *ModInt) AddAssign(b ModInt) {\n\t*a = a.Add(b)\n}\n\nfunc (a ModInt) Sub(b ModInt) ModInt {\n\td := a.v + MOD - b.v\n\tif d >= MOD {\n\t\td -= MOD\n\t}\n\treturn ModInt{d}\n}\n\nfunc (a *ModInt) SubAssign(b ModInt) {\n\t*a = a.Sub(b)\n}\n\nfunc (a ModInt) Mul(b ModInt) ModInt {\n\treturn ModInt{uint32((uint64(a.v) * uint64(b.v)) % uint64(MOD))}\n}\n\nfunc (a *ModInt) MulAssign(b ModInt) {\n\t*a = a.Mul(b)\n}\n\nfunc (a ModInt) Neg() ModInt {\n\tif a.v == 0 {\n\t\treturn ModInt{0}\n\t}\n\treturn ModInt{MOD - a.v}\n}\n\nfunc (a ModInt) Pow(n uint32) ModInt {\n\tt := NewModInt(1)\n\ts := a\n\tfor n > 0 {\n\t\tif (n & 1) == 1 {\n\t\t\tt.MulAssign(s)\n\t\t}\n\t\ts.MulAssign(s)\n\t\tn >>= 1\n\t}\n\treturn t\n}\n\nfunc (a ModInt) DivNum(other uint32) ModInt {\n\treturn a.Mul(NewModInt(other).Pow(MOD - 2))\n}\n\nfunc (a ModInt) Div(b ModInt) ModInt {\n\treturn a.Mul(b.Pow(MOD - 2))\n}\n\ntype Precalc struct {\n\tn    int\n\tinv  []ModInt\n\tfact []ModInt\n\tifact []ModInt\n}\n\nfunc NewPrecalc(n int) Precalc {\n\tinv := make([]ModInt, n+1)\n\tfact := make([]ModInt, n+1)\n\tifact := make([]ModInt, n+1)\n\tfor i := 0; i <= n; i++ {\n\t\tinv[i] = NewModInt(1)\n\t\tfact[i] = NewModInt(1)\n\t\tifact[i] = NewModInt(1)\n\t}\n\tfor i := 1; i <= n; i++ {\n\t\tif i > 2 {\n\t\t\tinv[i] = inv[MOD%uint32(i)].Neg().Mul(NewModInt(MOD / uint32(i)))\n\t\t}\n\t\tfact[i] = NewModInt(uint32(i)).Mul(fact[i-1])\n\t\tifact[i] = inv[i].Mul(ifact[i-1])\n\t}\n\treturn Precalc{\n\t\tn:    n,\n\t\tinv:  inv,\n\t\tfact: fact,\n\t\tifact: ifact,\n\t}\n}\n\nfunc (p Precalc) Fact(n int) ModInt {\n\treturn p.fact[n]\n}\n\nfunc (p Precalc) Inv(x int) ModInt {\n\treturn p.inv[x]\n}\n\nfunc (p Precalc) IFact(x int) ModInt {\n\treturn p.ifact[x]\n}\n\nfunc (p Precalc) Comb(n, k int) ModInt {\n\tif !(k <= n) {\n\t\treturn ModInt{0}\n\t}\n\treturn p.fact[n].Mul(p.ifact[k]).Mul(p.ifact[n-k])\n}\n\ntype SquareMatrix struct {\n\tn int\n\ta []ModInt\n}\n\nfunc ZeroMatrix(n int) SquareMatrix {\n\tz := NewModInt(0)\n\ta := make([]ModInt, n*n)\n\tfor i := range a {\n\t\ta[i] = z\n\t}\n\treturn SquareMatrix{\n\t\tn: n,\n\t\ta: a,\n\t}\n}\n\nfunc IdentityMatrix(n int) SquareMatrix {\n\tm := ZeroMatrix(n)\n\tfor i := 0; i < n; i++ {\n\t\tm.a[i*n+i] = NewModInt(1)\n\t}\n\treturn m\n}\n\nfunc (m *SquareMatrix) SetAt(i, j int, v ModInt) {\n\tm.a[i*m.n+j] = v\n}\n\nfunc (m *SquareMatrix) GetAt(i, j int) ModInt {\n\treturn m.a[i*m.n+j]\n}\n\nfunc MatMul(l, r SquareMatrix) SquareMatrix {\n\treturn l.Mul(r)\n}\n\nfunc (m SquareMatrix) Add(rhs SquareMatrix) SquareMatrix {\n\tn := m.n\n\tc := ZeroMatrix(n)\n\tfor i := 0; i < n*n; i++ {\n\t\tc.a[i] = m.a[i].Add(rhs.a[i])\n\t}\n\treturn c\n}\n\nfunc (m SquareMatrix) Mul(rhs SquareMatrix) SquareMatrix {\n\tn := m.n\n\tc := ZeroMatrix(n)\n\tfor i := 0; i < n; i++ {\n\t\tfor k := 0; k < n; k++ {\n\t\t\ta := m.a[i*n+k]\n\t\t\tfor j := 0; j < n; j++ {\n\t\t\t\tx := &c.a[i*n+j]\n\t\t\t\ty := rhs.a[k*n+j]\n\t\t\t\t*x = x.Add(a.Mul(y))\n\t\t\t}\n\t\t}\n\t}\n\treturn c\n}\n\nfunc run() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n uint64\n\tvar m int\n\tfmt.Fscan(in, &n, &m)\n\n\tt := IdentityMatrix(m)\n\ts := ZeroMatrix(m)\n\tfor i := 1; i < m; i++ {\n\t\ts.SetAt(i-1, i, NewModInt(1))\n\t}\n\ts.SetAt(m-1, 0, NewModInt(1))\n\ts.SetAt(m-1, m-1, NewModInt(1))\n\n\tfor n > 0 {\n\t\tif (n & 1) == 1 {\n\t\t\tt = t.Mul(s)\n\t\t}\n\t\ts = s.Mul(s)\n\t\tn >>= 1\n\t}\n\tans := t.GetAt(m-1, m-1)\n\tfmt.Println(ans.v)\n}\n\nfunc main() {\n\trun()\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_result": {
+                        "error": {
+                            "code": "content_filter_error",
+                            "message": "The contents are not filtered"
+                        }
+                    },
+                    "content_filter_results": {}
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst MOD uint32 = 1000000007\n\ntype ModInt struct {\n\tv uint32\n}\n\nfunc NewModInt(x uint32) ModInt {\n\treturn ModInt{x % MOD}\n}\n\nfunc (a ModInt) Add(b ModInt) ModInt {\n\td := a.v + b.v\n\tif d >= MOD {\n\t\td -= MOD\n\t}\n\treturn ModInt{d}\n}\n\nfunc (a ModInt) Sub(b ModInt) ModInt {\n\td := a.v + MOD - b.v\n\tif d >= MOD {\n\t\td -= MOD\n\t}\n\treturn ModInt{d}\n}\n\nfunc (a ModInt) Mul(b ModInt) ModInt {\n\treturn ModInt{uint32((uint64(a.v) * uint64(b.v)) % uint64(MOD))}\n}\n\nfunc (a ModInt) Neg() ModInt {\n\tif a.v == 0 {\n\t\treturn ModInt{0}\n\t}\n\treturn ModInt{MOD - a.v}\n}\n\nfunc (a ModInt) Pow(n uint32) ModInt {\n\tt := NewModInt(1)\n\ts := a\n\tfor n > 0 {\n\t\tif (n & 1) == 1 {\n\t\t\tt = t.Mul(s)\n\t\t}\n\t\ts = s.Mul(s)\n\t\tn >>= 1\n\t}\n\treturn t\n}\n\nfunc (a ModInt) DivNum(other uint32) ModInt {\n\treturn a.Mul(NewModInt(other).Pow(MOD - 2))\n}\n\nfunc (a ModInt) Div(b ModInt) ModInt {\n\treturn a.Mul(b.Pow(MOD - 2))\n}\n\ntype SquareMatrix struct {\n\tn int\n\ta []ModInt\n}\n\nfunc ZeroMatrix(n int) SquareMatrix {\n\tz := ModInt{0}\n\ta := make([]ModInt, n*n)\n\tfor i := range a {\n\t\ta[i] = z\n\t}\n\treturn SquareMatrix{n: n, a: a}\n}\n\nfunc IdentityMatrix(n int) SquareMatrix {\n\tm := ZeroMatrix(n)\n\tfor i := 0; i < n; i++ {\n\t\tm.a[i*n+i] = ModInt{1}\n\t}\n\treturn m\n}\n\nfunc (m *SquareMatrix) SetAt(i, j int, v ModInt) {\n\tm.a[i*m.n+j] = v\n}\n\nfunc (m *SquareMatrix) GetAt(i, j int) ModInt {\n\treturn m.a[i*m.n+j]\n}\n\nfunc (l SquareMatrix) AddMatrix(r SquareMatrix) SquareMatrix {\n\tn := l.n\n\tc := ZeroMatrix(n)\n\tfor i := 0; i < n*n; i++ {\n\t\tc.a[i] = l.a[i].Add(r.a[i])\n\t}\n\treturn c\n}\n\nfunc (l SquareMatrix) MulMatrix(r SquareMatrix) SquareMatrix {\n\tn := l.n\n\tc := ZeroMatrix(n)\n\tfor i := 0; i < n; i++ {\n\t\tfor k := 0; k < n; k++ {\n\t\t\ta := l.a[i*n+k]\n\t\t\trowStart := i * n\n\t\t\tcolStart := k * n\n\t\t\tfor j := 0; j < n; j++ {\n\t\t\t\tc.a[rowStart+j] = c.a[rowStart+j].Add(a.Mul(r.a[colStart+j]))\n\t\t\t}\n\t\t}\n\t}\n\treturn c\n}\n\nvar rdr = bufio.NewReader(os.Stdin)\n\nfunc run() {\n\tvar n uint64\n\tvar m int\n\tfmt.Fscan(rdr, &n, &m)\n\n\tt := IdentityMatrix(m)\n\ts := ZeroMatrix(m)\n\n\tfor i := 1; i < m; i++ {\n\t\ts.SetAt(i-1, i, ModInt{1})\n\t}\n\ts.SetAt(m-1, 0, ModInt{1})\n\ts.SetAt(m-1, m-1, ModInt{1})\n\n\tfor n > 0 {\n\t\tif (n & 1) == 1 {\n\t\t\tt = t.MulMatrix(s)\n\t\t}\n\t\ts = s.MulMatrix(s)\n\t\tn >>= 1\n\t}\n\n\tans := t.GetAt(m-1, m-1)\n\tfmt.Println(ans.v)\n}\n\nfunc main() {\n\trun()\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_result": {
+                        "error": {
+                            "code": "content_filter_error",
+                            "message": "The contents are not filtered"
+                        }
+                    },
+                    "content_filter_results": {}
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst MOD uint32 = 1000000007\n\ntype ModInt struct {\n\tv uint32\n}\n\nfunc NewModInt(x uint32) ModInt {\n\treturn ModInt{x % MOD}\n}\n\nfunc (a ModInt) Add(b ModInt) ModInt {\n\td := a.v + b.v\n\tif d >= MOD {\n\t\td -= MOD\n\t}\n\treturn ModInt{d}\n}\n\nfunc (a *ModInt) AddAssign(b ModInt) {\n\t*a = a.Add(b)\n}\n\nfunc (a ModInt) Sub(b ModInt) ModInt {\n\td := a.v + MOD - b.v\n\tif d >= MOD {\n\t\td -= MOD\n\t}\n\treturn ModInt{d}\n}\n\nfunc (a *ModInt) SubAssign(b ModInt) {\n\t*a = a.Sub(b)\n}\n\nfunc (a ModInt) Mul(b ModInt) ModInt {\n\treturn ModInt{uint32((uint64(a.v) * uint64(b.v)) % uint64(MOD))}\n}\n\nfunc (a *ModInt) MulAssign(b ModInt) {\n\t*a = a.Mul(b)\n}\n\nfunc (a ModInt) Neg() ModInt {\n\tif a.v == 0 {\n\t\treturn ModInt{0}\n\t}\n\treturn ModInt{MOD - a.v}\n}\n\nfunc (a ModInt) Pow(n uint32) ModInt {\n\tt := NewModInt(1)\n\ts := a\n\tfor n > 0 {\n\t\tif (n & 1) == 1 {\n\t\t\tt.MulAssign(s)\n\t\t}\n\t\ts.MulAssign(s)\n\t\tn >>= 1\n\t}\n\treturn t\n}\n\nfunc (a ModInt) DivNum(other uint32) ModInt {\n\treturn a.Mul(NewModInt(other).Pow(MOD - 2))\n}\n\nfunc (a ModInt) Div(b ModInt) ModInt {\n\treturn a.Mul(b.Pow(MOD - 2))\n}\n\ntype Precalc struct {\n\tn    int\n\tinv  []ModInt\n\tfact []ModInt\n\tifact []ModInt\n}\n\nfunc NewPrecalc(n int) Precalc {\n\tinv := make([]ModInt, n+1)\n\tfact := make([]ModInt, n+1)\n\tifact := make([]ModInt, n+1)\n\tfor i := 0; i <= n; i++ {\n\t\tinv[i] = NewModInt(1)\n\t\tfact[i] = NewModInt(1)\n\t\tifact[i] = NewModInt(1)\n\t}\n\tfor i := 1; i <= n; i++ {\n\t\tif i > 2 {\n\t\t\tinv[i] = inv[MOD%uint32(i)].Neg().Mul(NewModInt(MOD / uint32(i)))\n\t\t}\n\t\tfact[i] = NewModInt(uint32(i)).Mul(fact[i-1])\n\t\tifact[i] = inv[i].Mul(ifact[i-1])\n\t}\n\treturn Precalc{\n\t\tn:    n,\n\t\tinv:  inv,\n\t\tfact: fact,\n\t\tifact: ifact,\n\t}\n}\n\nfunc (p Precalc) Fact(n int) ModInt {\n\treturn p.fact[n]\n}\n\nfunc (p Precalc) Inv(x int) ModInt {\n\treturn p.inv[x]\n}\n\nfunc (p Precalc) IFact(x int) ModInt {\n\treturn p.ifact[x]\n}\n\nfunc (p Precalc) Comb(n, k int) ModInt {\n\tif !(k <= n) {\n\t\treturn ModInt{0}\n\t}\n\treturn p.fact[n].Mul(p.ifact[k]).Mul(p.ifact[n-k])\n}\n\ntype SquareMatrix struct {\n\tn int\n\ta []ModInt\n}\n\nfunc ZeroMatrix(n int) SquareMatrix {\n\tz := NewModInt(0)\n\ta := make([]ModInt, n*n)\n\tfor i := range a {\n\t\ta[i] = z\n\t}\n\treturn SquareMatrix{\n\t\tn: n,\n\t\ta: a,\n\t}\n}\n\nfunc IdentityMatrix(n int) SquareMatrix {\n\tm := ZeroMatrix(n)\n\tfor i := 0; i < n; i++ {\n\t\tm.a[i*n+i] = NewModInt(1)\n\t}\n\treturn m\n}\n\nfunc (m *SquareMatrix) SetAt(i, j int, v ModInt) {\n\tm.a[i*m.n+j] = v\n}\n\nfunc (m *SquareMatrix) GetAt(i, j int) ModInt {\n\treturn m.a[i*m.n+j]\n}\n\nfunc (l SquareMatrix) AddMatrix(r SquareMatrix) SquareMatrix {\n\tn := l.n\n\tc := ZeroMatrix(n)\n\tfor i := 0; i < n*n; i++ {\n\t\tc.a[i] = l.a[i].Add(r.a[i])\n\t}\n\treturn c\n}\n\nfunc (l SquareMatrix) MulMatrix(r SquareMatrix) SquareMatrix {\n\tn := l.n\n\tc := ZeroMatrix(n)\n\tfor i := 0; i < n; i++ {\n\t\tfor k := 0; k < n; k++ {\n\t\t\ta := l.a[i*n+k]\n\t\t\trowStart := i * n\n\t\t\tcolStart := k * n\n\t\t\tfor j := 0; j < n; j++ {\n\t\t\t\tc.a[rowStart+j] = c.a[rowStart+j].Add(a.Mul(r.a[colStart+j]))\n\t\t\t}\n\t\t}\n\t}\n\treturn c\n}\n\nfunc run() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n uint64\n\tvar m int\n\tfmt.Fscan(in, &n, &m)\n\n\tt := IdentityMatrix(m)\n\ts := ZeroMatrix(m)\n\tfor i := 1; i < m; i++ {\n\t\ts.SetAt(i-1, i, NewModInt(1))\n\t}\n\ts.SetAt(m-1, 0, NewModInt(1))\n\ts.SetAt(m-1, m-1, NewModInt(1))\n\n\tfor n > 0 {\n\t\tif (n & 1) == 1 {\n\t\t\tt = t.MulMatrix(s)\n\t\t}\n\t\ts = s.MulMatrix(s)\n\t\tn >>= 1\n\t}\n\tans := t.GetAt(m-1, m-1)\n\tfmt.Println(ans.v)\n}\n\nfunc main() {\n\trun()\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst MOD uint32 = 1000000007\n\ntype ModInt struct {\n\tv uint32\n}\n\nfunc NewModInt(x uint32) ModInt {\n\treturn ModInt{x % MOD}\n}\n\nfunc (a ModInt) Add(b ModInt) ModInt {\n\td := a.v + b.v\n\tif d >= MOD {\n\t\td -= MOD\n\t}\n\treturn ModInt{d}\n}\n\nfunc (a *ModInt) AddAssign(b ModInt) {\n\t*a = a.Add(b)\n}\n\nfunc (a ModInt) Sub(b ModInt) ModInt {\n\td := a.v + MOD - b.v\n\tif d >= MOD {\n\t\td -= MOD\n\t}\n\treturn ModInt{d}\n}\n\nfunc (a *ModInt) SubAssign(b ModInt) {\n\t*a = a.Sub(b)\n}\n\nfunc (a ModInt) Mul(b ModInt) ModInt {\n\treturn ModInt{uint32((uint64(a.v) * uint64(b.v)) % uint64(MOD))}\n}\n\nfunc (a *ModInt) MulAssign(b ModInt) {\n\t*a = a.Mul(b)\n}\n\nfunc (a ModInt) Neg() ModInt {\n\tif a.v == 0 {\n\t\treturn ModInt{0}\n\t}\n\treturn ModInt{MOD - a.v}\n}\n\nfunc (a ModInt) Pow(n uint32) ModInt {\n\tt := NewModInt(1)\n\ts := a\n\tfor n > 0 {\n\t\tif (n & 1) == 1 {\n\t\t\tt.MulAssign(s)\n\t\t}\n\t\ts.MulAssign(s)\n\t\tn >>= 1\n\t}\n\treturn t\n}\n\nfunc (a ModInt) DivNum(other uint32) ModInt {\n\treturn a.Mul(NewModInt(other).Pow(MOD - 2))\n}\n\nfunc (a ModInt) Div(b ModInt) ModInt {\n\treturn a.Mul(b.Pow(MOD - 2))\n}\n\ntype Precalc struct {\n\tn    int\n\tinv  []ModInt\n\tfact []ModInt\n\tifact []ModInt\n}\n\nfunc NewPrecalc(n int) Precalc {\n\tinv := make([]ModInt, n+1)\n\tfact := make([]ModInt, n+1)\n\tifact := make([]ModInt, n+1)\n\tfor i := 0; i <= n; i++ {\n\t\tinv[i] = NewModInt(1)\n\t\tfact[i] = NewModInt(1)\n\t\tifact[i] = NewModInt(1)\n\t}\n\tfor i := 1; i <= n; i++ {\n\t\tif i > 2 {\n\t\t\tinv[i] = inv[MOD%uint32(i)].Neg().Mul(NewModInt(MOD / uint32(i)))\n\t\t}\n\t\tfact[i] = NewModInt(uint32(i)).Mul(fact[i-1])\n\t\tifact[i] = inv[i].Mul(ifact[i-1])\n\t}\n\treturn Precalc{\n\t\tn:    n,\n\t\tinv:  inv,\n\t\tfact: fact,\n\t\tifact: ifact,\n\t}\n}\n\nfunc (p Precalc) Fact(n int) ModInt {\n\treturn p.fact[n]\n}\n\nfunc (p Precalc) Inv(x int) ModInt {\n\treturn p.inv[x]\n}\n\nfunc (p Precalc) IFact(x int) ModInt {\n\treturn p.ifact[x]\n}\n\nfunc (p Precalc) Comb(n, k int) ModInt {\n\tif !(k <= n) {\n\t\treturn ModInt{0}\n\t}\n\treturn p.fact[n].Mul(p.ifact[k]).Mul(p.ifact[n-k])\n}\n\ntype SquareMatrix struct {\n\tn int\n\ta []ModInt\n}\n\nfunc ZeroMatrix(n int) SquareMatrix {\n\tz := NewModInt(0)\n\ta := make([]ModInt, n*n)\n\tfor i := range a {\n\t\ta[i] = z\n\t}\n\treturn SquareMatrix{n: n, a: a}\n}\n\nfunc IdentityMatrix(n int) SquareMatrix {\n\tm := ZeroMatrix(n)\n\tfor i := 0; i < n; i++ {\n\t\tm.a[i*n+i] = NewModInt(1)\n\t}\n\treturn m\n}\n\nfunc (m *SquareMatrix) SetAt(i, j int, v ModInt) {\n\tm.a[i*m.n+j] = v\n}\n\nfunc (m *SquareMatrix) GetAt(i, j int) ModInt {\n\treturn m.a[i*m.n+j]\n}\n\nfunc (l SquareMatrix) Add(r SquareMatrix) SquareMatrix {\n\tn := l.n\n\tc := ZeroMatrix(n)\n\tfor i := 0; i < n*n; i++ {\n\t\tc.a[i] = l.a[i].Add(r.a[i])\n\t}\n\treturn c\n}\n\nfunc (l SquareMatrix) Mul(r SquareMatrix) SquareMatrix {\n\tn := l.n\n\tc := ZeroMatrix(n)\n\tfor i := 0; i < n; i++ {\n\t\tfor k := 0; k < n; k++ {\n\t\t\ta := l.a[i*n+k]\n\t\t\tfor j := 0; j < n; j++ {\n\t\t\t\tc.a[i*n+j] = c.a[i*n+j].Add(a.Mul(r.a[k*n+j]))\n\t\t\t}\n\t\t}\n\t}\n\treturn c\n}\n\nfunc MatMul(l, r SquareMatrix) SquareMatrix {\n\treturn l.Mul(r)\n}\n\nvar rdr = bufio.NewReader(os.Stdin)\n\nfunc run() {\n\tvar n uint64\n\tvar m int\n\tfmt.Fscan(rdr, &n, &m)\n\n\tt := IdentityMatrix(m)\n\ts := ZeroMatrix(m)\n\tfor i := 1; i < m; i++ {\n\t\ts.SetAt(i-1, i, NewModInt(1))\n\t}\n\ts.SetAt(m-1, 0, NewModInt(1))\n\ts.SetAt(m-1, m-1, NewModInt(1))\n\n\tfor n > 0 {\n\t\tif (n & 1) == 1 {\n\t\t\tt = t.Mul(s)\n\t\t}\n\t\ts = s.Mul(s)\n\t\tn >>= 1\n\t}\n\tans := t.GetAt(m-1, m-1)\n\tfmt.Println(ans.v)\n}\n\nfunc main() {\n\trun()\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst MOD uint32 = 1000000007\n\ntype ModInt struct {\n\tv uint32\n}\n\nfunc NewModInt(x uint32) ModInt {\n\treturn ModInt{x % MOD}\n}\n\nfunc (a ModInt) Add(b ModInt) ModInt {\n\td := a.v + b.v\n\tif d >= MOD {\n\t\td -= MOD\n\t}\n\treturn ModInt{d}\n}\n\nfunc (a *ModInt) AddAssign(b ModInt) {\n\t*a = a.Add(b)\n}\n\nfunc (a ModInt) Sub(b ModInt) ModInt {\n\td := a.v + MOD - b.v\n\tif d >= MOD {\n\t\td -= MOD\n\t}\n\treturn ModInt{d}\n}\n\nfunc (a *ModInt) SubAssign(b ModInt) {\n\t*a = a.Sub(b)\n}\n\nfunc (a ModInt) Mul(b ModInt) ModInt {\n\treturn ModInt{uint32((uint64(a.v) * uint64(b.v)) % uint64(MOD))}\n}\n\nfunc (a *ModInt) MulAssign(b ModInt) {\n\t*a = a.Mul(b)\n}\n\nfunc (a ModInt) Neg() ModInt {\n\tif a.v == 0 {\n\t\treturn ModInt{0}\n\t}\n\treturn ModInt{MOD - a.v}\n}\n\nfunc (a ModInt) Pow(n uint32) ModInt {\n\tt := NewModInt(1)\n\ts := a\n\tfor n > 0 {\n\t\tif (n & 1) == 1 {\n\t\t\tt.MulAssign(s)\n\t\t}\n\t\ts.MulAssign(s)\n\t\tn >>= 1\n\t}\n\treturn t\n}\n\nfunc (a ModInt) DivNum(other uint32) ModInt {\n\treturn a.Mul(NewModInt(other).Pow(MOD - 2))\n}\n\nfunc (a ModInt) Div(b ModInt) ModInt {\n\treturn a.Mul(b.Pow(MOD - 2))\n}\n\ntype Precalc struct {\n\tn    int\n\tinv  []ModInt\n\tfact []ModInt\n\tifact []ModInt\n}\n\nfunc NewPrecalc(n int) Precalc {\n\tinv := make([]ModInt, n+1)\n\tfact := make([]ModInt, n+1)\n\tifact := make([]ModInt, n+1)\n\tfor i := 0; i <= n; i++ {\n\t\tinv[i] = NewModInt(1)\n\t\tfact[i] = NewModInt(1)\n\t\tifact[i] = NewModInt(1)\n\t}\n\tfor i := 1; i <= n; i++ {\n\t\tif i > 2 {\n\t\t\tinv[i] = inv[MOD%uint32(i)].Neg().Mul(NewModInt(MOD / uint32(i)))\n\t\t}\n\t\tfact[i] = NewModInt(uint32(i)).Mul(fact[i-1])\n\t\tifact[i] = inv[i].Mul(ifact[i-1])\n\t}\n\treturn Precalc{n: n, inv: inv, fact: fact, ifact: ifact}\n}\n\nfunc (p Precalc) Fact(n int) ModInt {\n\treturn p.fact[n]\n}\n\nfunc (p Precalc) Inv(x int) ModInt {\n\treturn p.inv[x]\n}\n\nfunc (p Precalc) IFact(x int) ModInt {\n\treturn p.ifact[x]\n}\n\nfunc (p Precalc) Comb(n, k int) ModInt {\n\tif !(k <= n) {\n\t\treturn ModInt{0}\n\t}\n\treturn p.fact[n].Mul(p.ifact[k]).Mul(p.ifact[n-k])\n}\n\ntype SquareMatrix struct {\n\tn int\n\ta []ModInt\n}\n\nfunc ZeroMatrix(n int) SquareMatrix {\n\tz := ModInt{0}\n\ta := make([]ModInt, n*n)\n\tfor i := range a {\n\t\ta[i] = z\n\t}\n\treturn SquareMatrix{n: n, a: a}\n}\n\nfunc IdentityMatrix(n int) SquareMatrix {\n\tm := ZeroMatrix(n)\n\tfor i := 0; i < n; i++ {\n\t\tm.a[i*n+i] = ModInt{1}\n\t}\n\treturn m\n}\n\nfunc (m *SquareMatrix) SetAt(i, j int, v ModInt) {\n\tm.a[i*m.n+j] = v\n}\n\nfunc (m *SquareMatrix) GetAt(i, j int) ModInt {\n\treturn m.a[i*m.n+j]\n}\n\nfunc (l SquareMatrix) AddMatrix(r SquareMatrix) SquareMatrix {\n\tn := l.n\n\tc := ZeroMatrix(n)\n\tfor i := 0; i < n*n; i++ {\n\t\tc.a[i] = l.a[i].Add(r.a[i])\n\t}\n\treturn c\n}\n\nfunc (l SquareMatrix) MulMatrix(r SquareMatrix) SquareMatrix {\n\tn := l.n\n\tc := ZeroMatrix(n)\n\tfor i := 0; i < n; i++ {\n\t\tfor k := 0; k < n; k++ {\n\t\t\ta := l.a[i*n+k]\n\t\t\trowStart := i * n\n\t\t\tcolStart := k * n\n\t\t\tfor j := 0; j < n; j++ {\n\t\t\t\tc.a[rowStart+j] = c.a[rowStart+j].Add(a.Mul(r.a[colStart+j]))\n\t\t\t}\n\t\t}\n\t}\n\treturn c\n}\n\nfunc MatMul(l, r SquareMatrix) SquareMatrix {\n\treturn l.MulMatrix(r)\n}\n\nvar reader = bufio.NewReader(os.Stdin)\n\nfunc run() {\n\tvar n uint64\n\tvar m int\n\tfmt.Fscan(reader, &n, &m)\n\n\tt := IdentityMatrix(m)\n\ts := ZeroMatrix(m)\n\tfor i := 1; i < m; i++ {\n\t\ts.SetAt(i-1, i, ModInt{1})\n\t}\n\ts.SetAt(m-1, 0, ModInt{1})\n\ts.SetAt(m-1, m-1, ModInt{1})\n\n\tfor n > 0 {\n\t\tif (n & 1) == 1 {\n\t\t\tt = t.MulMatrix(s)\n\t\t}\n\t\ts = s.MulMatrix(s)\n\t\tn >>= 1\n\t}\n\tans := t.GetAt(m-1, m-1)\n\tfmt.Println(ans.v)\n}\n\nfunc main() {\n\trun()\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst MOD uint32 = 1000000007\n\ntype ModInt struct {\n\tv uint32\n}\n\nfunc NewModInt(x uint32) ModInt {\n\treturn ModInt{x % MOD}\n}\n\nfunc (a ModInt) Add(b ModInt) ModInt {\n\td := a.v + b.v\n\tif d >= MOD {\n\t\td -= MOD\n\t}\n\treturn ModInt{d}\n}\n\nfunc (a *ModInt) AddAssign(b ModInt) {\n\t*a = a.Add(b)\n}\n\nfunc (a ModInt) Sub(b ModInt) ModInt {\n\td := a.v + MOD - b.v\n\tif d >= MOD {\n\t\td -= MOD\n\t}\n\treturn ModInt{d}\n}\n\nfunc (a *ModInt) SubAssign(b ModInt) {\n\t*a = a.Sub(b)\n}\n\nfunc (a ModInt) Mul(b ModInt) ModInt {\n\treturn ModInt{uint32((uint64(a.v) * uint64(b.v)) % uint64(MOD))}\n}\n\nfunc (a *ModInt) MulAssign(b ModInt) {\n\t*a = a.Mul(b)\n}\n\nfunc (a ModInt) Neg() ModInt {\n\tif a.v == 0 {\n\t\treturn ModInt{0}\n\t}\n\treturn ModInt{MOD - a.v}\n}\n\nfunc (a ModInt) Pow(n uint32) ModInt {\n\tt := NewModInt(1)\n\ts := a\n\tfor n > 0 {\n\t\tif (n & 1) == 1 {\n\t\t\tt.MulAssign(s)\n\t\t}\n\t\ts.MulAssign(s)\n\t\tn >>= 1\n\t}\n\treturn t\n}\n\nfunc (a ModInt) DivNum(other uint32) ModInt {\n\treturn a.Mul(NewModInt(other).Pow(MOD - 2))\n}\n\nfunc (a ModInt) Div(b ModInt) ModInt {\n\treturn a.Mul(b.Pow(MOD - 2))\n}\n\ntype Precalc struct {\n\tn    int\n\tinv  []ModInt\n\tfact []ModInt\n\tifact []ModInt\n}\n\nfunc NewPrecalc(n int) Precalc {\n\tinv := make([]ModInt, n+1)\n\tfact := make([]ModInt, n+1)\n\tifact := make([]ModInt, n+1)\n\tfor i := 0; i <= n; i++ {\n\t\tinv[i] = NewModInt(1)\n\t\tfact[i] = NewModInt(1)\n\t\tifact[i] = NewModInt(1)\n\t}\n\tfor i := 1; i <= n; i++ {\n\t\tif i > 2 {\n\t\t\tinv[i] = inv[MOD%uint32(i)].Neg().Mul(NewModInt(MOD / uint32(i)))\n\t\t}\n\t\tfact[i] = NewModInt(uint32(i)).Mul(fact[i-1])\n\t\tifact[i] = inv[i].Mul(ifact[i-1])\n\t}\n\treturn Precalc{\n\t\tn:    n,\n\t\tinv:  inv,\n\t\tfact: fact,\n\t\tifact: ifact,\n\t}\n}\n\nfunc (p Precalc) Fact(n int) ModInt {\n\treturn p.fact[n]\n}\n\nfunc (p Precalc) Inv(x int) ModInt {\n\treturn p.inv[x]\n}\n\nfunc (p Precalc) IFact(x int) ModInt {\n\treturn p.ifact[x]\n}\n\nfunc (p Precalc) Comb(n, k int) ModInt {\n\tif !(k <= n) {\n\t\treturn ModInt{0}\n\t}\n\treturn p.fact[n].Mul(p.ifact[k]).Mul(p.ifact[n-k])\n}\n\ntype SquareMatrix struct {\n\tn int\n\ta []ModInt\n}\n\nfunc ZeroMatrix(n int) SquareMatrix {\n\tz := NewModInt(0)\n\ta := make([]ModInt, n*n)\n\tfor i := range a {\n\t\ta[i] = z\n\t}\n\treturn SquareMatrix{\n\t\tn: n,\n\t\ta: a,\n\t}\n}\n\nfunc IdentityMatrix(n int) SquareMatrix {\n\tm := ZeroMatrix(n)\n\tfor i := 0; i < n; i++ {\n\t\tm.a[i*n+i] = NewModInt(1)\n\t}\n\treturn m\n}\n\nfunc (m *SquareMatrix) SetAt(i, j int, v ModInt) {\n\tm.a[i*m.n+j] = v\n}\n\nfunc (m *SquareMatrix) GetAt(i, j int) ModInt {\n\treturn m.a[i*m.n+j]\n}\n\nfunc (l SquareMatrix) Add(r SquareMatrix) SquareMatrix {\n\tn := l.n\n\tc := ZeroMatrix(n)\n\tfor i := 0; i < n*n; i++ {\n\t\tc.a[i] = l.a[i].Add(r.a[i])\n\t}\n\treturn c\n}\n\nfunc (l SquareMatrix) Mul(r SquareMatrix) SquareMatrix {\n\tn := l.n\n\tc := ZeroMatrix(n)\n\tfor i := 0; i < n; i++ {\n\t\tfor k := 0; k < n; k++ {\n\t\t\ta := l.a[i*n+k]\n\t\t\trowStart := i * n\n\t\t\tcolStart := k * n\n\t\t\tfor j := 0; j < n; j++ {\n\t\t\t\tx := &c.a[rowStart+j]\n\t\t\t\ty := r.a[colStart+j]\n\t\t\t\t*x = x.Add(a.Mul(y))\n\t\t\t}\n\t\t}\n\t}\n\treturn c\n}\n\nfunc matmul(l, r SquareMatrix) SquareMatrix {\n\treturn l.Mul(r)\n}\n\nvar reader = bufio.NewReader(os.Stdin)\n\nfunc run() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n uint64\n\tvar m int\n\tfmt.Fscan(in, &n, &m)\n\n\tt := IdentityMatrix(m)\n\ts := ZeroMatrix(m)\n\tfor i := 1; i < m; i++ {\n\t\ts.SetAt(i-1, i, NewModInt(1))\n\t}\n\ts.SetAt(m-1, 0, NewModInt(1))\n\ts.SetAt(m-1, m-1, NewModInt(1))\n\n\tfor n > 0 {\n\t\tif (n & 1) == 1 {\n\t\t\tt = t.Mul(s)\n\t\t}\n\t\ts = s.Mul(s)\n\t\tn >>= 1\n\t}\n\tans := t.GetAt(m-1, m-1)\n\tfmt.Println(ans.v)\n}\n\nfunc main() {\n\trun()\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst MOD uint32 = 1000000007\n\ntype ModInt struct {\n\tv uint32\n}\n\nfunc NewModInt(x uint32) ModInt {\n\treturn ModInt{x % MOD}\n}\n\nfunc (a ModInt) Add(b ModInt) ModInt {\n\td := a.v + b.v\n\tif d >= MOD {\n\t\td -= MOD\n\t}\n\treturn ModInt{d}\n}\n\nfunc (a *ModInt) AddAssign(b ModInt) {\n\t*a = a.Add(b)\n}\n\nfunc (a ModInt) Sub(b ModInt) ModInt {\n\td := a.v + MOD - b.v\n\tif d >= MOD {\n\t\td -= MOD\n\t}\n\treturn ModInt{d}\n}\n\nfunc (a *ModInt) SubAssign(b ModInt) {\n\t*a = a.Sub(b)\n}\n\nfunc (a ModInt) Mul(b ModInt) ModInt {\n\treturn ModInt{uint32((uint64(a.v) * uint64(b.v)) % uint64(MOD))}\n}\n\nfunc (a *ModInt) MulAssign(b ModInt) {\n\t*a = a.Mul(b)\n}\n\nfunc (a ModInt) Neg() ModInt {\n\tif a.v == 0 {\n\t\treturn ModInt{0}\n\t}\n\treturn ModInt{MOD - a.v}\n}\n\nfunc (a ModInt) Pow(n uint32) ModInt {\n\tt := NewModInt(1)\n\ts := a\n\tfor n > 0 {\n\t\tif (n & 1) == 1 {\n\t\t\tt.MulAssign(s)\n\t\t}\n\t\ts.MulAssign(s)\n\t\tn >>= 1\n\t}\n\treturn t\n}\n\nfunc (a ModInt) DivNum(other uint32) ModInt {\n\treturn a.Mul(NewModInt(other).Pow(MOD - 2))\n}\n\nfunc (a ModInt) Div(b ModInt) ModInt {\n\treturn a.Mul(b.Pow(MOD - 2))\n}\n\ntype Precalc struct {\n\tn    int\n\tinv  []ModInt\n\tfact []ModInt\n\tifact []ModInt\n}\n\nfunc NewPrecalc(n int) Precalc {\n\tinv := make([]ModInt, n+1)\n\tfact := make([]ModInt, n+1)\n\tifact := make([]ModInt, n+1)\n\tfor i := 0; i <= n; i++ {\n\t\tinv[i] = NewModInt(1)\n\t\tfact[i] = NewModInt(1)\n\t\tifact[i] = NewModInt(1)\n\t}\n\tfor i := 1; i <= n; i++ {\n\t\tif i > 2 {\n\t\t\tinv[i] = inv[MOD%uint32(i)].Neg().Mul(NewModInt(MOD / uint32(i)))\n\t\t}\n\t\tfact[i] = NewModInt(uint32(i)).Mul(fact[i-1])\n\t\tifact[i] = inv[i].Mul(ifact[i-1])\n\t}\n\treturn Precalc{\n\t\tn:    n,\n\t\tinv:  inv,\n\t\tfact: fact,\n\t\tifact: ifact,\n\t}\n}\n\nfunc (p Precalc) Fact(n int) ModInt {\n\treturn p.fact[n]\n}\n\nfunc (p Precalc) Inv(x int) ModInt {\n\treturn p.inv[x]\n}\n\nfunc (p Precalc) IFact(x int) ModInt {\n\treturn p.ifact[x]\n}\n\nfunc (p Precalc) Comb(n, k int) ModInt {\n\tif !(k <= n) {\n\t\treturn ModInt{0}\n\t}\n\treturn p.fact[n].Mul(p.ifact[k]).Mul(p.ifact[n-k])\n}\n\ntype SquareMatrix struct {\n\tn int\n\ta []ModInt\n}\n\nfunc ZeroMatrix(n int) SquareMatrix {\n\tz := NewModInt(0)\n\ta := make([]ModInt, n*n)\n\tfor i := range a {\n\t\ta[i] = z\n\t}\n\treturn SquareMatrix{\n\t\tn: n,\n\t\ta: a,\n\t}\n}\n\nfunc IdentityMatrix(n int) SquareMatrix {\n\tm := ZeroMatrix(n)\n\tfor i := 0; i < n; i++ {\n\t\tm.a[i*n+i] = NewModInt(1)\n\t}\n\treturn m\n}\n\nfunc (m *SquareMatrix) SetAt(i, j int, v ModInt) {\n\tm.a[i*m.n+j] = v\n}\n\nfunc (m *SquareMatrix) GetAt(i, j int) ModInt {\n\treturn m.a[i*m.n+j]\n}\n\nfunc (l SquareMatrix) AddMatrix(r SquareMatrix) SquareMatrix {\n\tn := l.n\n\tc := ZeroMatrix(n)\n\tfor i := 0; i < n*n; i++ {\n\t\tc.a[i] = l.a[i].Add(r.a[i])\n\t}\n\treturn c\n}\n\nfunc (l SquareMatrix) MulMatrix(r SquareMatrix) SquareMatrix {\n\tn := l.n\n\tc := ZeroMatrix(n)\n\tfor i := 0; i < n; i++ {\n\t\tfor k := 0; k < n; k++ {\n\t\t\ta := l.a[i*n+k]\n\t\t\tfor j := 0; j < n; j++ {\n\t\t\t\tidxC := i*n + j\n\t\t\t\tidxR := k*n + j\n\t\t\t\tc.a[idxC] = c.a[idxC].Add(a.Mul(r.a[idxR]))\n\t\t\t}\n\t\t}\n\t}\n\treturn c\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n uint64\n\tvar m int\n\tfmt.Fscan(in, &n, &m)\n\n\tt := IdentityMatrix(m)\n\ts := ZeroMatrix(m)\n\tfor i := 1; i < m; i++ {\n\t\ts.SetAt(i-1, i, NewModInt(1))\n\t}\n\ts.SetAt(m-1, 0, NewModInt(1))\n\ts.SetAt(m-1, m-1, NewModInt(1))\n\n\tfor n > 0 {\n\t\tif (n & 1) == 1 {\n\t\t\tt = t.MulMatrix(s)\n\t\t}\n\t\ts = s.MulMatrix(s)\n\t\tn >>= 1\n\t}\n\tans := t.GetAt(m-1, m-1)\n\tfmt.Println(ans.v)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst MOD uint32 = 1000000007\n\ntype ModInt struct {\n\tv uint32\n}\n\nfunc NewModInt(x uint32) ModInt {\n\treturn ModInt{x % MOD}\n}\n\nfunc (a ModInt) Add(b ModInt) ModInt {\n\td := a.v + b.v\n\tif d >= MOD {\n\t\td -= MOD\n\t}\n\treturn ModInt{d}\n}\n\nfunc (a *ModInt) AddAssign(b ModInt) {\n\t*a = a.Add(b)\n}\n\nfunc (a ModInt) Sub(b ModInt) ModInt {\n\td := a.v + MOD - b.v\n\tif d >= MOD {\n\t\td -= MOD\n\t}\n\treturn ModInt{d}\n}\n\nfunc (a *ModInt) SubAssign(b ModInt) {\n\t*a = a.Sub(b)\n}\n\nfunc (a ModInt) Mul(b ModInt) ModInt {\n\treturn ModInt{uint32((uint64(a.v) * uint64(b.v)) % uint64(MOD))}\n}\n\nfunc (a *ModInt) MulAssign(b ModInt) {\n\t*a = a.Mul(b)\n}\n\nfunc (a ModInt) Neg() ModInt {\n\tif a.v == 0 {\n\t\treturn ModInt{0}\n\t}\n\treturn ModInt{MOD - a.v}\n}\n\nfunc (a ModInt) Pow(n uint32) ModInt {\n\tt := NewModInt(1)\n\ts := a\n\tfor n > 0 {\n\t\tif (n & 1) == 1 {\n\t\t\tt.MulAssign(s)\n\t\t}\n\t\ts.MulAssign(s)\n\t\tn >>= 1\n\t}\n\treturn t\n}\n\nfunc (a ModInt) DivNum(other uint32) ModInt {\n\treturn a.Mul(NewModInt(other).Pow(MOD - 2))\n}\n\nfunc (a ModInt) Div(b ModInt) ModInt {\n\treturn a.Mul(b.Pow(MOD - 2))\n}\n\ntype SquareMatrix struct {\n\tn int\n\ta []ModInt\n}\n\nfunc ZeroMatrix(n int) SquareMatrix {\n\tz := ModInt{0}\n\ta := make([]ModInt, n*n)\n\tfor i := range a {\n\t\ta[i] = z\n\t}\n\treturn SquareMatrix{n: n, a: a}\n}\n\nfunc IdentityMatrix(n int) SquareMatrix {\n\tm := ZeroMatrix(n)\n\tfor i := 0; i < n; i++ {\n\t\tm.a[i*n+i] = ModInt{1}\n\t}\n\treturn m\n}\n\nfunc (m *SquareMatrix) SetAt(i, j int, v ModInt) {\n\tm.a[i*m.n+j] = v\n}\n\nfunc (m *SquareMatrix) GetAt(i, j int) ModInt {\n\treturn m.a[i*m.n+j]\n}\n\nfunc (l SquareMatrix) AddMatrix(r SquareMatrix) SquareMatrix {\n\tn := l.n\n\tc := ZeroMatrix(n)\n\tfor i := 0; i < n*n; i++ {\n\t\tc.a[i] = l.a[i].Add(r.a[i])\n\t}\n\treturn c\n}\n\nfunc (l SquareMatrix) MulMatrix(r SquareMatrix) SquareMatrix {\n\tn := l.n\n\tc := ZeroMatrix(n)\n\tfor i := 0; i < n; i++ {\n\t\tfor k := 0; k < n; k++ {\n\t\t\ta := l.a[i*n+k]\n\t\t\trowStart := i * n\n\t\t\tcolStart := k * n\n\t\t\tfor j := 0; j < n; j++ {\n\t\t\t\tx := &c.a[rowStart+j]\n\t\t\t\ty := r.a[colStart+j]\n\t\t\t\t*x = x.Add(a.Mul(y))\n\t\t\t}\n\t\t}\n\t}\n\treturn c\n}\n\nvar rdr = bufio.NewReader(os.Stdin)\n\nfunc run() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n uint64\n\tvar m int\n\tfmt.Fscan(in, &n, &m)\n\n\tt := IdentityMatrix(m)\n\ts := ZeroMatrix(m)\n\tfor i := 1; i < m; i++ {\n\t\ts.SetAt(i-1, i, ModInt{1})\n\t}\n\ts.SetAt(m-1, 0, ModInt{1})\n\ts.SetAt(m-1, m-1, ModInt{1})\n\n\tfor n > 0 {\n\t\tif (n & 1) == 1 {\n\t\t\tt = t.MulMatrix(s)\n\t\t}\n\t\ts = s.MulMatrix(s)\n\t\tn >>= 1\n\t}\n\n\tans := t.GetAt(m-1, m-1)\n\tfmt.Println(ans.v)\n}\n\nfunc main() {\n\trun()\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_result": {
+                        "error": {
+                            "code": "content_filter_error",
+                            "message": "The contents are not filtered"
+                        }
+                    },
+                    "content_filter_results": {}
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 9900,
+            "prompt_tokens": 2549,
+            "total_tokens": 12449,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 2,
+                "engine_ttft_ms": 312,
+                "engine_ttlt_ms": 22860,
+                "pre_inference_ms": 214,
+                "service_tbt_ms": 2,
+                "service_ttft_ms": 633,
+                "service_ttlt_ms": 23178,
+                "total_duration_ms": 22973,
+                "user_visible_ttft_ms": 420
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Here is code in Rust programming lanaguge. Translate the following code from Rust to Go programming lanaguge. Do not output any extra description or tokens other than the translated code. \n\n// ---------- begin Matrix ----------\n\n#[allow(dead_code)]\nmod matrix {\n    use std::ops::Add;\n    use std::ops::Mul;\n    pub trait SemiRing: Add<Output = Self> + Mul<Output = Self> + Copy {\n        fn zero() -> Self;\n        fn one() -> Self;\n    }\n    #[derive(Clone)]\n    pub struct SquareMatrix<T: SemiRing> {\n        n: usize,\n        a: Vec<T>,\n    }\n    impl<T: SemiRing> SquareMatrix<T> {\n        pub fn zero(n: usize) -> Self {\n            let z = T::zero();\n            SquareMatrix {\n                n: n,\n                a: vec![z; n * n],\n            }\n        }\n        pub fn identity(n: usize) -> Self {\n            let mut m = Self::zero(n);\n            for i in 0..n {\n                m.a[i * n + i] = T::one();\n            }\n            m\n        }\n        pub fn set_at(&mut self, i: usize, j: usize, v: T) {\n            debug_assert!(i < self.n && j < self.n);\n            self.a[i * self.n + j] = v;\n        }\n        pub fn get_at(&self, i: usize, j: usize) -> T {\n            debug_assert!(i < self.n && j < self.n);\n            self.a[i * self.n + j]\n        }\n        pub fn matmul(l: Self, r: Self) -> Self {\n            l * r\n        }\n    }\n    impl<T: SemiRing> Add for SquareMatrix<T> {\n        type Output = Self;\n        fn add(self, rhs: Self) -> Self {\n            debug_assert!(self.n == rhs.n);\n            let n = self.n;\n            let mut c = Self::zero(n);\n            for i in 0..(n * n) {\n                c.a[i] = self.a[i] + rhs.a[i];\n            }\n            c\n        }\n    }\n    impl<T: SemiRing> Mul for SquareMatrix<T> {\n        type Output = Self;\n        fn mul(self, rhs: Self) -> Self {\n            debug_assert!(self.n == rhs.n);\n            let n = self.n;\n            let mut c = Self::zero(n);\n            for i in 0..n {\n                for k in 0..n {\n                    let a = self.a[i * n + k];\n                    for (x, y) in c.a[(i * n)..((i + 1) * n)].iter_mut().zip(rhs.a[(k * n)..((k + 1) * n)].iter()) {\n                        *x = *x + a * *y;\n                    }\n                }\n            }\n            c\n        }\n    }\n}\n\n// ---------- end Matrix ----------\n// ---------- begin ModInt ----------\n\n//https://github.com/kenkoooo/competitive-programming-rs/blob/master/src/math/mod_int.rs\n//\u3092\u53c2\u8003\u306b\u3057\u3066\u3044\u307e\u3059\n#[allow(dead_code)]\nmod modint {\n    pub const MOD: u32 = 1000000000 + 7;\n    use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};\n    #[derive(Clone, Copy)]\n    pub struct ModInt<T: Copy + Clone>(pub T);\n    pub type Num = u32;\n    impl Add<ModInt<Num>> for ModInt<Num> {\n        type Output = ModInt<Num>;\n        fn add(self, other: ModInt<Num>) -> ModInt<Num> {\n            let mut d = self.0 + other.0;\n            if d >= MOD {\n                d -= MOD;\n            }\n            ModInt(d)\n        }\n    }\n    impl AddAssign<ModInt<Num>> for ModInt<Num> {\n        fn add_assign(&mut self, other: ModInt<Num>) {\n            *self = *self + other;\n        }\n    }\n    impl Sub<ModInt<Num>> for ModInt<Num> {\n        type Output = ModInt<Num>;\n        fn sub(self, other: ModInt<Num>) -> ModInt<Num> {\n            let mut d = self.0 + MOD - other.0;\n            if d >= MOD {\n                d -= MOD;\n            }\n            ModInt(d)\n        }\n    }\n    impl SubAssign<ModInt<Num>> for ModInt<Num> {\n        fn sub_assign(&mut self, other: ModInt<Num>) {\n            *self = *self - other;\n        }\n    }\n    impl Mul<ModInt<Num>> for ModInt<Num> {\n        type Output = ModInt<Num>;\n        fn mul(self, other: ModInt<Num>) -> ModInt<Num> {\n            ModInt(((self.0 as u64) * (other.0 as u64) % (MOD as u64)) as u32)\n        }\n    }\n    impl MulAssign<ModInt<Num>> for ModInt<Num> {\n        fn mul_assign(&mut self, other: ModInt<Num>) {\n            *self = *self * other;\n        }\n    }\n    impl Div<Num> for ModInt<Num> {\n        type Output = ModInt<Num>;\n        fn div(self, other: Num) -> ModInt<Num> {\n            self * ModInt(other).pow(MOD - 2)\n        }\n    }\n    impl Div<ModInt<Num>> for ModInt<Num> {\n        type Output = ModInt<Num>;\n        fn div(self, other: ModInt<Num>) -> ModInt<Num> {\n            self * other.pow(MOD - 2)\n        }\n    }\n    impl DivAssign<ModInt<Num>> for ModInt<Num> {\n        fn div_assign(&mut self, other: ModInt<Num>) {\n            *self = *self / other;\n        }\n    }\n    impl Neg for ModInt<Num> {\n        type Output = ModInt<Num>;\n        fn neg(self) -> ModInt<Num> {\n            ModInt(if self.0 == 0 { 0 } else { MOD - self.0 })\n        }\n    }\n    impl ModInt<Num> {\n        pub fn new(v: u32) -> ModInt<Num> {\n            ModInt(v % MOD)\n        }\n        pub fn pow(self, mut n: u32) -> ModInt<Num> {\n            let mut t = ModInt::new(1);\n            let mut s = self;\n            while n > 0 {\n                if (n & 1) == 1 {\n                    t *= s;\n                }\n                s *= s;\n                n >>= 1;\n            }\n            t\n        }\n    }\n    pub struct Precalc {\n        n: usize,\n        inv: Vec<ModInt<Num>>,\n        fact: Vec<ModInt<Num>>,\n        ifact: Vec<ModInt<Num>>,\n    }\n    impl Precalc {\n        pub fn new(n: usize) -> Precalc {\n            let mut inv = vec![ModInt(1); n + 1];\n            let mut fact = vec![ModInt(1); n + 1];\n            let mut ifact = vec![ModInt(1); n + 1];\n            for i in 1..(n + 1) {\n                if i > 2 {\n                    inv[i] = -inv[(MOD as usize) % i] * ModInt(MOD / (i as u32));\n                }\n                fact[i] = ModInt(i as u32) * fact[i - 1];\n                ifact[i] = inv[i] * ifact[i - 1];\n            }\n            Precalc {\n                n: n,\n                inv: inv,\n                fact: fact,\n                ifact: ifact,\n            }\n        }\n        pub fn fact(self, n: usize) -> ModInt<Num> {\n            self.fact[n]\n        }\n        pub fn inv(self, x: usize) -> ModInt<Num> {\n            self.inv[x]\n        }\n        pub fn ifact(self, x: usize) -> ModInt<Num> {\n            self.ifact[x]\n        }\n        pub fn comb(self, n: usize, k: usize) -> ModInt<Num> {\n            if !(k <= n) {\n                return ModInt(0);\n            }\n            self.fact[n] * self.ifact[k] * self.ifact[n - k]\n        }\n    }\n    use std;\n    impl std::fmt::Display for ModInt<Num> {\n        fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {\n            write!(f, \"{}\", self.0)\n        }\n    }\n}\n\n// ---------- end ModInt ----------\n\n//https://qiita.com/tanakh/items/0ba42c7ca36cd29d0ac8 \u3088\u308a\nmacro_rules! input {\n    (source = $s:expr, $($r:tt)*) => {\n        let mut iter = $s.split_whitespace();\n        input_inner!{iter, $($r)*}\n    };\n    ($($r:tt)*) => {\n        let s = {\n            use std::io::Read;\n            let mut s = String::new();\n            std::io::stdin().read_to_string(&mut s).unwrap();\n            s\n        };\n        let mut iter = s.split_whitespace();\n        input_inner!{iter, $($r)*}\n    };\n}\n\nmacro_rules! input_inner {\n    ($iter:expr) => {};\n    ($iter:expr, ) => {};\n    ($iter:expr, $var:ident : $t:tt $($r:tt)*) => {\n        let $var = read_value!($iter, $t);\n        input_inner!{$iter $($r)*}\n    };\n}\n\nmacro_rules! read_value {\n    ($iter:expr, ( $($t:tt),* )) => {\n        ( $(read_value!($iter, $t)),* )\n    };\n    ($iter:expr, [ $t:tt ; $len:expr ]) => {\n        (0..$len).map(|_| read_value!($iter, $t)).collect::<Vec<_>>()\n    };\n    ($iter:expr, chars) => {\n        read_value!($iter, String).chars().collect::<Vec<char>>()\n    };\n    ($iter:expr, usize1) => {\n        read_value!($iter, usize) - 1\n    };\n    ($iter:expr, $t:ty) => {\n        $iter.next().unwrap().parse::<$t>().expect(\"Parse error\")\n    };\n}\n\n// \u3053\u3053\u307e\u3067\n\nuse matrix::SquareMatrix;\nuse modint::ModInt;\n\nimpl matrix::SemiRing for ModInt<modint::Num> {\n    fn one() -> Self {ModInt(1)}\n    fn zero() -> Self {ModInt(0)}\n}\n\nfn run() {\n    input! {\n        n: u64,\n        m: usize,\n    }\n    type M = SquareMatrix<ModInt<modint::Num>>;\n    let mut t = M::identity(m);\n    let mut s = M::zero(m);\n    for i in 1..m {\n        s.set_at(i - 1, i , ModInt(1));\n    }\n    s.set_at(m - 1, 0, ModInt(1));\n    s.set_at(m - 1, m - 1, ModInt(1));\n    let mut n = n;\n    while n > 0 {\n        if (n & 1) == 1 {\n            t = t * s.clone();\n        }\n        s = s.clone() * s;\n        n >>= 1;\n    }\n    let ans = t.get_at(m - 1, m - 1);\n    println!(\"{}\", ans);\n}\n\nfn main() {\n    run();\n}"
+    },
+    "source_data": {
+        "prob_desc_sample_outputs": [
+            "5",
+            "3"
+        ],
+        "file_name": "b828c8192a0edc4f10f10720d7cf939c5806cbbf9650f7fa5d17d5d0a0d36f77",
+        "prob_desc_input_from": "standard input",
+        "code_uid": "271738982d53e269a1ffd762e27227bf",
+        "prob_desc_description": "Reziba has many magic gems. Each magic gem can be split into $$$M$$$ normal gems. The amount of space each magic (and normal) gem takes is $$$1$$$ unit. A normal gem cannot be split.Reziba wants to choose a set of magic gems and split some of them, so the total space occupied by the resulting set of gems is $$$N$$$ units. If a magic gem is chosen and split, it takes $$$M$$$ units of space (since it is split into $$$M$$$ gems); if a magic gem is not split, it takes $$$1$$$ unit.How many different configurations of the resulting set of gems can Reziba have, such that the total amount of space taken is $$$N$$$ units? Print the answer modulo $$$1000000007$$$ ($$$10^9+7$$$). Two configurations are considered different if the number of magic gems Reziba takes to form them differs, or the indices of gems Reziba has to split differ.",
+        "difficulty": 2100,
+        "lang": "Rust",
+        "src_uid": "e7b9eec21d950f5d963ff50619c6f119",
+        "prob_desc_output_spec": "Print one integer, the total number of configurations of the resulting set of gems, given that the total amount of space taken is $$$N$$$ units. Print the answer modulo $$$1000000007$$$ ($$$10^9+7$$$).",
+        "prob_desc_time_limit": "3 seconds",
+        "prob_desc_input_spec": "The input contains a single line consisting of $$$2$$$ integers $$$N$$$ and $$$M$$$ ($$$1 \\le N \\le 10^{18}$$$, $$$2 \\le M \\le 100$$$).",
+        "prob_desc_sample_inputs": [
+            "4 2",
+            "3 2"
+        ],
+        "lang_cluster": "Rust",
+        "source_code": "// ---------- begin Matrix ----------\n\n#[allow(dead_code)]\nmod matrix {\n    use std::ops::Add;\n    use std::ops::Mul;\n    pub trait SemiRing: Add<Output = Self> + Mul<Output = Self> + Copy {\n        fn zero() -> Self;\n        fn one() -> Self;\n    }\n    #[derive(Clone)]\n    pub struct SquareMatrix<T: SemiRing> {\n        n: usize,\n        a: Vec<T>,\n    }\n    impl<T: SemiRing> SquareMatrix<T> {\n        pub fn zero(n: usize) -> Self {\n            let z = T::zero();\n            SquareMatrix {\n                n: n,\n                a: vec![z; n * n],\n            }\n        }\n        pub fn identity(n: usize) -> Self {\n            let mut m = Self::zero(n);\n            for i in 0..n {\n                m.a[i * n + i] = T::one();\n            }\n            m\n        }\n        pub fn set_at(&mut self, i: usize, j: usize, v: T) {\n            debug_assert!(i < self.n && j < self.n);\n            self.a[i * self.n + j] = v;\n        }\n        pub fn get_at(&self, i: usize, j: usize) -> T {\n            debug_assert!(i < self.n && j < self.n);\n            self.a[i * self.n + j]\n        }\n        pub fn matmul(l: Self, r: Self) -> Self {\n            l * r\n        }\n    }\n    impl<T: SemiRing> Add for SquareMatrix<T> {\n        type Output = Self;\n        fn add(self, rhs: Self) -> Self {\n            debug_assert!(self.n == rhs.n);\n            let n = self.n;\n            let mut c = Self::zero(n);\n            for i in 0..(n * n) {\n                c.a[i] = self.a[i] + rhs.a[i];\n            }\n            c\n        }\n    }\n    impl<T: SemiRing> Mul for SquareMatrix<T> {\n        type Output = Self;\n        fn mul(self, rhs: Self) -> Self {\n            debug_assert!(self.n == rhs.n);\n            let n = self.n;\n            let mut c = Self::zero(n);\n            for i in 0..n {\n                for k in 0..n {\n                    let a = self.a[i * n + k];\n                    for (x, y) in c.a[(i * n)..((i + 1) * n)].iter_mut().zip(rhs.a[(k * n)..((k + 1) * n)].iter()) {\n                        *x = *x + a * *y;\n                    }\n                }\n            }\n            c\n        }\n    }\n}\n\n// ---------- end Matrix ----------\n// ---------- begin ModInt ----------\n\n//https://github.com/kenkoooo/competitive-programming-rs/blob/master/src/math/mod_int.rs\n//\u3092\u53c2\u8003\u306b\u3057\u3066\u3044\u307e\u3059\n#[allow(dead_code)]\nmod modint {\n    pub const MOD: u32 = 1000000000 + 7;\n    use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};\n    #[derive(Clone, Copy)]\n    pub struct ModInt<T: Copy + Clone>(pub T);\n    pub type Num = u32;\n    impl Add<ModInt<Num>> for ModInt<Num> {\n        type Output = ModInt<Num>;\n        fn add(self, other: ModInt<Num>) -> ModInt<Num> {\n            let mut d = self.0 + other.0;\n            if d >= MOD {\n                d -= MOD;\n            }\n            ModInt(d)\n        }\n    }\n    impl AddAssign<ModInt<Num>> for ModInt<Num> {\n        fn add_assign(&mut self, other: ModInt<Num>) {\n            *self = *self + other;\n        }\n    }\n    impl Sub<ModInt<Num>> for ModInt<Num> {\n        type Output = ModInt<Num>;\n        fn sub(self, other: ModInt<Num>) -> ModInt<Num> {\n            let mut d = self.0 + MOD - other.0;\n            if d >= MOD {\n                d -= MOD;\n            }\n            ModInt(d)\n        }\n    }\n    impl SubAssign<ModInt<Num>> for ModInt<Num> {\n        fn sub_assign(&mut self, other: ModInt<Num>) {\n            *self = *self - other;\n        }\n    }\n    impl Mul<ModInt<Num>> for ModInt<Num> {\n        type Output = ModInt<Num>;\n        fn mul(self, other: ModInt<Num>) -> ModInt<Num> {\n            ModInt(((self.0 as u64) * (other.0 as u64) % (MOD as u64)) as u32)\n        }\n    }\n    impl MulAssign<ModInt<Num>> for ModInt<Num> {\n        fn mul_assign(&mut self, other: ModInt<Num>) {\n            *self = *self * other;\n        }\n    }\n    impl Div<Num> for ModInt<Num> {\n        type Output = ModInt<Num>;\n        fn div(self, other: Num) -> ModInt<Num> {\n            self * ModInt(other).pow(MOD - 2)\n        }\n    }\n    impl Div<ModInt<Num>> for ModInt<Num> {\n        type Output = ModInt<Num>;\n        fn div(self, other: ModInt<Num>) -> ModInt<Num> {\n            self * other.pow(MOD - 2)\n        }\n    }\n    impl DivAssign<ModInt<Num>> for ModInt<Num> {\n        fn div_assign(&mut self, other: ModInt<Num>) {\n            *self = *self / other;\n        }\n    }\n    impl Neg for ModInt<Num> {\n        type Output = ModInt<Num>;\n        fn neg(self) -> ModInt<Num> {\n            ModInt(if self.0 == 0 { 0 } else { MOD - self.0 })\n        }\n    }\n    impl ModInt<Num> {\n        pub fn new(v: u32) -> ModInt<Num> {\n            ModInt(v % MOD)\n        }\n        pub fn pow(self, mut n: u32) -> ModInt<Num> {\n            let mut t = ModInt::new(1);\n            let mut s = self;\n            while n > 0 {\n                if (n & 1) == 1 {\n                    t *= s;\n                }\n                s *= s;\n                n >>= 1;\n            }\n            t\n        }\n    }\n    pub struct Precalc {\n        n: usize,\n        inv: Vec<ModInt<Num>>,\n        fact: Vec<ModInt<Num>>,\n        ifact: Vec<ModInt<Num>>,\n    }\n    impl Precalc {\n        pub fn new(n: usize) -> Precalc {\n            let mut inv = vec![ModInt(1); n + 1];\n            let mut fact = vec![ModInt(1); n + 1];\n            let mut ifact = vec![ModInt(1); n + 1];\n            for i in 1..(n + 1) {\n                if i > 2 {\n                    inv[i] = -inv[(MOD as usize) % i] * ModInt(MOD / (i as u32));\n                }\n                fact[i] = ModInt(i as u32) * fact[i - 1];\n                ifact[i] = inv[i] * ifact[i - 1];\n            }\n            Precalc {\n                n: n,\n                inv: inv,\n                fact: fact,\n                ifact: ifact,\n            }\n        }\n        pub fn fact(self, n: usize) -> ModInt<Num> {\n            self.fact[n]\n        }\n        pub fn inv(self, x: usize) -> ModInt<Num> {\n            self.inv[x]\n        }\n        pub fn ifact(self, x: usize) -> ModInt<Num> {\n            self.ifact[x]\n        }\n        pub fn comb(self, n: usize, k: usize) -> ModInt<Num> {\n            if !(k <= n) {\n                return ModInt(0);\n            }\n            self.fact[n] * self.ifact[k] * self.ifact[n - k]\n        }\n    }\n    use std;\n    impl std::fmt::Display for ModInt<Num> {\n        fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {\n            write!(f, \"{}\", self.0)\n        }\n    }\n}\n\n// ---------- end ModInt ----------\n\n//https://qiita.com/tanakh/items/0ba42c7ca36cd29d0ac8 \u3088\u308a\nmacro_rules! input {\n    (source = $s:expr, $($r:tt)*) => {\n        let mut iter = $s.split_whitespace();\n        input_inner!{iter, $($r)*}\n    };\n    ($($r:tt)*) => {\n        let s = {\n            use std::io::Read;\n            let mut s = String::new();\n            std::io::stdin().read_to_string(&mut s).unwrap();\n            s\n        };\n        let mut iter = s.split_whitespace();\n        input_inner!{iter, $($r)*}\n    };\n}\n\nmacro_rules! input_inner {\n    ($iter:expr) => {};\n    ($iter:expr, ) => {};\n    ($iter:expr, $var:ident : $t:tt $($r:tt)*) => {\n        let $var = read_value!($iter, $t);\n        input_inner!{$iter $($r)*}\n    };\n}\n\nmacro_rules! read_value {\n    ($iter:expr, ( $($t:tt),* )) => {\n        ( $(read_value!($iter, $t)),* )\n    };\n    ($iter:expr, [ $t:tt ; $len:expr ]) => {\n        (0..$len).map(|_| read_value!($iter, $t)).collect::<Vec<_>>()\n    };\n    ($iter:expr, chars) => {\n        read_value!($iter, String).chars().collect::<Vec<char>>()\n    };\n    ($iter:expr, usize1) => {\n        read_value!($iter, usize) - 1\n    };\n    ($iter:expr, $t:ty) => {\n        $iter.next().unwrap().parse::<$t>().expect(\"Parse error\")\n    };\n}\n\n// \u3053\u3053\u307e\u3067\n\nuse matrix::SquareMatrix;\nuse modint::ModInt;\n\nimpl matrix::SemiRing for ModInt<modint::Num> {\n    fn one() -> Self {ModInt(1)}\n    fn zero() -> Self {ModInt(0)}\n}\n\nfn run() {\n    input! {\n        n: u64,\n        m: usize,\n    }\n    type M = SquareMatrix<ModInt<modint::Num>>;\n    let mut t = M::identity(m);\n    let mut s = M::zero(m);\n    for i in 1..m {\n        s.set_at(i - 1, i , ModInt(1));\n    }\n    s.set_at(m - 1, 0, ModInt(1));\n    s.set_at(m - 1, m - 1, ModInt(1));\n    let mut n = n;\n    while n > 0 {\n        if (n & 1) == 1 {\n            t = t * s.clone();\n        }\n        s = s.clone() * s;\n        n >>= 1;\n    }\n    let ans = t.get_at(m - 1, m - 1);\n    println!(\"{}\", ans);\n}\n\nfn main() {\n    run();\n}\n",
+        "exec_outcome": "PASSED",
+        "prob_desc_created_at": "1550504400",
+        "prob_desc_memory_limit": "256 megabytes",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_notes": "NoteIn the first example each magic gem can split into $$$2$$$ normal gems, and we know that the total amount of gems are $$$4$$$.Let $$$1$$$ denote a magic gem, and $$$0$$$ denote a normal gem.The total configurations you can have is:   $$$1 1 1 1$$$ (None of the gems split);  $$$0 0 1 1$$$ (First magic gem splits into $$$2$$$ normal gems);  $$$1 0 0 1$$$ (Second magic gem splits into $$$2$$$ normal gems);  $$$1 1 0 0$$$ (Third magic gem splits into $$$2$$$ normal gems);  $$$0 0 0 0$$$ (First and second magic gems split into total $$$4$$$ normal gems). Hence, answer is $$$5$$$.",
+        "hidden_unit_tests": "[{\"input\": \"4 2\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"3 2\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"1000000000000000000 2\\r\\n\", \"output\": [\"680057396\"]}, {\"input\": \"1000000000000000000 3\\r\\n\", \"output\": [\"615472476\"]}, {\"input\": \"1000000000000000000 5\\r\\n\", \"output\": [\"285726867\"]}, {\"input\": \"1000000000000000000 42\\r\\n\", \"output\": [\"683499162\"]}, {\"input\": \"1000000000000000000 69\\r\\n\", \"output\": [\"864131130\"]}, {\"input\": \"1000000000000000000 99\\r\\n\", \"output\": [\"847914677\"]}, {\"input\": \"1000000000000000000 100\\r\\n\", \"output\": [\"161502719\"]}, {\"input\": \"1 2\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"1 3\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"1 4\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"1 5\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"2 2\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"2 3\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"2 4\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"2 5\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"5 2\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"5 3\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"5 4\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"5 5\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"6 2\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"6 3\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"6 4\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"6 5\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"7 2\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"7 3\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"7 4\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"7 5\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"99 100\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"99 99\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"69 30\\r\\n\", \"output\": [\"96\"]}, {\"input\": \"69 2\\r\\n\", \"output\": [\"489376391\"]}, {\"input\": \"25 2\\r\\n\", \"output\": [\"121393\"]}, {\"input\": \"576460752303423487 100\\r\\n\", \"output\": [\"163029191\"]}, {\"input\": \"144115188075855871 100\\r\\n\", \"output\": [\"156647062\"]}, {\"input\": \"288230376151711743 100\\r\\n\", \"output\": [\"626842151\"]}]",
+        "source_lang": "Rust",
+        "target_lang": "Go"
+    }
+}

@@ -1,0 +1,349 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEHxTOI1o1Ij1IMMxHDfomxiKfwQG",
+        "created": 1787074331,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static class State {\n        int balance;\n        int mod;\n        State(int b, int m) { balance = b; mod = m; }\n    }\n\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        int n = Integer.parseInt(st.nextToken());\n        long m = Long.parseLong(st.nextToken());\n\n        int[] a = new int[n];\n        int[] b = new int[n];\n\n        st = new StringTokenizer(br.readLine());\n        for (int i = 0; i < n; i++) a[i] = Integer.parseInt(st.nextToken());\n\n        st = new StringTokenizer(br.readLine());\n        for (int i = 0; i < n; i++) b[i] = Integer.parseInt(st.nextToken());\n\n        int maxBalance = n; // per block of length n, balance never exceeds n\n        int statesCount = (n + 1) * n;\n        int INF = Integer.MAX_VALUE / 2;\n\n        int[][] transCost = new int[statesCount][statesCount];\n        for (int i = 0; i < statesCount; i++) Arrays.fill(transCost[i], INF);\n\n        // map (balance, mod) to id\n        int[][] id = new int[maxBalance + 1][n];\n        int idx = 0;\n        for (int bal = 0; bal <= maxBalance; bal++) {\n            for (int mod = 0; mod < n; mod++) {\n                id[bal][mod] = idx++;\n            }\n        }\n\n        // build transitions for one block of length n\n        for (int bal = 0; bal <= maxBalance; bal++) {\n            for (int mod = 0; mod < n; mod++) {\n                int startId = id[bal][mod];\n                int curBal = bal;\n                int curMod = mod;\n                int cost = 0;\n                boolean ok = true;\n                for (int step = 0; step < n; step++) {\n                    int pos = (curMod + step) % n;\n                    // choose open or close\n                    int openCost = a[pos];\n                    int closeCost = b[pos];\n\n                    // we must keep sequence regular: balance never negative, end non-negative\n                    // but within block we don't know final balance; we just simulate all possibilities\n                    // To handle all possibilities, we need DP over positions and balance.\n                    ok = false;\n                    break;\n                }\n                // The above simple simulation is insufficient; we need full DP per starting state.\n\n            }\n        }\n\n        // Full DP per block: for each starting (balance, mod), compute minimal cost to each ending (balance', mod')\n        for (int bal = 0; bal <= maxBalance; bal++) {\n            for (int mod = 0; mod < n; mod++) {\n                int startId = id[bal][mod];\n                int[][] dp = new int[n + 1][maxBalance + 1];\n                for (int i = 0; i <= n; i++) Arrays.fill(dp[i], INF);\n                dp[0][bal] = 0;\n\n                for (int step = 0; step < n; step++) {\n                    int pos = (mod + step) % n;\n                    for (int curBal = 0; curBal <= maxBalance; curBal++) {\n                        int curCost = dp[step][curBal];\n                        if (curCost == INF) continue;\n                        // open\n                        if (curBal + 1 <= maxBalance) {\n                            int nc = curCost + a[pos];\n                            if (nc < dp[step + 1][curBal + 1]) dp[step + 1][curBal + 1] = nc;\n                        }\n                        // close\n                        if (curBal > 0) {\n                            int nc = curCost + b[pos];\n                            if (nc < dp[step + 1][curBal - 1]) dp[step + 1][curBal - 1] = nc;\n                        }\n                    }\n                }\n\n                int endMod = (mod + n) % n;\n                for (int endBal = 0; endBal <= maxBalance; endBal++) {\n                    int c = dp[n][endBal];\n                    if (c < INF) {\n                        int endId = id[endBal][endMod];\n                        if (c < transCost[startId][endId]) transCost[startId][endId] = c;\n                    }\n                }\n            }\n        }\n\n        // Min-plus matrix exponentiation of transCost for k = m / n blocks\n        long blocks = m / n;\n        int size = statesCount;\n        long[][] dist = new long[size][size];\n        long[][] base = new long[size][size];\n        long INF_L = Long.MAX_VALUE / 4;\n\n        for (int i = 0; i < size; i++) {\n            for (int j = 0; j < size; j++) {\n                base[i][j] = transCost[i][j] >= INF ? INF_L : transCost[i][j];\n                dist[i][j] = (i == j) ? 0 : INF_L;\n            }\n        }\n\n        while (blocks > 0) {\n            if ((blocks & 1) == 1) {\n                dist = multiply(dist, base, size, INF_L);\n            }\n            base = multiply(base, base, size, INF_L);\n            blocks >>= 1;\n        }\n\n        int startId = id[0][0];\n        long ans = dist[startId][id[0][0]];\n        System.out.println(ans);\n    }\n\n    private static long[][] multiply(long[][] A, long[][] B, int n, long INF) {\n        long[][] C = new long[n][n];\n        for (int i = 0; i < n; i++) Arrays.fill(C[i], INF);\n        for (int i = 0; i < n; i++) {\n            for (int k = 0; k < n; k++) {\n                long aik = A[i][k];\n                if (aik == INF) continue;\n                long[] Bk = B[k];\n                long[] Ci = C[i];\n                for (int j = 0; j < n; j++) {\n                    long val = Bk[j];\n                    if (val == INF) continue;\n                    long nv = aik + val;\n                    if (nv < Ci[j]) Ci[j] = nv;\n                }\n            }\n        }\n        return C;\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        FastScanner fs = new FastScanner(System.in);\n        int n = fs.nextInt();\n        int m = fs.nextInt();\n        int[] a = new int[n];\n        int[] b = new int[n];\n        for (int i = 0; i < n; i++) a[i] = fs.nextInt();\n        for (int i = 0; i < n; i++) b[i] = fs.nextInt();\n\n        int L = n * m;\n        int maxBalance = m; // maximum possible balance\n\n        // dp[pos_mod][balance] = minimal cost for one block of n positions starting with given balance\n        long INF = Long.MAX_VALUE / 4;\n        long[][] dp = new long[n + 1][maxBalance + 1];\n        for (int i = 0; i <= n; i++) Arrays.fill(dp[i], INF);\n        dp[0][0] = 0;\n\n        for (int i = 0; i < n; i++) {\n            int idx = i % n;\n            for (int bal = 0; bal <= maxBalance; bal++) {\n                long cur = dp[i][bal];\n                if (cur == INF) continue;\n                // open bracket\n                int nb = bal + 1;\n                if (nb <= maxBalance) {\n                    long cost = cur + a[idx];\n                    if (cost < dp[i + 1][nb]) dp[i + 1][nb] = cost;\n                }\n                // close bracket\n                if (bal > 0) {\n                    int nb2 = bal - 1;\n                    long cost2 = cur + b[idx];\n                    if (cost2 < dp[i + 1][nb2]) dp[i + 1][nb2] = cost2;\n                }\n            }\n        }\n\n        // transition between blocks: we have m blocks of length n, total length nm\n        // we need total balance 0 after nm positions\n        long[] curBlock = new long[maxBalance + 1];\n        Arrays.fill(curBlock, INF);\n        curBlock[0] = 0;\n\n        for (int block = 0; block < m; block++) {\n            long[] nextBlock = new long[maxBalance + 1];\n            Arrays.fill(nextBlock, INF);\n            for (int bal = 0; bal <= maxBalance; bal++) {\n                long base = curBlock[bal];\n                if (base == INF) continue;\n                for (int nb = 0; nb <= maxBalance; nb++) {\n                    long add = dp[n][nb];\n                    if (add == INF) continue;\n                    int totalBal = bal + nb;\n                    if (totalBal <= maxBalance) {\n                        long val = base + add;\n                        if (val < nextBlock[totalBal]) nextBlock[totalBal] = val;\n                    }\n                }\n            }\n            curBlock = nextBlock;\n        }\n\n        long ans = curBlock[0];\n        System.out.println(ans);\n    }\n\n    // Fast scanner\n    private static class FastScanner {\n        private final InputStream in;\n        private final byte[] buffer = new byte[1 << 16];\n        private int ptr = 0, len = 0;\n\n        FastScanner(InputStream is) {\n            in = is;\n        }\n\n        private int read() throws IOException {\n            if (ptr >= len) {\n                len = in.read(buffer);\n                ptr = 0;\n                if (len <= 0) return -1;\n            }\n            return buffer[ptr++];\n        }\n\n        int nextInt() throws IOException {\n            int c;\n            do {\n                c = read();\n            } while (c <= ' ' && c != -1);\n            int sign = 1;\n            if (c == '-') {\n                sign = -1;\n                c = read();\n            }\n            int val = 0;\n            while (c > ' ') {\n                val = val * 10 + (c - '0');\n                c = read();\n            }\n            return val * sign;\n        }\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        FastScanner fs = new FastScanner(System.in);\n        int n = fs.nextInt();\n        int m = fs.nextInt();\n        int[] a = new int[n];\n        int[] b = new int[n];\n        for (int i = 0; i < n; i++) a[i] = fs.nextInt();\n        for (int i = 0; i < n; i++) b[i] = fs.nextInt();\n\n        int maxBalance = m; // maximum possible balance\n        long INF = Long.MAX_VALUE / 4;\n\n        long[][] dp = new long[n][maxBalance + 1];\n        for (int i = 0; i < n; i++) Arrays.fill(dp[i], INF);\n        dp[0][0] = 0;\n\n        for (int i = 0; i < m; i++) {\n            int cur = i % n;\n            int next = (i + 1) % n;\n            long[] nextDp = dp[next];\n            Arrays.fill(nextDp, INF);\n            long[] curDp = dp[cur];\n\n            for (int bal = 0; bal <= maxBalance; bal++) {\n                long val = curDp[bal];\n                if (val == INF) continue;\n\n                // open bracket\n                int balOpen = bal + 1;\n                if (balOpen <= maxBalance) {\n                    long cost = val + (a[cur] % n);\n                    if (cost < nextDp[balOpen]) nextDp[balOpen] = cost;\n                }\n\n                // close bracket\n                if (bal > 0) {\n                    int balClose = bal - 1;\n                    long cost = val + (b[cur] % n);\n                    if (cost < nextDp[balClose]) nextDp[balClose] = cost;\n                }\n            }\n        }\n\n        long ans = dp[m % n][0];\n        System.out.println(ans);\n    }\n\n    // Fast scanner\n    private static class FastScanner {\n        private final InputStream in;\n        private final byte[] buffer = new byte[1 << 16];\n        private int ptr = 0, len = 0;\n\n        FastScanner(InputStream is) {\n            in = is;\n        }\n\n        private int read() throws IOException {\n            if (ptr >= len) {\n                len = in.read(buffer);\n                ptr = 0;\n                if (len <= 0) return -1;\n            }\n            return buffer[ptr++];\n        }\n\n        int nextInt() throws IOException {\n            int c;\n            do {\n                c = read();\n            } while (c <= ' ' && c != -1);\n            int sign = 1;\n            if (c == '-') {\n                sign = -1;\n                c = read();\n            }\n            int val = 0;\n            while (c > ' ') {\n                val = val * 10 + c - '0';\n                c = read();\n            }\n            return val * sign;\n        }\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        FastScanner fs = new FastScanner(System.in);\n        int n = fs.nextInt();\n        int m = fs.nextInt();\n        int[] a = new int[n];\n        int[] b = new int[n];\n        for (int i = 0; i < n; i++) a[i] = fs.nextInt();\n        for (int i = 0; i < n; i++) b[i] = fs.nextInt();\n\n        int maxBalance = m / 2;\n        long INF = Long.MAX_VALUE / 4;\n\n        long[][] dp = new long[n][maxBalance + 1];\n        long[][] next = new long[n][maxBalance + 1];\n\n        for (int i = 0; i < n; i++) {\n            Arrays.fill(dp[i], INF);\n        }\n        dp[0][0] = 0;\n\n        for (int pos = 0; pos < m; pos++) {\n            int idx = pos % n;\n            int nextIdx = (idx + 1) % n;\n            Arrays.fill(next[nextIdx], INF);\n\n            for (int bal = 0; bal <= maxBalance; bal++) {\n                long cur = dp[idx][bal];\n                if (cur == INF) continue;\n\n                // open bracket\n                if (bal + 1 <= maxBalance) {\n                    long val = cur + a[idx];\n                    if (val < next[nextIdx][bal + 1]) {\n                        next[nextIdx][bal + 1] = val;\n                    }\n                }\n\n                // close bracket\n                if (bal > 0) {\n                    long val = cur + b[idx];\n                    if (val < next[nextIdx][bal - 1]) {\n                        next[nextIdx][bal - 1] = val;\n                    }\n                }\n            }\n\n            // move next layer into dp for next iteration\n            for (int i = 0; i < n; i++) {\n                System.arraycopy(next[i], 0, dp[i], 0, maxBalance + 1);\n            }\n        }\n\n        long ans = dp[m % n][0];\n        System.out.println(ans);\n    }\n\n    // Fast scanner\n    private static class FastScanner {\n        private final InputStream in;\n        private final byte[] buffer = new byte[1 << 16];\n        private int ptr = 0, len = 0;\n\n        FastScanner(InputStream is) {\n            in = is;\n        }\n\n        private int read() throws IOException {\n            if (ptr >= len) {\n                len = in.read(buffer);\n                ptr = 0;\n                if (len <= 0) return -1;\n            }\n            return buffer[ptr++];\n        }\n\n        int nextInt() throws IOException {\n            int c;\n            do {\n                c = read();\n            } while (c <= ' ' && c != -1);\n            int sign = 1;\n            if (c == '-') {\n                sign = -1;\n                c = read();\n            }\n            int val = 0;\n            while (c > ' ') {\n                val = val * 10 + c - '0';\n                c = read();\n            }\n            return val * sign;\n        }\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        int n = Integer.parseInt(st.nextToken());\n        long m = Long.parseLong(st.nextToken());\n\n        int[] a = new int[n];\n        int[] b = new int[n];\n\n        st = new StringTokenizer(br.readLine());\n        for (int i = 0; i < n; i++) a[i] = Integer.parseInt(st.nextToken());\n\n        st = new StringTokenizer(br.readLine());\n        for (int i = 0; i < n; i++) b[i] = Integer.parseInt(st.nextToken());\n\n        int maxBalance = (int) m;\n        long INF = Long.MAX_VALUE / 4;\n\n        long[][] dp = new long[n][maxBalance + 1];\n        for (int i = 0; i < n; i++) Arrays.fill(dp[i], INF);\n        dp[0][0] = 0;\n\n        for (int pos = 0; pos < m; pos++) {\n            int nextPos = (pos + 1) % n;\n            long[][] nextDp = new long[n][maxBalance + 1];\n            for (int i = 0; i < n; i++) Arrays.fill(nextDp[i], INF);\n\n            int idx = pos % n;\n            for (int i = 0; i < n; i++) {\n                for (int bal = 0; bal <= maxBalance; bal++) {\n                    long cur = dp[i][bal];\n                    if (cur == INF) continue;\n\n                    if (bal + 1 <= maxBalance) {\n                        long cost = cur + a[idx] % n;\n                        if (cost < nextDp[nextPos][bal + 1]) {\n                            nextDp[nextPos][bal + 1] = cost;\n                        }\n                    }\n\n                    if (bal > 0) {\n                        long cost = cur + b[idx] % n;\n                        if (cost < nextDp[nextPos][bal - 1]) {\n                            nextDp[nextPos][bal - 1] = cost;\n                        }\n                    }\n                }\n            }\n            dp = nextDp;\n        }\n\n        long ans = dp[0][0];\n        System.out.println(ans);\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        FastScanner fs = new FastScanner(System.in);\n        int n = fs.nextInt();\n        long m = fs.nextLong();\n        int[] a = new int[n];\n        int[] b = new int[n];\n        for (int i = 0; i < n; i++) a[i] = fs.nextInt();\n        for (int i = 0; i < n; i++) b[i] = fs.nextInt();\n\n        int maxLen = n;\n        long INF = Long.MAX_VALUE / 4;\n\n        long[][] dp = new long[maxLen + 1][maxLen + 1];\n        for (int i = 0; i <= maxLen; i++)\n            Arrays.fill(dp[i], INF);\n        dp[0][0] = 0;\n\n        for (int len = 0; len < maxLen; len++) {\n            for (int bal = 0; bal <= len; bal++) {\n                long cur = dp[len][bal];\n                if (cur == INF) continue;\n                int pos = len;\n                int idx = pos % n;\n                // open\n                dp[len + 1][bal + 1] = Math.min(dp[len + 1][bal + 1], cur + a[idx]);\n                // close\n                if (bal > 0) {\n                    dp[len + 1][bal - 1] = Math.min(dp[len + 1][bal - 1], cur + b[idx]);\n                }\n            }\n        }\n\n        long[] costBlock = new long[maxLen + 1];\n        Arrays.fill(costBlock, INF);\n        for (int bal = 0; bal <= maxLen; bal++) {\n            costBlock[bal] = dp[maxLen][bal];\n        }\n\n        long[] dpBlocks = new long[maxLen + 1];\n        Arrays.fill(dpBlocks, INF);\n        dpBlocks[0] = 0;\n\n        long blocks = m / n;\n        for (int i = 0; i < blocks; i++) {\n            long[] next = new long[maxLen + 1];\n            Arrays.fill(next, INF);\n            for (int bal = 0; bal <= maxLen; bal++) {\n                long cur = dpBlocks[bal];\n                if (cur == INF) continue;\n                for (int delta = 0; delta <= maxLen; delta++) {\n                    if (costBlock[delta] == INF) continue;\n                    int nb = bal + delta;\n                    if (nb > maxLen) continue;\n                    next[nb] = Math.min(next[nb], cur + costBlock[delta]);\n                }\n            }\n            dpBlocks = next;\n        }\n\n        long ans = dpBlocks[0];\n        System.out.println(ans);\n    }\n\n    // Fast scanner\n    private static class FastScanner {\n        private final InputStream in;\n        private final byte[] buffer = new byte[1 << 16];\n        private int ptr = 0, len = 0;\n\n        FastScanner(InputStream is) {\n            in = is;\n        }\n\n        private int read() throws IOException {\n            if (ptr >= len) {\n                len = in.read(buffer);\n                ptr = 0;\n                if (len <= 0) return -1;\n            }\n            return buffer[ptr++];\n        }\n\n        long nextLong() throws IOException {\n            int c;\n            do {\n                c = read();\n                if (c == -1) return -1;\n            } while (c <= ' ');\n            int sign = 1;\n            if (c == '-') {\n                sign = -1;\n                c = read();\n            }\n            long val = 0;\n            while (c > ' ') {\n                val = val * 10 + c - '0';\n                c = read();\n            }\n            return val * sign;\n        }\n\n        int nextInt() throws IOException {\n            return (int) nextLong();\n        }\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static class State {\n        int balance;\n        long cost;\n        State(int b, long c) { balance = b; cost = c; }\n    }\n\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        int n = Integer.parseInt(st.nextToken());\n        long m = Long.parseLong(st.nextToken());\n        int[] a = new int[n];\n        int[] b = new int[n];\n        st = new StringTokenizer(br.readLine());\n        for (int i = 0; i < n; i++) a[i] = Integer.parseInt(st.nextToken());\n        st = new StringTokenizer(br.readLine());\n        for (int i = 0; i < n; i++) b[i] = Integer.parseInt(st.nextToken());\n\n        int maxBalance = n; // safe upper bound for balance within one block\n        long INF = Long.MAX_VALUE / 4;\n\n        // DP for one block of length n\n        long[][] dp = new long[n + 1][maxBalance + 1];\n        for (int i = 0; i <= n; i++)\n            Arrays.fill(dp[i], INF);\n        dp[0][0] = 0;\n\n        for (int i = 0; i < n; i++) {\n            for (int bal = 0; bal <= maxBalance; bal++) {\n                long cur = dp[i][bal];\n                if (cur == INF) continue;\n                // open\n                if (bal + 1 <= maxBalance)\n                    dp[i + 1][bal + 1] = Math.min(dp[i + 1][bal + 1], cur + a[i]);\n                // close\n                if (bal > 0)\n                    dp[i + 1][bal - 1] = Math.min(dp[i + 1][bal - 1], cur + b[i]);\n            }\n        }\n\n        // collect reachable states after one block\n        List<State> states = new ArrayList<>();\n        for (int bal = 0; bal <= maxBalance; bal++) {\n            if (dp[n][bal] < INF) states.add(new State(bal, dp[n][bal]));\n        }\n\n        int S = states.size();\n        long[][] trans = new long[S][S];\n        for (int i = 0; i < S; i++) Arrays.fill(trans[i], INF);\n\n        // build transitions: from state i to j by applying one block starting with balance states[i].balance\n        for (int si = 0; si < S; si++) {\n            int startBal = states.get(si).balance;\n            long[][] dp2 = new long[n + 1][maxBalance + 1];\n            for (int i = 0; i <= n; i++)\n                Arrays.fill(dp2[i], INF);\n            if (startBal <= maxBalance) dp2[0][startBal] = 0;\n\n            for (int i = 0; i < n; i++) {\n                for (int bal = 0; bal <= maxBalance; bal++) {\n                    long cur = dp2[i][bal];\n                    if (cur == INF) continue;\n                    if (bal + 1 <= maxBalance)\n                        dp2[i + 1][bal + 1] = Math.min(dp2[i + 1][bal + 1], cur + a[i]);\n                    if (bal > 0)\n                        dp2[i + 1][bal - 1] = Math.min(dp2[i + 1][bal - 1], cur + b[i]);\n                }\n            }\n\n            for (int sj = 0; sj < S; sj++) {\n                int endBal = states.get(sj).balance;\n                if (dp2[n][endBal] < INF) {\n                    trans[si][sj] = dp2[n][endBal];\n                }\n            }\n        }\n\n        // min-plus matrix exponentiation of trans^(m/n)\n        long blocks = m / n;\n        long[][] result = new long[S][S];\n        for (int i = 0; i < S; i++) {\n            Arrays.fill(result[i], INF);\n            result[i][i] = 0;\n        }\n\n        long[][] base = trans;\n        while (blocks > 0) {\n            if ((blocks & 1) == 1) {\n                result = multiplyMinPlus(result, base, INF);\n            }\n            base = multiplyMinPlus(base, base, INF);\n            blocks >>= 1;\n        }\n\n        // initial state: balance 0, cost 0\n        int startIndex = -1, endIndex = -1;\n        for (int i = 0; i < S; i++) {\n            if (states.get(i).balance == 0) startIndex = i;\n            if (states.get(i).balance == 0) endIndex = i;\n        }\n\n        long ans = result[startIndex][endIndex];\n        System.out.println(ans);\n    }\n\n    private static long[][] multiplyMinPlus(long[][] A, long[][] B, long INF) {\n        int n = A.length;\n        int m = B[0].length;\n        int k = B.length;\n        long[][] C = new long[n][m];\n        for (int i = 0; i < n; i++) Arrays.fill(C[i], INF);\n        for (int i = 0; i < n; i++) {\n            for (int x = 0; x < k; x++) {\n                if (A[i][x] == INF) continue;\n                long ax = A[i][x];\n                long[] Bx = B[x];\n                for (int j = 0; j < m; j++) {\n                    if (Bx[j] == INF) continue;\n                    long val = ax + Bx[j];\n                    if (val < C[i][j]) C[i][j] = val;\n                }\n            }\n        }\n        return C;\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        FastScanner fs = new FastScanner(System.in);\n        int n = fs.nextInt();\n        long m = fs.nextLong();\n        int[] a = new int[n];\n        int[] b = new int[n];\n        for (int i = 0; i < n; i++) a[i] = fs.nextInt();\n        for (int i = 0; i < n; i++) b[i] = fs.nextInt();\n\n        int maxBalance = n;\n        long INF = Long.MAX_VALUE / 4;\n\n        long[][] dp = new long[n + 1][maxBalance + 1];\n        for (int i = 0; i <= n; i++)\n            Arrays.fill(dp[i], INF);\n        dp[0][0] = 0;\n\n        for (int i = 0; i < n; i++) {\n            int idx = i % n;\n            for (int bal = 0; bal <= maxBalance; bal++) {\n                long cur = dp[i][bal];\n                if (cur == INF) continue;\n                // open\n                if (bal + 1 <= maxBalance) {\n                    long val = cur + a[idx];\n                    if (val < dp[i + 1][bal + 1]) dp[i + 1][bal + 1] = val;\n                }\n                // close\n                if (bal > 0) {\n                    long val = cur + b[idx];\n                    if (val < dp[i + 1][bal - 1]) dp[i + 1][bal - 1] = val;\n                }\n            }\n        }\n\n        long[] transCost = new long[maxBalance + 1];\n        long[] transDelta = new long[maxBalance + 1];\n        for (int bal = 0; bal <= maxBalance; bal++) {\n            transCost[bal] = dp[n][bal];\n            transDelta[bal] = bal;\n        }\n\n        long[] bestCost = new long[maxBalance + 1];\n        long[] bestDelta = new long[maxBalance + 1];\n        for (int bal = 0; bal <= maxBalance; bal++) {\n            bestCost[bal] = transCost[bal];\n            bestDelta[bal] = transDelta[bal];\n        }\n\n        for (int iter = 0; iter < maxBalance; iter++) {\n            boolean improved = false;\n            for (int bal = 0; bal <= maxBalance; bal++) {\n                long newCost = bestCost[bal] + transCost[(int) bestDelta[bal]];\n                long newDelta = bestDelta[(int) bestDelta[bal]];\n                if (newCost < bestCost[bal]) {\n                    bestCost[bal] = newCost;\n                    bestDelta[bal] = newDelta;\n                    improved = true;\n                }\n            }\n            if (!improved) break;\n        }\n\n        long blocks = m / n;\n        int rem = (int) (m % n);\n\n        long[] dpRem = new long[rem + 1];\n        Arrays.fill(dpRem, INF);\n        dpRem[0] = 0;\n        int maxBalRem = maxBalance;\n\n        for (int i = 0; i < rem; i++) {\n            int idx = i % n;\n            long[] next = new long[rem + 1];\n            Arrays.fill(next, INF);\n            for (int bal = 0; bal <= maxBalRem && bal <= i; bal++) {\n                long cur = dpRem[bal];\n                if (cur == INF) continue;\n                if (bal + 1 <= maxBalRem) {\n                    long val = cur + a[idx];\n                    if (val < next[bal + 1]) next[bal + 1] = val;\n                }\n                if (bal > 0) {\n                    long val = cur + b[idx];\n                    if (val < next[bal - 1]) next[bal - 1] = val;\n                }\n            }\n            dpRem = next;\n        }\n\n        long answer = INF;\n        for (int bal = 0; bal <= maxBalance; bal++) {\n            long costBlocks = 0;\n            long deltaBlocks = bal;\n            long k = blocks;\n            while (k > 0) {\n                if ((k & 1) != 0) {\n                    costBlocks += bestCost[(int) deltaBlocks];\n                    deltaBlocks = bestDelta[(int) deltaBlocks];\n                }\n                long[] newBestCost = new long[maxBalance + 1];\n                long[] newBestDelta = new long[maxBalance + 1];\n                for (int i = 0; i <= maxBalance; i++) {\n                    newBestCost[i] = bestCost[(int) bestDelta[i]] + bestCost[i];\n                    newBestDelta[i] = bestDelta[(int) bestDelta[i]];\n                }\n                bestCost = newBestCost;\n                bestDelta = newBestDelta;\n                k >>= 1;\n            }\n            if (deltaBlocks <= rem && dpRem[(int) deltaBlocks] < INF) {\n                long total = costBlocks + dpRem[(int) deltaBlocks];\n                if (total < answer) answer = total;\n            }\n        }\n\n        System.out.println(answer);\n    }\n\n    static class FastScanner {\n        private final InputStream in;\n        private final byte[] buffer = new byte[1 << 16];\n        private int ptr = 0, len = 0;\n\n        FastScanner(InputStream is) {\n            in = is;\n        }\n\n        private int read() throws IOException {\n            if (ptr >= len) {\n                len = in.read(buffer);\n                ptr = 0;\n                if (len <= 0) return -1;\n            }\n            return buffer[ptr++];\n        }\n\n        int nextInt() throws IOException {\n            int c;\n            do {\n                c = read();\n                if (c == -1) return -1;\n            } while (c <= ' ');\n            int sign = 1;\n            if (c == '-') {\n                sign = -1;\n                c = read();\n            }\n            int val = 0;\n            while (c > ' ') {\n                val = val * 10 + c - '0';\n                c = read();\n            }\n            return val * sign;\n        }\n\n        long nextLong() throws IOException {\n            int c;\n            do {\n                c = read();\n                if (c == -1) return -1;\n            } while (c <= ' ');\n            int sign = 1;\n            if (c == '-') {\n                sign = -1;\n                c = read();\n            }\n            long val = 0;\n            while (c > ' ') {\n                val = val * 10 + c - '0';\n                c = read();\n            }\n            return val * sign;\n        }\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 7793,
+            "prompt_tokens": 372,
+            "total_tokens": 8165,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 1,
+                "engine_ttft_ms": 44,
+                "engine_ttlt_ms": 8986,
+                "pre_inference_ms": 168,
+                "service_tbt_ms": 1,
+                "service_ttft_ms": 300,
+                "service_ttlt_ms": 9236,
+                "total_duration_ms": 9083,
+                "user_visible_ttft_ms": 132
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Java to solve this programming problem:\nDescription: Jeff loves regular bracket sequences.Today Jeff is going to take a piece of paper and write out the regular bracket sequence, consisting of nm brackets. Let's number all brackets of this sequence from 0 to nm - 1 from left to right. Jeff knows that he is going to spend ai mod n liters of ink on the i-th bracket of the sequence if he paints it opened and bi mod n liters if he paints it closed.You've got sequences a, b and numbers n, m. What minimum amount of ink will Jeff need to paint a regular bracket sequence of length nm?Operation x mod y means taking the remainder after dividing number x by number y.\nInput Specification: The first line contains two integers n and m (1\u2009\u2264\u2009n\u2009\u2264\u200920;\u00a01\u2009\u2264\u2009m\u2009\u2264\u2009107; m is even). The next line contains n integers: a0, a1, ..., an\u2009-\u20091 (1\u2009\u2264\u2009ai\u2009\u2264\u200910). The next line contains n integers: b0, b1, ..., bn\u2009-\u20091 (1\u2009\u2264\u2009bi\u2009\u2264\u200910). The numbers are separated by spaces.\nOutput Specification: In a single line print the answer to the problem \u2014 the minimum required amount of ink in liters.\n\nSample Input:\n2 6\n1 2\n2 1\nSample Output:\n12\n\nSample Input:\n1 10000000\n2\n3\nSample Output:\n25000000\n\nNotes: NoteIn the first test the optimal sequence is: ()()()()()(), the required number of ink liters is 12.\nTake input from standard input and output to standard output\nProvide the Java code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "f40900973f4ebeb6fdafd75ebe4e9601",
+        "difficulty": 2500,
+        "prob_desc_sample_inputs": [
+            "2 6\n1 2\n2 1",
+            "1 10000000\n2\n3"
+        ],
+        "prob_desc_time_limit": "1 second",
+        "tags": [
+            "dp",
+            "matrices"
+        ],
+        "prob_desc_output_spec": "In a single line print the answer to the problem \u2014 the minimum required amount of ink in liters.",
+        "prob_desc_input_spec": "The first line contains two integers n and m (1\u2009\u2264\u2009n\u2009\u2264\u200920;\u00a01\u2009\u2264\u2009m\u2009\u2264\u2009107; m is even). The next line contains n integers: a0, a1, ..., an\u2009-\u20091 (1\u2009\u2264\u2009ai\u2009\u2264\u200910). The next line contains n integers: b0, b1, ..., bn\u2009-\u20091 (1\u2009\u2264\u2009bi\u2009\u2264\u200910). The numbers are separated by spaces.",
+        "lang_cluster": "Java",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first test the optimal sequence is: ()()()()()(), the required number of ink liters is 12.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Jeff loves regular bracket sequences.Today Jeff is going to take a piece of paper and write out the regular bracket sequence, consisting of nm brackets. Let's number all brackets of this sequence from 0 to nm - 1 from left to right. Jeff knows that he is going to spend ai mod n liters of ink on the i-th bracket of the sequence if he paints it opened and bi mod n liters if he paints it closed.You've got sequences a, b and numbers n, m. What minimum amount of ink will Jeff need to paint a regular bracket sequence of length nm?Operation x mod y means taking the remainder after dividing number x by number y.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1380900600",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "12",
+            "25000000"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"2 6\\r\\n1 2\\r\\n2 1\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1 10000000\\r\\n2\\r\\n3\\r\\n\", \"output\": [\"25000000\"]}, {\"input\": \"3 184\\r\\n3 2 8\\r\\n3 9 2\\r\\n\", \"output\": [\"1288\"]}, {\"input\": \"4 26\\r\\n10 2 5 9\\r\\n5 4 2 5\\r\\n\", \"output\": [\"444\"]}, {\"input\": \"3 76\\r\\n4 7 9\\r\\n10 1 1\\r\\n\", \"output\": [\"684\"]}, {\"input\": \"3 98\\r\\n6 1 9\\r\\n10 2 4\\r\\n\", \"output\": [\"1127\"]}, {\"input\": \"5 114\\r\\n7 5 8 10 10\\r\\n2 7 9 4 5\\r\\n\", \"output\": [\"3021\"]}, {\"input\": \"1 14\\r\\n7\\r\\n6\\r\\n\", \"output\": [\"91\"]}, {\"input\": \"5 142\\r\\n8 7 6 2 2\\r\\n8 2 6 1 7\\r\\n\", \"output\": [\"2703\"]}, {\"input\": \"1 184\\r\\n8\\r\\n8\\r\\n\", \"output\": [\"1472\"]}, {\"input\": \"2 1900670\\r\\n10 3\\r\\n9 6\\r\\n\", \"output\": [\"22808044\"]}, {\"input\": \"6 17656\\r\\n2 7 4 7 7 3\\r\\n3 5 3 6 9 10\\r\\n\", \"output\": [\"459064\"]}, {\"input\": \"16 3273408\\r\\n3 2 8 8 10 1 1 7 1 4 5 7 5 8 10 10\\r\\n4 4 3 4 7 9 5 1 7 10 7 2 7 9 4 5\\r\\n\", \"output\": [\"186584261\"]}, {\"input\": \"11 4532614\\r\\n7 3 4 1 8 3 5 2 8 10 9\\r\\n6 10 3 7 5 1 1 8 4 9 7\\r\\n\", \"output\": [\"201701323\"]}, {\"input\": \"7 3952828\\r\\n1 1 9 3 5 9 2\\r\\n3 5 6 2 7 9 4\\r\\n\", \"output\": [\"106726356\"]}, {\"input\": \"20 807878\\r\\n9 4 2 5 2 7 9 3 4 4 9 2 8 3 8 9 5 7 4 7\\r\\n8 4 8 7 10 4 10 6 8 1 7 9 3 10 2 2 6 7 3 9\\r\\n\", \"output\": [\"67053877\"]}, {\"input\": \"3 3684044\\r\\n8 6 4\\r\\n3 1 2\\r\\n\", \"output\": [\"38682465\"]}, {\"input\": \"9 7683580\\r\\n4 6 8 5 10 6 3 4 7\\r\\n6 7 3 10 3 10 1 4 10\\r\\n\", \"output\": [\"303501412\"]}, {\"input\": \"10 6007734\\r\\n4 7 6 7 4 3 4 7 7 6\\r\\n8 9 5 7 6 3 2 2 10 4\\r\\n\", \"output\": [\"270348030\"]}, {\"input\": \"7 859320\\r\\n10 1 4 9 2 5 5\\r\\n5 10 3 6 6 5 10\\r\\n\", \"output\": [\"23201650\"]}, {\"input\": \"20 10000000\\r\\n10 3 2 6 2 3 9 2 8 4 4 4 3 4 7 9 5 1 7 10\\r\\n9 6 2 8 3 2 8 10 6 3 2 8 8 10 1 1 7 1 4 5\\r\\n\", \"output\": [\"730000001\"]}, {\"input\": \"20 10000000\\r\\n7 10 9 2 9 7 6 10 3 7 5 1 1 8 4 9 7 9 6 8\\r\\n9 4 3 6 1 7 3 4 1 8 3 5 2 8 10 9 1 2 10 4\\r\\n\", \"output\": [\"780000008\"]}, {\"input\": \"20 10000000\\r\\n2 7 9 4 1 9 8 4 6 10 5 10 4 5 9 9 10 9 1 6\\r\\n5 9 2 9 8 9 1 10 1 9 5 6 4 9 1 10 3 9 9 7\\r\\n\", \"output\": [\"890000001\"]}, {\"input\": \"20 10000000\\r\\n6 7 3 9 10 10 1 9 4 6 8 5 10 6 3 4 7 8 6 6\\r\\n7 4 7 2 7 3 10 10 6 7 3 10 3 10 1 4 10 10 7 3\\r\\n\", \"output\": [\"920000004\"]}, {\"input\": \"20 10000000\\r\\n7 4 3 4 7 7 6 5 4 6 5 8 3 5 3 8 4 3 4 8\\r\\n7 6 3 2 2 10 4 3 5 7 9 9 8 5 4 9 4 3 3 4\\r\\n\", \"output\": [\"880000001\"]}, {\"input\": \"1 2\\r\\n1\\r\\n1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"20 10000000\\r\\n1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1\\r\\n1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1\\r\\n\", \"output\": [\"200000000\"]}, {\"input\": \"20 10000000\\r\\n10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10\\r\\n10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10\\r\\n\", \"output\": [\"2000000000\"]}]"
+    }
+}

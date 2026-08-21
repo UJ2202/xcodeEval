@@ -1,0 +1,389 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-8e89e7637b65b3b1",
+        "created": 1787084031,
+        "model": "qwen-nvfp4",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.27.1-d7a14dad",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```php\n<?php\n$line = trim(fgets(STDIN));\n$x = (int)$line;\n\n// The image is rotated by -x degrees (counter-clockwise if x is positive clockwise camera rotation)\n// We need to find the minimum number of 90-degree clockwise turns (0, 1, 2, or 3)\n// such that the deviation from vertical is minimized.\n\n// After k clockwise 90-degree turns, the total rotation of the image is:\n// initial_image_rotation + k * 90\n// initial_image_rotation = -x (because camera rotated x clockwise, image appears rotated -x)\n// So total rotation = -x + k * 90\n\n// We want to minimize the deviation from vertical, which means we want the total rotation\n// to be as close to a multiple of 360 as possible (i.e., 0 degrees deviation).\n// The deviation is the minimum angle between the total rotation and the nearest multiple of 360.\n\n// Let's compute for k = 0, 1, 2, 3:\n// total_rotation = (-x + k * 90) mod 360, but we need to handle negative values properly.\n\n// Function to compute the minimum deviation from vertical (0 or 180)\n// Actually, deviation from vertical means how far the \"up\" direction is from true up.\n// If the image is rotated by angle A, the deviation from vertical is the minimum of:\n// |A mod 360| and |360 - (A mod 360)|, but also considering 180 degrees.\n// Wait, let me re-read the problem.\n\n// The deviation from vertical is the angle between the image's \"up\" and the true up.\n// If the image is rotated by angle A (clockwise), then the deviation is the minimum angle\n// between A and 0 (mod 360). So it's min(A mod 360, 360 - (A mod 360)) if we consider\n// the smallest angle. But actually, since we're talking about deviation from vertical,\n// and the image can be upside down (180 degrees), the deviation should be the minimum\n// angle between the rotation and 0 or 180? No, wait.\n\n// Let me re-read: \"the picture should be rotated so that image would be minimally deviated from vertical\"\n// and \"up direction deviation from vertical is minimum\"\n\n// So we want the \"up\" direction of the image to be as close to the true up as possible.\n// If the image is rotated by angle A clockwise, then the \"up\" direction of the image is\n// at angle A from the true up. The deviation is the minimum angle between A and 0 (mod 360).\n// So deviation = min(A mod 360, 360 - (A mod 360)) if A mod 360 is in [0, 360).\n\n// But wait, if A mod 360 is 180, the deviation is 180. If it's 90, the deviation is 90.\n\n// Let me verify with the examples:\n// Example 1: x = 60\n// Image rotation = -60 degrees (counter-clockwise 60)\n// k=0: total = -60, mod 360 = 300, deviation = min(300, 60) = 60\n// k=1: total = -60 + 90 = 30, mod 360 = 30, deviation = min(30, 330) = 30\n// k=2: total = -60 + 180 = 120, mod 360 = 120, deviation = min(120, 240) = 120\n// k=3: total = -60 + 270 = 210, mod 360 = 210, deviation = min(210, 150) = 150\n// Minimum deviation is 30 at k=1. Output: 1. Correct.\n\n// Example 2: x = -60\n// Image rotation = -(-60) = 60 degrees (clockwise 60)\n// k=0: total = 60, mod 360 = 60, deviation = min(60, 300) = 60\n// k=1: total = 60 + 90 = 150, mod 360 = 150, deviation = min(150, 210) = 150\n// k=2: total = 60 + 180 = 240, mod 360 = 240, deviation = min(240, 120) = 120\n// k=3: total = 60 + 270 = 330, mod 360 = 330, deviation = min(330, 30) = 30\n// Minimum deviation is 30 at k=3. Output: 3. Correct.\n\n// So the algorithm is:\n// For k in [0, 1, 2, 3]:\n//   total = (-x + k * 90)\n//   mod_val = total % 360\n//   if mod_val < 0: mod_val += 360\n//   deviation = min(mod_val, 360 - mod_val)\n// Find the k with minimum deviation. If there's a tie, choose the smallest k.\n\n$best_k = 0;\n$best_deviation = PHP_INT_MAX;\n\nfor ($k = 0; $k <= 3; $k++) {\n    $total = -x + $k * 90;\n    $mod_val = $total % 360;\n    if ($mod_val < 0) {\n        $mod_val += 360;\n    }\n    $deviation = min($mod_val, 360 - $mod_val);\n    \n    if ($deviation < $best_deviation) {\n        $best_deviation = $deviation;\n        $best_k = $k;\n    }\n}\n\necho $best_k . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\n$line = trim(fgets(STDIN));\n$x = (int)$line;\n\n// The image is rotated by -x degrees (counter-clockwise if x is positive)\n// We need to apply k times 90 degrees clockwise rotation\n// Total rotation of image = -x + k * 90\n// We want to minimize the deviation from vertical (0 or 180 degrees)\n// Deviation is min(|angle mod 360|, 360 - |angle mod 360|) but we need to consider that 0 and 180 are both \"vertical\"\n// Actually, the deviation from vertical means how far the \"up\" direction is from true up.\n// If the total rotation angle is A, then the deviation is min(A mod 360, 360 - (A mod 360)) if we consider 0 as up.\n// But wait, vertical means 0 or 180. So the deviation from vertical is min(|A mod 360|, |180 - (A mod 360)|, |360 - (A mod 360)|, |180 + (A mod 360)|) ... \n// Actually, simpler: the angle modulo 360. The deviation from vertical (0 or 180) is:\n// Let r = A mod 360, normalized to [0, 360)\n// Deviation = min(r, 360 - r, |r - 180|)\n// But since 180 is also vertical, the deviation from vertical is min(r, 360-r, abs(r-180))\n// However, note that if r is close to 0, deviation is r. If r is close to 180, deviation is |r-180|. If r is close to 360, deviation is 360-r.\n// So deviation = min(r, 360 - r, abs(r - 180))\n\n// We can only apply k = 0, 1, 2, 3 turns (since 4 turns = 360 degrees, same as 0)\n// So we just check k = 0, 1, 2, 3 and find the one with minimum deviation.\n\nfunction deviation($angle) {\n    // Normalize angle to [0, 360)\n    $r = fmod($angle, 360);\n    if ($r < 0) {\n        $r += 360;\n    }\n    // Deviation from vertical (0 or 180)\n    $d1 = $r;           // distance to 0\n    $d2 = 360 - $r;     // distance to 360 (which is same as 0)\n    $d3 = abs($r - 180); // distance to 180\n    return min($d1, $d2, $d3);\n}\n\n// The image rotation is -x (because camera rotation x clockwise means image is rotated -x, i.e., counter-clockwise by x)\n// Wait, let me re-read: \"on clockwise camera rotation frame the content becomes rotated counter-clockwise\"\n// So if camera is rotated x degrees clockwise, the image content is rotated -x degrees (counter-clockwise by x).\n// Then we apply k times 90 degrees clockwise. So total image rotation = -x + k * 90.\n\n$best_k = 0;\n$best_dev = PHP_INT_MAX;\n\nfor ($k = 0; $k <= 3; $k++) {\n    $total_rotation = -$x + $k * 90;\n    $dev = deviation($total_rotation);\n    if ($dev < $best_dev) {\n        $best_dev = $dev;\n        $best_k = $k;\n    }\n}\n\necho $best_k . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\n$line = trim(fgets(STDIN));\n$x = (int)$line;\n\n// The image is rotated by -x degrees (counter-clockwise if x is positive clockwise camera rotation)\n// We need to find k (0, 1, 2, 3) such that the total rotation after k 90-degree clockwise turns\n// has minimal deviation from vertical.\n\n// After k turns, the total rotation of the image is: -x + k * 90 degrees\n// We want to minimize the deviation from vertical, which means minimizing the angle modulo 360\n// such that the result is as close to 0 or 180 as possible (since vertical can be up or down, but we want minimal deviation from vertical axis)\n\n// Actually, deviation from vertical means the angle between the image's up direction and the true vertical.\n// The image's up direction after rotation is at angle (-x + k*90) degrees from true up.\n// The deviation from vertical is the minimum of |angle| and |360 - angle|, but we also need to consider that 180 degrees is also \"vertical\" but upside down.\n// Wait, the problem says \"minimally deviated from vertical\". Vertical means the up direction is either up or down? No, it says \"deviation from vertical\", which typically means the angle from the vertical axis. So 0 and 180 are both on the vertical axis.\n\n// Let me re-read: \"the image would be minimally deviated from vertical\"\n// The deviation from vertical for an angle theta is min(|theta mod 360|, |360 - (theta mod 360)|, |theta mod 360 - 180|, |360 - (theta mod 360) - 180|)\n// Actually, the deviation from the vertical axis is min(|theta|, |180 - |theta||) where theta is in [0, 180] after normalizing.\n\n// Let me think again. The angle of the image's up direction relative to true up is A = (-x + k*90) mod 360.\n// The deviation from vertical is the minimum angle between A and either 0 or 180.\n// So deviation = min(|A|, |360 - A|, |A - 180|, |360 - A - 180|)\n// Which simplifies to: let A_norm = A mod 360, then if A_norm > 180, A_norm = 360 - A_norm. Then deviation = min(A_norm, 180 - A_norm).\n\n// We need to find k in {0, 1, 2, 3} that minimizes this deviation.\n\nfunction getDeviation($angle) {\n    // Normalize angle to [0, 360)\n    $angle = $angle % 360;\n    if ($angle < 0) {\n        $angle += 360;\n    }\n    // The deviation from vertical (0 or 180)\n    $dev1 = $angle;\n    $dev2 = 360 - $angle;\n    $dev3 = abs($angle - 180);\n    $dev4 = abs(360 - $angle - 180);\n    return min($dev1, $dev2, $dev3, $dev4);\n}\n\n$bestK = 0;\n$bestDev = getDeviation(-$x);\n\nfor ($k = 1; $k <= 3; $k++) {\n    $totalRotation = -$x + $k * 90;\n    $dev = getDeviation($totalRotation);\n    if ($dev < $bestDev) {\n        $bestDev = $dev;\n        $bestK = $k;\n    }\n}\n\necho $bestK . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "<?php\n$input = trim(fgets(STDIN));\n$x = (int)$input;\n\n// The image is rotated by -x degrees (counter-clockwise if x is positive, clockwise if x is negative)\n// We can apply k times 90 degrees clockwise rotation.\n// Total rotation of the image relative to original: -x + 90*k\n// We want to minimize the deviation from vertical.\n// Deviation is the minimum angle between the current rotation and a multiple of 360 (or 0).\n// Actually, deviation from vertical means the angle modulo 360, but we take the minimum of |angle| and 360 - |angle|.\n// More precisely, we want to minimize the distance to the nearest multiple of 360? No.\n// The problem says \"minimally deviated from vertical\". Vertical means 0, 90, 180, 270? \n// No, \"up direction deviation from vertical\". \n// Looking at the example:\n// x = 60. Image rotated -60 (60 CCW).\n// k=0: total rot = -60. Deviation = 60.\n// k=1: total rot = -60 + 90 = 30. Deviation = 30.\n// k=2: total rot = -60 + 180 = 120. Deviation = 120? Or 360-120=240? Min is 120.\n// k=3: total rot = -60 + 270 = 210. Deviation = 360-210=150? Or 210? Min is 150.\n// Wait, the example output for 60 is 1.\n// Let's re-read the note for -60.\n// x = -60. Image rotated +60 (60 CW).\n// k=0: total rot = 60. Deviation = 60.\n// k=1: total rot = 60 + 90 = 150. Deviation = 150? Note says 150.\n// k=2: total rot = 60 + 180 = 240. Note says 120 (because 240 CW = 120 CCW).\n// k=3: total rot = 60 + 270 = 330. Note says 30 (because 330 CW = 30 CCW).\n// So deviation is min(|total_rot mod 360|, 360 - |total_rot mod 360|).\n// Actually, it's the angular distance to 0.\n// Let R be the total rotation. The deviation is min(R mod 360, 360 - (R mod 360)).\n// But we need to handle negative rotations.\n// Let's define a function to get the deviation.\n// dev(angle) = min(abs(angle % 360), 360 - abs(angle % 360))\n// Wait, if angle is -60, abs(-60 % 360) is 60. min(60, 300) = 60.\n// If angle is 30, abs(30 % 360) is 30. min(30, 330) = 30.\n// If angle is 120, abs(120 % 360) is 120. min(120, 240) = 120.\n// If angle is 210, abs(210 % 360) is 210. min(210, 150) = 150.\n\n// We need to find k in {0, 1, 2, 3} that minimizes dev(-x + 90*k).\n// Since the period is 360, and we rotate by 90, k only needs to be 0, 1, 2, 3.\n\n$minDev = PHP_INT_MAX;\n$bestK = 0;\n\nfor ($k = 0; $k < 4; $k++) {\n    $totalRot = -$x + 90 * $k;\n    // Normalize totalRot to [0, 360)\n    $norm = $totalRot % 360;\n    if ($norm < 0) {\n        $norm += 360;\n    }\n    // Deviation is min(norm, 360 - norm)\n    $dev = min($norm, 360 - $norm);\n    \n    if ($dev < $minDev) {\n        $minDev = $dev;\n        $bestK = $k;\n    }\n}\n\necho $bestK . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```php\n<?php\n$line = trim(fgets(STDIN));\n$x = (int)$line;\n\n// The image is rotated by -x degrees (counter-clockwise if camera is clockwise)\n// We need to find k (0, 1, 2, 3) such that the deviation from vertical is minimized.\n// After k clockwise 90-degree turns, the total rotation of the image is:\n// initial_image_rotation + k * 90\n// initial_image_rotation = -x (because camera rotation by x clockwise makes image rotate by -x)\n// So total rotation = -x + k * 90\n// We want to minimize the deviation from 0 (or 360, or -180, etc.)\n// The deviation is the minimum of |angle mod 360| and 360 - |angle mod 360|, but we need to handle negative angles properly.\n\n// Let's compute for each k in 0..3:\n// total = (-x + k * 90) mod 360, normalized to [0, 360)\n// deviation = min(total, 360 - total)\n\nfunction deviation($angle) {\n    // Normalize angle to [0, 360)\n    $angle = $angle % 360;\n    if ($angle < 0) {\n        $angle += 360;\n    }\n    // Deviation from vertical (0 or 180)\n    // Actually, we want the minimum angle to the nearest multiple of 180? No, to 0.\n    // Wait, \"deviation from vertical\" means how far from 0 degrees (upright).\n    // So deviation = min($angle, 360 - $angle)\n    return min($angle, 360 - $angle);\n}\n\n$best_k = 0;\n$best_dev = PHP_INT_MAX;\n\nfor ($k = 0; $k <= 3; $k++) {\n    $total = (-$x + $k * 90) % 360;\n    if ($total < 0) {\n        $total += 360;\n    }\n    $dev = min($total, 360 - $total);\n    if ($dev < $best_dev) {\n        $best_dev = $dev;\n        $best_k = $k;\n    }\n}\n\necho $best_k . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```php\n<?php\nreadline();\n\nfunction readline() {\n    $line = fgets(STDIN);\n    if ($line === false) return;\n    $x = trim($line);\n    if ($x === '') return;\n    \n    // The camera is rotated by x degrees.\n    // Positive x means clockwise camera rotation.\n    // When camera rotates clockwise by x, the image content appears rotated counter-clockwise by x.\n    // So the image is rotated by -x degrees (counter-clockwise) relative to true up.\n    // We need to apply k times 90-degree clockwise turns.\n    // Each 90-degree clockwise turn adds 90 degrees clockwise to the image rotation.\n    // So total image rotation after k turns = -x + 90*k degrees (clockwise positive).\n    // We want to minimize the deviation from vertical, i.e., minimize |total_rotation mod 360| in terms of smallest angle from 0.\n    // The deviation is min(|r|, 360 - |r|) where r = total_rotation mod 360, but we need to be careful with signs.\n    \n    // Actually, let's think about it differently.\n    // The image is initially rotated by -x degrees (counter-clockwise if x is positive).\n    // After k clockwise 90-degree turns, the total rotation of the image is -x + 90*k degrees.\n    // We want this to be as close to 0 (mod 360) as possible.\n    // The deviation is the smallest angle between (-x + 90*k) mod 360 and 0.\n    \n    // Since we can only do k = 0, 1, 2, 3 turns (4 turns brings us back to start), we just check all 4 possibilities.\n    \n    $x = (int)$x;\n    \n    // Normalize x to [0, 360)\n    $x_mod = $x % 360;\n    if ($x_mod < 0) {\n        $x_mod += 360;\n    }\n    \n    // The image is rotated by -x degrees. So the initial rotation is -x_mod (or equivalently 360 - x_mod if x_mod > 0).\n    // Let's compute the deviation for each k in 0..3.\n    \n    $min_dev = PHP_INT_MAX;\n    $best_k = 0;\n    \n    for ($k = 0; $k < 4; $k++) {\n        // Total rotation = -x + 90*k\n        // We want to find the deviation from 0 mod 360.\n        // Let r = (-x + 90*k) mod 360, normalized to [0, 360).\n        $r = (-$x + 90 * $k) % 360;\n        if ($r < 0) {\n            $r += 360;\n        }\n        // Deviation is min(r, 360 - r)\n        $dev = min($r, 360 - $r);\n        if ($dev < $min_dev) {\n            $min_dev = $dev;\n            $best_k = $k;\n        }\n    }\n    \n    echo $best_k . \"\\n\";\n}\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\n$input = trim(fgets(STDIN));\n$x = (int)$input;\n\n// The image is rotated by -x degrees (counter-clockwise if camera is clockwise)\n// We need to find the minimum number of 90-degree clockwise turns (0, 1, 2, or 3)\n// such that the total rotation deviation from vertical is minimized.\n\n// Let's think about it:\n// Camera rotation: x degrees (positive = clockwise)\n// Image rotation: -x degrees (so if camera rotates clockwise, image appears counter-clockwise)\n// After k 90-degree clockwise turns, the image is rotated by (-x + k * 90) degrees\n// We want to minimize the deviation from vertical, which means minimizing the absolute angle modulo 360, \n// but considering that an angle of 180 is the same deviation as 180, and 360 is 0.\n// The deviation from vertical is the minimum of |angle| and 360 - |angle|, but actually we need to consider \n// the smallest angle between the current orientation and vertical (0 or 180? No, vertical is 0).\n// Actually, the problem says \"deviation from vertical\". Vertical means 0 degrees.\n// So we want to minimize the angular distance from 0 (or 360).\n\n// For each k in {0, 1, 2, 3}:\n// total_rotation = (-x + k * 90) mod 360\n// But we need to handle negative numbers properly.\n// The deviation is min(total_rotation, 360 - total_rotation) if total_rotation is in [0, 360)\n\n// Let's compute for each k:\n$best_k = 0;\n$best_deviation = PHP_INT_MAX;\n\nfor ($k = 0; $k <= 3; $k++) {\n    // total rotation of the image after k clockwise 90-degree turns\n    // Image was rotated by -x, then we add k*90 clockwise\n    $total = (-$x + $k * 90) % 360;\n    \n    // Normalize to [0, 360)\n    if ($total < 0) {\n        $total += 360;\n    }\n    \n    // Deviation from vertical (0 degrees)\n    $deviation = min($total, 360 - $total);\n    \n    if ($deviation < $best_deviation) {\n        $best_deviation = $deviation;\n        $best_k = $k;\n    }\n}\n\necho $best_k . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```php\n<?php\n$line = trim(fgets(STDIN));\n$x = (int)$line;\n\n// The image is rotated by -x degrees (if camera rotates clockwise by x, image rotates counter-clockwise by x)\n// So the image's \"up\" direction is deviated by -x degrees from true up.\n// We can apply k times 90 degrees clockwise rotation to the image.\n// After k rotations, the total rotation of the image is: -x + k * 90 degrees.\n// We want to minimize the deviation from vertical, i.e., minimize |(-x + k*90) mod 360| but considering the smallest angle.\n// Actually, the deviation from vertical is the minimum of |angle| and 360 - |angle| where angle is normalized to [-180, 180].\n\n// Let's think differently. The image is initially rotated by -x degrees (counter-clockwise if x is positive).\n// We apply k clockwise 90-degree rotations. So the total rotation of the image content is: -x + 90*k.\n// We want this total rotation to be as close to 0 (mod 360) as possible.\n// The deviation is min(|(-x + 90*k) mod 360|, 360 - |(-x + 90*k) mod 360|) but we need to be careful with the modulo.\n\n// Actually, let's normalize the initial image rotation.\n// The image is rotated by -x degrees. Let's call this r = -x.\n// After k clockwise 90-degree turns, the image rotation becomes r + 90*k.\n// We want to find k in {0, 1, 2, 3} that minimizes the angular deviation of (r + 90*k) from 0 (mod 360).\n\n// The deviation of an angle a from vertical is min(|a mod 360|, 360 - |a mod 360|) but we need to handle negative angles properly.\n// Let's define a function to compute the minimum deviation from 0 for an angle a (in degrees).\n// Normalize a to [0, 360): a_norm = a % 360; if a_norm < 0, a_norm += 360.\n// Then deviation = min(a_norm, 360 - a_norm).\n\nfunction deviation($a) {\n    $a_norm = $a % 360;\n    if ($a_norm < 0) {\n        $a_norm += 360;\n    }\n    return min($a_norm, 360 - $a_norm);\n}\n\n$r = -$x;\n$best_k = 0;\n$best_dev = deviation($r);\n\nfor ($k = 1; $k <= 3; $k++) {\n    $dev = deviation($r + 90 * $k);\n    if ($dev < $best_dev) {\n        $best_dev = $dev;\n        $best_k = $k;\n    }\n}\n\necho $best_k;\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 8,
+                "message": {
+                    "content": "<?php\n$input = trim(fgets(STDIN));\n$x = (int)$input;\n\n// The image is rotated by -x degrees (counter-clockwise if x is positive clockwise camera rotation)\n// We can apply k times 90 degrees clockwise rotation to the image.\n// Total rotation of the image content relative to original: -x + k * 90\n// We want to minimize the deviation from vertical (0 or 180 degrees).\n// Deviation is the minimum angle to reach 0 or 180 modulo 360.\n// Let angle = (-x + k * 90) % 360. We normalize to [0, 360).\n// The deviation from vertical is min(angle, 360 - angle) if we consider 0 as vertical.\n// But wait, vertical means 0 or 180. So deviation is min(angle, 180 - angle, 180 + angle, 360 - angle)?\n// Actually, the deviation from vertical is the minimum angle to the nearest multiple of 180.\n// So deviation = min(angle % 180, 180 - (angle % 180)) where angle is normalized to [0, 360).\n// Or simpler: let r = abs(-x) % 360. But we need to consider k=0,1,2,3.\n\n// Let's just try k = 0, 1, 2, 3.\n// For each k, compute the total rotation angle of the image content.\n// The camera is rotated by x degrees clockwise.\n// The image content is rotated by -x degrees (counter-clockwise) relative to the camera frame.\n// Wait, the problem says: \"on clockwise camera rotation frame the content becomes rotated counter-clockwise\".\n// So if camera rotates x degrees clockwise, the image content appears rotated -x degrees (counter-clockwise) relative to the true up.\n// Then we apply k times 90 degrees clockwise rotation to the image.\n// So the final rotation of the image content relative to true up is: -x + k * 90.\n// We want to minimize the deviation from vertical.\n// Vertical is 0 or 180.\n// So we want to minimize the distance to the nearest multiple of 180.\n// Let angle = (-x + k * 90) % 360. Normalize to [0, 360).\n// Deviation = min(angle, 360 - angle) if we consider 0 as the reference? No, vertical is 0 and 180.\n// So deviation = min(angle % 180, 180 - (angle % 180)).\n\n// Let's compute for k=0,1,2,3.\n$best_k = 0;\n$best_dev = PHP_INT_MAX;\n\nfor ($k = 0; $k < 4; $k++) {\n    // Total rotation = -x + k * 90\n    // We need to handle large x.\n    // Let's compute angle = (-x + k * 90) % 360.\n    // In PHP, % can be negative. So we do:\n    $angle = (-$x + $k * 90) % 360;\n    if ($angle < 0) {\n        $angle += 360;\n    }\n    // Now angle is in [0, 360).\n    // Deviation from vertical (0 or 180):\n    $dev1 = $angle % 180;\n    $dev2 = 180 - $dev1;\n    $dev = min($dev1, $dev2);\n    \n    if ($dev < $best_dev) {\n        $best_dev = $dev;\n        $best_k = $k;\n    }\n}\n\necho $best_k;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 9,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\n$line = trim(fgets(STDIN));\n$x = (int)$line;\n\n// The camera rotation is x degrees.\n// Positive x means clockwise camera rotation, which results in counter-clockwise image rotation.\n// So the image is rotated by -x degrees (if x is positive, image is rotated counter-clockwise by x).\n// Actually, let's re-read: \"on clockwise camera rotation frame the content becomes rotated counter-clockwise\"\n// So if camera rotates clockwise by x, image content is rotated counter-clockwise by x.\n// That means the image is effectively rotated by -x degrees (clockwise positive convention for image rotation).\n// Wait, let's think in terms of image rotation angle.\n// Let's define the image rotation angle as the angle we need to correct.\n// If camera rotates clockwise by x, the image appears rotated counter-clockwise by x.\n// So the image is rotated by -x degrees (using clockwise as positive).\n// We can apply 90-degree clockwise turns. Each turn adds 90 degrees clockwise to the image.\n// After k turns, the total image rotation is (-x + 90*k) degrees.\n// We want to minimize the deviation from vertical, i.e., minimize the absolute value of the angle modulo 360, considering the smallest angle to vertical.\n// The deviation from vertical is min(|angle mod 360|, 360 - |angle mod 360|) but we need to be careful with the sign.\n// Actually, the deviation is the smallest angle between the current \"up\" direction and the true vertical.\n// So for a total rotation angle A, the deviation is min(A mod 360, 360 - (A mod 360)) but we need to handle negative angles properly.\n// Let's normalize the angle to [0, 360).\n// For k = 0, 1, 2, 3, compute the total rotation angle = (-x + 90*k) mod 360.\n// Then compute the deviation as min(angle, 360 - angle) where angle is in [0, 360).\n// We want to find k in {0, 1, 2, 3} that minimizes the deviation. If there's a tie, we want the minimum k.\n\nfunction deviation($angle) {\n    // Normalize angle to [0, 360)\n    $angle = $angle % 360;\n    if ($angle < 0) {\n        $angle += 360;\n    }\n    // Deviation from vertical\n    return min($angle, 360 - $angle);\n}\n\n$best_k = 0;\n$best_dev = deviation(-$x);\n\nfor ($k = 1; $k <= 3; $k++) {\n    $total_rotation = -$x + 90 * $k;\n    $dev = deviation($total_rotation);\n    if ($dev < $best_dev) {\n        $best_dev = $dev;\n        $best_k = $k;\n    }\n}\n\necho $best_k;\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 10,
+                "message": {
+                    "content": "<?php\n$input = trim(fgets(STDIN));\n$x = (int)$input;\n\n// The image is rotated by -x degrees relative to true up.\n// We can apply k times 90 degrees clockwise rotation.\n// Total rotation of image = -x + 90*k degrees.\n// We want to minimize the deviation from vertical (0 or 180 degrees).\n// Deviation is the minimum angle between the total rotation and the nearest multiple of 180.\n// Actually, deviation from vertical means the angle between the \"up\" direction in the image and the true up.\n// If the image is rotated by angle A, the deviation is min(A mod 360, 360 - (A mod 360)) if we consider 0 and 180 as vertical?\n// No, vertical means 0 or 180. The deviation from vertical is the minimum angle to the nearest multiple of 180.\n// Let's re-read carefully.\n// \"deviation from vertical\"\n// In the notes:\n// x = -60. Image rotated 60 clockwise.\n// k=0: total 60. Deviation 60.\n// k=1: total 60+90=150. Deviation 150? Note says \"deviation ... is 150 degrees\". Wait.\n// Note says: \"One 90 degrees clockwise turn of the image result in 150 degrees clockwise total rotation and deviation from \"true up\" for one turn is 150 degrees.\"\n// This implies deviation is just the angle from 0? But 150 is closer to 180 than to 0?\n// Let's check k=2: total 240. Note says deviation is 120. 240 is 120 away from 180? Or 120 away from 360(0)?\n// 240 mod 360 = 240. Distance to 0 is 240 (or 120 the other way). Distance to 180 is 60.\n// The note says deviation is 120. So it's the distance to the nearest multiple of 360? i.e. distance to 0?\n// Let's check k=3: total 330. Note says deviation is 30. 330 is 30 away from 360(0).\n// Let's check k=0: total 60. Deviation 60. 60 is 60 away from 0.\n// So the \"deviation from vertical\" in the problem context seems to be the angle from 0 (or 360), i.e., how far the top of the image is from the true top.\n// Wait, if the image is upside down (180), is it \"vertical\"?\n// The problem says \"faces that are just slightly deviated from vertical\".\n// Usually, a face upside down is not considered \"slightly deviated from vertical\" in the sense of being upright.\n// However, the FPGA rotates by 90.\n// Let's look at the sample x=60.\n// Image rotated -60 (counter-clockwise).\n// k=0: total -60. Deviation 60.\n// k=1: total -60+90=30. Deviation 30.\n// k=2: total -60+180=120. Deviation 120.\n// k=3: total -60+270=210. Deviation 150 (210-360=-150, abs 150).\n// Min deviation is 30 at k=1. Output 1. Matches.\n\n// So the deviation is the minimum angle to the nearest multiple of 360?\n// i.e. d = min( (total % 360 + 360) % 360, 360 - ((total % 360 + 360) % 360) )\n// Let's verify with x=-60.\n// total = 60 + 90k.\n// k=0: 60. d = min(60, 300) = 60.\n// k=1: 150. d = min(150, 210) = 150.\n// k=2: 240. d = min(240, 120) = 120.\n// k=3: 330. d = min(330, 30) = 30.\n// Min is 30 at k=3. Output 3. Matches.\n\n// So we need to find k in {0, 1, 2, 3} that minimizes the circular distance of (-x + 90k) to 0 mod 360.\n// Since k is only 0..3, we can just check all 4 cases.\n\n$min_dev = PHP_INT_MAX;\n$best_k = 0;\n\nfor ($k = 0; $k < 4; $k++) {\n    // total rotation = -x + 90*k\n    // We need to handle large x.\n    // Let's normalize -x to [0, 360)\n    // $angle = (-x) % 360\n    // In PHP, % can be negative.\n    $angle = ((-x) % 360 + 360) % 360;\n    $total = ($angle + 90 * $k) % 360;\n    \n    $dev = min($total, 360 - $total);\n    \n    if ($dev < $min_dev) {\n        $min_dev = $dev;\n        $best_k = $k;\n    }\n}\n\necho $best_k . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 11,
+                "message": {
+                    "content": "<?php\n// Read the input\n$input = trim(fgets(STDIN));\n$x = (int)$input;\n\n// The image is rotated by -x degrees (counter-clockwise if x is positive).\n// We can apply k times 90 degrees clockwise rotation.\n// Total rotation of the image content relative to true up:\n// Initial image rotation: -x\n// After k 90-degree clockwise turns: -x + 90*k\n// We want to minimize the deviation from vertical (0 or 180 degrees).\n// The deviation is the minimum angle between the current orientation and the nearest multiple of 180.\n// Actually, the problem states \"minimally deviated from vertical\". Vertical means 0 or 180.\n// So we want to minimize min(|(-x + 90*k) mod 360|, 360 - |(-x + 90*k) mod 360|) but considering the shortest path to 0 or 180.\n// More simply, the deviation from vertical is the distance to the nearest multiple of 180.\n// Let R = (-x + 90*k) mod 360. We want R to be as close to 0 or 180 as possible.\n// The deviation is min(R, 360-R) if we consider 0, but since 180 is also vertical, \n// the deviation is min(R, 180-R, 180+R, 360-R) ... wait.\n// Let's normalize the angle to [0, 360).\n// The deviation from vertical is min(angle, 360-angle) if we only care about 0? No, vertical is 0 and 180.\n// So deviation = min(angle, 180 - angle, 180 + angle, 360 - angle) is not quite right.\n// Let's define deviation d(A) for an angle A (in [0, 360)) as the minimum distance to 0 or 180.\n// d(A) = min(A, 180-A, 180+A, 360-A) is incorrect.\n// Distance to 0 is min(A, 360-A).\n// Distance to 180 is min(|A-180|, 360-|A-180|).\n// So d(A) = min(min(A, 360-A), min(|A-180|, 360-|A-180|)).\n// Actually, simpler: d(A) = min(A, 360-A, 180-A, 180+A) doesn't work directly.\n// Let's just calculate the angle modulo 360, normalize to [0, 360).\n// Then check distance to 0 and 180.\n// dist0 = min(angle, 360-angle)\n// dist180 = min(abs(angle-180), 360-abs(angle-180))\n// deviation = min(dist0, dist180)\n\n// However, we only need to try k = 0, 1, 2, 3 because 4 turns bring us back to start.\n// We want the minimum k (number of turns) that gives the minimum deviation.\n// If there are ties in deviation, we choose the smallest k.\n\nfunction getDeviation($angle) {\n    // Normalize angle to [0, 360)\n    $angle = $angle % 360;\n    if ($angle < 0) {\n        $angle += 360;\n    }\n    \n    // Distance to 0\n    $d0 = min($angle, 360 - $angle);\n    // Distance to 180\n    $d180 = min(abs($angle - 180), 360 - abs($angle - 180));\n    \n    return min($d0, $d180);\n}\n\n// The initial rotation of the image content is -x.\n// After k turns, the rotation is -x + 90*k.\n// We iterate k from 0 to 3.\n\n$minDeviation = PHP_INT_MAX;\n$minTurns = 0;\n\nfor ($k = 0; $k < 4; $k++) {\n    $currentRotation = -$x + 90 * $k;\n    $deviation = getDeviation($currentRotation);\n    \n    if ($deviation < $minDeviation) {\n        $minDeviation = $deviation;\n        $minTurns = $k;\n    }\n}\n\necho $minTurns;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 12,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\n$line = trim(fgets(STDIN));\n$x = (int)$line;\n\n// The image is rotated by -x degrees (counter to camera rotation)\n// We can apply k times 90 degrees clockwise rotation (k = 0, 1, 2, 3)\n// Total rotation of image = -x + k * 90\n// We want to minimize the deviation from vertical (0 or 180 degrees)\n// Deviation is the minimum angle to 0 or 180\n\nfunction deviation($angle) {\n    // Normalize angle to [0, 360)\n    $angle = $angle % 360;\n    if ($angle < 0) $angle += 360;\n    \n    // Deviation from vertical: min(angle, 360 - angle, abs(angle - 180))\n    // Actually, deviation from vertical means how far from 0 or 180\n    $d1 = $angle;\n    $d2 = 360 - $angle;\n    $d3 = abs($angle - 180);\n    \n    return min($d1, $d2, $d3);\n}\n\n// Image rotation due to camera: -x\n// After k clockwise 90-degree turns: -x + k*90\n// We need to find k in {0, 1, 2, 3} that minimizes deviation\n\n$best_k = 0;\n$best_dev = PHP_INT_MAX;\n\nfor ($k = 0; $k <= 3; $k++) {\n    $total_rotation = -$x + $k * 90;\n    $dev = deviation($total_rotation);\n    if ($dev < $best_dev) {\n        $best_dev = $dev;\n        $best_k = $k;\n    }\n}\n\necho $best_k . \"\\n\";\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 13,
+                "message": {
+                    "content": "```php\n<?php\n// Read the input\n$x = trim(fgets(STDIN));\n$x = (int)$x;\n\n// The image is rotated by -x degrees (counter-clockwise if x is positive, clockwise if x is negative)\n// We need to find the minimum number of 90-degree clockwise turns (0, 1, 2, or 3)\n// such that the total rotation deviation from vertical is minimized.\n\n// After k clockwise 90-degree turns, the total rotation of the image is:\n// initial_image_rotation + k * 90\n// where initial_image_rotation = -x (because camera rotation x causes image rotation -x)\n\n// So total rotation = -x + k * 90\n// We want to minimize the deviation from vertical, which is the absolute angle modulo 360,\n// but considering the shortest path to 0 (i.e., min(angle % 360, 360 - (angle % 360)))\n\nfunction deviation($angle) {\n    // Normalize angle to [0, 360)\n    $angle = $angle % 360;\n    if ($angle < 0) {\n        $angle += 360;\n    }\n    // The deviation from vertical is the minimum of angle and 360 - angle\n    return min($angle, 360 - $angle);\n}\n\n$best_k = 0;\n$best_dev = deviation(-$x);\n\nfor ($k = 1; $k <= 3; $k++) {\n    $total_rotation = -$x + $k * 90;\n    $dev = deviation($total_rotation);\n    if ($dev < $best_dev) {\n        $best_dev = $dev;\n        $best_k = $k;\n    }\n}\n\necho $best_k . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 14,
+                "message": {
+                    "content": "```php\n<?php\n$line = trim(fgets(STDIN));\n$x = (int)$line;\n\n// The image is rotated by -x degrees (counter-clockwise if x is positive, clockwise if x is negative)\n// We need to find the minimum number of 90-degree clockwise turns (0, 1, 2, or 3)\n// such that the total rotation deviation from vertical is minimized.\n\n// After k clockwise turns of 90 degrees each, the total image rotation is:\n// (-x) + k * 90 degrees\n// We want to minimize the absolute deviation from vertical, which is the minimum of:\n// |total mod 360| and |360 - (total mod 360)|\n\nfunction deviation($angle) {\n    // Normalize angle to [0, 360)\n    $angle = $angle % 360;\n    if ($angle < 0) {\n        $angle += 360;\n    }\n    // Deviation from vertical is min(angle, 360 - angle)\n    return min($angle, 360 - $angle);\n}\n\n$best = 0;\n$minDev = PHP_INT_MAX;\n\nfor ($k = 0; $k <= 3; $k++) {\n    // Image rotation: -x + k * 90\n    $totalRotation = -$x + $k * 90;\n    $dev = deviation($totalRotation);\n    if ($dev < $minDev) {\n        $minDev = $dev;\n        $best = $k;\n    }\n}\n\necho $best . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 15,
+                "message": {
+                    "content": "```php\n<?php\nreadline();\nfunction readline() {\n    $line = trim(fgets(STDIN));\n    return $line;\n}\n\n$x = (int)readline();\n\n// The image is rotated by -x degrees (counter-clockwise if x is positive)\n// We need to find minimum k in {0, 1, 2, 3} such that the deviation from vertical is minimized\n// After k clockwise 90-degree turns, the total rotation of the image is: -x + k*90\n// The deviation from vertical is the minimum angle to 0 mod 360, i.e., min(|angle|, 360 - |angle|) where angle is normalized to [-180, 180]\n\nfunction deviation($angle) {\n    // Normalize angle to [-180, 180]\n    $angle = $angle % 360;\n    if ($angle > 180) {\n        $angle -= 360;\n    } elseif ($angle < -180) {\n        $angle += 360;\n    }\n    return abs($angle);\n}\n\n$minDev = PHP_INT_MAX;\n$bestK = 0;\n\nfor ($k = 0; $k <= 3; $k++) {\n    $totalRotation = -x + $k * 90;\n    $dev = deviation($totalRotation);\n    if ($dev < $minDev) {\n        $minDev = $dev;\n        $bestK = $k;\n    }\n}\n\necho $bestK . \"\\n\";\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 16,
+                "message": {
+                    "content": "```php\n<?php\n$line = trim(fgets(STDIN));\n$x = (int)$line;\n\n// The image is rotated by -x degrees (counter-clockwise if x is positive)\n// We need to find k (0, 1, 2, or 3) such that the total rotation deviation from vertical is minimized.\n// Total rotation after k clockwise 90-degree turns: -x + k * 90\n// We want to minimize the absolute deviation from 0 (mod 360), i.e., the angle closest to 0.\n\nfunction deviation($angle) {\n    // Normalize angle to [0, 360)\n    $angle = $angle % 360;\n    if ($angle < 0) {\n        $angle += 360;\n    }\n    // The deviation from vertical is min(angle, 360 - angle)\n    return min($angle, 360 - $angle);\n}\n\n$best_k = 0;\n$best_dev = deviation(-$x);\n\nfor ($k = 1; $k <= 3; $k++) {\n    $total_rotation = -$x + $k * 90;\n    $dev = deviation($total_rotation);\n    if ($dev < $best_dev) {\n        $best_dev = $dev;\n        $best_k = $k;\n    }\n}\n\necho $best_k . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 17,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\n$x = trim(fgets(STDIN));\n$x = (int)$x;\n\n// The image is rotated by -x degrees (counter-clockwise if x is positive)\n// We can apply k times 90 degrees clockwise rotation (k = 0, 1, 2, 3)\n// After k rotations, the total rotation of the image is: (-x + k * 90) degrees\n// We want to minimize the deviation from vertical, which is the minimum of:\n// |angle mod 360| and 360 - |angle mod 360|\n\nfunction deviation($angle) {\n    // Normalize angle to [0, 360)\n    $angle = $angle % 360;\n    if ($angle < 0) {\n        $angle += 360;\n    }\n    // Deviation from vertical is min(angle, 360 - angle)\n    return min($angle, 360 - $angle);\n}\n\n$min_dev = PHP_INT_MAX;\n$best_k = 0;\n\nfor ($k = 0; $k < 4; $k++) {\n    // Image rotation: -x + k * 90\n    $total_rotation = -$x + $k * 90;\n    $dev = deviation($total_rotation);\n    if ($dev < $min_dev) {\n        $min_dev = $dev;\n        $best_k = $k;\n    }\n}\n\necho $best_k . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 18,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\n$line = trim(fgets(STDIN));\n$x = (int)$line;\n\n// The image is rotated by -x degrees (counter-clockwise if x is positive)\n// We can apply k times 90 degrees clockwise rotation, where k is 0, 1, 2, or 3\n// After k rotations, the total rotation of the image is: -x + k*90 degrees\n// We want to minimize the deviation from vertical, which means minimizing\n// the absolute angle modulo 360, considering the shortest path to 0\n\nfunction deviation($angle) {\n    // Normalize angle to [0, 360)\n    $angle = $angle % 360;\n    if ($angle < 0) {\n        $angle += 360;\n    }\n    // The deviation from vertical is the minimum of angle and 360 - angle\n    return min($angle, 360 - $angle);\n}\n\n// Try k = 0, 1, 2, 3\n$minDev = PHP_INT_MAX;\n$bestK = 0;\n\nfor ($k = 0; $k < 4; $k++) {\n    // Total rotation of image: -x + k*90\n    $totalRotation = -$x + $k * 90;\n    $dev = deviation($totalRotation);\n    if ($dev < $minDev) {\n        $minDev = $dev;\n        $bestK = $k;\n    }\n}\n\necho $bestK . \"\\n\";\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 19,
+                "message": {
+                    "content": "```php\n<?php\n$line = trim(fgets(STDIN));\n$x = (int)$line;\n\n// The image is rotated by -x degrees (counter-clockwise if x is positive)\n// We need to find the minimum number of 90-degree clockwise turns (0, 1, 2, or 3)\n// such that the resulting deviation from vertical is minimized.\n\n// After k clockwise turns, the total rotation of the image is:\n// image_rotation = -x + k * 90\n// We want to minimize the absolute deviation from vertical, which is:\n// min(|angle|, 360 - |angle|) where angle is normalized to [0, 360)\n\nfunction deviation($angle) {\n    // Normalize angle to [0, 360)\n    $angle = $angle % 360;\n    if ($angle < 0) {\n        $angle += 360;\n    }\n    // The deviation from vertical is the minimum of the angle and 360 - angle\n    return min($angle, 360 - $angle);\n}\n\n$best_k = 0;\n$best_dev = PHP_INT_MAX;\n\nfor ($k = 0; $k <= 3; $k++) {\n    $total_rotation = -$x + $k * 90;\n    $dev = deviation($total_rotation);\n    if ($dev < $best_dev) {\n        $best_dev = $dev;\n        $best_k = $k;\n    }\n}\n\necho $best_k . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 14013,
+            "prompt_tokens": 732,
+            "total_tokens": 14745
+        },
+        "prompt": "Write a program in PHP to solve this programming problem:\nDescription: Vasya started working in a machine vision company of IT City. Vasya's team creates software and hardware for identification of people by their face.One of the project's know-how is a camera rotating around its optical axis on shooting. People see an eye-catching gadget \u2014 a rotating camera \u2014 come up to it to see it better, look into it. And the camera takes their photo at that time. What could be better for high quality identification?But not everything is so simple. The pictures from camera appear rotated too (on clockwise camera rotation frame the content becomes rotated counter-clockwise). But the identification algorithm can work only with faces that are just slightly deviated from vertical.Vasya was entrusted to correct the situation \u2014 to rotate a captured image so that image would be minimally deviated from vertical. Requirements were severe. Firstly, the picture should be rotated only on angle divisible by 90 degrees to not lose a bit of information about the image. Secondly, the frames from the camera are so huge and FPS is so big that adequate rotation speed is provided by hardware FPGA solution only. And this solution can rotate only by 90 degrees clockwise. Of course, one can apply 90 degrees turn several times but for the sake of performance the number of turns should be minimized.Help Vasya implement the program that by the given rotation angle of the camera can determine the minimum number of 90 degrees clockwise turns necessary to get a picture in which up direction deviation from vertical is minimum.The next figure contains frames taken from an unrotated camera, then from rotated 90 degrees clockwise, then from rotated 90 degrees counter-clockwise. Arrows show direction to \"true up\".  The next figure shows 90 degrees clockwise turn by FPGA hardware.  \nInput Specification: The only line of the input contains one integer x (\u2009-\u20091018\u2009\u2264\u2009x\u2009\u2264\u20091018) \u2014 camera angle in degrees. Positive value denotes clockwise camera rotation, negative \u2014 counter-clockwise.\nOutput Specification: Output one integer \u2014 the minimum required number of 90 degrees clockwise turns.\n\nSample Input:\n60\nSample Output:\n1\n\nSample Input:\n-60\nSample Output:\n3\n\nNotes: NoteWhen the camera is rotated 60 degrees counter-clockwise (the second example), an image from it is rotated 60 degrees clockwise. One 90 degrees clockwise turn of the image result in 150 degrees clockwise total rotation and deviation from \"true up\" for one turn is 150 degrees. Two 90 degrees clockwise turns of the image result in 240 degrees clockwise total rotation and deviation from \"true up\" for two turns is 120 degrees because 240 degrees clockwise equal to 120 degrees counter-clockwise. Three 90 degrees clockwise turns of the image result in 330 degrees clockwise total rotation and deviation from \"true up\" for three turns is 30 degrees because 330 degrees clockwise equal to 30 degrees counter-clockwise.From 60, 150, 120 and 30 degrees deviations the smallest is 30, and it it achieved in three 90 degrees clockwise turns.\nTake input from standard input and output to standard output\nProvide the PHP code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "509db9cb6156b692557ba874a09f150e",
+        "difficulty": 1800,
+        "prob_desc_sample_inputs": [
+            "60",
+            "-60"
+        ],
+        "prob_desc_time_limit": "0.5 seconds",
+        "tags": [
+            "geometry",
+            "math"
+        ],
+        "prob_desc_output_spec": "Output one integer \u2014 the minimum required number of 90 degrees clockwise turns.",
+        "prob_desc_input_spec": "The only line of the input contains one integer x (\u2009-\u20091018\u2009\u2264\u2009x\u2009\u2264\u20091018) \u2014 camera angle in degrees. Positive value denotes clockwise camera rotation, negative \u2014 counter-clockwise.",
+        "lang_cluster": "PHP",
+        "source_code": "",
+        "prob_desc_notes": "NoteWhen the camera is rotated 60 degrees counter-clockwise (the second example), an image from it is rotated 60 degrees clockwise. One 90 degrees clockwise turn of the image result in 150 degrees clockwise total rotation and deviation from \"true up\" for one turn is 150 degrees. Two 90 degrees clockwise turns of the image result in 240 degrees clockwise total rotation and deviation from \"true up\" for two turns is 120 degrees because 240 degrees clockwise equal to 120 degrees counter-clockwise. Three 90 degrees clockwise turns of the image result in 330 degrees clockwise total rotation and deviation from \"true up\" for three turns is 30 degrees because 330 degrees clockwise equal to 30 degrees counter-clockwise.From 60, 150, 120 and 30 degrees deviations the smallest is 30, and it it achieved in three 90 degrees clockwise turns.",
+        "prob_desc_memory_limit": "64 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Vasya started working in a machine vision company of IT City. Vasya's team creates software and hardware for identification of people by their face.One of the project's know-how is a camera rotating around its optical axis on shooting. People see an eye-catching gadget \u2014 a rotating camera \u2014 come up to it to see it better, look into it. And the camera takes their photo at that time. What could be better for high quality identification?But not everything is so simple. The pictures from camera appear rotated too (on clockwise camera rotation frame the content becomes rotated counter-clockwise). But the identification algorithm can work only with faces that are just slightly deviated from vertical.Vasya was entrusted to correct the situation \u2014 to rotate a captured image so that image would be minimally deviated from vertical. Requirements were severe. Firstly, the picture should be rotated only on angle divisible by 90 degrees to not lose a bit of information about the image. Secondly, the frames from the camera are so huge and FPS is so big that adequate rotation speed is provided by hardware FPGA solution only. And this solution can rotate only by 90 degrees clockwise. Of course, one can apply 90 degrees turn several times but for the sake of performance the number of turns should be minimized.Help Vasya implement the program that by the given rotation angle of the camera can determine the minimum number of 90 degrees clockwise turns necessary to get a picture in which up direction deviation from vertical is minimum.The next figure contains frames taken from an unrotated camera, then from rotated 90 degrees clockwise, then from rotated 90 degrees counter-clockwise. Arrows show direction to \"true up\".  The next figure shows 90 degrees clockwise turn by FPGA hardware.  ",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1455807600",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "1",
+            "3"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"60\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-60\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"44\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"45\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"46\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"134\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"135\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"136\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"224\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"225\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"226\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"227\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"313\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"314\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"315\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"316\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"358\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"359\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"360\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"361\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"999999999999999340\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"999999999999999325\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"999999999999999326\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"999999999999999415\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"999999999999999416\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"999999999999999504\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"999999999999999505\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"999999999999999506\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"999999999999999594\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"999999999999999595\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"999999999999999596\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"999999999999999639\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"999999999999999640\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"6678504591813508\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"201035370138545377\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"441505850043460771\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"252890591709237675\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"272028913373922389\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"141460527912396122\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"479865961765156498\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-44\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-45\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-46\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"-134\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"-135\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-136\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-224\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-225\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-226\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-227\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-313\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-314\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-315\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-316\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-358\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-359\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-360\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-361\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-999999999999999340\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-999999999999999325\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-999999999999999326\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-999999999999999415\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"-999999999999999416\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"-999999999999999504\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-999999999999999505\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-999999999999999506\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-999999999999999594\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-999999999999999595\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-999999999999999596\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-999999999999999639\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-999999999999999640\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-6678504591813508\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-201035370138545377\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-441505850043460771\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"-252890591709237675\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-272028913373922389\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-141460527912396122\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-479865961765156498\\r\\n\", \"output\": [\"2\"]}]"
+    }
+}

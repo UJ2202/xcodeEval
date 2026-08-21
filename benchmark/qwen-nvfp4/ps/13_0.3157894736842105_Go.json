@@ -1,0 +1,390 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-bce8a034b4c707e7",
+        "created": 1787074693,
+        "model": "qwen-nvfp4",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.27.1-d7a14dad",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(reader, &n)\n\n\t// dp[i][j] = minimum weight to triangulate polygon from vertex i to vertex j (inclusive)\n\t// The polygon has vertices 1..n\n\t// We use 1-indexed for clarity\n\t// dp[i][j] where i < j, and the sub-polygon is vertices i, i+1, ..., j\n\t// Base case: if j == i+1, it's an edge, no triangle needed, weight = 0\n\t// If j == i+2, it's a triangle with vertices i, i+1, i+2, weight = i*(i+1)*(i+2)\n\t\n\t// For larger sub-polygons, we pick a vertex k (i < k < j) to form triangle (i, k, j)\n\t// and triangulate the two sub-polygons (i, ..., k) and (k, ..., j)\n\t// dp[i][j] = min over k of (dp[i][k] + dp[k][j] + i*k*j)\n\t\n\t// Note: vertices are labeled 1 to n\n\t// We need to handle the wrap-around? No, because the polygon is convex and we're doing standard DP on a chain.\n\t// Actually, for a convex polygon with vertices 1..n in order, the standard interval DP works on the linear chain 1..n.\n\t// The triangulation of the polygon with vertices 1..n can be represented by dp[1][n].\n\t\n\t// Initialize dp table\n\t// dp[i][j] for 1 <= i < j <= n\n\t// We'll use a 2D slice\n\tdp := make([][]int64, n+1)\n\tfor i := 1; i <= n; i++ {\n\t\tdp[i] = make([]int64, n+1)\n\t}\n\t\n\t// Base cases:\n\t// For any i, dp[i][i+1] = 0 (just an edge)\n\t// For any i, dp[i][i+2] = int64(i) * int64(i+1) * int64(i+2)\n\t\n\t// Fill dp for increasing length of interval\n\t// length = j - i, from 2 to n-1\n\tfor length := 2; length <= n-1; length++ {\n\t\tfor i := 1; i+length <= n; i++ {\n\t\t\tj := i + length\n\t\t\tif length == 2 {\n\t\t\t\tdp[i][j] = int64(i) * int64(i+1) * int64(j)\n\t\t\t} else {\n\t\t\t\t// Find minimum over k from i+1 to j-1\n\t\t\t\tminVal := int64(1 << 62) // large value\n\t\t\t\tfor k := i + 1; k < j; k++ {\n\t\t\t\t\tval := dp[i][k] + dp[k][j] + int64(i)*int64(k)*int64(j)\n\t\t\t\t\tif val < minVal {\n\t\t\t\t\t\tminVal = val\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tdp[i][j] = minVal\n\t\t\t}\n\t\t}\n\t}\n\t\n\tfmt.Println(dp[1][n])\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(reader, &n)\n\n\t// dp[i][j] = minimum weight to triangulate the polygon with vertices i, i+1, ..., j (cyclic)\n\t// We use 1-indexed vertices from 1 to n\n\t// dp[i][j] for i <= j in the linear sense, but we need to handle the cyclic nature\n\t// Actually, since it's a convex polygon, we can use standard interval DP on a linear array\n\t// but we need to be careful: the polygon is cyclic. However, for a convex polygon,\n\t// we can fix vertex 1 and consider the chain from 1 to n.\n\t// Standard approach: dp[i][j] = min over k in (i+1..j-1) of dp[i][k] + dp[k][j] + i*k*j\n\t// Base case: dp[i][i+1] = 0 (no triangle, just an edge)\n\t// dp[i][i+2] = i*(i+1)*(i+2)\n\n\t// Since n can be up to 500, O(n^3) is 125e6 which might be borderline in Go.\n\t// Let's try to optimize or just go with O(n^3).\n\n\tdp := make([][]int64, n+2)\n\tfor i := range dp {\n\t\tdp[i] = make([]int64, n+2)\n\t}\n\n\t// Initialize: dp[i][j] = 0 when j == i+1 (adjacent vertices, no triangle)\n\t// For length 2 (3 vertices): dp[i][i+2] = i*(i+1)*(i+2)\n\n\t// We'll fill by increasing length of the interval\n\t// length = j - i\n\t// length 1: j = i+1, dp = 0\n\t// length 2: j = i+2, dp = i*(i+1)*(i+2)\n\t// length >= 3: dp[i][j] = min_{k=i+1}^{j-1} (dp[i][k] + dp[k][j] + int64(i)*int64(k)*int64(j))\n\n\t// Note: vertices are 1..n. We consider intervals [i, j] where 1 <= i < j <= n\n\t// The polygon is convex, so this works.\n\n\tfor length := 2; length <= n-1; length++ {\n\t\tfor i := 1; i+length <= n; i++ {\n\t\t\tj := i + length\n\t\t\tif length == 2 {\n\t\t\t\tdp[i][j] = int64(i) * int64(i+1) * int64(i+2)\n\t\t\t} else {\n\t\t\t\tminVal := int64(1<<62)\n\t\t\t\tfor k := i + 1; k < j; k++ {\n\t\t\t\t\tval := dp[i][k] + dp[k][j] + int64(i)*int64(k)*int64(j)\n\t\t\t\t\tif val < minVal {\n\t\t\t\t\t\tminVal = val\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tdp[i][j] = minVal\n\t\t\t}\n\t\t}\n\t}\n\n\tfmt.Println(dp[1][n])\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(reader, &n)\n\n\t// dp[i][j] = minimum weight to triangulate the polygon with vertices from i to j (inclusive)\n\t// The polygon is labeled 1 to n\n\t// We use 0-indexed internally: vertex i corresponds to label i+1\n\t// dp[i][j] for i < j, the sub-polygon from vertex i to vertex j (going counter-clockwise)\n\t// The number of vertices in this sub-polygon is j - i + 1\n\t// We need at least 3 vertices to form a triangle\n\n\t// dp[i][j] = min over k (i < k < j) of dp[i][k] + dp[k][j] + (i+1)*(k+1)*(j+1)\n\t// Base case: if j - i + 1 == 2, dp[i][j] = 0 (no triangle, just an edge)\n\t// If j - i + 1 == 3, dp[i][j] = (i+1)*(i+2)*(j+1)\n\n\t// Size: n x n\n\tdp := make([][]int64, n)\n\tfor i := range dp {\n\t\tdp[i] = make([]int64, n)\n\t}\n\n\t// Fill for increasing length of sub-polygon\n\t// length = j - i + 1\n\tfor length := 3; length <= n; length++ {\n\t\tfor i := 0; i <= n-length; i++ {\n\t\t\tj := i + length - 1\n\t\t\tif length == 3 {\n\t\t\t\tdp[i][j] = int64(i+1) * int64(i+2) * int64(j+1)\n\t\t\t} else {\n\t\t\t\tminVal := int64(1<<62) // large value\n\t\t\t\tfor k := i + 1; k < j; k++ {\n\t\t\t\t\tval := dp[i][k] + dp[k][j] + int64(i+1)*int64(k+1)*int64(j+1)\n\t\t\t\t\tif val < minVal {\n\t\t\t\t\t\tminVal = val\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tdp[i][j] = minVal\n\t\t\t}\n\t\t}\n\t}\n\n\tfmt.Println(dp[0][n-1])\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(reader, &n)\n\n\t// dp[i][j] = minimum weight to triangulate the polygon with vertices i, i+1, ..., j\n\t// We use 0-indexed vertices: 0 to n-1\n\t// dp[i][j] is defined for j - i >= 2 (at least 3 vertices)\n\t// dp[i][j] = min over k in (i+1, j-1) of dp[i][k] + dp[k][j] + (i+1)*(k+1)*(j+1)\n\t// Note: vertex labels are 1-indexed, so vertex index i has label i+1\n\n\t// Initialize dp with a large value\n\tconst INF = 1 << 60\n\tdp := make([][]int64, n)\n\tfor i := range dp {\n\t\tdp[i] = make([]int64, n)\n\t\tfor j := range dp[i] {\n\t\t\tdp[i][j] = INF\n\t\t}\n\t}\n\n\t// Base case: triangles (3 vertices)\n\tfor i := 0; i < n-2; i++ {\n\t\tj := i + 2\n\t\tdp[i][j] = int64(i+1) * int64(i+2) * int64(i+3)\n\t}\n\n\t// Fill dp for larger lengths\n\t// length = number of vertices in the sub-polygon\n\tfor length := 4; length <= n; length++ {\n\t\tfor i := 0; i <= n-length; i++ {\n\t\t\tj := i + length - 1\n\t\t\tminVal := int64(INF)\n\t\t\tfor k := i + 1; k < j; k++ {\n\t\t\t\tval := dp[i][k] + dp[k][j] + int64(i+1)*int64(k+1)*int64(j+1)\n\t\t\t\tif val < minVal {\n\t\t\t\t\tminVal = val\n\t\t\t\t}\n\t\t\t}\n\t\t\tdp[i][j] = minVal\n\t\t}\n\t}\n\n\tfmt.Println(dp[0][n-1])\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\twriter := bufio.NewWriter(os.Stdout)\n\tdefer writer.Flush()\n\n\tvar n int\n\tfmt.Fscan(reader, &n)\n\n\t// dp[i][j] = minimum weight to triangulate polygon with vertices i, i+1, ..., j\n\t// Vertices are labeled 1 to n\n\t// We use 1-indexed for clarity\n\n\t// dp[i][j] for i <= j, represents the sub-polygon from vertex i to vertex j\n\t// The number of vertices is j - i + 1\n\t// We need at least 3 vertices to form a triangle\n\n\t// Initialize dp with a large value\n\tconst INF = 1 << 60\n\tdp := make([][]int64, n+1)\n\tfor i := 1; i <= n; i++ {\n\t\tdp[i] = make([]int64, n+1)\n\t\tfor j := 1; j <= n; j++ {\n\t\t\tdp[i][j] = INF\n\t\t}\n\t}\n\n\t// Base case: triangle (3 vertices)\n\t// dp[i][i+2] = i * (i+1) * (i+2)\n\tfor i := 1; i+2 <= n; i++ {\n\t\tdp[i][i+2] = int64(i) * int64(i+1) * int64(i+2)\n\t}\n\n\t// Fill dp for larger polygons\n\t// Length of the sub-polygon (number of vertices) from 4 to n\n\tfor length := 4; length <= n; length++ {\n\t\tfor i := 1; i+length-1 <= n; i++ {\n\t\t\tj := i + length - 1\n\t\t\t// Try all possible k such that triangle (i, k, j) is formed\n\t\t\t// k ranges from i+1 to j-1\n\t\t\t// The weight is dp[i][k] + dp[k][j] + i * k * j\n\t\t\t// Note: dp[i][k] is 0 if k == i+1 (no vertices between, but actually it's a degenerate case)\n\t\t\t// Actually, if k == i+1, then dp[i][k] is for 2 vertices which is 0 (no triangulation needed, it's just an edge)\n\t\t\t// Similarly if k == j-1, dp[k][j] is for 2 vertices which is 0\n\t\t\t// So we need to handle the base case where the sub-polygon has 2 vertices as 0\n\t\t\t// Let's redefine: dp[i][j] = 0 if j == i+1 (2 vertices, no triangle)\n\t\t\t// But our base case was for 3 vertices. Let's adjust.\n\t\t\t\n\t\t\t// Actually, let's redefine dp[i][j] as the minimum weight to triangulate the polygon with vertices i, i+1, ..., j.\n\t\t\t// If j == i+1, there are 2 vertices, no triangle, weight = 0.\n\t\t\t// If j == i+2, there are 3 vertices, one triangle, weight = i*(i+1)*(i+2).\n\t\t\t// For j > i+2, we pick a vertex k (i < k < j) and form triangle (i, k, j).\n\t\t\t// The weight is dp[i][k] + dp[k][j] + i*k*j.\n\t\t\t\n\t\t\t// We already set dp[i][i+2] above.\n\t\t\t// For length >= 4, we compute:\n\t\t\tbest := INF\n\t\t\tfor k := i + 1; k <= j-1; k++ {\n\t\t\t\t// dp[i][k] is the cost for vertices i..k\n\t\t\t\t// dp[k][j] is the cost for vertices k..j\n\t\t\t\t// The triangle is (i, k, j)\n\t\t\t\tcost := dp[i][k] + dp[k][j] + int64(i)*int64(k)*int64(j)\n\t\t\t\tif cost < best {\n\t\t\t\t\tbest = cost\n\t\t\t\t}\n\t\t\t}\n\t\t\tdp[i][j] = best\n\t\t}\n\t}\n\n\t// The answer is dp[1][n]\n\tfmt.Fprintf(writer, \"%d\\n\", dp[1][n])\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(reader, &n)\n\n\t// dp[i][j] = minimum weight to triangulate the polygon from vertex i to vertex j (inclusive)\n\t// where i and j are 0-indexed, and the polygon is considered as a sub-polygon\n\t// with vertices i, i+1, ..., j (modulo n)\n\t\n\t// We'll use 0-indexed vertices: 0 to n-1\n\t// dp[i][j] for i < j, representing the sub-polygon with vertices i, i+1, ..., j\n\t// The number of vertices in this sub-polygon is j - i + 1\n\t// We need at least 3 vertices to form a triangle\n\t\n\t// Initialize dp with a large value\n\tconst INF = 1 << 60\n\tdp := make([][]int64, n)\n\tfor i := range dp {\n\t\tdp[i] = make([]int64, n)\n\t\tfor j := range dp[i] {\n\t\t\tdp[i][j] = INF\n\t\t}\n\t}\n\t\n\t// Base case: when j - i + 1 == 3, i.e., j = i + 2\n\t// The triangle has vertices i, i+1, i+2 (0-indexed), which correspond to labels i+1, i+2, i+3\n\t// Weight = (i+1) * (i+2) * (i+3)\n\tfor i := 0; i < n-2; i++ {\n\t\tj := i + 2\n\t\tdp[i][j] = int64(i+1) * int64(i+2) * int64(i+3)\n\t}\n\t\n\t// Fill dp for larger sub-polygons\n\t// Length of the sub-polygon (number of vertices) from 4 to n\n\tfor length := 4; length <= n; length++ {\n\t\tfor i := 0; i + length - 1 < n; i++ {\n\t\t\tj := i + length - 1\n\t\t\t// Try all possible k such that we split the polygon into:\n\t\t\t// sub-polygon i..k and sub-polygon k..j, with triangle (i, k, j)\n\t\t\t// k ranges from i+1 to j-1\n\t\t\t// The triangle has vertices i, k, j (0-indexed), labels i+1, k+1, j+1\n\t\t\t// The sub-polygon i..k has vertices i, i+1, ..., k\n\t\t\t// The sub-polygon k..j has vertices k, k+1, ..., j\n\t\t\t// But we need to be careful: the triangulation of i..k and k..j are independent\n\t\t\t// except that they share the edge (k, j) or (i, k)?\n\t\t\t\n\t\t\t// Actually, the standard approach:\n\t\t\t// dp[i][j] = min over k in (i+1 to j-1) of:\n\t\t\t//   dp[i][k] + dp[k][j] + (i+1)*(k+1)*(j+1)\n\t\t\t// But wait, this is only valid if the sub-polygons i..k and k..j are valid.\n\t\t\t// dp[i][k] is defined when k - i + 1 >= 3, i.e., k >= i+2\n\t\t\t// dp[k][j] is defined when j - k + 1 >= 3, i.e., k <= j-2\n\t\t\t\n\t\t\tbest := INF\n\t\t\tfor k := i + 1; k < j; k++ {\n\t\t\t\t// Check if dp[i][k] is valid (needs at least 3 vertices: k - i + 1 >= 3 => k >= i+2)\n\t\t\t\t// Check if dp[k][j] is valid (needs at least 3 vertices: j - k + 1 >= 3 => k <= j-2)\n\t\t\t\tif k - i + 1 < 3 || j - k + 1 < 3 {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\t// Triangle weight\n\t\t\t\ttriWeight := int64(i+1) * int64(k+1) * int64(j+1)\n\t\t\t\tval := dp[i][k] + dp[k][j] + triWeight\n\t\t\t\tif val < best {\n\t\t\t\t\tbest = val\n\t\t\t\t}\n\t\t\t}\n\t\t\tdp[i][j] = best\n\t\t}\n\t}\n\t\n\t// The answer is dp[0][n-1]\n\tfmt.Println(dp[0][n-1])\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(reader, &n)\n\n\t// dp[i][j] = minimum weight to triangulate the polygon from vertex i to vertex j (inclusive)\n\t// where vertices are labeled 1 to n\n\t// We use 0-indexed internally: vertex i corresponds to label i+1\n\t// dp[i][j] for i <= j, representing the sub-polygon with vertices i, i+1, ..., j\n\t// The number of vertices is j - i + 1\n\t// If j - i + 1 < 3, dp[i][j] = 0 (no triangulation needed)\n\t// If j - i + 1 == 3, dp[i][j] = (i+1)*(j-i+2)*(j+1) ... wait, let me think carefully.\n\n\t// Let's use 0-indexed vertices. Vertex index k has label k+1.\n\t// dp[i][j] = minimum weight to triangulate the polygon formed by vertices i, i+1, ..., j (in order)\n\t// This sub-polygon has (j - i + 1) vertices.\n\t// Base case: if j - i + 1 < 3, dp[i][j] = 0\n\t// If j - i + 1 == 3, dp[i][j] = (i+1)*(i+2)*(j+1)\n\t// For larger: dp[i][j] = min over k from i+1 to j-1 of:\n\t//   dp[i][k] + dp[k][j] + (i+1)*(k+1)*(j+1)\n\n\t// Since n <= 500, we can use a 2D array of size n x n\n\t// Use a large number for infinity\n\tconst INF = 1 << 60\n\n\tdp := make([][]int64, n)\n\tfor i := range dp {\n\t\tdp[i] = make([]int64, n)\n\t\tfor j := range dp[i] {\n\t\t\tdp[i][j] = INF\n\t\t}\n\t}\n\n\t// Base cases: single vertex or two vertices have 0 cost\n\tfor i := 0; i < n; i++ {\n\t\tdp[i][i] = 0\n\t\tif i+1 < n {\n\t\t\tdp[i][i+1] = 0\n\t\t}\n\t}\n\n\t// Fill dp table by increasing length of sub-polygon\n\t// length = number of vertices from i to j\n\tfor length := 3; length <= n; length++ {\n\t\tfor i := 0; i <= n-length; i++ {\n\t\t\tj := i + length - 1\n\t\t\tif length == 3 {\n\t\t\t\t// Triangle with vertices i, i+1, i+2\n\t\t\t\tdp[i][j] = int64(i+1) * int64(i+2) * int64(i+3)\n\t\t\t} else {\n\t\t\t\t// Try all possible k as the third vertex of the triangle that includes edge (i, j)\n\t\t\t\tbest := INF\n\t\t\t\tfor k := i + 1; k < j; k++ {\n\t\t\t\t\tcost := dp[i][k] + dp[k][j] + int64(i+1)*int64(k+1)*int64(j+1)\n\t\t\t\t\tif cost < best {\n\t\t\t\t\t\tbest = cost\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tdp[i][j] = best\n\t\t\t}\n\t\t}\n\t}\n\n\t// The answer is dp[0][n-1]\n\tfmt.Println(dp[0][n-1])\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(reader, &n)\n\n\t// dp[i][j] = minimum weight to triangulate the polygon from vertex i to vertex j (inclusive)\n\t// where the vertices are considered in order i, i+1, ..., j\n\t// We use 1-indexed vertices from 1 to n\n\t// dp[i][j] for i <= j, and we consider the sub-polygon formed by vertices i, i+1, ..., j\n\t// The number of vertices in this sub-polygon is j - i + 1\n\t// If j - i + 1 < 3, i.e., j - i < 2, then it's not a polygon that needs triangulation\n\t// Actually, for a chain of vertices from i to j, if the number of vertices is k = j-i+1\n\t// If k == 1 or 2, it's just an edge or point, weight 0\n\t// If k == 3, it's a triangle, weight = i * (i+1) * j? No, the vertices are i, i+1, ..., j\n\t// Wait, the vertices are labeled 1 to n. In the sub-problem from i to j, the vertices are i, i+1, ..., j.\n\t// But we need to be careful: the triangulation of a polygon with vertices i, i+1, ..., j (in order)\n\t// The base case: if j - i + 1 == 3, then it's a triangle with vertices i, i+1, j. Weight = i * (i+1) * j.\n\t// Wait, no. The vertices are i, i+1, i+2, ..., j. If j = i+2, then vertices are i, i+1, i+2. Weight = i*(i+1)*(i+2).\n\t// For larger sub-polygons, we pick a vertex k (i < k < j) to form a triangle (i, k, j), and then\n\t// the sub-polygons are (i, i+1, ..., k) and (k, k+1, ..., j).\n\t// So dp[i][j] = min over k from i+1 to j-1 of (dp[i][k] + dp[k][j] + i * k * j)\n\t// But wait, the triangle formed is (i, k, j). The weight of this triangle is i * k * j.\n\t// And the sub-polygons are from i to k and from k to j.\n\t// However, we need to make sure that the sub-polygons are valid. The sub-polygon from i to k has vertices i, i+1, ..., k.\n\t// The sub-polygon from k to j has vertices k, k+1, ..., j.\n\t// This is correct.\n\n\t// Initialize dp with large values\n\t// dp[i][j] where i and j are 1-indexed, 1 <= i <= j <= n\n\t// We'll use a 2D slice\n\tdp := make([][]int64, n+1)\n\tfor i := 1; i <= n; i++ {\n\t\tdp[i] = make([]int64, n+1)\n\t\tfor j := 1; j <= n; j++ {\n\t\t\tdp[i][j] = 0\n\t\t}\n\t}\n\n\t// For length = 3 (j - i + 1 = 3, i.e., j = i + 2)\n\t// dp[i][i+2] = i * (i+1) * (i+2)\n\t// For length > 3, we compute using the recurrence\n\n\t// We iterate by the length of the sub-polygon (number of vertices)\n\t// length = j - i + 1\n\t// length starts from 3 up to n\n\n\tfor length := 3; length <= n; length++ {\n\t\tfor i := 1; i + length - 1 <= n; i++ {\n\t\t\tj := i + length - 1\n\t\t\tif length == 3 {\n\t\t\t\tdp[i][j] = int64(i) * int64(i+1) * int64(j)\n\t\t\t} else {\n\t\t\t\t// Initialize with a large value\n\t\t\t\tdp[i][j] = int64(1e18)\n\t\t\t\tfor k := i + 1; k < j; k++ {\n\t\t\t\t\t// The triangle is (i, k, j)\n\t\t\t\t\t// Sub-polygons: (i, ..., k) and (k, ..., j)\n\t\t\t\t\t// dp[i][k] is the min weight for vertices i..k\n\t\t\t\t\t// dp[k][j] is the min weight for vertices k..j\n\t\t\t\t\tcost := dp[i][k] + dp[k][j] + int64(i)*int64(k)*int64(j)\n\t\t\t\t\tif cost < dp[i][j] {\n\t\t\t\t\t\tdp[i][j] = cost\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tfmt.Println(dp[1][n])\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 8,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\twriter := bufio.NewWriter(os.Stdout)\n\tdefer writer.Flush()\n\n\tvar n int\n\tfmt.Fscanf(reader, \"%d\", &n)\n\n\t// dp[i][j] = minimum weight to triangulate polygon with vertices i, i+1, ..., j (cyclic)\n\t// We use 1-indexed vertices from 1 to n\n\t// dp[i][j] for i <= j in a linear sense, but we need to handle the cyclic nature\n\t// Actually, for a convex polygon with vertices 1..n, we can use standard interval DP\n\t// where dp[i][j] represents the min weight to triangulate the sub-polygon formed by vertices i, i+1, ..., j\n\t// This works because the polygon is convex and vertices are in order.\n\n\t// Initialize dp with a large value\n\t// dp[i][j] for j - i + 1 >= 3\n\t// Base case: dp[i][i+1] = 0 (edge, no triangle)\n\t// dp[i][i+2] = i * (i+1) * (i+2)\n\n\t// Since n can be up to 500, we use a 2D slice\n\tdp := make([][]int64, n+2)\n\tfor i := range dp {\n\t\tdp[i] = make([]int64, n+2)\n\t}\n\n\t// Initialize with 0 for base cases (length 1 and 2)\n\t// For length >= 3, we'll compute\n\n\t// Fill dp table\n\t// len is the number of vertices in the sub-polygon\n\tfor length := 3; length <= n; length++ {\n\t\tfor i := 1; i+length-1 <= n; i++ {\n\t\t\tj := i + length - 1\n\t\t\tdp[i][j] = int64(1<<62) // large value\n\t\t\t// Choose a vertex k between i+1 and j-1 to form triangle (i, k, j)\n\t\t\t// The triangle (i, k, j) splits the polygon into:\n\t\t\t// - sub-polygon from i to k\n\t\t\t// - triangle (i, k, j)\n\t\t\t// - sub-polygon from k to j\n\t\t\tfor k := i + 1; k < j; k++ {\n\t\t\t\tcost := dp[i][k] + dp[k][j] + int64(i)*int64(k)*int64(j)\n\t\t\t\tif cost < dp[i][j] {\n\t\t\t\t\tdp[i][j] = cost\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tfmt.Fprintf(writer, \"%d\\n\", dp[1][n])\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 9,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(reader, &n)\n\n\t// dp[i][j] = minimum weight to triangulate the polygon from vertex i to vertex j (inclusive)\n\t// where the vertices are i, i+1, ..., j (mod n, but we use linear indexing)\n\t// We'll use 0-indexed: vertices 0 to n-1\n\t// dp[i][j] for i < j, representing the sub-polygon with vertices i, i+1, ..., j\n\n\t// Initialize dp with a large value\n\tconst INF = 1 << 60\n\tdp := make([][]int64, n)\n\tfor i := range dp {\n\t\tdp[i] = make([]int64, n)\n\t\tfor j := range dp[i] {\n\t\t\tdp[i][j] = INF\n\t\t}\n\t}\n\n\t// Base case: no triangulation needed for a single edge (i == j) or two vertices (i+1 == j)\n\t// For a triangle (j == i+2), dp[i][i+2] = (i+1)*(i+2)*(i+3) in 1-indexed\n\t// In 0-indexed: vertices i, i+1, i+2 -> labels (i+1), (i+2), (i+3)\n\t// So weight = (i+1)*(i+2)*(i+3)\n\n\t// Fill dp for increasing lengths\n\t// Length is the number of vertices in the sub-polygon: from 2 to n\n\t// For a sub-polygon with vertices i..j, the number of vertices is j-i+1\n\t// We need at least 3 vertices to form a triangle\n\n\tfor length := 3; length <= n; length++ {\n\t\tfor i := 0; i <= n-length; i++ {\n\t\t\tj := i + length - 1\n\t\t\t// Try all possible k such that we form triangle (i, k, j)\n\t\t\t// k ranges from i+1 to j-1\n\t\t\tminVal := INF\n\t\t\tfor k := i + 1; k < j; k++ {\n\t\t\t\t// The triangle is (i, k, j) with labels (i+1), (k+1), (j+1)\n\t\t\t\ttriWeight := int64(i+1) * int64(k+1) * int64(j+1)\n\t\t\t\tleft := dp[i][k]\n\t\t\t\tright := dp[k][j]\n\t\t\t\ttotal := left + right + triWeight\n\t\t\t\tif total < minVal {\n\t\t\t\t\tminVal = total\n\t\t\t\t}\n\t\t\t}\n\t\t\tdp[i][j] = minVal\n\t\t}\n\t}\n\n\t// The answer is dp[0][n-1]\n\tfmt.Println(dp[0][n-1])\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 10,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(reader, &n)\n\n\t// dp[i][j] = minimum weight to triangulate the sub-polygon with vertices i, i+1, ..., j\n\t// Vertices are labeled 1 to n\n\t// We use 1-indexed for vertices\n\t// dp[i][j] for i < j, the sub-polygon from vertex i to vertex j (inclusive)\n\t// The number of vertices in sub-polygon is j - i + 1\n\t// We need at least 3 vertices to form a triangle\n\n\t// dp[i][j] = min over k in (i+1, j-1) of (dp[i][k] + dp[k][j] + i * k * j)\n\t// Base case: if j == i+1, it's an edge, weight 0\n\t// if j == i+2, it's a triangle, weight = i * (i+1) * (i+2)\n\n\t// Since n can be up to 500, we use a 2D DP table\n\t// dp[i][j] where i and j are vertex indices (1-based)\n\t// We'll use a large number for infinity\n\n\tconst INF = 1 << 60\n\n\t// dp[i][j] for 1 <= i < j <= n\n\t// We'll create a 2D slice\n\tdp := make([][]int64, n+1)\n\tfor i := range dp {\n\t\tdp[i] = make([]int64, n+1)\n\t}\n\n\t// Initialize with 0 for base cases (edges)\n\t// For j = i+1, dp[i][j] = 0 (no triangle)\n\t// For j = i+2, dp[i][j] = i * (i+1) * (i+2)\n\n\t// Fill dp for increasing length of sub-polygon\n\t// Length = j - i + 1\n\t// We iterate by the number of vertices in the sub-polygon\n\t// Let len = j - i + 1\n\t// For len = 2: dp[i][i+1] = 0\n\t// For len = 3: dp[i][i+2] = i * (i+1) * (i+2)\n\t// For len >= 4: dp[i][j] = min over k in (i+1, j-1) of (dp[i][k] + dp[k][j] + i * k * j)\n\n\tfor i := 1; i <= n; i++ {\n\t\tfor j := i + 1; j <= n; j++ {\n\t\t\tlength := j - i + 1\n\t\t\tif length == 2 {\n\t\t\t\tdp[i][j] = 0\n\t\t\t} else if length == 3 {\n\t\t\t\tdp[i][j] = int64(i) * int64(i+1) * int64(i+2)\n\t\t\t} else {\n\t\t\t\tdp[i][j] = INF\n\t\t\t\tfor k := i + 1; k <= j-1; k++ {\n\t\t\t\t\tcost := dp[i][k] + dp[k][j] + int64(i)*int64(k)*int64(j)\n\t\t\t\t\tif cost < dp[i][j] {\n\t\t\t\t\t\tdp[i][j] = cost\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tfmt.Println(dp[1][n])\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 11,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\twriter := bufio.NewWriter(os.Stdout)\n\tdefer writer.Flush()\n\n\tvar n int\n\tfmt.Fscan(reader, &n)\n\n\t// dp[i][j] = minimum weight triangulation of polygon with vertices i, i+1, ..., j\n\t// Vertices are labeled 1 to n\n\t// We use 1-indexed for simplicity\n\t// dp[i][j] for i < j, and the polygon has vertices i, i+1, ..., j\n\t// The number of vertices is j - i + 1\n\t// If j - i + 1 == 2, it's an edge, weight 0\n\t// If j - i + 1 == 3, it's a triangle, weight = i * (i+1) * j\n\n\t// We need to handle the circular nature. Since it's a regular polygon with vertices 1..n in order,\n\t// we can think of it as a linear problem if we fix vertex 1 as part of every triangulation?\n\t// Actually, for a convex polygon, the standard DP works on a linear sequence if we consider\n\t// the polygon as vertices 1, 2, ..., n. The triangulation of the polygon with vertices 1..n\n\t// can be computed with dp[i][j] where i and j are indices in [1, n], and we consider the sub-polygon\n\t// formed by vertices i, i+1, ..., j. But wait, the polygon is circular. However, for a convex polygon\n\t// with vertices in order, the standard matrix chain multiplication style DP works if we consider\n\t// the polygon as a sequence. But the sub-polygon from i to j is not a closed polygon unless we\n\t// include the edge from j back to i. Actually, in the standard problem \"Minimum Score Triangulation of Polygon\",\n\t// the polygon is given as a circular array, but the DP is done by fixing one vertex or by considering\n\t// the sub-polygon defined by a contiguous sequence of vertices.\n\n\t// Let's use the standard approach:\n\t// dp[i][j] = minimum weight of triangulating the sub-polygon with vertices i, i+1, ..., j\n\t// where the vertices are consecutive in the original polygon.\n\t// The sub-polygon has vertices i, i+1, ..., j. This is a valid polygon if we consider the edge from j to i.\n\t// For this to work, we need j - i + 1 >= 3.\n\t// Base case: if j == i+1, dp[i][j] = 0 (just an edge)\n\t// If j == i+2, dp[i][j] = i * (i+1) * j (one triangle)\n\t// For j > i+2:\n\t// dp[i][j] = min over k in [i+1, j-1] of (dp[i][k] + dp[k][j] + i * k * j)\n\t// Wait, is that correct? The triangle formed is (i, k, j). The weight is i * k * j.\n\t// And we triangulate the sub-polygon i..k and k..j.\n\t// Yes, this is the standard recurrence.\n\n\t// But note: the polygon is circular with vertices 1..n. The sub-polygon i..j where j < i in circular sense?\n\t// Actually, since the vertices are labeled 1 to n in counter-clockwise order, and we are considering\n\t// contiguous sequences, we can just do the DP for i from 1 to n, j from i to n, and the answer is dp[1][n].\n\t// This works because any triangulation of the n-gon must include vertex 1, and the DP covers all possibilities.\n\n\t// Let's verify with n=4:\n\t// dp[1][4] = min over k in {2,3} of (dp[1][k] + dp[k][4] + 1*k*4)\n\t// k=2: dp[1][2] + dp[2][4] + 1*2*4 = 0 + dp[2][4] + 8\n\t//   dp[2][4]: vertices 2,3,4. k=3: dp[2][3]+dp[3][4]+2*3*4 = 0+0+24 = 24\n\t//   so dp[2][4] = 24\n\t//   total for k=2: 0 + 24 + 8 = 32\n\t// k=3: dp[1][3] + dp[3][4] + 1*3*4\n\t//   dp[1][3]: vertices 1,2,3. k=2: dp[1][2]+dp[2][3]+1*2*3 = 0+0+6 = 6\n\t//   dp[3][4] = 0\n\t//   total for k=3: 6 + 0 + 12 = 18\n\t// min(32, 18) = 18. Correct.\n\n\t// So the DP is:\n\t// dp[i][j] for 1 <= i < j <= n\n\t// dp[i][i+1] = 0\n\t// dp[i][i+2] = i*(i+1)*(i+2)\n\t// For length L from 3 to n-1 (number of vertices in sub-polygon is L+1? No, j-i+1 vertices)\n\t// Let's iterate by the length of the sub-polygon (number of vertices).\n\t// len = j - i + 1\n\t// len = 2: dp[i][j] = 0\n\t// len = 3: dp[i][j] = i*(i+1)*j\n\t// len >= 4: dp[i][j] = min_{k=i+1}^{j-1} (dp[i][k] + dp[k][j] + i*k*j)\n\n\t// We'll use a 2D slice.\n\t// n can be up to 500, so n*n = 250000, which is fine.\n\n\tdp := make([][]int64, n+1)\n\tfor i := 1; i <= n; i++ {\n\t\tdp[i] = make([]int64, n+1)\n\t}\n\n\t// Initialize base cases\n\tfor i := 1; i <= n; i++ {\n\t\tif i+1 <= n {\n\t\t\tdp[i][i+1] = 0\n\t\t}\n\t\tif i+2 <= n {\n\t\t\tdp[i][i+2] = int64(i) * int64(i+1) * int64(i+2)\n\t\t}\n\t}\n\n\t// Fill the table for larger lengths\n\t// len is the number of vertices in the sub-polygon, from 4 to n\n\tfor len := 4; len <= n; len++ {\n\t\tfor i := 1; i+len-1 <= n; i++ {\n\t\t\tj := i + len - 1\n\t\t\tdp[i][j] = int64(1e18) // large number\n\t\t\tfor k := i + 1; k < j; k++ {\n\t\t\t\tval := dp[i][k] + dp[k][j] + int64(i)*int64(k)*int64(j)\n\t\t\t\tif val < dp[i][j] {\n\t\t\t\t\tdp[i][j] = val\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tfmt.Fprintln(writer, dp[1][n])\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 12,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\twriter := bufio.NewWriter(os.Stdout)\n\tdefer writer.Flush()\n\n\tvar n int\n\tfmt.Fscanf(reader, \"%d\", &n)\n\n\t// dp[i][j] = minimum weight to triangulate polygon with vertices i, i+1, ..., j\n\t// We use 0-indexed: vertices 0 to n-1\n\t// dp[i][j] is defined for j - i >= 2 (at least 3 vertices)\n\t\n\t// Initialize dp with a large value\n\tdp := make([][]int64, n)\n\tfor i := range dp {\n\t\tdp[i] = make([]int64, n)\n\t\t}\n\t\n\t// Base case: triangle (3 vertices)\n\tfor i := 0; i < n; i++ {\n\t\tj := (i + 2) % n\n\t\t// Actually, we need to be careful with the indexing.\n\t\t// Let's use a different approach: dp[i][j] where i and j are indices in the original array,\n\t\t// and we consider the sub-polygon from vertex i to vertex j going counter-clockwise.\n\t\t// But since it's a polygon, we need to handle wrap-around.\n\t\t// Alternative: use a 2D array dp[i][j] where i < j, and the sub-polygon is vertices i, i+1, ..., j.\n\t\t// This works if we don't wrap around. But the polygon is circular.\n\t\t// Standard approach: fix vertex 0 and consider sub-polygons that include vertex 0? No.\n\t\t// Better approach: dp[i][j] = min weight to triangulate the polygon formed by vertices i, i+1, ..., j (in order),\n\t\t// where the indices are taken modulo n, but we only consider i <= j and the arc from i to j doesn't wrap around 0.\n\t\t// Actually, the standard way is to use dp[i][j] for 0 <= i < j < n, representing the sub-polygon with vertices i, i+1, ..., j.\n\t\t// The full polygon is dp[0][n-1].\n\t\t// But wait, the polygon is circular. The triangulation of the full polygon uses all n vertices.\n\t\t// If we define dp[i][j] as the min weight to triangulate the polygon with vertices i, i+1, ..., j (consecutive in the original labeling),\n\t\t// then for the full polygon, we need to consider that vertex 0 and vertex n-1 are adjacent.\n\t\t// So dp[0][n-1] would be the answer if we can triangulate the polygon with vertices 0, 1, ..., n-1.\n\t\t// This is valid because the vertices are in order around the polygon.\n\t\t\n\t\t// Let's redefine: dp[i][j] = minimum weight to triangulate the polygon with vertices i, i+1, ..., j (inclusive),\n\t\t// where these vertices are consecutive in the original polygon.\n\t\t// The base case is when j = i+2: dp[i][i+2] = (i+1)*(i+2)*(i+3) ... wait, labels are 1 to n.\n\t\t// Vertex i has label i+1.\n\t\t// So for triangle with vertices i, i+1, i+2, the weight is (i+1)*(i+2)*(i+3).\n\t\t\n\t\t// Let's use 1-indexed labels in the formula.\n\t\t// dp[i][j] for 0 <= i < j < n, where the sub-polygon has vertices i, i+1, ..., j.\n\t\t// Number of vertices = j - i + 1.\n\t\t// Base case: j - i + 1 == 3, i.e., j = i + 2.\n\t\t// dp[i][i+2] = (i+1) * (i+2) * (i+3)\n\t\t\n\t\t// For larger sub-polygons, we pick a vertex k (i < k < j) to form a triangle with i and j.\n\t\t// The triangle is (i, k, j) with weight (i+1)*(k+1)*(j+1).\n\t\t// Then we need to triangulate the sub-polygon from i to k and from k to j.\n\t\t// dp[i][j] = min over k in (i+1, j-1) of [dp[i][k] + dp[k][j] + (i+1)*(k+1)*(j+1)]\n\t\t// Note: dp[i][k] is defined only if k - i >= 2, and dp[k][j] is defined only if j - k >= 2.\n\t\t// If k - i == 1, then dp[i][k] is 0 (no triangulation needed for 2 vertices? No, a sub-polygon with 2 vertices is not a polygon).\n\t\t// Actually, if the sub-polygon has only 2 vertices, it's not a polygon, so we consider its weight as 0.\n\t\t// Similarly, if the sub-polygon has 3 vertices, it's a triangle.\n\t\t// So we can define dp[i][j] = 0 if j - i < 2 (i.e., 1 or 2 vertices).\n\t\t// But j - i < 2 means j = i or j = i+1.\n\t\t// For j = i+1: 2 vertices, no triangle, weight 0.\n\t\t// For j = i: 1 vertex, not valid, but we won't use it.\n\t\t\n\t\t// Let's set dp[i][j] = 0 for j - i <= 1.\n\t\t// For j - i == 2: dp[i][j] = (i+1)*(i+2)*(i+3)\n\t\t// For j - i >= 3: dp[i][j] = min over k in (i+1, j-1) of [dp[i][k] + dp[k][j] + (i+1)*(k+1)*(j+1)]\n\t}\n\t\n\t// Initialize dp\n\tfor i := 0; i < n; i++ {\n\t\tfor j := 0; j < n; j++ {\n\t\t\tif j - i <= 1 {\n\t\t\t\tdp[i][j] = 0\n\t\t\t} else if j - i == 2 {\n\t\t\t\tdp[i][j] = int64(i+1) * int64(i+2) * int64(i+3)\n\t\t\t} else {\n\t\t\t\tdp[i][j] = -1 // mark as uncomputed\n\t\t\t}\n\t\t}\n\t}\n\t\n\t// Fill dp table\n\t// We need to fill in increasing order of (j - i)\n\tfor length := 3; length <= n; length++ {\n\t\tfor i := 0; i <= n-length; i++ {\n\t\t\tj := i + length - 1\n\t\t\tif j >= n {\n\t\t\t\tbreak\n\t\t\t}\n\t\t\tminVal := int64(1e18)\n\t\t\tfor k := i + 1; k < j; k++ {\n\t\t\t\t// k is the middle vertex\n\t\t\t\t// Triangle (i, k, j)\n\t\t\t\ttriWeight := int64(i+1) * int64(k+1) * int64(j+1)\n\t\t\t\tleft := dp[i][k]\n\t\t\t\tright := dp[k][j]\n\t\t\t\ttotal := left + right + triWeight\n\t\t\t\tif total < minVal {\n\t\t\t\t\tminVal = total\n\t\t\t\t}\n\t\t\t}\n\t\t\tdp[i][j] = minVal\n\t\t}\n\t}\n\t\n\tfmt.Fprintf(writer, \"%d\\n\", dp[0][n-1])\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 13,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(reader, &n)\n\n\tif n == 3 {\n\t\tfmt.Println(6)\n\t\treturn\n\t}\n\n\t// dp[i][j] = minimum weight to triangulate the sub-polygon with vertices from i to j (inclusive)\n\t// where i and j are indices in 0..n-1, and the sub-polygon has at least 3 vertices\n\t// We use 1-indexed labels: vertex i has label i+1\n\n\t// dp[i][j] for 0 <= i < j <= n-1, and j - i >= 2 (at least 3 vertices)\n\tdp := make([][]int64, n)\n\tfor i := range dp {\n\t\tdp[i] = make([]int64, n)\n\t}\n\n\t// Base case: triangles (3 vertices)\n\tfor i := 0; i < n-2; i++ {\n\t\tj := i + 2\n\t\tdp[i][j] = int64((i + 1) * (i + 2) * (i + 3))\n\t}\n\n\t// Fill for larger sub-polygons\n\t// Length of the sub-polygon (number of vertices) from 4 to n\n\tfor length := 4; length <= n; length++ {\n\t\tfor i := 0; i <= n-length; i++ {\n\t\t\tj := i + length - 1\n\t\t\tdp[i][j] = int64(1<<62) // large value\n\t\t\t// Try each possible middle vertex k\n\t\t\tfor k := i + 1; k < j; k++ {\n\t\t\t\tcost := dp[i][k] + dp[k][j] + int64((i+1)*(k+1)*(j+1))\n\t\t\t\tif cost < dp[i][j] {\n\t\t\t\t\tdp[i][j] = cost\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tfmt.Println(dp[0][n-1])\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 14,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(reader, &n)\n\n\t// dp[i][j] = minimum weight to triangulate the polygon with vertices from i to j (inclusive)\n\t// where the vertices are labeled i, i+1, ..., j (in the original labeling)\n\t// We use 1-indexed labels.\n\t\n\t// dp[i][j] represents the minimum cost to triangulate the sub-polygon with vertices i, i+1, ..., j\n\t// The base case: if j == i+1, it's just an edge, cost 0\n\t// If j == i+2, it's a triangle with vertices i, i+1, i+2, cost = i*(i+1)*(i+2)\n\t\n\tdp := make([][]int64, n+2)\n\tfor i := range dp {\n\t\tdp[i] = make([]int64, n+2)\n\t}\n\t\n\t// Initialize\n\tfor i := 1; i <= n; i++ {\n\t\tfor j := i; j <= n; j++ {\n\t\t\tdp[i][j] = 0\n\t\t}\n\t}\n\t\n\t// Fill dp table\n\t// Length of the sub-polygon (number of vertices) goes from 3 to n\n\tfor length := 3; length <= n; length++ {\n\t\tfor i := 1; i+length-1 <= n; i++ {\n\t\t\tj := i + length - 1\n\t\t\tdp[i][j] = int64(1e18)\n\t\t\t// Choose a vertex k between i and j to form triangle (i, k, j)\n\t\t\t// The triangle (i, k, j) splits the polygon into:\n\t\t\t// - sub-polygon i, i+1, ..., k\n\t\t\t// - triangle (i, k, j)\n\t\t\t// - sub-polygon k, k+1, ..., j\n\t\t\tfor k := i + 1; k < j; k++ {\n\t\t\t\tcost := dp[i][k] + dp[k][j] + int64(i)*int64(k)*int64(j)\n\t\t\t\tif cost < dp[i][j] {\n\t\t\t\t\tdp[i][j] = cost\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\t\n\tfmt.Println(dp[1][n])\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 15,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc min(a, b int64) int64 {\n\tif a < b {\n\t\treturn a\n\t}\n\treturn b\n}\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(reader, &n)\n\n\t// dp[i][j] = minimum weight to triangulate polygon with vertices i, i+1, ..., j\n\t// Vertices are 1-indexed: 1 to n\n\t// We use 0-indexed internally: 0 to n-1\n\t// dp[i][j] for i <= j, representing the sub-polygon from vertex i to vertex j (inclusive)\n\t// The number of vertices in this sub-polygon is j - i + 1\n\t// If j - i + 1 < 3, dp[i][j] = 0 (no triangle needed)\n\t// If j - i + 1 == 3, dp[i][j] = (i+1) * (i+2) * (j+1)\n\t// Otherwise, dp[i][j] = min over k from i+1 to j-1 of:\n\t//   dp[i][k] + dp[k][j] + (i+1) * (k+1) * (j+1)\n\n\t// Since n can be up to 500, we need O(n^3) which is 125 million operations.\n\t// This might be tight in Go but should be feasible with optimizations.\n\n\t// Use 2D slice for dp\n\tdp := make([][]int64, n)\n\tfor i := range dp {\n\t\tdp[i] = make([]int64, n)\n\t}\n\n\t// Base case: no triangles for 1 or 2 vertices\n\t// For length 3 (j = i+2):\n\tfor i := 0; i < n; i++ {\n\t\tif i+2 < n {\n\t\t\tdp[i][i+2] = int64((i + 1) * (i + 2) * (i + 3))\n\t\t}\n\t}\n\n\t// Fill dp for increasing lengths\n\t// length = j - i + 1, from 4 to n\n\tfor length := 4; length <= n; length++ {\n\t\tfor i := 0; i <= n-length; i++ {\n\t\t\tj := i + length - 1\n\t\t\tdp[i][j] = int64(1<<62) // large value\n\t\t\t// Try all possible k (the middle vertex of the triangle that includes i and j)\n\t\t\t// k ranges from i+1 to j-1\n\t\t\tfor k := i + 1; k < j; k++ {\n\t\t\t\tval := dp[i][k] + dp[k][j] + int64((i+1)*(k+1)*(j+1))\n\t\t\t\tif val < dp[i][j] {\n\t\t\t\t\tdp[i][j] = val\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tfmt.Println(dp[0][n-1])\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 16,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\twriter := bufio.NewWriter(os.Stdout)\n\tdefer writer.Flush()\n\n\tvar n int\n\tfmt.Fscan(reader, &n)\n\n\t// dp[i][j] = minimum weight to triangulate polygon with vertices i, i+1, ..., j\n\t// Vertices are labeled 1 to n\n\t// We use 0-indexed internally, so vertex i (0-indexed) has label i+1\n\n\t// dp[i][j] for 0 <= i < j < n\n\t// The polygon from i to j (inclusive) has (j - i + 1) vertices\n\t// If j - i + 1 == 1, it's a single vertex (not a polygon)\n\t// If j - i + 1 == 2, it's an edge (not a polygon)\n\t// If j - i + 1 == 3, it's a triangle\n\t// We need to triangulate the polygon with vertices i, i+1, ..., j\n\n\t// dp[i][j] = min over k where i < k < j of:\n\t//   dp[i][k] + dp[k][j] + (i+1) * (k+1) * (j+1)\n\t// Base case: if j == i+1, dp[i][j] = 0 (just an edge, no triangle)\n\t// If j == i+2, dp[i][j] = (i+1)*(i+2)*(i+3) (single triangle)\n\n\tdp := make([][]int64, n)\n\tfor i := range dp {\n\t\tdp[i] = make([]int64, n)\n\t}\n\n\t// Fill dp for increasing length\n\t// length = j - i + 1\n\t// length 1: single vertex, dp = 0 (not used)\n\t// length 2: edge, dp = 0\n\t// length 3: triangle\n\t// length >= 4: triangulate\n\n\tfor length := 3; length <= n; length++ {\n\t\tfor i := 0; i+length-1 < n; i++ {\n\t\t\tj := i + length - 1\n\t\t\tif length == 3 {\n\t\t\t\t// Single triangle\n\t\t\t\tdp[i][j] = int64(i+1) * int64(j-1+1) * int64(j+1)\n\t\t\t\t// Wait, vertices are i, i+1, j. Labels: i+1, i+2, j+1\n\t\t\t\tdp[i][j] = int64(i+1) * int64(i+2) * int64(j+1)\n\t\t\t} else {\n\t\t\t\t// Try all possible k where i < k < j\n\t\t\t\tminVal := int64(1 << 62)\n\t\t\t\tfor k := i + 1; k < j; k++ {\n\t\t\t\t\tval := dp[i][k] + dp[k][j] + int64(i+1)*int64(k+1)*int64(j+1)\n\t\t\t\t\tif val < minVal {\n\t\t\t\t\t\tminVal = val\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tdp[i][j] = minVal\n\t\t\t}\n\t\t}\n\t}\n\n\t// The answer is dp[0][n-1]\n\tfmt.Fprintf(writer, \"%d\\n\", dp[0][n-1])\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 17,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(reader, &n)\n\n\t// dp[i][j] = minimum weight to triangulate polygon from vertex i to vertex j (inclusive)\n\t// The polygon is 1-indexed, vertices 1..n\n\t// We use 0-indexed internally: vertices 0..n-1 corresponding to labels 1..n\n\n\t// dp[i][j] for 0 <= i < j < n\n\t// Base case: if j == i+1, no triangle (just an edge), weight 0\n\t// If j == i+2, one triangle: (i, i+1, i+2), weight = (i+1)*(i+2)*(i+3)\n\n\tdp := make([][]int64, n)\n\tfor i := range dp {\n\t\tdp[i] = make([]int64, n)\n\t}\n\n\t// Fill dp for increasing lengths\n\t// length = j - i\n\tfor length := 2; length < n; length++ {\n\t\tfor i := 0; i+length < n; i++ {\n\t\t\tj := i + length\n\t\t\tif length == 2 {\n\t\t\t\t// Triangle with vertices i, i+1, i+2\n\t\t\t\t// Labels are i+1, i+2, i+3\n\t\t\t\tdp[i][j] = int64(i+1) * int64(i+2) * int64(i+3)\n\t\t\t} else {\n\t\t\t\t// Try all possible k where i < k < j\n\t\t\t\t// The triangle is (i, k, j), and we need to triangulate (i..k) and (k..j)\n\t\t\t\tminVal := int64(1<<62)\n\t\t\t\tfor k := i + 1; k < j; k++ {\n\t\t\t\t\t// Triangle (i, k, j) has labels (i+1), (k+1), (j+1)\n\t\t\t\t\ttriWeight := int64(i+1) * int64(k+1) * int64(j+1)\n\t\t\t\t\ttotal := dp[i][k] + dp[k][j] + triWeight\n\t\t\t\t\tif total < minVal {\n\t\t\t\t\t\tminVal = total\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tdp[i][j] = minVal\n\t\t\t}\n\t\t}\n\t}\n\n\t// The answer is dp[0][n-1]\n\tfmt.Println(dp[0][n-1])\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 18,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(reader, &n)\n\n\t// dp[i][j] = minimum weight to triangulate the polygon from vertex i to vertex j (inclusive)\n\t// where vertices are labeled 1 to n\n\t// We use 0-indexed internally, but labels are 1-indexed\n\t\n\t// dp[i][j] for i <= j, represents the sub-polygon with vertices i, i+1, ..., j\n\t// The number of vertices is j - i + 1\n\t// We need at least 3 vertices to form a triangle\n\t\n\tdp := make([][]int64, n)\n\tfor i := range dp {\n\t\tdp[i] = make([]int64, n)\n\t}\n\t\n\t// Initialize with 0\n\tfor i := 0; i < n; i++ {\n\t\tfor j := 0; j < n; j++ {\n\t\t\tdp[i][j] = 0\n\t\t}\n\t}\n\t\n\t// Base case: when we have exactly 3 vertices (i, i+1, i+2), the weight is (i+1)*(i+2)*(i+3)\n\t// For a sub-polygon from i to j with exactly 3 vertices: j = i+2\n\t// Weight = (i+1) * (i+2) * (i+3)\n\t\n\t// Fill DP table for increasing lengths\n\t// Length = number of vertices in the sub-polygon\n\t// For length = 3, 4, ..., n\n\tfor length := 3; length <= n; length++ {\n\t\tfor i := 0; i <= n-length; i++ {\n\t\t\tj := i + length - 1\n\t\t\tif length == 3 {\n\t\t\t\t// Triangle with vertices i, i+1, i+2 (0-indexed)\n\t\t\t\t// Labels: i+1, i+2, i+3\n\t\t\t\tdp[i][j] = int64(i+1) * int64(i+2) * int64(i+3)\n\t\t\t} else {\n\t\t\t\t// Try all possible k where k is the third vertex of the triangle that includes edge (i, j)\n\t\t\t\t// The triangle is (i, k, j) where i < k < j\n\t\t\t\t// The sub-polygon is split into:\n\t\t\t\t// 1. Sub-polygon from i to k\n\t\t\t\t// 2. Triangle (i, k, j)\n\t\t\t\t// 3. Sub-polygon from k to j\n\t\t\t\tminVal := int64(1<<62 - 1)\n\t\t\t\tfor k := i + 1; k < j; k++ {\n\t\t\t\t\t// Triangle weight: (i+1) * (k+1) * (j+1)\n\t\t\t\t\ttriWeight := int64(i+1) * int64(k+1) * int64(j+1)\n\t\t\t\t\t// Left part: dp[i][k] (sub-polygon from i to k)\n\t\t\t\t\t// Right part: dp[k][j] (sub-polygon from k to j)\n\t\t\t\t\t// Note: if k == i+1, then dp[i][k] has only 2 vertices, which is 0\n\t\t\t\t\t// Similarly if k == j-1, dp[k][j] has only 2 vertices, which is 0\n\t\t\t\t\ttotal := dp[i][k] + triWeight + dp[k][j]\n\t\t\t\t\tif total < minVal {\n\t\t\t\t\t\tminVal = total\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tdp[i][j] = minVal\n\t\t\t}\n\t\t}\n\t}\n\t\n\tfmt.Println(dp[0][n-1])\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 19,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(reader, &n)\n\n\t// dp[i][j] = minimum weight to triangulate polygon from vertex i to vertex j (inclusive)\n\t// where the vertices are consecutive in the polygon\n\t// We use 1-indexed vertices: 1 to n\n\t// dp[i][j] for i < j, and the polygon part is vertices i, i+1, ..., j\n\t// Base case: if j == i+1, it's an edge, no triangle needed, weight 0\n\t// If j == i+2, it's a triangle with vertices i, i+1, i+2, weight = i*(i+1)*(i+2)\n\n\t// We need to handle the cyclic nature. Since vertices are labeled 1 to n in order,\n\t// and the polygon is regular, we can use DP on the linear sequence 1..n.\n\t// The triangulation of the polygon with vertices 1..n can be computed by:\n\t// dp[i][j] = min over k in (i+1, j-1) of dp[i][k] + dp[k][j] + i*k*j\n\t// for j - i >= 2\n\n\t// Initialize dp table\n\tdp := make([][]int64, n+1)\n\tfor i := range dp {\n\t\tdp[i] = make([]int64, n+1)\n\t}\n\n\t// Fill dp for increasing length of the sub-polygon\n\t// Length = j - i\n\t// For length 1 (j = i+1): dp[i][i+1] = 0\n\t// For length 2 (j = i+2): dp[i][i+2] = i*(i+1)*(i+2)\n\t// For length >= 3: dp[i][j] = min over k in (i+1, j-1) of dp[i][k] + dp[k][j] + i*k*j\n\n\tfor length := 2; length <= n-1; length++ {\n\t\tfor i := 1; i+length <= n; i++ {\n\t\t\tj := i + length\n\t\t\tif length == 1 {\n\t\t\t\tdp[i][j] = 0\n\t\t\t} else if length == 2 {\n\t\t\t\tdp[i][j] = int64(i) * int64(i+1) * int64(i+2)\n\t\t\t} else {\n\t\t\t\tdp[i][j] = int64(1e18)\n\t\t\t\tfor k := i + 1; k < j; k++ {\n\t\t\t\t\tval := dp[i][k] + dp[k][j] + int64(i)*int64(k)*int64(j)\n\t\t\t\t\tif val < dp[i][j] {\n\t\t\t\t\t\tdp[i][j] = val\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tfmt.Println(dp[1][n])\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 17023,
+            "prompt_tokens": 434,
+            "total_tokens": 17457
+        },
+        "prompt": "Write a program in Go to solve this programming problem:\nDescription: You are given a regular polygon with $$$n$$$ vertices labeled from $$$1$$$ to $$$n$$$ in counter-clockwise order. The triangulation of a given polygon is a set of triangles such that each vertex of each triangle is a vertex of the initial polygon, there is no pair of triangles such that their intersection has non-zero area, and the total area of all triangles is equal to the area of the given polygon. The weight of a triangulation is the sum of weigths of triangles it consists of, where the weight of a triagle is denoted as the product of labels of its vertices.Calculate the minimum weight among all triangulations of the polygon.\nInput Specification: The first line contains single integer $$$n$$$ ($$$3 \\le n \\le 500$$$) \u2014 the number of vertices in the regular polygon.\nOutput Specification: Print one integer \u2014 the minimum weight among all triangulations of the given polygon.\n\nSample Input:\n3\nSample Output:\n6\n\nSample Input:\n4\nSample Output:\n18\n\nNotes: NoteAccording to Wiki: polygon triangulation is the decomposition of a polygonal area (simple polygon) $$$P$$$ into a set of triangles, i.\u2009e., finding a set of triangles with pairwise non-intersecting interiors whose union is $$$P$$$.In the first example the polygon is a triangle, so we don't need to cut it further, so the answer is $$$1 \\cdot 2 \\cdot 3 = 6$$$.In the second example the polygon is a rectangle, so it should be divided into two triangles. It's optimal to cut it using diagonal $$$1-3$$$ so answer is $$$1 \\cdot 2 \\cdot 3 + 1 \\cdot 3 \\cdot 4 = 6 + 12 = 18$$$.\nTake input from standard input and output to standard output\nProvide the Go code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "1bd29d7a8793c22e81a1f6fd3991307a",
+        "difficulty": 1200,
+        "prob_desc_sample_inputs": [
+            "3",
+            "4"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "dp",
+            "greedy",
+            "math"
+        ],
+        "prob_desc_output_spec": "Print one integer \u2014 the minimum weight among all triangulations of the given polygon.",
+        "prob_desc_input_spec": "The first line contains single integer $$$n$$$ ($$$3 \\le n \\le 500$$$) \u2014 the number of vertices in the regular polygon.",
+        "lang_cluster": "Go",
+        "source_code": "",
+        "prob_desc_notes": "NoteAccording to Wiki: polygon triangulation is the decomposition of a polygonal area (simple polygon) $$$P$$$ into a set of triangles, i.\u2009e., finding a set of triangles with pairwise non-intersecting interiors whose union is $$$P$$$.In the first example the polygon is a triangle, so we don't need to cut it further, so the answer is $$$1 \\cdot 2 \\cdot 3 = 6$$$.In the second example the polygon is a rectangle, so it should be divided into two triangles. It's optimal to cut it using diagonal $$$1-3$$$ so answer is $$$1 \\cdot 2 \\cdot 3 + 1 \\cdot 3 \\cdot 4 = 6 + 12 = 18$$$.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "You are given a regular polygon with $$$n$$$ vertices labeled from $$$1$$$ to $$$n$$$ in counter-clockwise order. The triangulation of a given polygon is a set of triangles such that each vertex of each triangle is a vertex of the initial polygon, there is no pair of triangles such that their intersection has non-zero area, and the total area of all triangles is equal to the area of the given polygon. The weight of a triangulation is the sum of weigths of triangles it consists of, where the weight of a triagle is denoted as the product of labels of its vertices.Calculate the minimum weight among all triangulations of the polygon.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1553267100",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "6",
+            "18"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"3\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"4\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"5\\r\\n\", \"output\": [\"38\"]}, {\"input\": \"6\\r\\n\", \"output\": [\"68\"]}, {\"input\": \"7\\r\\n\", \"output\": [\"110\"]}, {\"input\": \"8\\r\\n\", \"output\": [\"166\"]}, {\"input\": \"9\\r\\n\", \"output\": [\"238\"]}, {\"input\": \"10\\r\\n\", \"output\": [\"328\"]}, {\"input\": \"100\\r\\n\", \"output\": [\"333298\"]}, {\"input\": \"101\\r\\n\", \"output\": [\"343398\"]}, {\"input\": \"102\\r\\n\", \"output\": [\"353700\"]}, {\"input\": \"103\\r\\n\", \"output\": [\"364206\"]}, {\"input\": \"104\\r\\n\", \"output\": [\"374918\"]}, {\"input\": \"105\\r\\n\", \"output\": [\"385838\"]}, {\"input\": \"106\\r\\n\", \"output\": [\"396968\"]}, {\"input\": \"107\\r\\n\", \"output\": [\"408310\"]}, {\"input\": \"108\\r\\n\", \"output\": [\"419866\"]}, {\"input\": \"109\\r\\n\", \"output\": [\"431638\"]}, {\"input\": \"110\\r\\n\", \"output\": [\"443628\"]}, {\"input\": \"500\\r\\n\", \"output\": [\"41666498\"]}, {\"input\": \"497\\r\\n\", \"output\": [\"40920990\"]}, {\"input\": \"494\\r\\n\", \"output\": [\"40184428\"]}, {\"input\": \"491\\r\\n\", \"output\": [\"39456758\"]}, {\"input\": \"488\\r\\n\", \"output\": [\"38737926\"]}, {\"input\": \"485\\r\\n\", \"output\": [\"38027878\"]}, {\"input\": \"482\\r\\n\", \"output\": [\"37326560\"]}, {\"input\": \"479\\r\\n\", \"output\": [\"36633918\"]}, {\"input\": \"476\\r\\n\", \"output\": [\"35949898\"]}, {\"input\": \"473\\r\\n\", \"output\": [\"35274446\"]}, {\"input\": \"470\\r\\n\", \"output\": [\"34607508\"]}, {\"input\": \"467\\r\\n\", \"output\": [\"33949030\"]}, {\"input\": \"464\\r\\n\", \"output\": [\"33298958\"]}, {\"input\": \"461\\r\\n\", \"output\": [\"32657238\"]}, {\"input\": \"458\\r\\n\", \"output\": [\"32023816\"]}, {\"input\": \"455\\r\\n\", \"output\": [\"31398638\"]}, {\"input\": \"452\\r\\n\", \"output\": [\"30781650\"]}, {\"input\": \"449\\r\\n\", \"output\": [\"30172798\"]}, {\"input\": \"446\\r\\n\", \"output\": [\"29572028\"]}, {\"input\": \"42\\r\\n\", \"output\": [\"24680\"]}, {\"input\": \"69\\r\\n\", \"output\": [\"109478\"]}, {\"input\": \"228\\r\\n\", \"output\": [\"3950706\"]}, {\"input\": \"233\\r\\n\", \"output\": [\"4216366\"]}, {\"input\": \"420\\r\\n\", \"output\": [\"24695858\"]}, {\"input\": \"368\\r\\n\", \"output\": [\"16611886\"]}, {\"input\": \"225\\r\\n\", \"output\": [\"3796798\"]}, {\"input\": \"11\\r\\n\", \"output\": [\"438\"]}, {\"input\": \"12\\r\\n\", \"output\": [\"570\"]}, {\"input\": \"13\\r\\n\", \"output\": [\"726\"]}, {\"input\": \"14\\r\\n\", \"output\": [\"908\"]}, {\"input\": \"135\\r\\n\", \"output\": [\"820078\"]}, {\"input\": \"199\\r\\n\", \"output\": [\"2626798\"]}, {\"input\": \"137\\r\\n\", \"output\": [\"857070\"]}, {\"input\": \"131\\r\\n\", \"output\": [\"749318\"]}, {\"input\": \"130\\r\\n\", \"output\": [\"732288\"]}, {\"input\": \"139\\r\\n\", \"output\": [\"895158\"]}]"
+    }
+}

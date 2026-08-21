@@ -1,0 +1,391 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-8b981e1108858f1a",
+        "created": 1787079290,
+        "model": "qwen-nvfp4",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.27.1-d7a14dad",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nrl.on('line', (line) => {\n    const [xStr, nStr] = line.trim().split(' ');\n    const x = BigInt(xStr);\n    const n = BigInt(nStr);\n    \n    const MOD = 1000000007n;\n    \n    // Find prime factors of x\n    function primeFactors(num) {\n        const factors = new Map();\n        let temp = num;\n        let d = 2n;\n        while (d * d <= temp) {\n            while (temp % d === 0n) {\n                factors.set(d, (factors.get(d) || 0n) + 1n);\n                temp /= d;\n            }\n            d += 1n;\n        }\n        if (temp > 1n) {\n            factors.set(temp, (factors.get(temp) || 0n) + 1n);\n        }\n        return factors;\n    }\n    \n    const factors = primeFactors(x);\n    \n    // Function to compute sum of floor(n / p^k) for k=1 to infinity\n    // This gives the total exponent of prime p in n!\n    function sumFloor(n, p) {\n        let sum = 0n;\n        let power = p;\n        while (power <= n) {\n            sum += n / power;\n            // Check for overflow: if power > n / p, then next power would exceed n\n            if (power > n / p) break;\n            power *= p;\n        }\n        return sum;\n    }\n    \n    // For each prime factor p of x, we need to compute:\n    // product_{i=1}^{n} g(i, p) = p^(sum_{i=1}^{n} v_p(i)) = p^(sum_{i=1}^{n} floor(n/p^k) for k=1..)\n    // Wait, that's not right. Let me re-think.\n    \n    // f(x, y) = product of g(y, p) for all p in prime(x)\n    // g(y, p) = p^(v_p(y)) where v_p(y) is the exponent of p in y\n    // So f(x, y) = product_{p in prime(x)} p^(v_p(y))\n    \n    // We need product_{y=1}^{n} f(x, y) = product_{y=1}^{n} product_{p in prime(x)} p^(v_p(y))\n    // = product_{p in prime(x)} product_{y=1}^{n} p^(v_p(y))\n    // = product_{p in prime(x)} p^(sum_{y=1}^{n} v_p(y))\n    \n    // sum_{y=1}^{n} v_p(y) = sum_{k=1}^{infinity} floor(n / p^k)\n    \n    let result = 1n;\n    \n    for (const [p, _] of factors) {\n        const totalExponent = sumFloor(n, p);\n        // Compute p^totalExponent mod MOD\n        // Use modular exponentiation\n        let base = p % MOD;\n        if (base < 0n) base += MOD;\n        let exp = totalExponent % (MOD - 1n); // Fermat's little theorem: a^(MOD-1) = 1 mod MOD\n        // But wait, totalExponent can be huge. We need to compute p^totalExponent mod MOD.\n        // Since MOD is prime, we can use Fermat's little theorem: p^(MOD-1) \u2261 1 (mod MOD)\n        // So p^totalExponent mod MOD = p^(totalExponent mod (MOD-1)) mod MOD\n        \n        // However, we need to be careful: if p is divisible by MOD, then p^k mod MOD = 0 for k>=1\n        // But p is a prime factor of x, and x <= 10^9, MOD = 10^9+7, so p < MOD always (since p <= x <= 10^9 < 10^9+7)\n        // So p is never divisible by MOD.\n        \n        let pow = 1n;\n        let b = base;\n        let e = exp;\n        while (e > 0n) {\n            if (e % 2n === 1n) {\n                pow = (pow * b) % MOD;\n            }\n            b = (b * b) % MOD;\n            e /= 2n;\n        }\n        \n        result = (result * pow) % MOD;\n    }\n    \n    console.log(result.toString());\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "```javascript\nconst MOD = 1000000007n;\n\nfunction modPow(base, exp, mod) {\n    base %= mod;\n    if (base < 0) base += mod;\n    let result = 1n;\n    while (exp > 0n) {\n        if (exp % 2n === 1n) {\n            result = (result * base) % mod;\n        }\n        base = (base * base) % mod;\n        exp = exp / 2n;\n    }\n    return result;\n}\n\nfunction getPrimeFactors(x) {\n    const factors = [];\n    let n = x;\n    for (let i = 2; i * i <= n; i++) {\n        if (n % i === 0) {\n            factors.push(i);\n            while (n % i === 0) {\n                n = Math.floor(n / i);\n            }\n        }\n    }\n    if (n > 1) {\n        factors.push(n);\n    }\n    return factors;\n}\n\nfunction solve() {\n    const input = require('fs').readFileSync('/dev/stdin', 'utf8').trim().split(/\\s+/);\n    const x = BigInt(input[0]);\n    const n = BigInt(input[1]);\n\n    const primeFactors = getPrimeFactors(Number(x));\n\n    let result = 1n;\n\n    for (const p of primeFactors) {\n        const pBig = BigInt(p);\n        // We need to compute the sum of exponents of p in 1, 2, ..., n\n        // This is the exponent of p in n!\n        // Legendre's formula: sum_{k>=1} floor(n / p^k)\n        let exponent = 0n;\n        let power = pBig;\n        while (power <= n) {\n            exponent += n / power;\n            // Check for overflow\n            if (power > n / pBig) break;\n            power *= pBig;\n        }\n\n        // Multiply result by p^exponent mod MOD\n        result = (result * modPow(pBig, exponent, MOD)) % MOD;\n    }\n\n    console.log(result.toString());\n}\n\nsolve();\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```javascript\nconst MOD = 1000000007n;\n\nfunction modPow(base, exp, mod) {\n    base %= mod;\n    let result = 1n;\n    while (exp > 0n) {\n        if (exp % 2n === 1n) {\n            result = (result * base) % mod;\n        }\n        base = (base * base) % mod;\n        exp = exp / 2n;\n    }\n    return result;\n}\n\nfunction solve() {\n    const readline = require('fs').readFileSync('/dev/stdin', 'utf8').trim().split(/\\s+/);\n    const x = BigInt(readline[0]);\n    const n = BigInt(readline[1]);\n\n    // Factorize x to get prime divisors\n    const primes = [];\n    let temp = x;\n    for (let i = 2n; i * i <= temp; i++) {\n        if (temp % i === 0n) {\n            primes.push(i);\n            while (temp % i === 0n) {\n                temp /= i;\n            }\n        }\n    }\n    if (temp > 1n) {\n        primes.push(temp);\n    }\n\n    let answer = 1n;\n\n    for (const p of primes) {\n        // We need to compute the product of g(y, p) for y = 1 to n\n        // g(y, p) = p^k where k is the largest integer such that p^k divides y\n        // So the product over y=1..n of g(y,p) = p^(sum_{y=1}^{n} k(y))\n        // where k(y) is the exponent of p in y\n        \n        // The sum of exponents of p in all numbers from 1 to n is:\n        // sum_{j=1}^{inf} floor(n / p^j)\n        \n        let totalExponent = 0n;\n        let power = p;\n        while (power <= n) {\n            totalExponent += n / power;\n            // Check for overflow: if power * p > n, we can stop\n            if (power > n / p) break;\n            power *= p;\n        }\n        \n        // Multiply answer by p^(totalExponent) mod MOD\n        answer = (answer * modPow(p, totalExponent, MOD)) % MOD;\n    }\n\n    console.log(answer.toString());\n}\n\nsolve();\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout,\n});\n\nrl.on('line', (line) => {\n    const parts = line.split(' ').map(Number);\n    const x = parts[0];\n    const n = parts[1];\n    \n    const MOD = 1000000007n;\n    \n    // Find prime factors of x\n    function getPrimeFactors(num) {\n        const factors = [];\n        let d = 2;\n        while (d * d <= num) {\n            if (num % d === 0) {\n                factors.push(d);\n                while (num % d === 0) {\n                    num = Math.floor(num / d);\n                }\n            }\n            d++;\n        }\n        if (num > 1) {\n            factors.push(num);\n        }\n        return factors;\n    }\n    \n    const primes = getPrimeFactors(x);\n    \n    // For each prime p, we need to compute the sum of exponents of p in all numbers from 1 to n\n    // The exponent of p in y is the largest k such that p^k divides y\n    // So for each prime p, we need sum_{y=1}^{n} (exponent of p in y)\n    // This is equivalent to: for each k >= 1, count how many y in [1, n] are divisible by p^k\n    // Sum = sum_{k=1}^{inf} floor(n / p^k)\n    \n    function modPow(base, exp, mod) {\n        let result = 1n;\n        base = base % mod;\n        while (exp > 0n) {\n            if (exp % 2n === 1n) {\n                result = (result * base) % mod;\n            }\n            exp = exp / 2n;\n            base = (base * base) % mod;\n        }\n        return result;\n    }\n    \n    let answer = 1n;\n    \n    for (const p of primes) {\n        // Compute total exponent sum for prime p across all numbers 1..n\n        // totalExp = sum_{k=1}^{inf} floor(n / p^k)\n        let totalExp = 0n;\n        let power = BigInt(p);\n        while (power <= BigInt(n)) {\n            totalExp += BigInt(Math.floor(Number(n) / Number(power)));\n            // Check if power * p would overflow or exceed n\n            if (power > BigInt(n) / BigInt(p)) {\n                break;\n            }\n            power *= BigInt(p);\n        }\n        \n        // Multiply answer by p^totalExp mod MOD\n        answer = (answer * modPow(BigInt(p), totalExp, MOD)) % MOD;\n    }\n    \n    console.log(answer.toString());\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nrl.on('line', (line) => {\n    const parts = line.trim().split(' ');\n    const x = BigInt(parts[0]);\n    const n = BigInt(parts[1]);\n    \n    const MOD = 1000000007n;\n    \n    // Find prime factors of x\n    function primeFactors(num) {\n        const factors = new Map();\n        let temp = num;\n        for (let i = 2n; i * i <= temp; i++) {\n            while (temp % i === 0n) {\n                factors.set(i, (factors.get(i) || 0n) + 1n);\n                temp /= i;\n            }\n        }\n        if (temp > 1n) {\n            factors.set(temp, (factors.get(temp) || 0n) + 1n);\n        }\n        return factors;\n    }\n    \n    // Calculate g(y, p) = p^k where k is the exponent of p in y\n    function g(y, p) {\n        let power = 1n;\n        while (y % p === 0n) {\n            power *= p;\n            y /= p;\n        }\n        return power;\n    }\n    \n    // Calculate f(x, y) = product of g(y, p) for all p in prime(x)\n    function f(x, y, primeFactorsOfX) {\n        let result = 1n;\n        for (const [p, _] of primeFactorsOfX) {\n            result = (result * (y % p === 0n ? g(y, p) : 1n)) % MOD;\n        }\n        return result;\n    }\n    \n    // We need to compute product_{y=1}^{n} f(x, y) mod MOD\n    // f(x, y) = product_{p | x} g(y, p)\n    // So product_{y=1}^{n} f(x, y) = product_{y=1}^{n} product_{p | x} g(y, p)\n    // = product_{p | x} product_{y=1}^{n} g(y, p)\n    \n    const factors = primeFactors(x);\n    \n    let answer = 1n;\n    \n    for (const [p, _] of factors) {\n        // We need to compute product_{y=1}^{n} g(y, p) mod MOD\n        // g(y, p) = p^k where k is the exponent of p in y\n        // So product_{y=1}^{n} g(y, p) = p^{sum_{y=1}^{n} exponent_of_p_in_y}\n        \n        // sum_{y=1}^{n} exponent_of_p_in_y = sum_{k>=1} floor(n / p^k)\n        // This is the exponent of p in n!\n        \n        let exponent = 0n;\n        let pk = p;\n        while (pk <= n) {\n            exponent += n / pk;\n            pk *= p;\n        }\n        \n        // answer *= p^exponent mod MOD\n        // Use fast modular exponentiation\n        function modPow(base, exp, mod) {\n            let result = 1n;\n            base = base % mod;\n            while (exp > 0n) {\n                if (exp % 2n === 1n) {\n                    result = (result * base) % mod;\n                }\n                exp = exp / 2n;\n                base = (base * base) % mod;\n            }\n            return result;\n        }\n        \n        answer = (answer * modPow(p, exponent, MOD)) % MOD;\n    }\n    \n    console.log(answer.toString());\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```javascript\nconst MOD = 1000000007n;\n\nfunction modPow(base, exp, mod) {\n    base %= mod;\n    if (base < 0) base += mod;\n    let result = 1n;\n    while (exp > 0n) {\n        if (exp & 1n) {\n            result = (result * base) % mod;\n        }\n        base = (base * base) % mod;\n        exp >>= 1n;\n    }\n    return result;\n}\n\nfunction primeFactors(x) {\n    const factors = new Set();\n    let n = x;\n    for (let i = 2; i * i <= n; i++) {\n        while (n % i === 0) {\n            factors.add(i);\n            n = Math.floor(n / i);\n        }\n    }\n    if (n > 1) {\n        factors.add(n);\n    }\n    return Array.from(factors);\n}\n\nfunction main() {\n    const input = require('fs').readFileSync('/dev/stdin', 'utf8').trim().split(/\\s+/);\n    const x = BigInt(input[0]);\n    const n = BigInt(input[1]);\n\n    const primes = primeFactors(Number(x));\n\n    let result = 1n;\n\n    for (const p of primes) {\n        const pBig = BigInt(p);\n        // We need to compute sum_{k=1}^{n} v_p(k) where v_p(k) is the exponent of p in k\n        // This is the sum of exponents of p in the prime factorization of 1*2*...*n = n!\n        // Legendre's formula: sum_{k=1}^{n} v_p(k) = sum_{j=1}^{inf} floor(n / p^j)\n        \n        let totalExp = 0n;\n        let power = pBig;\n        while (power <= n) {\n            totalExp += n / power;\n            // Check for overflow: if power > n / pBig, then next power would exceed n\n            if (power > n / pBig) break;\n            power *= pBig;\n        }\n\n        // Multiply result by p^totalExp mod MOD\n        result = (result * modPow(pBig, totalExp, MOD)) % MOD;\n    }\n\n    console.log(result.toString());\n}\n\nmain();\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```javascript\nconst MOD = 1000000007n;\n\nfunction modPow(base, exp, mod) {\n    base %= mod;\n    if (base < 0) base += mod;\n    let result = 1n;\n    while (exp > 0n) {\n        if (exp % 2n === 1n) {\n            result = (result * base) % mod;\n        }\n        base = (base * base) % mod;\n        exp = exp / 2n;\n    }\n    return result;\n}\n\nfunction primeFactors(x) {\n    const factors = [];\n    let n = x;\n    for (let i = 2n; i * i <= n; i++) {\n        if (n % i === 0n) {\n            factors.push(i);\n            while (n % i === 0n) {\n                n = n / i;\n            }\n        }\n    }\n    if (n > 1n) {\n        factors.push(n);\n    }\n    return factors;\n}\n\nfunction main() {\n    const readline = require('readline');\n    const rl = readline.createInterface({\n        input: process.stdin,\n        output: process.stdout\n    });\n\n    rl.on('line', (line) => {\n        const parts = line.trim().split(/\\s+/);\n        const x = BigInt(parts[0]);\n        const n = BigInt(parts[1]);\n\n        const primes = primeFactors(x);\n\n        let result = 1n;\n\n        for (const p of primes) {\n            // We need to compute the sum of exponents of p in all numbers from 1 to n\n            // This is the total number of times p divides all numbers from 1 to n\n            // i.e., sum_{k=1}^{infinity} floor(n / p^k)\n            let totalExp = 0n;\n            let power = p;\n            while (power <= n) {\n                totalExp += n / power;\n                // Check for overflow: if power > n / p, then next power would exceed n\n                if (power > n / p) {\n                    break;\n                }\n                power = power * p;\n            }\n\n            // Multiply result by p^totalExp mod MOD\n            result = (result * modPow(p, totalExp, MOD)) % MOD;\n        }\n\n        console.log(result.toString());\n    });\n}\n\nmain();\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```javascript\nconst MOD = 1000000007n;\n\nfunction modPow(base, exp, mod) {\n    base %= mod;\n    if (base < 0) base += mod;\n    let result = 1n;\n    while (exp > 0n) {\n        if (exp & 1n) {\n            result = (result * base) % mod;\n        }\n        base = (base * base) % mod;\n        exp >>= 1n;\n    }\n    return result;\n}\n\nfunction primeFactors(x) {\n    const factors = new Set();\n    let n = x;\n    for (let i = 2; i * i <= n; i++) {\n        while (n % i === 0) {\n            factors.add(i);\n            n = Math.floor(n / i);\n        }\n    }\n    if (n > 1) {\n        factors.add(n);\n    }\n    return [...factors];\n}\n\nfunction main() {\n    const input = require('fs').readFileSync('/dev/stdin', 'utf8').trim().split(/\\s+/);\n    const x = parseInt(input[0]);\n    const n = BigInt(input[1]);\n\n    const primes = primeFactors(x);\n\n    let result = 1n;\n\n    for (const p of primes) {\n        // We need to compute the sum of exponents of p in all numbers from 1 to n\n        // This is the total number of times p divides all numbers from 1 to n\n        // i.e., sum_{k=1}^{n} v_p(k) = sum_{j=1}^{inf} floor(n / p^j)\n        \n        let totalExp = 0n;\n        let power = BigInt(p);\n        \n        while (power <= n) {\n            totalExp += n / power;\n            // Check if multiplying by p would exceed n\n            if (power > n / BigInt(p)) {\n                break;\n            }\n            power *= BigInt(p);\n        }\n\n        // Multiply result by p^totalExp mod MOD\n        result = (result * modPow(BigInt(p), totalExp, MOD)) % MOD;\n    }\n\n    console.log(result.toString());\n}\n\nmain();\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 8,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nrl.on('line', (line) => {\n    const parts = line.trim().split(/\\s+/);\n    const x = BigInt(parts[0]);\n    const n = BigInt(parts[1]);\n    \n    const MOD = 1000000007n;\n    \n    // Find prime factors of x\n    function primeFactors(num) {\n        const factors = new Set();\n        let n = num;\n        let d = 2n;\n        while (d * d <= n) {\n            while (n % d === 0n) {\n                factors.add(d);\n                n /= d;\n            }\n            d += 1n;\n        }\n        if (n > 1n) {\n            factors.add(n);\n        }\n        return Array.from(factors);\n    }\n    \n    const primes = primeFactors(x);\n    \n    // For each prime p, we need to compute the product of g(y, p) for y = 1 to n\n    // g(y, p) = p^k where k is the largest integer such that p^k divides y\n    // So we need: product_{y=1}^{n} (p^{v_p(y)}) = p^{sum_{y=1}^{n} v_p(y)}\n    // sum_{y=1}^{n} v_p(y) = sum_{k=1}^{inf} floor(n / p^k)\n    \n    function modPow(base, exp, mod) {\n        if (exp === 0n) return 1n;\n        let result = 1n;\n        base = base % mod;\n        while (exp > 0n) {\n            if (exp % 2n === 1n) {\n                result = (result * base) % mod;\n            }\n            exp = exp / 2n;\n            base = (base * base) % mod;\n        }\n        return result;\n    }\n    \n    let answer = 1n;\n    \n    for (const p of primes) {\n        // Compute sum_{k=1}^{inf} floor(n / p^k)\n        let totalExp = 0n;\n        let power = p;\n        while (power <= n) {\n            totalExp += n / power;\n            // Check if power * p would overflow or exceed n\n            if (power > n / p) {\n                break;\n            }\n            power *= p;\n        }\n        \n        // Multiply answer by p^totalExp mod MOD\n        answer = (answer * modPow(p % MOD, totalExp, MOD)) % MOD;\n    }\n    \n    console.log(answer.toString());\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 9,
+                "message": {
+                    "content": "```javascript\nconst MOD = 1000000007n;\n\nfunction modPow(base, exp, mod) {\n    base %= mod;\n    let result = 1n;\n    while (exp > 0n) {\n        if (exp % 2n === 1n) {\n            result = (result * base) % mod;\n        }\n        base = (base * base) % mod;\n        exp = exp / 2n;\n    }\n    return result;\n}\n\nfunction main() {\n    const input = require('fs').readFileSync('/dev/stdin', 'utf8').trim().split(/\\s+/);\n    const x = BigInt(input[0]);\n    const n = BigInt(input[1]);\n\n    // Find prime factors of x\n    const primeFactors = new Set();\n    let temp = x;\n    let d = 2n;\n    while (d * d <= temp) {\n        if (temp % d === 0n) {\n            primeFactors.add(d);\n            while (temp % d === 0n) {\n                temp = temp / d;\n            }\n        }\n        d += 1n;\n    }\n    if (temp > 1n) {\n        primeFactors.add(temp);\n    }\n\n    const primes = Array.from(primeFactors);\n\n    let answer = 1n;\n\n    for (const p of primes) {\n        // We need to compute the sum of exponents of p in the product 1 * 2 * ... * n\n        // This is the exponent of p in n!\n        // Legendre's formula: sum_{k=1}^{inf} floor(n / p^k)\n        let totalExp = 0n;\n        let power = p;\n        while (power <= n) {\n            totalExp += n / power;\n            // Check if power * p would overflow or exceed n\n            if (power > n / p) break;\n            power *= p;\n        }\n\n        // Multiply answer by p^totalExp mod MOD\n        answer = (answer * modPow(p, totalExp, MOD)) % MOD;\n    }\n\n    console.log(answer.toString());\n}\n\nmain();\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 10,
+                "message": {
+                    "content": "```javascript\nconst MOD = 1000000007n;\n\nfunction modPow(base, exp, mod) {\n    let result = 1n;\n    base = base % mod;\n    while (exp > 0n) {\n        if (exp % 2n === 1n) {\n            result = (result * base) % mod;\n        }\n        exp = exp >> 1n;\n        base = (base * base) % mod;\n    }\n    return result;\n}\n\nfunction getPrimeFactors(x) {\n    const factors = [];\n    let n = x;\n    for (let i = 2n; i * i <= n; i++) {\n        if (n % i === 0n) {\n            factors.push(i);\n            while (n % i === 0n) {\n                n = n / i;\n            }\n        }\n    }\n    if (n > 1n) {\n        factors.push(n);\n    }\n    return factors;\n}\n\nfunction main() {\n    const readline = require('readline');\n    const rl = readline.createInterface({\n        input: process.stdin,\n        output: process.stdout\n    });\n\n    rl.on('line', (line) => {\n        const parts = line.trim().split(/\\s+/);\n        const x = BigInt(parts[0]);\n        const n = BigInt(parts[1]);\n\n        const primeFactors = getPrimeFactors(x);\n\n        let result = 1n;\n\n        for (const p of primeFactors) {\n            // We need to compute the sum of exponents of p in all numbers from 1 to n\n            // This is the total exponent of p in n!\n            // Legendre's formula: sum_{k=1}^{inf} floor(n / p^k)\n            let totalExp = 0n;\n            let power = p;\n            while (power <= n) {\n                totalExp += n / power;\n                // Check for overflow: if power > n / p, then next power would exceed n\n                if (power > n / p) {\n                    break;\n                }\n                power *= p;\n            }\n\n            // Multiply result by p^totalExp mod MOD\n            result = (result * modPow(p, totalExp, MOD)) % MOD;\n        }\n\n        console.log(result.toString());\n    });\n}\n\nmain();\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 11,
+                "message": {
+                    "content": "```javascript\nconst MOD = 1000000007n;\n\nfunction modPow(base, exp, mod) {\n    base = base % mod;\n    if (base === 0) return 0n;\n    let result = 1n;\n    while (exp > 0n) {\n        if (exp % 2n === 1n) {\n            result = (result * base) % mod;\n        }\n        exp = exp / 2n;\n        base = (base * base) % mod;\n    }\n    return result;\n}\n\nfunction primeFactors(x) {\n    const factors = new Map();\n    let n = x;\n    for (let i = 2n; i * i <= n; i++) {\n        while (n % i === 0n) {\n            factors.set(i, (factors.get(i) || 0n) + 1n);\n            n = n / i;\n        }\n    }\n    if (n > 1n) {\n        factors.set(n, (factors.get(n) || 0n) + 1n);\n    }\n    return factors;\n}\n\nfunction main() {\n    const readline = require('readline');\n    const rl = readline.createInterface({\n        input: process.stdin\n    });\n\n    rl.on('line', (line) => {\n        const parts = line.trim().split(/\\s+/);\n        const x = BigInt(parts[0]);\n        const n = BigInt(parts[1]);\n\n        const factors = primeFactors(x);\n        let result = 1n;\n\n        for (const [p, _] of factors) {\n            // We need to compute the product of g(y, p) for y = 1 to n\n            // g(y, p) = p^k where k is the largest integer such that p^k divides y\n            // So the product over y=1..n of g(y, p) = p^(sum of k over y=1..n)\n            // The sum of k over y=1..n is the total exponent of p in n!\n            // Which is sum_{i=1}^{inf} floor(n / p^i)\n            \n            let totalExp = 0n;\n            let power = p;\n            while (power <= n) {\n                totalExp += n / power;\n                // Check for overflow: if power > n / p, then next power would exceed n\n                if (power > n / p) break;\n                power *= p;\n            }\n\n            // Multiply result by p^totalExp mod MOD\n            result = (result * modPow(p, totalExp, MOD)) % MOD;\n        }\n\n        console.log(result.toString());\n    });\n}\n\nmain();\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 12,
+                "message": {
+                    "content": "```javascript\nconst MOD = 1000000007n;\n\nfunction modPow(base, exp, mod) {\n    let result = 1n;\n    base = base % mod;\n    while (exp > 0n) {\n        if (exp % 2n === 1n) {\n            result = (result * base) % mod;\n        }\n        exp = exp / 2n;\n        base = (base * base) % mod;\n    }\n    return result;\n}\n\nfunction primeFactors(x) {\n    const factors = new Map();\n    let n = x;\n    for (let i = 2n; i * i <= n; i++) {\n        while (n % i === 0n) {\n            factors.set(i, (factors.get(i) || 0n) + 1n);\n            n = n / i;\n        }\n    }\n    if (n > 1n) {\n        factors.set(n, (factors.get(n) || 0n) + 1n);\n    }\n    return factors;\n}\n\nfunction main() {\n    const input = require('fs').readFileSync('/dev/stdin', 'utf8').trim().split(/\\s+/);\n    const x = BigInt(input[0]);\n    const n = BigInt(input[1]);\n\n    const factors = primeFactors(x);\n\n    let result = 1n;\n\n    for (const [p, exp] of factors) {\n        // We need to compute the sum of g(y, p) for y = 1 to n\n        // g(y, p) = p^k where k is the largest integer such that p^k divides y\n        // The product f(x, y) = product over p in prime(x) of g(y, p)\n        // So the total product is product over p in prime(x) of (product_{y=1}^{n} g(y, p))\n        \n        // For a fixed prime p, we need to compute product_{y=1}^{n} p^{v_p(y)} = p^{sum_{y=1}^{n} v_p(y)}\n        // where v_p(y) is the exponent of p in y.\n        \n        // sum_{y=1}^{n} v_p(y) = sum_{k=1}^{inf} floor(n / p^k)\n        \n        let sumExp = 0n;\n        let power = p;\n        while (power <= n) {\n            sumExp += n / power;\n            if (power > n / p) break; // avoid overflow\n            power *= p;\n        }\n        \n        // result *= p^sumExp mod MOD\n        result = (result * modPow(p % MOD, sumExp, MOD)) % MOD;\n    }\n\n    console.log(result.toString());\n}\n\nmain();\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 13,
+                "message": {
+                    "content": "```javascript\nconst MOD = 1000000007n;\n\nfunction modPow(base, exp, mod) {\n    let result = 1n;\n    base = base % mod;\n    while (exp > 0n) {\n        if (exp % 2n === 1n) {\n            result = (result * base) % mod;\n        }\n        exp = exp / 2n;\n        base = (base * base) % mod;\n    }\n    return result;\n}\n\nfunction getPrimeFactors(x) {\n    const factors = [];\n    let temp = x;\n    for (let i = 2; i * i <= temp; i++) {\n        if (temp % i === 0) {\n            factors.push(i);\n            while (temp % i === 0) {\n                temp /= i;\n            }\n        }\n    }\n    if (temp > 1) {\n        factors.push(temp);\n    }\n    return factors;\n}\n\nfunction main() {\n    const readline = require('fs').readFileSync('/dev/stdin', 'utf8').trim().split(/\\s+/);\n    const x = BigInt(readline[0]);\n    const n = BigInt(readline[1]);\n\n    const primeFactors = getPrimeFactors(Number(x));\n\n    let result = 1n;\n\n    for (const p of primeFactors) {\n        const pBig = BigInt(p);\n        // We need to compute the product of g(y, p) for y = 1 to n\n        // g(y, p) = p^k where k is the largest integer such that p^k divides y\n        // So the product over y=1..n of g(y, p) = p^(sum of k_y for y=1..n)\n        // where k_y is the exponent of p in y.\n        // sum of k_y for y=1..n = sum_{j>=1} floor(n / p^j)\n        \n        let exponent = 0n;\n        let power = pBig;\n        while (power <= n) {\n            exponent += n / power;\n            // Check for overflow: if power * pBig > n, break\n            if (power > n / pBig) {\n                break;\n            }\n            power *= pBig;\n        }\n\n        // result *= p^exponent mod MOD\n        result = (result * modPow(pBig, exponent, MOD)) % MOD;\n    }\n\n    console.log(result.toString());\n}\n\nmain();\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 14,
+                "message": {
+                    "content": "```javascript\nconst MOD = 1000000007n;\n\nfunction modPow(base, exp, mod) {\n    let result = 1n;\n    base = base % mod;\n    while (exp > 0n) {\n        if (exp % 2n === 1n) {\n            result = (result * base) % mod;\n        }\n        exp = exp / 2n;\n        base = (base * base) % mod;\n    }\n    return result;\n}\n\nfunction main() {\n    const readline = require('readline');\n    const rl = readline.createInterface({\n        input: process.stdin,\n        terminal: false\n    });\n\n    let line;\n    rl.on('line', (l) => {\n        line = l;\n        rl.close();\n    });\n\n    rl.on('close', () => {\n        const parts = line.trim().split(/\\s+/);\n        const x = BigInt(parts[0]);\n        const n = BigInt(parts[1]);\n\n        // Find prime factors of x\n        const primeFactors = new Set();\n        let temp = x;\n        let d = 2n;\n        while (d * d <= temp) {\n            if (temp % d === 0n) {\n                primeFactors.add(d);\n                while (temp % d === 0n) {\n                    temp = temp / d;\n                }\n            }\n            d += 1n;\n        }\n        if (temp > 1n) {\n            primeFactors.add(temp);\n        }\n\n        const primes = Array.from(primeFactors);\n\n        let answer = 1n;\n\n        for (const p of primes) {\n            // We need to compute the product of g(y, p) for y = 1 to n\n            // g(y, p) = p^k where k is the largest integer such that p^k divides y\n            // So the product over y=1..n of g(y, p) = p^(sum of k for each y)\n            // The sum of k over y=1..n is the total exponent of p in the product 1*2*...*n = n!\n            // That is, sum_{y=1}^{n} v_p(y) = v_p(n!)\n            // v_p(n!) = sum_{i=1}^{inf} floor(n / p^i)\n\n            let totalExponent = 0n;\n            let power = p;\n            while (power <= n) {\n                totalExponent += n / power;\n                // Check for overflow: if power > n / p, then next power would exceed n\n                if (power > n / p) break;\n                power *= p;\n            }\n\n            // Multiply answer by p^totalExponent mod MOD\n            answer = (answer * modPow(p, totalExponent, MOD)) % MOD;\n        }\n\n        console.log(answer.toString());\n    });\n}\n\nmain();\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 15,
+                "message": {
+                    "content": "```javascript\nconst MOD = 1000000007n;\n\nfunction modPow(base, exp, mod) {\n    let result = 1n;\n    base = base % mod;\n    while (exp > 0n) {\n        if (exp % 2n === 1n) {\n            result = (result * base) % mod;\n        }\n        exp = exp / 2n;\n        base = (base * base) % mod;\n    }\n    return result;\n}\n\nfunction main() {\n    const line = require('fs').readFileSync('/dev/stdin', 'utf8').trim().split(/\\s+/);\n    const x = BigInt(line[0]);\n    const n = BigInt(line[1]);\n\n    // Find prime factors of x\n    const primeFactors = new Set();\n    let temp = x;\n    for (let i = 2n; i * i <= temp; i++) {\n        if (temp % i === 0n) {\n            primeFactors.add(i);\n            while (temp % i === 0n) {\n                temp = temp / i;\n            }\n        }\n    }\n    if (temp > 1n) {\n        primeFactors.add(temp);\n    }\n\n    const primes = Array.from(primeFactors);\n\n    let answer = 1n;\n\n    for (const p of primes) {\n        // We need to compute the product of g(y, p) for y = 1 to n\n        // g(y, p) = p^k where k is the largest integer such that p^k divides y\n        // So the total exponent of p in the product is sum_{y=1}^{n} v_p(y)\n        // where v_p(y) is the exponent of p in y\n        \n        // The sum of v_p(y) for y=1 to n is:\n        // sum_{k=1}^{inf} floor(n / p^k)\n        \n        let exponent = 0n;\n        let power = p;\n        while (power <= n) {\n            exponent += n / power;\n            // Check if power * p would overflow or exceed n\n            if (power > n / p) break;\n            power = power * p;\n        }\n\n        // Multiply answer by p^exponent mod MOD\n        answer = (answer * modPow(p % MOD, exponent, MOD)) % MOD;\n    }\n\n    console.log(answer.toString());\n}\n\nmain();\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 16,
+                "message": {
+                    "content": "```javascript\nconst MOD = 1000000007n;\n\nfunction modPow(base, exp, mod) {\n    base = base % mod;\n    let result = 1n;\n    while (exp > 0n) {\n        if (exp % 2n === 1n) {\n            result = (result * base) % mod;\n        }\n        exp = exp >> 1n;\n        base = (base * base) % mod;\n    }\n    return result;\n}\n\nfunction primeFactors(x) {\n    const factors = new Map();\n    let n = x;\n    for (let i = 2n; i * i <= n; i++) {\n        while (n % i === 0n) {\n            factors.set(i, (factors.get(i) || 0n) + 1n);\n            n = n / i;\n        }\n    }\n    if (n > 1n) {\n        factors.set(n, (factors.get(n) || 0n) + 1n);\n    }\n    return factors;\n}\n\nfunction main() {\n    const readline = require('readline');\n    const rl = readline.createInterface({\n        input: process.stdin,\n        terminal: false\n    });\n\n    rl.on('line', (line) => {\n        const parts = line.trim().split(/\\s+/);\n        const x = BigInt(parts[0]);\n        const n = BigInt(parts[1]);\n\n        const factors = primeFactors(x);\n\n        let result = 1n;\n\n        for (const [p, exp] of factors) {\n            // We need to compute the product of g(y, p) for y=1 to n\n            // g(y, p) = p^k where k is the max such that p^k divides y\n            // So the product over y=1..n of g(y, p) = p^(sum of k over y=1..n)\n            // where k is the exponent of p in y.\n            // The sum of exponents of p in all numbers from 1 to n is:\n            // sum_{k=1}^{inf} floor(n / p^k)\n            \n            let totalExp = 0n;\n            let power = p;\n            while (power <= n) {\n                totalExp += n / power;\n                // Check for overflow: if power > n / p, then next power would exceed n\n                if (power > n / p) {\n                    break;\n                }\n                power *= p;\n            }\n\n            // Multiply result by p^totalExp mod MOD\n            result = (result * modPow(p, totalExp, MOD)) % MOD;\n        }\n\n        console.log(result.toString());\n    });\n}\n\nmain();\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 17,
+                "message": {
+                    "content": "```javascript\nconst MOD = 1000000007n;\n\nfunction modPow(base, exp, mod) {\n    base = base % mod;\n    let result = 1n;\n    while (exp > 0n) {\n        if (exp % 2n === 1n) {\n            result = (result * base) % mod;\n        }\n        exp = exp >> 1n;\n        base = (base * base) % mod;\n    }\n    return result;\n}\n\nfunction modInverse(a, mod) {\n    return modPow(a, mod - 2n, mod);\n}\n\nfunction factorize(x) {\n    const factors = [];\n    let n = x;\n    for (let i = 2n; i * i <= n; i++) {\n        if (n % i === 0n) {\n            let count = 0n;\n            while (n % i === 0n) {\n                count++;\n                n = n / i;\n            }\n            factors.push({ prime: i, exponent: count });\n        }\n    }\n    if (n > 1n) {\n        factors.push({ prime: n, exponent: 1n });\n    }\n    return factors;\n}\n\nfunction main() {\n    const input = require('fs').readFileSync('/dev/stdin', 'utf8').trim().split(/\\s+/);\n    const x = BigInt(input[0]);\n    const n = BigInt(input[1]);\n\n    const factors = factorize(x);\n\n    let result = 1n;\n\n    for (const { prime, exponent } of factors) {\n        // We need to compute the product of g(y, prime) for y from 1 to n\n        // g(y, prime) = prime^k where k is the largest integer such that prime^k divides y\n        // So the total exponent of prime in the product is sum_{y=1}^{n} k(y)\n        // where k(y) is the exponent of prime in y\n        \n        // The sum of exponents of prime in all numbers from 1 to n is:\n        // sum_{k=1}^{inf} floor(n / prime^k)\n        \n        let totalExponent = 0n;\n        let power = prime;\n        while (power <= n) {\n            totalExponent += n / power;\n            // Check for overflow: if power > n / prime, then next power would exceed n\n            if (power > n / prime) break;\n            power = power * prime;\n        }\n\n        // The contribution of this prime to the product is prime^(totalExponent * exponent)\n        // Wait, let me re-read the problem.\n        \n        // f(x, y) = product of g(y, p) for all p in prime(x)\n        // g(y, p) = p^k where k is the max such that p^k divides y\n        // So for each prime p in prime(x), we take p^(exponent of p in y)\n        // The total product over y=1 to n is product over p in prime(x) of p^(sum of exponents of p in y for y=1 to n)\n        \n        // So for each prime p in prime(x), the total exponent is sum_{y=1}^{n} (exponent of p in y)\n        // which is sum_{k=1}^{inf} floor(n / p^k)\n        \n        // But wait, the problem says f(x, y) = product of g(y, p) for p in prime(x)\n        // g(y, p) = p^(exponent of p in y)\n        // So f(x, y) = product_{p in prime(x)} p^(exponent of p in y)\n        \n        // The total product is product_{y=1}^{n} f(x, y) = product_{y=1}^{n} product_{p in prime(x)} p^(exponent of p in y)\n        // = product_{p in prime(x)} p^(sum_{y=1}^{n} exponent of p in y)\n        // = product_{p in prime(x)} p^(sum_{k=1}^{inf} floor(n / p^k))\n        \n        // So for each prime p in prime(x), we compute totalExponent = sum_{k=1}^{inf} floor(n / p^k)\n        // and multiply result by p^(totalExponent) mod MOD\n        \n        // Note: the exponent in factorize(x) doesn't matter here! Let me re-check.\n        \n        // Wait, prime(x) is the set of prime divisors of x. So if x = 12 = 2^2 * 3, then prime(x) = {2, 3}.\n        // f(x, y) = g(y, 2) * g(y, 3) = 2^(exp of 2 in y) * 3^(exp of 3 in y)\n        // So the exponent of each prime p in the final product is just sum_{y=1}^{n} (exp of p in y), regardless of the exponent of p in x.\n        \n        // So the factorization of x only matters to get the set of primes, not their exponents.\n        \n        result = (result * modPow(prime, totalExponent, MOD)) % MOD;\n    }\n\n    console.log(result.toString());\n}\n\nmain();\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 18,
+                "message": {
+                    "content": "```javascript\nconst MOD = 1000000007n;\n\nfunction modPow(base, exp, mod) {\n    let result = 1n;\n    base = base % mod;\n    while (exp > 0n) {\n        if (exp % 2n === 1n) {\n            result = (result * base) % mod;\n        }\n        exp = exp / 2n;\n        base = (base * base) % mod;\n    }\n    return result;\n}\n\nfunction main() {\n    const line = require('fs').readFileSync('/dev/stdin', 'utf8').trim().split(/\\s+/);\n    const x = BigInt(line[0]);\n    const n = BigInt(line[1]);\n\n    // Find prime factors of x\n    let temp = x;\n    const primeFactors = [];\n    let d = 2n;\n    while (d * d <= temp) {\n        if (temp % d === 0n) {\n            primeFactors.push(d);\n            while (temp % d === 0n) {\n                temp = temp / d;\n            }\n        }\n        d += 1n;\n    }\n    if (temp > 1n) {\n        primeFactors.push(temp);\n    }\n\n    let result = 1n;\n\n    for (const p of primeFactors) {\n        // We need to compute the product of g(y, p) for y = 1 to n\n        // g(y, p) = p^k where k is the largest integer such that p^k divides y\n        // So the total exponent of p in the product is sum_{y=1}^{n} v_p(y)\n        // where v_p(y) is the exponent of p in the prime factorization of y\n        // This sum is: floor(n/p) + floor(n/p^2) + floor(n/p^3) + ...\n        \n        let power = p;\n        let totalExp = 0n;\n        while (power <= n) {\n            totalExp += n / power;\n            // Check if power * p would overflow or exceed n\n            if (power > n / p) break;\n            power *= p;\n        }\n\n        // Multiply result by p^totalExp mod MOD\n        result = (result * modPow(p % MOD, totalExp, MOD)) % MOD;\n    }\n\n    console.log(result.toString());\n}\n\nmain();\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 19,
+                "message": {
+                    "content": "```javascript\nconst MOD = 1000000007n;\n\nfunction modPow(base, exp, mod) {\n    let result = 1n;\n    base = base % mod;\n    while (exp > 0n) {\n        if (exp % 2n === 1n) {\n            result = (result * base) % mod;\n        }\n        exp = exp / 2n;\n        base = (base * base) % mod;\n    }\n    return result;\n}\n\nfunction main() {\n    const line = require('fs').readFileSync('/dev/stdin', 'utf8').trim().split(/\\s+/);\n    const x = BigInt(line[0]);\n    const n = BigInt(line[1]);\n\n    // Find prime factors of x\n    let temp = x;\n    const primeFactors = [];\n    let d = 2n;\n    while (d * d <= temp) {\n        if (temp % d === 0n) {\n            primeFactors.push(d);\n            while (temp % d === 0n) {\n                temp = temp / d;\n            }\n        }\n        d += (d === 2n ? 1n : 2n);\n    }\n    if (temp > 1n) {\n        primeFactors.push(temp);\n    }\n\n    let answer = 1n;\n\n    for (const p of primeFactors) {\n        // We need to compute the product of g(y, p) for y from 1 to n\n        // g(y, p) = p^k where k is the largest integer such that p^k divides y\n        // So the product over y=1..n of g(y, p) = p^(sum of k(y) for y=1..n)\n        // where k(y) is the exponent of p in y.\n        // The sum of exponents of p in all numbers from 1 to n is:\n        // sum_{k=1}^{inf} floor(n / p^k)\n        \n        let exponent = 0n;\n        let power = p;\n        while (power <= n) {\n            exponent += n / power;\n            // Check if power * p would overflow or exceed n\n            if (power > n / p) {\n                break;\n            }\n            power *= p;\n        }\n\n        // Multiply answer by p^exponent mod MOD\n        answer = (answer * modPow(p, exponent, MOD)) % MOD;\n    }\n\n    console.log(answer.toString());\n}\n\nmain();\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 13087,
+            "prompt_tokens": 747,
+            "total_tokens": 13834
+        },
+        "prompt": "Write a program in Javascript to solve this programming problem:\nDescription: Let's introduce some definitions that will be needed later.Let $$$prime(x)$$$ be the set of prime divisors of $$$x$$$. For example, $$$prime(140) = \\{ 2, 5, 7 \\}$$$, $$$prime(169) = \\{ 13 \\}$$$.Let $$$g(x, p)$$$ be the maximum possible integer $$$p^k$$$ where $$$k$$$ is an integer such that $$$x$$$ is divisible by $$$p^k$$$. For example:  $$$g(45, 3) = 9$$$ ($$$45$$$ is divisible by $$$3^2=9$$$ but not divisible by $$$3^3=27$$$),  $$$g(63, 7) = 7$$$ ($$$63$$$ is divisible by $$$7^1=7$$$ but not divisible by $$$7^2=49$$$). Let $$$f(x, y)$$$ be the product of $$$g(y, p)$$$ for all $$$p$$$ in $$$prime(x)$$$. For example:  $$$f(30, 70) = g(70, 2) \\cdot g(70, 3) \\cdot g(70, 5) = 2^1 \\cdot 3^0 \\cdot 5^1 = 10$$$,  $$$f(525, 63) = g(63, 3) \\cdot g(63, 5) \\cdot g(63, 7) = 3^2 \\cdot 5^0 \\cdot 7^1 = 63$$$. You have integers $$$x$$$ and $$$n$$$. Calculate $$$f(x, 1) \\cdot f(x, 2) \\cdot \\ldots \\cdot f(x, n) \\bmod{(10^{9} + 7)}$$$.\nInput Specification: The only line contains integers $$$x$$$ and $$$n$$$ ($$$2 \\le x \\le 10^{9}$$$, $$$1 \\le n \\le 10^{18}$$$)\u00a0\u2014 the numbers used in formula.\nOutput Specification: Print the answer.\n\nSample Input:\n10 2\nSample Output:\n2\n\nSample Input:\n20190929 1605\nSample Output:\n363165664\n\nSample Input:\n947 987654321987654321\nSample Output:\n593574252\n\nNotes: NoteIn the first example, $$$f(10, 1) = g(1, 2) \\cdot g(1, 5) = 1$$$, $$$f(10, 2) = g(2, 2) \\cdot g(2, 5) = 2$$$.In the second example, actual value of formula is approximately $$$1.597 \\cdot 10^{171}$$$. Make sure you print the answer modulo $$$(10^{9} + 7)$$$.In the third example, be careful about overflow issue.\nTake input from standard input and output to standard output\nProvide the Javascript code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "04610fbaa746c083dda30e21fa6e1a0c",
+        "difficulty": 1700,
+        "prob_desc_sample_inputs": [
+            "10 2",
+            "20190929 1605",
+            "947 987654321987654321"
+        ],
+        "prob_desc_time_limit": "1 second",
+        "tags": [
+            "math",
+            "number theory"
+        ],
+        "prob_desc_output_spec": "Print the answer.",
+        "prob_desc_input_spec": "The only line contains integers $$$x$$$ and $$$n$$$ ($$$2 \\le x \\le 10^{9}$$$, $$$1 \\le n \\le 10^{18}$$$)\u00a0\u2014 the numbers used in formula.",
+        "lang_cluster": "Javascript",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first example, $$$f(10, 1) = g(1, 2) \\cdot g(1, 5) = 1$$$, $$$f(10, 2) = g(2, 2) \\cdot g(2, 5) = 2$$$.In the second example, actual value of formula is approximately $$$1.597 \\cdot 10^{171}$$$. Make sure you print the answer modulo $$$(10^{9} + 7)$$$.In the third example, be careful about overflow issue.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Let's introduce some definitions that will be needed later.Let $$$prime(x)$$$ be the set of prime divisors of $$$x$$$. For example, $$$prime(140) = \\{ 2, 5, 7 \\}$$$, $$$prime(169) = \\{ 13 \\}$$$.Let $$$g(x, p)$$$ be the maximum possible integer $$$p^k$$$ where $$$k$$$ is an integer such that $$$x$$$ is divisible by $$$p^k$$$. For example:  $$$g(45, 3) = 9$$$ ($$$45$$$ is divisible by $$$3^2=9$$$ but not divisible by $$$3^3=27$$$),  $$$g(63, 7) = 7$$$ ($$$63$$$ is divisible by $$$7^1=7$$$ but not divisible by $$$7^2=49$$$). Let $$$f(x, y)$$$ be the product of $$$g(y, p)$$$ for all $$$p$$$ in $$$prime(x)$$$. For example:  $$$f(30, 70) = g(70, 2) \\cdot g(70, 3) \\cdot g(70, 5) = 2^1 \\cdot 3^0 \\cdot 5^1 = 10$$$,  $$$f(525, 63) = g(63, 3) \\cdot g(63, 5) \\cdot g(63, 7) = 3^2 \\cdot 5^0 \\cdot 7^1 = 63$$$. You have integers $$$x$$$ and $$$n$$$. Calculate $$$f(x, 1) \\cdot f(x, 2) \\cdot \\ldots \\cdot f(x, n) \\bmod{(10^{9} + 7)}$$$.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1569762300",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "2",
+            "363165664",
+            "593574252"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"10 2\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"20190929 1605\\r\\n\", \"output\": [\"363165664\"]}, {\"input\": \"947 987654321987654321\\r\\n\", \"output\": [\"593574252\"]}, {\"input\": \"2 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"1000000000 1000000000000000000\\r\\n\", \"output\": [\"997440007\"]}, {\"input\": \"688829161 296569860304026304\\r\\n\", \"output\": [\"388155331\"]}, {\"input\": \"666010979 443570624148538441\\r\\n\", \"output\": [\"886507301\"]}, {\"input\": \"62459 243660471368579\\r\\n\", \"output\": [\"842535934\"]}, {\"input\": \"7946761 48034259999420806\\r\\n\", \"output\": [\"286862630\"]}, {\"input\": \"651423529 424352614134813841\\r\\n\", \"output\": [\"408736200\"]}, {\"input\": \"9 188\\r\\n\", \"output\": [\"954137859\"]}, {\"input\": \"670514203 852730801385798525\\r\\n\", \"output\": [\"355832385\"]}, {\"input\": \"610455946 416624575433175279\\r\\n\", \"output\": [\"338494046\"]}, {\"input\": \"49 79792266297612001\\r\\n\", \"output\": [\"444608448\"]}, {\"input\": \"3 450283905890997363\\r\\n\", \"output\": [\"137055211\"]}, {\"input\": \"46957 103538299629493\\r\\n\", \"output\": [\"516798047\"]}, {\"input\": \"732253291 788822690846812980\\r\\n\", \"output\": [\"73304767\"]}, {\"input\": \"97073 914735122128017\\r\\n\", \"output\": [\"829607048\"]}, {\"input\": \"17282811 699905460125739623\\r\\n\", \"output\": [\"59360995\"]}, {\"input\": \"181 6364290927201661\\r\\n\", \"output\": [\"475029602\"]}, {\"input\": \"858913688 891530069762947837\\r\\n\", \"output\": [\"647838042\"]}, {\"input\": \"967354019 885482785588887131\\r\\n\", \"output\": [\"808625396\"]}, {\"input\": \"266771957 238077331412324150\\r\\n\", \"output\": [\"739449215\"]}, {\"input\": \"830311913 317759021041529386\\r\\n\", \"output\": [\"693455621\"]}, {\"input\": \"848817679 656378982730193530\\r\\n\", \"output\": [\"62821476\"]}, {\"input\": \"195871858 768946182432660488\\r\\n\", \"output\": [\"392505530\"]}, {\"input\": \"711775563 733987980910045529\\r\\n\", \"output\": [\"162577667\"]}, {\"input\": \"525248617 82607938303742375\\r\\n\", \"output\": [\"23639347\"]}, {\"input\": \"143742939 719404683072701713\\r\\n\", \"output\": [\"302790025\"]}, {\"input\": \"28436 878968615689292495\\r\\n\", \"output\": [\"214265329\"]}, {\"input\": \"84649 916822936406978638\\r\\n\", \"output\": [\"246601699\"]}, {\"input\": \"87620 877857688202236881\\r\\n\", \"output\": [\"744263233\"]}, {\"input\": \"593239213 160216936483594374\\r\\n\", \"output\": [\"304167038\"]}, {\"input\": \"701679551 498836898172258517\\r\\n\", \"output\": [\"430076831\"]}, {\"input\": \"570117590 448352800956119696\\r\\n\", \"output\": [\"137534751\"]}, {\"input\": \"955489921 180523632657788226\\r\\n\", \"output\": [\"983910063\"]}, {\"input\": \"292681 817149800101377878\\r\\n\", \"output\": [\"608820127\"]}, {\"input\": \"1369 886139189349580965\\r\\n\", \"output\": [\"84873742\"]}, {\"input\": \"354907921 125959632388542241\\r\\n\", \"output\": [\"911890209\"]}, {\"input\": \"844561 602411242538130481\\r\\n\", \"output\": [\"731875446\"]}, {\"input\": \"841 353814783205469041\\r\\n\", \"output\": [\"865189676\"]}, {\"input\": \"602555209 363072779893033681\\r\\n\", \"output\": [\"506211588\"]}, {\"input\": \"822649 556728843703025449\\r\\n\", \"output\": [\"339554911\"]}, {\"input\": \"307371493 799006685782884121\\r\\n\", \"output\": [\"29424494\"]}, {\"input\": \"2 576460752303423488\\r\\n\", \"output\": [\"222384588\"]}, {\"input\": \"5 298023223876953125\\r\\n\", \"output\": [\"570366926\"]}, {\"input\": \"31891 32434291280971\\r\\n\", \"output\": [\"947227318\"]}, {\"input\": \"2 576460752303423487\\r\\n\", \"output\": [\"198832797\"]}, {\"input\": \"183 183\\r\\n\", \"output\": [\"387952563\"]}, {\"input\": \"139 1000000000000000000\\r\\n\", \"output\": [\"141180258\"]}]"
+    }
+}

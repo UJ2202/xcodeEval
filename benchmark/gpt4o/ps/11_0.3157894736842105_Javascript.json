@@ -1,0 +1,342 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEI01EJRWVEzqEdBkvWUKPITcIYHm",
+        "created": 1787074489,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nlet idx = 0;\nconst n = input[idx++], m = input[idx++];\n\nconst edges = [];\nfor (let i = 0; i < m; i++) {\n    const a = input[idx++] - 1;\n    const b = input[idx++] - 1;\n    edges.push([a, b]);\n}\n\n// Precompute all 21 dominoes (a,b) with 1<=a<=b<=6\nconst dominos = [];\nfor (let a = 1; a <= 6; a++) {\n    for (let b = a; b <= 6; b++) {\n        dominos.push([a, b]);\n    }\n}\nconst D = dominos.length; // 21\n\nlet best = 0;\n\n// For each assignment of dot value (1..6) or unused (0) to each vertex\n// There are 7^n possibilities; n<=7 => 7^7=823543\nconst pow7 = [];\npow7[0] = 1;\nfor (let i = 1; i <= n; i++) pow7[i] = pow7[i - 1] * 7;\n\nfor (let mask = 0; mask < pow7[n]; mask++) {\n    // decode base-7 digits: 0..6, where 0 means vertex unused, 1..6 is dot value\n    const val = new Array(n);\n    let tmp = mask;\n    for (let i = 0; i < n; i++) {\n        val[i] = tmp % 7;\n        tmp = Math.floor(tmp / 7);\n    }\n\n    // collect edges whose both endpoints are assigned non-zero\n    const pairs = [];\n    for (let i = 0; i < m; i++) {\n        const [u, v] = edges[i];\n        const a = val[u], b = val[v];\n        if (a === 0 || b === 0) continue;\n        pairs.push([a, b]);\n    }\n    if (pairs.length <= best) continue; // can't beat current best\n\n    // For each pair (a,b), we need a domino with unordered values {a,b}\n    // Count multiplicity of each unordered pair\n    const need = new Map(); // key: \"a,b\" with a<=b, value: count\n    for (const [x, y] of pairs) {\n        const a = Math.min(x, y);\n        const b = Math.max(x, y);\n        const key = a + ',' + b;\n        need.set(key, (need.get(key) || 0) + 1);\n    }\n\n    // Each domino type (a,b) is available at most once.\n    // So for each needed type, we can place at most 1 domino.\n    let used = 0;\n    for (const cnt of need.values()) {\n        if (cnt > 0) used++;\n    }\n\n    if (used > best) best = used;\n}\n\nconsole.log(best);",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nlet idx = 0;\nconst n = input[idx++], m = input[idx++];\n\nconst edges = [];\nfor (let i = 0; i < m; i++) {\n    const a = input[idx++] - 1;\n    const b = input[idx++] - 1;\n    edges.push([a, b]);\n}\n\n// Precompute all 21 dominoes (a,b) with 1<=a<=b<=6\nconst dominoes = [];\nfor (let a = 1; a <= 6; a++) {\n    for (let b = a; b <= 6; b++) {\n        dominoes.push([a, b]);\n    }\n}\nconst D = dominoes.length; // 21\n\nlet best = 0;\n\n// For each assignment of dot value (0..6) to each vertex\n// 0 means no domino incident to that vertex\nconst maxMask = Math.pow(7, n);\n\nfunction dfsEdge(edgeIdx, usedMask, placedCount, vertexDots) {\n    if (edgeIdx === m) {\n        if (placedCount > best) best = placedCount;\n        return;\n    }\n\n    // Prune: even if we place dominoes on all remaining edges, can't beat best\n    if (placedCount + (m - edgeIdx) <= best) return;\n\n    const [u, v] = edges[edgeIdx];\n\n    // Option 1: skip this edge\n    dfsEdge(edgeIdx + 1, usedMask, placedCount, vertexDots);\n\n    // Option 2: try to place a domino\n    const du = vertexDots[u];\n    const dv = vertexDots[v];\n\n    // If both vertices have dot value 0, we can choose any domino and orientation\n    if (du === 0 && dv === 0) {\n        for (let i = 0; i < D; i++) {\n            if (usedMask & (1 << i)) continue;\n            const [a, b] = dominoes[i];\n\n            // orientation u<-a, v<-b\n            vertexDots[u] = a;\n            vertexDots[v] = b;\n            dfsEdge(edgeIdx + 1, usedMask | (1 << i), placedCount + 1, vertexDots);\n            // orientation u<-b, v<-a (if different)\n            if (a !== b) {\n                vertexDots[u] = b;\n                vertexDots[v] = a;\n                dfsEdge(edgeIdx + 1, usedMask | (1 << i), placedCount + 1, vertexDots);\n            }\n            vertexDots[u] = 0;\n            vertexDots[v] = 0;\n        }\n        return;\n    }\n\n    // If one vertex has 0 and other has fixed dot value\n    if (du === 0 && dv !== 0) {\n        const needV = dv;\n        for (let i = 0; i < D; i++) {\n            if (usedMask & (1 << i)) continue;\n            const [a, b] = dominoes[i];\n\n            // Try make v get needV\n            if (a === needV) {\n                // u gets b\n                vertexDots[u] = b;\n                dfsEdge(edgeIdx + 1, usedMask | (1 << i), placedCount + 1, vertexDots);\n                vertexDots[u] = 0;\n            }\n            if (b === needV && a !== b) {\n                vertexDots[u] = a;\n                dfsEdge(edgeIdx + 1, usedMask | (1 << i), placedCount + 1, vertexDots);\n                vertexDots[u] = 0;\n            }\n        }\n        return;\n    }\n\n    if (du !== 0 && dv === 0) {\n        const needU = du;\n        for (let i = 0; i < D; i++) {\n            if (usedMask & (1 << i)) continue;\n            const [a, b] = dominoes[i];\n\n            if (a === needU) {\n                vertexDots[v] = b;\n                dfsEdge(edgeIdx + 1, usedMask | (1 << i), placedCount + 1, vertexDots);\n                vertexDots[v] = 0;\n            }\n            if (b === needU && a !== b) {\n                vertexDots[v] = a;\n                dfsEdge(edgeIdx + 1, usedMask | (1 << i), placedCount + 1, vertexDots);\n                vertexDots[v] = 0;\n            }\n        }\n        return;\n    }\n\n    // Both vertices have fixed dot values\n    const needU = du;\n    const needV = dv;\n\n    for (let i = 0; i < D; i++) {\n        if (usedMask & (1 << i)) continue;\n        const [a, b] = dominoes[i];\n\n        // orientation u<-a, v<-b\n        if (a === needU && b === needV) {\n            dfsEdge(edgeIdx + 1, usedMask | (1 << i), placedCount + 1, vertexDots);\n        }\n        // orientation u<-b, v<-a\n        if (b === needU && a === needV && a !== b) {\n            dfsEdge(edgeIdx + 1, usedMask | (1 << i), placedCount + 1, vertexDots);\n        }\n    }\n}\n\nif (m === 0) {\n    console.log(0);\n} else {\n    const vertexDots = new Array(n).fill(0);\n    dfsEdge(0, 0, 0, vertexDots);\n    console.log(best);\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nif (input.length === 0) {\n    process.exit(0);\n}\nlet idx = 0;\nconst n = input[idx++];\nconst m = input[idx++];\n\nconst edges = [];\nfor (let i = 0; i < m; i++) {\n    const a = input[idx++] - 1;\n    const b = input[idx++] - 1;\n    edges.push([a, b]);\n}\n\n// Precompute all 21 dominoes (a,b) with 1<=a<=b<=6\nconst dominoes = [];\nfor (let a = 1; a <= 6; a++) {\n    for (let b = a; b <= 6; b++) {\n        dominoes.push([a, b]);\n    }\n}\nconst D = dominoes.length; // 21\n\nlet best = 0;\n\n// Precompute for each edge the list of possible (dominoIndex, orientation)\n// orientation: 0 => a->u, b->v; 1 => b->u, a->v\nconst edgeOptions = [];\nfor (let e = 0; e < m; e++) {\n    const opts = [];\n    for (let d = 0; d < D; d++) {\n        const [a, b] = dominoes[d];\n        // orientation 0\n        opts.push({ d, o: 0, uVal: a, vVal: b });\n        // orientation 1\n        opts.push({ d, o: 1, uVal: b, vVal: a });\n    }\n    edgeOptions.push(opts);\n}\n\n// Recursive backtracking over edges\nfunction dfs(edgeIdx, usedMask, vertexVal, placed) {\n    if (edgeIdx === m) {\n        if (placed > best) best = placed;\n        return;\n    }\n\n    // Upper bound pruning: remaining edges + placed <= best?\n    const remaining = m - edgeIdx;\n    if (placed + remaining <= best) {\n        return;\n    }\n\n    const [u, v] = edges[edgeIdx];\n\n    // Option 1: skip this edge\n    dfs(edgeIdx + 1, usedMask, vertexVal, placed);\n\n    // Option 2: try placing a domino\n    const opts = edgeOptions[edgeIdx];\n    for (let i = 0; i < opts.length; i++) {\n        const { d, uVal, vVal } = opts[i];\n\n        // domino already used?\n        if (usedMask & (1 << d)) continue;\n\n        // check vertex constraints\n        const oldU = vertexVal[u];\n        const oldV = vertexVal[v];\n\n        if (oldU !== 0 && oldU !== uVal) continue;\n        if (oldV !== 0 && oldV !== vVal) continue;\n\n        // apply\n        vertexVal[u] = uVal;\n        vertexVal[v] = vVal;\n\n        dfs(edgeIdx + 1, usedMask | (1 << d), vertexVal, placed + 1);\n\n        // revert\n        vertexVal[u] = oldU;\n        vertexVal[v] = oldV;\n    }\n}\n\nconst vertexVal = new Array(n).fill(0);\ndfs(0, 0, vertexVal, 0);\n\nconsole.log(best.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nlet idx = 0;\nconst n = input[idx++];\nconst m = input[idx++];\n\nconst edges = [];\nfor (let i = 0; i < m; i++) {\n    const a = input[idx++] - 1;\n    const b = input[idx++] - 1;\n    edges.push([a, b]);\n}\n\n// Precompute all 6^n assignments of colors (1..6) to vertices\nconst totalAssignments = Math.pow(6, n);\nlet best = 0;\n\nfor (let mask = 0; mask < totalAssignments; mask++) {\n    // decode mask into colors for vertices\n    const color = new Array(n);\n    let tmp = mask;\n    for (let v = 0; v < n; v++) {\n        color[v] = (tmp % 6) + 1;\n        tmp = Math.floor(tmp / 6);\n    }\n\n    // Count how many domino types (a,b) are required\n    // Use a 7x7 matrix (1-based indices) to store counts\n    const cnt = Array.from({ length: 7 }, () => Array(7).fill(0));\n\n    for (let [u, v] of edges) {\n        let cu = color[u];\n        let cv = color[v];\n        if (cu <= cv) cnt[cu][cv]++;\n        else cnt[cv][cu]++;\n    }\n\n    // For each domino type (a,b) we can use at most 1\n    let used = 0;\n    for (let a = 1; a <= 6; a++) {\n        for (let b = a; b <= 6; b++) {\n            if (cnt[a][b] > 0) used++;\n        }\n    }\n\n    if (used > best) best = used;\n}\n\nconsole.log(best.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nlet idx = 0;\nconst n = input[idx++], m = input[idx++];\n\nconst edges = [];\nfor (let i = 0; i < m; i++) {\n    const a = input[idx++] - 1;\n    const b = input[idx++] - 1;\n    edges.push([a, b]);\n}\n\n// Precompute all 7^n assignments of colors (0..6) to vertices\n// color 0 means \"no color\" (no incident domino), 1..6 are dot counts\nconst totalAssignments = Math.pow(7, n);\nlet best = 0;\n\n// Precompute all domino types (a,b) with 1<=a<=b<=6\nconst dominoTypes = [];\nfor (let a = 1; a <= 6; a++) {\n    for (let b = a; b <= 6; b++) {\n        dominoTypes.push([a, b]);\n    }\n}\n// 21 types\n\n// For each assignment, build bipartite graph between edges and domino types\n// and compute maximum bipartite matching (edges side <= 21)\nfunction maxMatching(edgeDominoAdj) {\n    const E = edgeDominoAdj.length;\n    const D = dominoTypes.length;\n    const matchDomino = Array(D).fill(-1);\n    let result = 0;\n\n    function dfs(e, seen) {\n        for (const d of edgeDominoAdj[e]) {\n            if (seen[d]) continue;\n            seen[d] = true;\n            if (matchDomino[d] === -1 || dfs(matchDomino[d], seen)) {\n                matchDomino[d] = e;\n                return true;\n            }\n        }\n        return false;\n    }\n\n    for (let e = 0; e < E; e++) {\n        const seen = Array(D).fill(false);\n        if (dfs(e, seen)) result++;\n    }\n    return result;\n}\n\nfor (let mask = 0; mask < totalAssignments; mask++) {\n    // decode base-7 mask into colors\n    const color = new Array(n);\n    let tmp = mask;\n    for (let i = 0; i < n; i++) {\n        color[i] = tmp % 7;\n        tmp = Math.floor(tmp / 7);\n    }\n\n    // build adjacency: for each edge, list of domino indices that can be placed\n    const edgeDominoAdj = [];\n    for (let ei = 0; ei < m; ei++) {\n        const [u, v] = edges[ei];\n        const cu = color[u];\n        const cv = color[v];\n        const list = [];\n\n        if (cu === 0 && cv === 0) {\n            // any domino type can be placed\n            for (let d = 0; d < dominoTypes.length; d++) list.push(d);\n        } else if (cu === 0 && cv !== 0) {\n            // cv must be one of the halves\n            for (let d = 0; d < dominoTypes.length; d++) {\n                const [a, b] = dominoTypes[d];\n                if (a === cv || b === cv) list.push(d);\n            }\n        } else if (cu !== 0 && cv === 0) {\n            for (let d = 0; d < dominoTypes.length; d++) {\n                const [a, b] = dominoTypes[d];\n                if (a === cu || b === cu) list.push(d);\n            }\n        } else {\n            // both non-zero\n            const a = cu, b = cv;\n            if (a <= b) {\n                // need domino (a,b)\n                for (let d = 0; d < dominoTypes.length; d++) {\n                    const [x, y] = dominoTypes[d];\n                    if (x === a && y === b) {\n                        list.push(d);\n                        break;\n                    }\n                }\n            } else {\n                // a > b, need domino (b,a)\n                for (let d = 0; d < dominoTypes.length; d++) {\n                    const [x, y] = dominoTypes[d];\n                    if (x === b && y === a) {\n                        list.push(d);\n                        break;\n                    }\n                }\n            }\n        }\n        edgeDominoAdj.push(list);\n    }\n\n    const placed = maxMatching(edgeDominoAdj);\n    if (placed > best) best = placed;\n}\n\nconsole.log(best);",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_result": {
+                        "error": {
+                            "code": "content_filter_error",
+                            "message": "The contents are not filtered"
+                        }
+                    },
+                    "content_filter_results": {}
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nlet idx = 0;\nconst n = input[idx++], m = input[idx++];\n\nconst edges = [];\nfor (let i = 0; i < m; i++) {\n    const a = input[idx++] - 1;\n    const b = input[idx++] - 1;\n    edges.push([a, b]);\n}\n\n// Precompute all domino types (a,b) with 1<=a<=b<=6\nconst dominoes = [];\nfor (let a = 1; a <= 6; a++) {\n    for (let b = a; b <= 6; b++) {\n        dominoes.push([a, b]);\n    }\n}\nconst D = dominoes.length; // 21\n\n// Precompute for each vertex mask (colors 1..6) the number of vertices\nconst colorMasks = [];\nfor (let mask = 0; mask < (1 << (3 * n)); mask++) {\n    // not needed, we'll generate via recursion\n}\n\n// Generate all colorings via recursion\nlet best = 0;\n\n// For each coloring, we will compute maximum matching size in the bipartite graph:\n// left side: edges (0..m-1)\n// right side: dominoes (0..20)\n// edge exists if that domino can be placed on that graph edge under this coloring.\n\nfunction maxMatching(adj) {\n    // adj: array of arrays; adj[e] = list of domino indices\n    const matchR = new Array(D).fill(-1);\n    let result = 0;\n\n    function dfs(u, seen) {\n        for (let v of adj[u]) {\n            if (seen[v]) continue;\n            seen[v] = true;\n            if (matchR[v] === -1 || dfs(matchR[v], seen)) {\n                matchR[v] = u;\n                return true;\n            }\n        }\n        return false;\n    }\n\n    for (let u = 0; u < m; u++) {\n        const seen = new Array(D).fill(false);\n        if (dfs(u, seen)) result++;\n    }\n    return result;\n}\n\nconst colors = new Array(n).fill(1);\n\nfunction dfsColor(pos) {\n    if (pos === n) {\n        if (m === 0) {\n            best = Math.max(best, 0);\n            return;\n        }\n        // Build adjacency for this coloring\n        const adj = Array.from({ length: m }, () => []);\n        for (let i = 0; i < m; i++) {\n            const [u, v] = edges[i];\n            const cu = colors[u];\n            const cv = colors[v];\n            // For each domino type, check if it can be oriented to match cu,cv\n            for (let d = 0; d < D; d++) {\n                const [a, b] = dominoes[d];\n                if ((a === cu && b === cv) || (a === cv && b === cu)) {\n                    adj[i].push(d);\n                }\n            }\n        }\n        const mm = maxMatching(adj);\n        if (mm > best) best = mm;\n        return;\n    }\n    for (let c = 1; c <= 6; c++) {\n        colors[pos] = c;\n        dfsColor(pos + 1);\n    }\n}\n\ndfsColor(0);\nconsole.log(best.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nif (input.length === 0) {\n    process.exit(0);\n}\nlet idx = 0;\nconst n = input[idx++];\nconst m = input[idx++];\n\nconst edges = [];\nfor (let i = 0; i < m; i++) {\n    const a = input[idx++] - 1;\n    const b = input[idx++] - 1;\n    edges.push([a, b]);\n}\n\n// Precompute all 7^n assignments (n <= 7)\nconst pow7 = [];\npow7[0] = 1;\nfor (let i = 1; i <= n; i++) pow7[i] = pow7[i - 1] * 7;\n\nlet best = 0;\n\n// For each assignment of labels 0..6 (0 means unused, 1..6 dots)\nfor (let mask = 0; mask < pow7[n]; mask++) {\n    let tmp = mask;\n    const label = new Array(n);\n    for (let v = 0; v < n; v++) {\n        label[v] = tmp % 7;\n        tmp = (tmp / 7) | 0;\n    }\n\n    // Build adjacency matrix of allowed domino types\n    const adj = Array.from({ length: 7 }, () => Array(7).fill(0));\n    let possibleEdges = 0;\n\n    for (let i = 0; i < m; i++) {\n        const [u, v] = edges[i];\n        const lu = label[u];\n        const lv = label[v];\n        if (lu === 0 || lv === 0) continue;\n        const a = Math.min(lu, lv);\n        const b = Math.max(lu, lv);\n        adj[a][b]++;\n        possibleEdges++;\n    }\n\n    if (possibleEdges <= best) continue; // cannot beat current best\n\n    // Build bipartite graph: left nodes are edges (a,b) with a<=b, right nodes are domino types (a,b)\n    // There is an edge if adj[a][b] > 0 (capacity) and domino type (a,b) exists (always 1)\n    // But each domino type is unique, so capacity 1 on right side.\n    // Maximum matching size is limited by number of distinct (a,b) with adj[a][b]>0.\n    // However, since each adj[a][b] can be >1, but we only have one domino of that type,\n    // we just count distinct types.\n\n    let countTypes = 0;\n    for (let a = 1; a <= 6; a++) {\n        for (let b = a; b <= 6; b++) {\n            if (adj[a][b] > 0) countTypes++;\n        }\n    }\n\n    if (countTypes > best) best = countTypes;\n}\n\nconsole.log(best);",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nlet idx = 0;\nconst n = input[idx++], m = input[idx++];\n\nconst edges = [];\nfor (let i = 0; i < m; i++) {\n    const a = input[idx++] - 1;\n    const b = input[idx++] - 1;\n    edges.push([a, b]);\n}\n\n// Precompute all domino types (a,b) with 1<=a<=b<=6\nconst dominos = [];\nfor (let a = 1; a <= 6; a++) {\n    for (let b = a; b <= 6; b++) {\n        dominos.push([a, b]);\n    }\n}\n// 21 dominos\nconst D = dominos.length;\n\n// For each vertex, we assign a color in [0..6], where 0 means unused, 1..6 means dot count\n// We will enumerate all 7^n assignments.\nconst pow7 = new Array(n + 1);\npow7[0] = 1;\nfor (let i = 1; i <= n; i++) pow7[i] = pow7[i - 1] * 7;\n\nlet best = 0;\n\n// Precompute for speed: for each vertex assignment index, we can decode on the fly\nconst totalAssignments = pow7[n];\n\nfor (let mask = 0; mask < totalAssignments; mask++) {\n    // Decode base-7 representation into colors\n    const color = new Array(n);\n    let tmp = mask;\n    for (let i = 0; i < n; i++) {\n        color[i] = tmp % 7;\n        tmp = Math.floor(tmp / 7);\n    }\n\n    // For each edge, determine possible domino types (a,b) that can be placed\n    // and store them as bitmasks over 21 dominos.\n    const edgeMasks = new Array(m).fill(0);\n    let possible = true;\n\n    for (let e = 0; e < m; e++) {\n        const [u, v] = edges[e];\n        const cu = color[u];\n        const cv = color[v];\n\n        let maskDom = 0;\n\n        if (cu === 0 && cv === 0) {\n            // Any domino, any orientation\n            for (let d = 0; d < D; d++) {\n                maskDom |= (1 << d);\n            }\n        } else if (cu === 0 && cv !== 0) {\n            // cv fixed, cu free\n            for (let d = 0; d < D; d++) {\n                const [a, b] = dominos[d];\n                if (b === cv || a === cv) {\n                    maskDom |= (1 << d);\n                }\n            }\n        } else if (cu !== 0 && cv === 0) {\n            // cu fixed, cv free\n            for (let d = 0; d < D; d++) {\n                const [a, b] = dominos[d];\n                if (a === cu || b === cu) {\n                    maskDom |= (1 << d);\n                }\n            }\n        } else {\n            // both fixed\n            for (let d = 0; d < D; d++) {\n                const [a, b] = dominos[d];\n                if ((a === cu && b === cv) || (a === cv && b === cu)) {\n                    maskDom |= (1 << d);\n                }\n            }\n        }\n\n        if (maskDom === 0) {\n            possible = false;\n            break;\n        }\n        edgeMasks[e] = maskDom;\n    }\n\n    if (!possible) continue;\n\n    // Now we need maximum matching between edges and dominos:\n    // bipartite graph: left = edges (0..m-1), right = dominos (0..20)\n    // edge exists if bit in edgeMasks[e] is set.\n    // We'll use DFS-based maximum bipartite matching (Kuhn algorithm).\n    const matchDomino = new Array(D).fill(-1);\n\n    function dfs(e, seen) {\n        for (let d = 0; d < D; d++) {\n            if (!(edgeMasks[e] & (1 << d))) continue;\n            if (seen[d]) continue;\n            seen[d] = true;\n            if (matchDomino[d] === -1 || dfs(matchDomino[d], seen)) {\n                matchDomino[d] = e;\n                return true;\n            }\n        }\n        return false;\n    }\n\n    let matched = 0;\n    for (let e = 0; e < m; e++) {\n        const seen = new Array(D).fill(false);\n        if (dfs(e, seen)) matched++;\n    }\n\n    if (matched > best) best = matched;\n}\n\nconsole.log(best);",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 6436,
+            "prompt_tokens": 736,
+            "total_tokens": 7172,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 4,
+                "engine_ttft_ms": 327,
+                "engine_ttlt_ms": 24566,
+                "pre_inference_ms": 201,
+                "service_tbt_ms": 4,
+                "service_ttft_ms": 737,
+                "service_ttlt_ms": 24869,
+                "total_duration_ms": 24683,
+                "user_visible_ttft_ms": 536
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Javascript to solve this programming problem:\nDescription: Anadi has a set of dominoes. Every domino has two parts, and each part contains some dots. For every $$$a$$$ and $$$b$$$ such that $$$1 \\leq a \\leq b \\leq 6$$$, there is exactly one domino with $$$a$$$ dots on one half and $$$b$$$ dots on the other half. The set contains exactly $$$21$$$ dominoes. Here is an exact illustration of his set:  Also, Anadi has an undirected graph without self-loops and multiple edges. He wants to choose some dominoes and place them on the edges of this graph. He can use at most one domino of each type. Each edge can fit at most one domino. It's not necessary to place a domino on each edge of the graph.When placing a domino on an edge, he also chooses its direction. In other words, one half of any placed domino must be directed toward one of the endpoints of the edge and the other half must be directed toward the other endpoint. There's a catch: if there are multiple halves of dominoes directed toward the same vertex, each of these halves must contain the same number of dots.How many dominoes at most can Anadi place on the edges of his graph?\nInput Specification: The first line contains two integers $$$n$$$ and $$$m$$$ ($$$1 \\leq n \\leq 7$$$, $$$0 \\leq m \\leq \\frac{n\\cdot(n-1)}{2}$$$) \u2014 the number of vertices and the number of edges in the graph. The next $$$m$$$ lines contain two integers each. Integers in the $$$i$$$-th line are $$$a_i$$$ and $$$b_i$$$ ($$$1 \\leq a, b \\leq n$$$, $$$a \\neq b$$$) and denote that there is an edge which connects vertices $$$a_i$$$ and $$$b_i$$$. The graph might be disconnected. It's however guaranteed that the graph doesn't contain any self-loops, and that there is at most one edge between any pair of vertices.\nOutput Specification: Output one integer which denotes the maximum number of dominoes which Anadi can place on the edges of the graph.\n\nSample Input:\n4 4\n1 2\n2 3\n3 4\n4 1\nSample Output:\n4\n\nSample Input:\n7 0\nSample Output:\n0\n\nSample Input:\n3 1\n1 3\nSample Output:\n1\n\nSample Input:\n7 21\n1 2\n1 3\n1 4\n1 5\n1 6\n1 7\n2 3\n2 4\n2 5\n2 6\n2 7\n3 4\n3 5\n3 6\n3 7\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7\nSample Output:\n16\n\nNotes: NoteHere is an illustration of Anadi's graph from the first sample test:  And here is one of the ways to place a domino on each of its edges:  Note that each vertex is faced by the halves of dominoes with the same number of dots. For instance, all halves directed toward vertex $$$1$$$ have three dots.\nTake input from standard input and output to standard output\nProvide the Javascript code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "11e6559cfb71b8f6ca88242094b17a2b",
+        "difficulty": 1700,
+        "prob_desc_sample_inputs": [
+            "4 4\n1 2\n2 3\n3 4\n4 1",
+            "7 0",
+            "3 1\n1 3",
+            "7 21\n1 2\n1 3\n1 4\n1 5\n1 6\n1 7\n2 3\n2 4\n2 5\n2 6\n2 7\n3 4\n3 5\n3 6\n3 7\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "brute force",
+            "graphs"
+        ],
+        "prob_desc_output_spec": "Output one integer which denotes the maximum number of dominoes which Anadi can place on the edges of the graph.",
+        "prob_desc_input_spec": "The first line contains two integers $$$n$$$ and $$$m$$$ ($$$1 \\leq n \\leq 7$$$, $$$0 \\leq m \\leq \\frac{n\\cdot(n-1)}{2}$$$) \u2014 the number of vertices and the number of edges in the graph. The next $$$m$$$ lines contain two integers each. Integers in the $$$i$$$-th line are $$$a_i$$$ and $$$b_i$$$ ($$$1 \\leq a, b \\leq n$$$, $$$a \\neq b$$$) and denote that there is an edge which connects vertices $$$a_i$$$ and $$$b_i$$$. The graph might be disconnected. It's however guaranteed that the graph doesn't contain any self-loops, and that there is at most one edge between any pair of vertices.",
+        "lang_cluster": "Javascript",
+        "source_code": "",
+        "prob_desc_notes": "NoteHere is an illustration of Anadi's graph from the first sample test:  And here is one of the ways to place a domino on each of its edges:  Note that each vertex is faced by the halves of dominoes with the same number of dots. For instance, all halves directed toward vertex $$$1$$$ have three dots.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Anadi has a set of dominoes. Every domino has two parts, and each part contains some dots. For every $$$a$$$ and $$$b$$$ such that $$$1 \\leq a \\leq b \\leq 6$$$, there is exactly one domino with $$$a$$$ dots on one half and $$$b$$$ dots on the other half. The set contains exactly $$$21$$$ dominoes. Here is an exact illustration of his set:  Also, Anadi has an undirected graph without self-loops and multiple edges. He wants to choose some dominoes and place them on the edges of this graph. He can use at most one domino of each type. Each edge can fit at most one domino. It's not necessary to place a domino on each edge of the graph.When placing a domino on an edge, he also chooses its direction. In other words, one half of any placed domino must be directed toward one of the endpoints of the edge and the other half must be directed toward the other endpoint. There's a catch: if there are multiple halves of dominoes directed toward the same vertex, each of these halves must contain the same number of dots.How many dominoes at most can Anadi place on the edges of his graph?",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1569143100",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "4",
+            "0",
+            "1",
+            "16"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"4 4\\r\\n1 2\\r\\n2 3\\r\\n3 4\\r\\n4 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 1\\r\\n1 3\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 21\\r\\n1 2\\r\\n1 3\\r\\n1 4\\r\\n1 5\\r\\n1 6\\r\\n1 7\\r\\n2 3\\r\\n2 4\\r\\n2 5\\r\\n2 6\\r\\n2 7\\r\\n3 4\\r\\n3 5\\r\\n3 6\\r\\n3 7\\r\\n4 5\\r\\n4 6\\r\\n4 7\\r\\n5 6\\r\\n5 7\\r\\n6 7\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"4 4\\r\\n4 2\\r\\n2 3\\r\\n3 4\\r\\n2 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"5 7\\r\\n4 3\\r\\n3 2\\r\\n1 4\\r\\n5 3\\r\\n5 2\\r\\n4 5\\r\\n1 5\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"6 9\\r\\n2 5\\r\\n3 6\\r\\n1 2\\r\\n1 4\\r\\n2 6\\r\\n6 1\\r\\n3 4\\r\\n1 3\\r\\n5 3\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"7 5\\r\\n5 6\\r\\n3 7\\r\\n7 2\\r\\n4 2\\r\\n1 4\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"7 14\\r\\n7 3\\r\\n2 4\\r\\n2 1\\r\\n2 5\\r\\n5 3\\r\\n6 7\\r\\n4 7\\r\\n5 4\\r\\n7 5\\r\\n4 3\\r\\n4 1\\r\\n6 1\\r\\n6 3\\r\\n3 1\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 15\\r\\n4 6\\r\\n7 3\\r\\n3 1\\r\\n6 5\\r\\n2 7\\r\\n3 6\\r\\n7 6\\r\\n2 6\\r\\n7 5\\r\\n3 5\\r\\n5 4\\r\\n4 7\\r\\n2 1\\r\\n2 4\\r\\n2 3\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"7 18\\r\\n1 5\\r\\n5 7\\r\\n1 3\\r\\n1 6\\r\\n4 5\\r\\n3 7\\r\\n6 7\\r\\n4 7\\r\\n2 7\\r\\n1 2\\r\\n7 1\\r\\n5 6\\r\\n6 2\\r\\n4 2\\r\\n5 3\\r\\n3 6\\r\\n4 6\\r\\n4 3\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 14\\r\\n2 7\\r\\n5 7\\r\\n3 4\\r\\n4 2\\r\\n2 3\\r\\n4 1\\r\\n6 5\\r\\n4 7\\r\\n6 2\\r\\n6 1\\r\\n5 3\\r\\n5 1\\r\\n7 6\\r\\n3 1\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 11\\r\\n4 7\\r\\n6 4\\r\\n5 1\\r\\n1 4\\r\\n5 4\\r\\n1 2\\r\\n3 4\\r\\n4 2\\r\\n6 1\\r\\n3 1\\r\\n7 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"7 18\\r\\n3 2\\r\\n5 3\\r\\n6 7\\r\\n7 3\\r\\n5 4\\r\\n4 6\\r\\n2 4\\r\\n7 1\\r\\n5 6\\r\\n5 2\\r\\n5 1\\r\\n3 4\\r\\n7 4\\r\\n6 1\\r\\n3 6\\r\\n7 2\\r\\n1 3\\r\\n1 2\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 17\\r\\n1 7\\r\\n5 6\\r\\n6 3\\r\\n1 2\\r\\n1 6\\r\\n3 4\\r\\n6 7\\r\\n4 5\\r\\n1 3\\r\\n1 5\\r\\n4 1\\r\\n5 2\\r\\n3 5\\r\\n4 6\\r\\n7 5\\r\\n7 2\\r\\n6 2\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"7 10\\r\\n3 6\\r\\n6 1\\r\\n4 6\\r\\n1 7\\r\\n7 4\\r\\n5 3\\r\\n5 6\\r\\n6 7\\r\\n7 5\\r\\n5 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"1 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 1\\r\\n2 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"3 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 2\\r\\n2 3\\r\\n1 3\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"3 3\\r\\n1 2\\r\\n2 3\\r\\n1 3\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"4 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"4 2\\r\\n2 4\\r\\n1 3\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"4 6\\r\\n2 1\\r\\n1 4\\r\\n2 4\\r\\n3 1\\r\\n3 2\\r\\n3 4\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"5 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 3\\r\\n5 1\\r\\n1 4\\r\\n5 4\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"5 10\\r\\n1 2\\r\\n3 4\\r\\n1 3\\r\\n2 3\\r\\n5 4\\r\\n5 1\\r\\n4 1\\r\\n5 3\\r\\n5 2\\r\\n2 4\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"6 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6 3\\r\\n4 2\\r\\n5 4\\r\\n4 3\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"6 6\\r\\n4 3\\r\\n4 6\\r\\n1 2\\r\\n4 5\\r\\n6 3\\r\\n3 2\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"6 15\\r\\n4 3\\r\\n2 1\\r\\n3 6\\r\\n1 3\\r\\n4 1\\r\\n2 3\\r\\n3 5\\r\\n4 5\\r\\n6 1\\r\\n2 5\\r\\n1 5\\r\\n2 6\\r\\n6 4\\r\\n5 6\\r\\n4 2\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"6 12\\r\\n2 1\\r\\n4 3\\r\\n1 5\\r\\n6 4\\r\\n6 2\\r\\n3 6\\r\\n1 6\\r\\n2 4\\r\\n1 4\\r\\n2 5\\r\\n5 4\\r\\n1 3\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 1\\r\\n5 3\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 2\\r\\n5 1\\r\\n3 5\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"7 3\\r\\n1 5\\r\\n5 7\\r\\n2 7\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"7 4\\r\\n3 7\\r\\n7 5\\r\\n1 3\\r\\n1 6\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7 6\\r\\n3 5\\r\\n7 1\\r\\n3 7\\r\\n5 4\\r\\n7 4\\r\\n3 6\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"7 7\\r\\n2 5\\r\\n6 1\\r\\n5 4\\r\\n7 2\\r\\n3 2\\r\\n4 1\\r\\n7 3\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"7 8\\r\\n4 1\\r\\n5 7\\r\\n6 4\\r\\n7 1\\r\\n6 3\\r\\n3 4\\r\\n3 1\\r\\n6 7\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"7 9\\r\\n2 6\\r\\n7 4\\r\\n2 5\\r\\n2 7\\r\\n4 2\\r\\n3 5\\r\\n5 6\\r\\n6 7\\r\\n7 3\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"7 11\\r\\n2 4\\r\\n1 3\\r\\n5 2\\r\\n2 7\\r\\n1 4\\r\\n4 3\\r\\n2 1\\r\\n7 6\\r\\n3 2\\r\\n7 4\\r\\n4 5\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"7 12\\r\\n6 3\\r\\n3 5\\r\\n7 5\\r\\n1 5\\r\\n1 7\\r\\n7 6\\r\\n4 1\\r\\n2 1\\r\\n1 6\\r\\n5 6\\r\\n3 4\\r\\n4 2\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 13\\r\\n6 5\\r\\n5 7\\r\\n4 2\\r\\n7 2\\r\\n4 1\\r\\n6 7\\r\\n4 3\\r\\n1 6\\r\\n2 5\\r\\n5 4\\r\\n2 1\\r\\n6 4\\r\\n6 2\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 16\\r\\n3 5\\r\\n1 3\\r\\n3 7\\r\\n4 2\\r\\n1 4\\r\\n1 6\\r\\n7 6\\r\\n5 1\\r\\n7 2\\r\\n4 3\\r\\n3 6\\r\\n2 3\\r\\n2 5\\r\\n4 5\\r\\n2 6\\r\\n5 7\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 17\\r\\n4 6\\r\\n1 7\\r\\n7 5\\r\\n3 7\\r\\n7 2\\r\\n2 5\\r\\n6 7\\r\\n1 3\\r\\n5 1\\r\\n6 2\\r\\n4 2\\r\\n3 2\\r\\n1 2\\r\\n5 3\\r\\n4 5\\r\\n3 4\\r\\n1 6\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 19\\r\\n6 1\\r\\n6 4\\r\\n6 5\\r\\n1 7\\r\\n2 7\\r\\n3 5\\r\\n7 6\\r\\n2 4\\r\\n5 7\\r\\n3 4\\r\\n6 2\\r\\n4 1\\r\\n5 1\\r\\n4 7\\r\\n3 2\\r\\n4 5\\r\\n3 1\\r\\n2 5\\r\\n6 3\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 20\\r\\n4 7\\r\\n1 4\\r\\n2 3\\r\\n4 3\\r\\n3 7\\r\\n7 5\\r\\n4 5\\r\\n1 2\\r\\n6 7\\r\\n3 1\\r\\n3 5\\r\\n1 5\\r\\n1 7\\r\\n2 6\\r\\n6 4\\r\\n5 2\\r\\n5 6\\r\\n6 3\\r\\n1 6\\r\\n2 7\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 21\\r\\n3 5\\r\\n7 2\\r\\n2 3\\r\\n6 5\\r\\n5 2\\r\\n4 7\\r\\n2 6\\r\\n2 4\\r\\n6 7\\r\\n5 1\\r\\n1 4\\r\\n4 5\\r\\n5 7\\r\\n4 6\\r\\n3 1\\r\\n1 2\\r\\n3 4\\r\\n7 1\\r\\n3 7\\r\\n6 1\\r\\n3 6\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 12\\r\\n3 4\\r\\n5 4\\r\\n1 7\\r\\n7 3\\r\\n2 5\\r\\n3 2\\r\\n1 4\\r\\n5 6\\r\\n6 1\\r\\n6 3\\r\\n2 1\\r\\n5 7\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 7\\r\\n7 6\\r\\n4 2\\r\\n3 1\\r\\n4 7\\r\\n6 3\\r\\n2 5\\r\\n1 5\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"7 6\\r\\n7 5\\r\\n5 2\\r\\n1 5\\r\\n5 4\\r\\n3 5\\r\\n6 5\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"7 15\\r\\n5 1\\r\\n3 2\\r\\n2 5\\r\\n3 5\\r\\n6 1\\r\\n4 3\\r\\n6 2\\r\\n4 5\\r\\n7 5\\r\\n3 6\\r\\n3 1\\r\\n7 3\\r\\n4 6\\r\\n6 5\\r\\n6 7\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 18\\r\\n3 7\\r\\n3 2\\r\\n2 1\\r\\n1 7\\r\\n5 1\\r\\n3 4\\r\\n5 6\\r\\n4 2\\r\\n6 2\\r\\n1 4\\r\\n2 5\\r\\n6 3\\r\\n3 1\\r\\n6 7\\r\\n6 1\\r\\n7 2\\r\\n6 4\\r\\n3 5\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 19\\r\\n1 2\\r\\n7 3\\r\\n3 4\\r\\n4 7\\r\\n3 6\\r\\n7 5\\r\\n6 2\\r\\n4 6\\r\\n6 7\\r\\n5 2\\r\\n3 2\\r\\n6 5\\r\\n4 1\\r\\n2 4\\r\\n4 5\\r\\n6 1\\r\\n3 1\\r\\n1 7\\r\\n5 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 16\\r\\n3 2\\r\\n6 3\\r\\n6 1\\r\\n5 6\\r\\n7 5\\r\\n5 2\\r\\n6 2\\r\\n2 1\\r\\n5 4\\r\\n4 1\\r\\n7 2\\r\\n1 5\\r\\n2 4\\r\\n7 3\\r\\n1 7\\r\\n6 7\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 12\\r\\n4 1\\r\\n6 4\\r\\n3 4\\r\\n3 1\\r\\n2 4\\r\\n7 5\\r\\n5 4\\r\\n2 1\\r\\n6 7\\r\\n2 3\\r\\n7 4\\r\\n6 5\\r\\n\", \"output\": [\"11\"]}]"
+    }
+}

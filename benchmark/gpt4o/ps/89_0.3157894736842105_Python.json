@@ -1,0 +1,350 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEIHSX6GdmnzXbOpg71bpJWrCjSPz",
+        "created": 1787075570,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "import sys\nfrom itertools import product\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    n, m = map(int, data)\n    cells = [(i, j) for i in range(n) for j in range(m)]\n    idx = {cells[k]: k for k in range(len(cells))}\n    total = n * m\n\n    # Precompute possible moves for each cell\n    moves = []\n    for i, j in cells:\n        options = []\n        # stay\n        options.append((i, j))\n        if i > 0:\n            options.append((i - 1, j))\n        if i + 1 < n:\n            options.append((i + 1, j))\n        if j > 0:\n            options.append((i, j - 1))\n        if j + 1 < m:\n            options.append((i, j + 1))\n        moves.append([idx[pos] for pos in options])\n\n    # Backtracking with pruning\n    best = 0\n    assigned = [None] * total  # assigned target index for each spider\n    occupied = [0] * total     # count of spiders ending in each cell\n\n    def dfs(pos, current_occupied):\n        nonlocal best\n        if pos == total:\n            free_cells = total - current_occupied\n            if free_cells > best:\n                best = free_cells\n            return\n\n        # Upper bound pruning: even if all remaining spiders go to already occupied cells\n        # minimal additional occupied cells is 0, so max free = total - current_occupied\n        if total - current_occupied <= best:\n            return\n\n        # Try all possible moves for spider at pos\n        for t in moves[pos]:\n            prev_count = occupied[t]\n            occupied[t] += 1\n            new_occupied = current_occupied + (1 if prev_count == 0 else 0)\n            assigned[pos] = t\n            dfs(pos + 1, new_occupied)\n            occupied[t] -= 1\n            assigned[pos] = None\n\n    dfs(0, 0)\n    print(best)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "import sys\nfrom itertools import product\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    n, m = map(int, data)\n    cells = [(i, j) for i in range(n) for j in range(m)]\n    idx = {cells[k]: k for k in range(len(cells))}\n    N = len(cells)\n\n    # Precompute neighbors including staying\n    moves = []\n    for (i, j) in cells:\n        options = []\n        options.append((i, j))  # stay\n        if i > 0:\n            options.append((i - 1, j))\n        if i + 1 < n:\n            options.append((i + 1, j))\n        if j > 0:\n            options.append((i, j - 1))\n        if j + 1 < m:\n            options.append((i, j + 1))\n        moves.append([idx[pos] for pos in options])\n\n    # Precompute all possible move choices per cell as bitmasks of destinations\n    cell_choices = []\n    for mv in moves:\n        choices = []\n        for dest in mv:\n            choices.append(1 << dest)\n        cell_choices.append(choices)\n\n    best = 0\n\n    # Backtracking over cells\n    def dfs(pos, occ_mask):\n        nonlocal best\n        if pos == N:\n            # count occupied cells\n            occ_count = occ_mask.bit_count()\n            free = N - occ_count\n            if free > best:\n                best = free\n            return\n        # Pruning: even if all remaining spiders go to new cells,\n        # max additional free cells is (N - pos), but free cells depend on occupied.\n        # Simple pruning not very strong; skip for simplicity.\n\n        for choice in cell_choices[pos]:\n            dfs(pos + 1, occ_mask | choice)\n\n    dfs(0, 0)\n    print(best)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "import sys\nfrom itertools import product\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    n, m = map(int, data)\n    cells = [(i, j) for i in range(n) for j in range(m)]\n    k = len(cells)\n\n    # Directions: 0 stay, 1 up, 2 down, 3 left, 4 right\n    moves = [(0, 0), (-1, 0), (1, 0), (0, -1), (0, 1)]\n\n    best = 0\n\n    # Precompute valid moves for each cell (to avoid checking out-of-bounds repeatedly)\n    valid_moves = []\n    for (i, j) in cells:\n        vm = []\n        for d, (di, dj) in enumerate(moves):\n            ni, nj = i + di, j + dj\n            if 0 <= ni < n and 0 <= nj < m:\n                vm.append((d, ni, nj))\n        valid_moves.append(vm)\n\n    # We will iterate over all assignments using base-5 counting,\n    # but skip invalid directions for each cell quickly.\n    # However, since each cell has at most 5 valid moves, we can instead\n    # directly iterate over the cartesian product of valid moves per cell.\n    # This is 5^k in worst case (k<=40, but nm<=40 and many cells have fewer moves).\n    # Still too big; we need pruning.\n    #\n    # Instead, use DFS with pruning: at each step, assign a move to a cell,\n    # track occupied target cells and possible maximum.\n\n    target = [None] * k  # store target positions index or (i,j)\n\n    # Map (i,j) to index\n    pos_to_idx = {(i, j): idx for idx, (i, j) in enumerate(cells)}\n\n    def dfs(idx, occupied_count, occupied_set):\n        nonlocal best\n        # Remaining cells: k - idx, even if all go to new cells, max new = k - idx\n        # Max possible free cells = total cells - min possible occupied cells\n        # But we want maximize free cells = cells without spiders = cells not in occupied_set\n        # Current free cells = k - occupied_count\n        # Even if all remaining spiders go to already occupied cells, free cells won't decrease.\n        # So no useful upper bound better than k - occupied_count.\n        if idx == k:\n            free_cells = k - occupied_count\n            if free_cells > best:\n                best = free_cells\n            return\n\n        # Simple pruning: even if all remaining spiders move to already occupied cells,\n        # free_cells = k - occupied_count is current; if it's already <= best, we can prune.\n        if k - occupied_count <= best:\n            return\n\n        vm = valid_moves[idx]\n        for d, ni, nj in vm:\n            # target index\n            t_idx = pos_to_idx[(ni, nj)]\n            new_occupied = occupied_count\n            added = False\n            if t_idx not in occupied_set:\n                occupied_set.add(t_idx)\n                new_occupied += 1\n                added = True\n            dfs(idx + 1, new_occupied, occupied_set)\n            if added:\n                occupied_set.remove(t_idx)\n\n    # Initially, no occupied cells after movement\n    dfs(0, 0, set())\n\n    print(best)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "import sys\nfrom itertools import product\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    n, m = map(int, data)\n    cells = [(i, j) for i in range(n) for j in range(m)]\n    idx = {(i, j): k for k, (i, j) in enumerate(cells)}\n    total = n * m\n\n    # Precompute neighbors including staying\n    moves = []\n    for i, j in cells:\n        options = []\n        # stay\n        options.append((i, j))\n        # up\n        if i > 0:\n            options.append((i - 1, j))\n        # down\n        if i + 1 < n:\n            options.append((i + 1, j))\n        # left\n        if j > 0:\n            options.append((i, j - 1))\n        # right\n        if j + 1 < m:\n            options.append((i, j + 1))\n        moves.append(options)\n\n    best = 0\n\n    # Recursive search over cells\n    def dfs(pos, occupied_mask):\n        nonlocal best\n        if pos == total:\n            # count occupied cells\n            occ = bin(occupied_mask).count(\"1\")\n            free = total - occ\n            if free > best:\n                best = free\n            return\n\n        # Prune: even if all remaining cells become free, can't beat best\n        occ = bin(occupied_mask).count(\"1\")\n        max_possible_free = total - occ  # assume all remaining spiders move to already occupied cells\n        if max_possible_free <= best:\n            return\n\n        # Try all moves for this spider\n        for ni, nj in moves[pos]:\n            bit = 1 << idx[(ni, nj)]\n            dfs(pos + 1, occupied_mask | bit)\n\n    dfs(0, 0)\n    print(best)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "import sys\nfrom itertools import product\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    n, m = map(int, data)\n    cells = [(i, j) for i in range(n) for j in range(m)]\n    idx = {(i, j): k for k, (i, j) in enumerate(cells)}\n    total = n * m\n\n    # Precompute possible moves for each cell\n    moves = []\n    for i, j in cells:\n        options = [(i, j)]  # stay\n        if i > 0:\n            options.append((i - 1, j))\n        if i + 1 < n:\n            options.append((i + 1, j))\n        if j > 0:\n            options.append((i, j - 1))\n        if j + 1 < m:\n            options.append((i, j + 1))\n        moves.append([idx[pos] for pos in options])\n\n    best = 0\n\n    # Backtracking over cells, assigning a move option index for each\n    assign = [0] * total\n\n    def dfs(pos, occupied_mask):\n        nonlocal best\n        if pos == total:\n            # Count occupied cells\n            occ = bin(occupied_mask).count(\"1\")\n            free = total - occ\n            if free > best:\n                best = free\n            return\n\n        # Prune: even if all remaining cells become free, can't beat best\n        remaining = total - pos\n        occ = bin(occupied_mask).count(\"1\")\n        max_free_possible = total - occ  # if all remaining land on already occupied\n        if max_free_possible <= best:\n            return\n\n        for dest in moves[pos]:\n            new_mask = occupied_mask | (1 << dest)\n            assign[pos] = dest\n            dfs(pos + 1, new_mask)\n\n    dfs(0, 0)\n    print(best)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "import sys\nfrom itertools import product\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    n, m = map(int, data)\n    cells = [(i, j) for i in range(n) for j in range(m)]\n    k = len(cells)\n\n    # Directions: 0=stay,1=up,2=down,3=left,4=right\n    def neighbors(i, j):\n        res = [(i, j)]  # stay\n        res.append((i - 1, j) if i > 0 else None)          # up\n        res.append((i + 1, j) if i + 1 < n else None)      # down\n        res.append((i, j - 1) if j > 0 else None)          # left\n        res.append((i, j + 1) if j + 1 < m else None)      # right\n        return res\n\n    moves = [neighbors(i, j) for (i, j) in cells]\n\n    best = 0\n\n    # Backtracking over cells, assigning a move (0..4) each\n    def dfs(idx, occupied):\n        nonlocal best\n        if idx == k:\n            # count empty cells\n            empty = k - len(occupied)\n            if empty > best:\n                best = empty\n            return\n\n        # Pruning: even if all remaining spiders move to new cells,\n        # maximum additional empties is number of remaining cells.\n        # Current occupied size is len(occupied).\n        # Minimal possible occupied cells is at least 1 (since each spider occupies one).\n        # Simple pruning not very strong but fine for small k.\n        # Try all possible moves for this spider\n        for d in range(5):\n            dest = moves[idx][d]\n            if dest is None:\n                continue\n            occupied.add(dest)\n            dfs(idx + 1, occupied)\n            occupied.remove(dest)\n\n    dfs(0, set())\n    print(best)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "import sys\nfrom itertools import product\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    n, m = map(int, data)\n    cells = [(i, j) for i in range(n) for j in range(m)]\n    idx = {cells[k]: k for k in range(len(cells))}\n    total = n * m\n\n    # Precompute neighbors for each cell\n    moves = []\n    for (i, j) in cells:\n        options = []\n        # stay\n        options.append((i, j))\n        # up\n        if i > 0:\n            options.append((i - 1, j))\n        # down\n        if i + 1 < n:\n            options.append((i + 1, j))\n        # left\n        if j > 0:\n            options.append((i, j - 1))\n        # right\n        if j + 1 < m:\n            options.append((i, j + 1))\n        moves.append(options)\n\n    best = 0\n\n    # Backtracking over cells, assigning destination for each spider\n    dest_count = [0] * total\n\n    def dfs(pos, occupied):\n        nonlocal best\n        if pos == total:\n            free = total - occupied\n            if free > best:\n                best = free\n            return\n        # Pruning: even if all remaining spiders go to already occupied cells,\n        # max free cells = total - (occupied + 0) = total - occupied\n        if total - occupied <= best:\n            return\n\n        options = moves[pos]\n        for d in options:\n            di = idx[d]\n            was_zero = (dest_count[di] == 0)\n            dest_count[di] += 1\n            dfs(pos + 1, occupied + (1 if was_zero else 0))\n            dest_count[di] -= 1\n\n    dfs(0, 0)\n    print(best)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "import sys\nfrom itertools import product\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    n, m = map(int, data)\n    N = n * m\n\n    # Map cell index to (r, c) and back\n    def idx_to_rc(i):\n        return divmod(i, m)\n\n    def rc_to_idx(r, c):\n        return r * m + c\n\n    # Precompute neighbors (including staying)\n    moves = []\n    for i in range(N):\n        r, c = idx_to_rc(i)\n        options = []\n        # stay\n        options.append(i)\n        # up\n        if r > 0:\n            options.append(rc_to_idx(r - 1, c))\n        # down\n        if r + 1 < n:\n            options.append(rc_to_idx(r + 1, c))\n        # left\n        if c > 0:\n            options.append(rc_to_idx(r, c - 1))\n        # right\n        if c + 1 < m:\n            options.append(rc_to_idx(r, c + 1))\n        moves.append(options)\n\n    best = 0\n\n    # Brute force all assignments: for each cell choose one of its possible moves\n    # Total combinations <= 5^40 in worst case, but constraints n*m<=40 and borders reduce options.\n    # However, this is still huge; we need pruning.\n    # Instead, we observe that multiple spiders can share cells, so we only care about which cells are occupied.\n    # We'll use backtracking with bitmask of occupied target cells.\n\n    # Precompute for each cell its move options as bitmasks\n    move_masks = []\n    for i in range(N):\n        opts = []\n        for t in moves[i]:\n            opts.append(1 << t)\n        move_masks.append(opts)\n\n    def dfs(i, occupied_mask):\n        nonlocal best\n        if i == N:\n            # count occupied cells\n            occ = occupied_mask.bit_count()\n            empty = N - occ\n            if empty > best:\n                best = empty\n            return\n        # Upper bound pruning: even if all remaining spiders go to new cells\n        remaining = N - i\n        occ = occupied_mask.bit_count()\n        max_new_occ = min(N - occ, remaining)\n        if N - (occ + max_new_occ) <= best:\n            return\n\n        for mask in move_masks[i]:\n            dfs(i + 1, occupied_mask | mask)\n\n    dfs(0, 0)\n    print(best)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 3963,
+            "prompt_tokens": 348,
+            "total_tokens": 4311,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 3,
+                "engine_ttft_ms": 311,
+                "engine_ttlt_ms": 14158,
+                "pre_inference_ms": 188,
+                "service_tbt_ms": 3,
+                "service_ttft_ms": 605,
+                "service_ttlt_ms": 14440,
+                "total_duration_ms": 14266,
+                "user_visible_ttft_ms": 417
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Python to solve this programming problem:\nDescription: Little Petya loves training spiders. Petya has a board n\u2009\u00d7\u2009m in size. Each cell of the board initially has a spider sitting on it. After one second Petya chooses a certain action for each spider, and all of them humbly perform its commands. There are 5 possible commands: to stay idle or to move from current cell to some of the four side-neighboring cells (that is, one command for each of the four possible directions). Petya gives the commands so that no spider leaves the field. It is allowed for spiders to pass through each other when they crawl towards each other in opposite directions. All spiders crawl simultaneously and several spiders may end up in one cell. Petya wants to know the maximum possible number of spider-free cells after one second.\nInput Specification: The first line contains two space-separated integers n and m (1\u2009\u2264\u2009n,\u2009m\u2009\u2264\u200940,\u2009n\u00b7m\u2009\u2264\u200940) \u2014 the board sizes.\nOutput Specification: In the first line print the maximum number of cells without spiders.\n\nSample Input:\n1 1\nSample Output:\n0\n\nSample Input:\n2 3\nSample Output:\n4\n\nNotes: NoteIn the first sample the only possible answer is:sIn the second sample one of the possible solutions is: rdlruls denotes command \"stay idle\", l, r, d, u denote commands \"crawl left\", \"crawl right\", \"crawl down\", \"crawl up\", correspondingly.\nTake input from standard input and output to standard output\nProvide the Python code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "097674b4dd696b30e102938f71dd39b9",
+        "difficulty": 2100,
+        "prob_desc_sample_inputs": [
+            "1 1",
+            "2 3"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "bitmasks",
+            "dp",
+            "dsu"
+        ],
+        "prob_desc_output_spec": "In the first line print the maximum number of cells without spiders.",
+        "prob_desc_input_spec": "The first line contains two space-separated integers n and m (1\u2009\u2264\u2009n,\u2009m\u2009\u2264\u200940,\u2009n\u00b7m\u2009\u2264\u200940) \u2014 the board sizes.",
+        "lang_cluster": "Python",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first sample the only possible answer is:sIn the second sample one of the possible solutions is: rdlruls denotes command \"stay idle\", l, r, d, u denote commands \"crawl left\", \"crawl right\", \"crawl down\", \"crawl up\", correspondingly.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Little Petya loves training spiders. Petya has a board n\u2009\u00d7\u2009m in size. Each cell of the board initially has a spider sitting on it. After one second Petya chooses a certain action for each spider, and all of them humbly perform its commands. There are 5 possible commands: to stay idle or to move from current cell to some of the four side-neighboring cells (that is, one command for each of the four possible directions). Petya gives the commands so that no spider leaves the field. It is allowed for spiders to pass through each other when they crawl towards each other in opposite directions. All spiders crawl simultaneously and several spiders may end up in one cell. Petya wants to know the maximum possible number of spider-free cells after one second.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1315051200",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "0",
+            "4"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"1 1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 3\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"4 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"4 2\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"4 3\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"4 4\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1 40\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"1 2\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"1 3\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"1 4\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"1 5\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"1 6\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"1 7\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"1 8\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"1 9\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"1 10\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"1 11\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"1 12\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"1 13\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"1 14\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"1 15\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"1 16\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"1 17\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"1 18\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1 19\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1 20\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"1 21\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"1 22\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"1 23\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"1 24\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"1 25\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"1 26\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"1 27\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"1 28\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"1 29\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"1 30\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"1 31\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"1 32\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"1 33\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"1 34\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"1 35\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"1 36\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"1 37\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"1 38\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"1 39\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"2 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"2 2\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"2 4\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"2 5\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"2 6\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"2 7\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"2 8\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"2 9\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"2 10\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"2 11\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"2 12\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"2 13\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"2 14\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"2 15\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"2 16\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"2 17\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"2 18\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"2 19\\r\\n\", \"output\": [\"28\"]}, {\"input\": \"2 20\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"3 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"3 2\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"3 3\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"3 4\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"3 5\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"3 6\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"3 7\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"3 8\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"3 9\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"3 10\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"3 11\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"3 12\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"3 13\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"4 5\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"4 6\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"4 7\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"4 8\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"4 9\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"4 10\\r\\n\", \"output\": [\"30\"]}, {\"input\": \"5 1\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"5 2\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"5 3\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"5 4\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"5 5\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"5 6\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"5 7\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"5 8\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"6 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"6 2\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"6 3\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"6 4\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"6 5\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"6 6\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"7 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7 2\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"7 3\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 4\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"7 5\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"8 1\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"8 2\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"8 3\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"8 4\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"8 5\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"9 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"9 2\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"9 3\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"9 4\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"10 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"10 2\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"10 3\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"10 4\\r\\n\", \"output\": [\"30\"]}, {\"input\": \"11 1\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"11 2\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"11 3\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"12 1\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"12 2\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"12 3\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"13 1\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"13 2\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"13 3\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"14 1\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"14 2\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"15 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"15 2\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"16 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"16 2\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"17 1\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"17 2\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"18 1\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"18 2\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"19 1\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"19 2\\r\\n\", \"output\": [\"28\"]}, {\"input\": \"20 1\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"20 2\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"21 1\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"22 1\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"23 1\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"24 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"25 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"26 1\\r\\n\", \"output\": [\"17\"]}, {\"input\": \"27 1\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"28 1\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"29 1\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"30 1\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"31 1\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"32 1\\r\\n\", \"output\": [\"21\"]}, {\"input\": \"33 1\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"34 1\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"35 1\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"36 1\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"37 1\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"38 1\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"39 1\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"40 1\\r\\n\", \"output\": [\"26\"]}]"
+    }
+}

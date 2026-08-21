@@ -1,0 +1,349 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEHpICbcT5e0uHxL16tG6maGqGutw",
+        "created": 1787073824,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\n\tvar n int\n\tvar m int64\n\tif _, err := fmt.Fscan(in, &n, &m); err != nil {\n\t\treturn\n\t}\n\n\ta := make([]int64, n)\n\tb := make([]int64, n)\n\tfor i := 0; i < n; i++ {\n\t\tfmt.Fscan(in, &a[i])\n\t}\n\tfor i := 0; i < n; i++ {\n\t\tfmt.Fscan(in, &b[i])\n\t}\n\n\t// dp[h][r] = minimal cost to reach height h at position r within one block\n\tconst INF int64 = 1<<60\n\tdp := make([][]int64, n+1)\n\tfor i := range dp {\n\t\tdp[i] = make([]int64, n)\n\t\tfor j := range dp[i] {\n\t\t\tdp[i][j] = INF\n\t\t}\n\t}\n\tdp[0][0] = 0\n\n\tfor r := 0; r < n; r++ {\n\t\tfor h := 0; h <= n; h++ {\n\t\t\tif dp[h][r] == INF {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\t// open bracket\n\t\t\tif h+1 <= n {\n\t\t\t\tcost := dp[h][r] + a[r]\n\t\t\t\tif cost < dp[h+1][(r+1)%n] {\n\t\t\t\t\tdp[h+1][(r+1)%n] = cost\n\t\t\t\t}\n\t\t\t}\n\t\t\t// close bracket\n\t\t\tif h > 0 {\n\t\t\t\tcost := dp[h][r] + b[r]\n\t\t\t\tif cost < dp[h-1][(r+1)%n] {\n\t\t\t\t\tdp[h-1][(r+1)%n] = cost\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\t// We need transitions over full blocks: from height h to height h' after n steps\n\t// This is dp[h'][0] when starting from h at position 0.\n\t// But our dp was built assuming start at height 0, so we need to adjust.\n\t// However, costs depend only on position mod n, not on absolute index,\n\t// and heights are independent. So transitions from any height are same:\n\t// adding +1 or -1 per step with same costs. Thus we can reuse dp as is:\n\t// dpBlock[h'][h] = minimal cost to go from h to h' in one block.\n\tdpBlock := make([][]int64, n+1)\n\tfor i := range dpBlock {\n\t\tdpBlock[i] = make([]int64, n+1)\n\t\tfor j := range dpBlock[i] {\n\t\t\tdpBlock[i][j] = INF\n\t\t}\n\t}\n\n\t// Recompute properly for all starting heights.\n\t// For each starting height hs, run DP over one block.\n\tfor hs := 0; hs <= n; hs++ {\n\t\tfor i := range dp {\n\t\t\tfor j := range dp[i] {\n\t\t\t\tdp[i][j] = INF\n\t\t\t}\n\t\t}\n\t\tdp[hs][0] = 0\n\t\tfor r := 0; r < n; r++ {\n\t\t\tfor h := 0; h <= n; h++ {\n\t\t\t\tif dp[h][r] == INF {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tif h+1 <= n {\n\t\t\t\t\tcost := dp[h][r] + a[r]\n\t\t\t\t\tif cost < dp[h+1][(r+1)%n] {\n\t\t\t\t\t\tdp[h+1][(r+1)%n] = cost\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tif h > 0 {\n\t\t\t\t\tcost := dp[h][r] + b[r]\n\t\t\t\t\tif cost < dp[h-1][(r+1)%n] {\n\t\t\t\t\t\tdp[h-1][(r+1)%n] = cost\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tfor he := 0; he <= n; he++ {\n\t\t\tdpBlock[hs][he] = dp[he][0]\n\t\t}\n\t}\n\n\tblocks := m / int64(n)\n\n\t// dpBlocks[k][h] minimal cost to reach height h after k blocks\n\tdpBlocks := make([][]int64, blocks+1)\n\tfor i := range dpBlocks {\n\t\tdpBlocks[i] = make([]int64, n+1)\n\t\tfor j := range dpBlocks[i] {\n\t\t\tdpBlocks[i][j] = INF\n\t\t}\n\t}\n\tdpBlocks[0][0] = 0\n\n\tfor k := int64(0); k < blocks; k++ {\n\t\tfor h := 0; h <= n; h++ {\n\t\t\tif dpBlocks[k][h] == INF {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tfor h2 := 0; h2 <= n; h2++ {\n\t\t\t\tif dpBlock[h][h2] == INF {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tcost := dpBlocks[k][h] + dpBlock[h][h2]\n\t\t\t\tif cost < dpBlocks[k+1][h2] {\n\t\t\t\t\tdpBlocks[k+1][h2] = cost\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tans := dpBlocks[blocks][0]\n\tfmt.Println(ans)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst INF int64 = 1<<60\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n int\n\tvar m int64\n\tif _, err := fmt.Fscan(in, &n, &m); err != nil {\n\t\treturn\n\t}\n\ta := make([]int64, n)\n\tb := make([]int64, n)\n\tfor i := 0; i < n; i++ {\n\t\tfmt.Fscan(in, &a[i])\n\t}\n\tfor i := 0; i < n; i++ {\n\t\tfmt.Fscan(in, &b[i])\n\t}\n\n\t// dp[pos][balance] minimal cost for one block of length n\n\tdp := make([][]int64, n+1)\n\tfor i := 0; i <= n; i++ {\n\t\tdp[i] = make([]int64, n+1)\n\t\tfor j := 0; j <= n; j++ {\n\t\t\tdp[i][j] = INF\n\t\t}\n\t}\n\tdp[0][0] = 0\n\tfor i := 0; i < n; i++ {\n\t\tfor bal := 0; bal <= n; bal++ {\n\t\t\tif dp[i][bal] == INF {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\t// open\n\t\t\tif bal+1 <= n {\n\t\t\t\tc := dp[i][bal] + a[i]\n\t\t\t\tif c < dp[i+1][bal+1] {\n\t\t\t\t\tdp[i+1][bal+1] = c\n\t\t\t\t}\n\t\t\t}\n\t\t\t// close\n\t\t\tif bal > 0 {\n\t\t\t\tc := dp[i][bal] + b[i]\n\t\t\t\tif c < dp[i+1][bal-1] {\n\t\t\t\t\tdp[i+1][bal-1] = c\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\t// build transition matrix T over balances 0..n\n\tsize := n + 1\n\tT := make([][]int64, size)\n\tfor i := 0; i < size; i++ {\n\t\tT[i] = make([]int64, size)\n\t\tfor j := 0; j < size; j++ {\n\t\t\tT[i][j] = INF\n\t\t}\n\t}\n\tfor s := 0; s <= n; s++ {\n\t\tfor e := 0; e <= n; e++ {\n\t\t\tif dp[n][e] == INF {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\t// starting balance s, ending balance e\n\t\t\t// shift path by s: all balances along path must be >=0 and <=n\n\t\t\t// original path balances are between 0..n, so shifting by s\n\t\t\t// requires s + balance <= n => balance <= n - s\n\t\t\t// and s + balance >=0 always true since s>=0, balance>=0\n\t\t\t// final balance becomes s + (e - 0) = s + e - 0? No:\n\t\t\t// in dp we started at 0 and ended at e, so net change = e\n\t\t\t// starting from s gives s+e\n\t\t\tif s+e <= n {\n\t\t\t\tif dp[n][e] < T[s][s+e] {\n\t\t\t\t\tT[s][s+e] = dp[n][e]\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\t// matrix exponentiation of T to power mBlocks\n\tmBlocks := m / int64(n)\n\t// result matrix R = identity\n\tR := make([][]int64, size)\n\tfor i := 0; i < size; i++ {\n\t\tR[i] = make([]int64, size)\n\t\tfor j := 0; j < size; j++ {\n\t\t\tif i == j {\n\t\t\t\tR[i][j] = 0\n\t\t\t} else {\n\t\t\t\tR[i][j] = INF\n\t\t\t}\n\t\t}\n\t}\n\n\tmatMul := func(A, B [][]int64) [][]int64 {\n\t\tres := make([][]int64, size)\n\t\tfor i := 0; i < size; i++ {\n\t\t\tres[i] = make([]int64, size)\n\t\t\tfor j := 0; j < size; j++ {\n\t\t\t\tres[i][j] = INF\n\t\t\t}\n\t\t}\n\t\tfor i := 0; i < size; i++ {\n\t\t\tfor k := 0; k < size; k++ {\n\t\t\t\tif A[i][k] == INF {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tak := A[i][k]\n\t\t\t\tfor j := 0; j < size; j++ {\n\t\t\t\t\tif B[k][j] == INF {\n\t\t\t\t\t\tcontinue\n\t\t\t\t\t}\n\t\t\t\t\tval := ak + B[k][j]\n\t\t\t\t\tif val < res[i][j] {\n\t\t\t\t\t\tres[i][j] = val\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\treturn res\n\t}\n\n\tfor mBlocks > 0 {\n\t\tif mBlocks&1 == 1 {\n\t\t\tR = matMul(R, T)\n\t\t}\n\t\tT = matMul(T, T)\n\t\tmBlocks >>= 1\n\t}\n\n\t// we need total balance 0\n\tfmt.Println(R[0][0])\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst INF int64 = 1 << 60\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\n\tvar n int\n\tvar m int64\n\tif _, err := fmt.Fscan(in, &n, &m); err != nil {\n\t\treturn\n\t}\n\n\ta := make([]int64, n)\n\tb := make([]int64, n)\n\tfor i := 0; i < n; i++ {\n\t\tfmt.Fscan(in, &a[i])\n\t}\n\tfor i := 0; i < n; i++ {\n\t\tfmt.Fscan(in, &b[i])\n\t}\n\n\t// dp[pos][balance] = minimal cost after pos brackets (pos in [0..n]),\n\t// with current balance (0..n). We only need up to n/2 actually, but n<=20.\n\tdp := make([][]int64, n+1)\n\tfor i := 0; i <= n; i++ {\n\t\tdp[i] = make([]int64, n+1)\n\t\tfor j := 0; j <= n; j++ {\n\t\t\tdp[i][j] = INF\n\t\t}\n\t}\n\tdp[0][0] = 0\n\n\tfor pos := 0; pos < n; pos++ {\n\t\tfor bal := 0; bal <= n; bal++ {\n\t\t\tif dp[pos][bal] == INF {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\t// open bracket\n\t\t\tif bal+1 <= n {\n\t\t\t\tcost := dp[pos][bal] + a[pos]\n\t\t\t\tif cost < dp[pos+1][bal+1] {\n\t\t\t\t\tdp[pos+1][bal+1] = cost\n\t\t\t\t}\n\t\t\t}\n\t\t\t// close bracket (only if balance>0)\n\t\t\tif bal > 0 {\n\t\t\t\tcost := dp[pos][bal] + b[pos]\n\t\t\t\tif cost < dp[pos+1][bal-1] {\n\t\t\t\t\tdp[pos+1][bal-1] = cost\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\t// For each possible net balance k after one block (length n),\n\t// we need cost C[k] = dp[n][k].\n\tC := make([]int64, n+1)\n\tfor k := 0; k <= n; k++ {\n\t\tC[k] = dp[n][k]\n\t}\n\n\t// DP over blocks: f[block][balance], but we only keep current.\n\t// balance can be up to n (since each block can increase balance by at most n).\n\t// However, total length is nm, so maximum possible balance is nm/2, but nm can be large.\n\t// Yet each block changes balance by at most n, and we only need balances up to n\n\t// because we can't close more than opened within a block sequence without going negative.\n\t// But across blocks, balance can accumulate. However, to stay valid, balance never negative,\n\t// and final balance must be 0. Max balance is nm/2, but we can't store that.\n\t// Observation: after each block, balance <= n, because within a block we can't\n\t// increase balance more than n and we can always close inside the block.\n\t// So we restrict balances to [0..n].\n\t// Transition: from balance i to j, j>=i and j-i<=n, cost add C[j-i].\n\t// But also we can decrease balance inside block: net change = j-i can be negative.\n\t// However, dp[n][k] is defined for k>=0 only; net balance after block can't be negative.\n\t// So j>=0 and k=j-i>=0 => j>=i. Thus balances are non-decreasing across blocks.\n\t// This implies final balance can't return to 0 unless it never increases, so only k=0 allowed.\n\t// Therefore only C[0] is usable, and answer is m * C[0].\n\n\t// So answer is m * C[0].\n\tans := int64(m) * C[0]\n\tfmt.Println(ans)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst INF int64 = 1<<60\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\n\tvar n int\n\tvar m int64\n\tif _, err := fmt.Fscan(in, &n, &m); err != nil {\n\t\treturn\n\t}\n\n\ta := make([]int64, n)\n\tb := make([]int64, n)\n\tfor i := 0; i < n; i++ {\n\t\tfmt.Fscan(in, &a[i])\n\t}\n\tfor i := 0; i < n; i++ {\n\t\tfmt.Fscan(in, &b[i])\n\t}\n\n\t// dp[pos][balance] minimal cost for one block of length n\n\tdp := make([][]int64, n+1)\n\tfor i := range dp {\n\t\tdp[i] = make([]int64, n+1)\n\t\tfor j := range dp[i] {\n\t\t\tdp[i][j] = INF\n\t\t}\n\t}\n\tdp[0][0] = 0\n\n\tfor pos := 0; pos < n; pos++ {\n\t\tfor bal := 0; bal <= n; bal++ {\n\t\t\tif dp[pos][bal] == INF {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\t// open bracket\n\t\t\tif bal+1 <= n {\n\t\t\t\tcost := dp[pos][bal] + a[pos]\n\t\t\t\tif cost < dp[pos+1][bal+1] {\n\t\t\t\t\tdp[pos+1][bal+1] = cost\n\t\t\t\t}\n\t\t\t}\n\t\t\t// close bracket\n\t\t\tif bal > 0 {\n\t\t\t\tcost := dp[pos][bal] + b[pos]\n\t\t\t\tif cost < dp[pos+1][bal-1] {\n\t\t\t\t\tdp[pos+1][bal-1] = cost\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\t// transition matrix T for balances 0..n\n\tT := make([][]int64, n+1)\n\tfor i := range T {\n\t\tT[i] = make([]int64, n+1)\n\t\tfor j := range T[i] {\n\t\t\tT[i][j] = INF\n\t\t}\n\t}\n\n\tfor s := 0; s <= n; s++ {\n\t\tfor e := 0; e <= n; e++ {\n\t\t\tif dp[n][e] == INF {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\t// only transitions where sequence never goes negative\n\t\t\t// are already ensured by DP; we just record cost\n\t\t\tif dp[n][e] < T[s][e] {\n\t\t\t\tT[s][e] = dp[n][e]\n\t\t\t}\n\t\t}\n\t}\n\n\t// min-plus matrix exponentiation of T to power mBlocks = m/n\n\tmBlocks := m / int64(n)\n\n\t// identity matrix I\n\tI := make([][]int64, n+1)\n\tfor i := range I {\n\t\tI[i] = make([]int64, n+1)\n\t\tfor j := range I[i] {\n\t\t\tI[i][j] = INF\n\t\t}\n\t\tI[i][i] = 0\n\t}\n\n\tres := I\n\tbase := T\n\n\t// fast exponentiation\n\tfor mBlocks > 0 {\n\t\tif mBlocks&1 == 1 {\n\t\t\tres = minPlusMul(res, base)\n\t\t}\n\t\tbase = minPlusMul(base, base)\n\t\tmBlocks >>= 1\n\t}\n\n\t// answer: start balance 0, end balance 0\n\tans := res[0][0]\n\tfmt.Println(ans)\n}\n\nfunc minPlusMul(A, B [][]int64) [][]int64 {\n\tn := len(A)\n\tC := make([][]int64, n)\n\tfor i := range C {\n\t\tC[i] = make([]int64, n)\n\t\tfor j := range C[i] {\n\t\t\tC[i][j] = INF\n\t\t}\n\t}\n\n\tfor i := 0; i < n; i++ {\n\t\tfor k := 0; k < n; k++ {\n\t\t\tif A[i][k] == INF {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tak := A[i][k]\n\t\t\trowB := B[k]\n\t\t\tfor j := 0; j < n; j++ {\n\t\t\t\tif rowB[j] == INF {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tval := ak + rowB[j]\n\t\t\t\tif val < C[i][j] {\n\t\t\t\t\tC[i][j] = val\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\treturn C\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst INF int64 = 1<<60\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n int\n\tvar m int64\n\tif _, err := fmt.Fscan(in, &n, &m); err != nil {\n\t\treturn\n\t}\n\n\ta := make([]int64, n)\n\tb := make([]int64, n)\n\tfor i := 0; i < n; i++ {\n\t\tfmt.Fscan(in, &a[i])\n\t}\n\tfor i := 0; i < n; i++ {\n\t\tfmt.Fscan(in, &b[i])\n\t}\n\n\t// dp[pos][balance] = minimal cost for a block of length n\n\tdp := make([][]int64, n+1)\n\tfor i := range dp {\n\t\tdp[i] = make([]int64, n+1)\n\t\tfor j := range dp[i] {\n\t\t\tdp[i][j] = INF\n\t\t}\n\t}\n\tdp[0][0] = 0\n\n\tfor pos := 0; pos < n; pos++ {\n\t\tfor bal := 0; bal <= n; bal++ {\n\t\t\tif dp[pos][bal] == INF {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\t// open bracket\n\t\t\tif bal+1 <= n {\n\t\t\t\tcost := dp[pos][bal] + a[pos]\n\t\t\t\tif cost < dp[pos+1][bal+1] {\n\t\t\t\t\tdp[pos+1][bal+1] = cost\n\t\t\t\t}\n\t\t\t}\n\t\t\t// close bracket\n\t\t\tif bal > 0 {\n\t\t\t\tcost := dp[pos][bal] + b[pos]\n\t\t\t\tif cost < dp[pos+1][bal-1] {\n\t\t\t\t\tdp[pos+1][bal-1] = cost\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\t// transition matrix T[bal][bal'] = minimal cost to go from bal to bal' in one block\n\tT := make([][]int64, n+1)\n\tfor i := range T {\n\t\tT[i] = make([]int64, n+1)\n\t\tfor j := range T[i] {\n\t\t\tT[i][j] = INF\n\t\t}\n\t}\n\n\tfor start := 0; start <= n; start++ {\n\t\t// re-run DP for each starting balance\n\t\tfor i := 0; i <= n; i++ {\n\t\t\tfor j := 0; j <= n; j++ {\n\t\t\t\tdp[i][j] = INF\n\t\t\t}\n\t\t}\n\t\tdp[0][start] = 0\n\t\tfor pos := 0; pos < n; pos++ {\n\t\t\tfor bal := 0; bal <= n; bal++ {\n\t\t\t\tif dp[pos][bal] == INF {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\t// open\n\t\t\t\tif bal+1 <= n {\n\t\t\t\t\tcost := dp[pos][bal] + a[pos]\n\t\t\t\t\tif cost < dp[pos+1][bal+1] {\n\t\t\t\t\t\tdp[pos+1][bal+1] = cost\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\t// close\n\t\t\t\tif bal > 0 {\n\t\t\t\t\tcost := dp[pos][bal] + b[pos]\n\t\t\t\t\tif cost < dp[pos+1][bal-1] {\n\t\t\t\t\t\tdp[pos+1][bal-1] = cost\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tfor end := 0; end <= n; end++ {\n\t\t\tT[start][end] = dp[n][end]\n\t\t}\n\t}\n\n\t// DP over blocks using min-plus matrix exponentiation\n\t// vector v[bal] = minimal cost to reach balance bal after some blocks\n\tv := make([]int64, n+1)\n\tfor i := range v {\n\t\tv[i] = INF\n\t}\n\tv[0] = 0\n\n\tblocks := m / int64(n)\n\n\t// fast exponentiation of T applied to vector v\n\tfor blocks > 0 {\n\t\tif blocks&1 == 1 {\n\t\t\tv = applyMatrixToVector(T, v, n)\n\t\t}\n\t\tT = multiplyMatrices(T, T, n)\n\t\tblocks >>= 1\n\t}\n\n\t// need final balance 0\n\tfmt.Println(v[0])\n}\n\nfunc applyMatrixToVector(T [][]int64, v []int64, n int) []int64 {\n\tres := make([]int64, n+1)\n\tfor i := range res {\n\t\tres[i] = INF\n\t}\n\tfor i := 0; i <= n; i++ {\n\t\tif v[i] == INF {\n\t\t\tcontinue\n\t\t}\n\t\tfor j := 0; j <= n; j++ {\n\t\t\tif T[i][j] == INF {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tval := v[i] + T[i][j]\n\t\t\tif val < res[j] {\n\t\t\t\tres[j] = val\n\t\t\t}\n\t\t}\n\t}\n\treturn res\n}\n\nfunc multiplyMatrices(A, B [][]int64, n int) [][]int64 {\n\tC := make([][]int64, n+1)\n\tfor i := range C {\n\t\tC[i] = make([]int64, n+1)\n\t\tfor j := range C[i] {\n\t\t\tC[i][j] = INF\n\t\t}\n\t}\n\tfor i := 0; i <= n; i++ {\n\t\tfor k := 0; k <= n; k++ {\n\t\t\tif A[i][k] == INF {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tfor j := 0; j <= n; j++ {\n\t\t\t\tif B[k][j] == INF {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tval := A[i][k] + B[k][j]\n\t\t\t\tif val < C[i][j] {\n\t\t\t\t\tC[i][j] = val\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\treturn C\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst INF int64 = 1<<60\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n int\n\tvar m int64\n\tif _, err := fmt.Fscan(in, &n, &m); err != nil {\n\t\treturn\n\t}\n\ta := make([]int64, n)\n\tb := make([]int64, n)\n\tfor i := 0; i < n; i++ {\n\t\tfmt.Fscan(in, &a[i])\n\t}\n\tfor i := 0; i < n; i++ {\n\t\tfmt.Fscan(in, &b[i])\n\t}\n\n\t// dp[pos][balance] minimal cost for one block of length n\n\tdp := make([][]int64, n+1)\n\tfor i := range dp {\n\t\tdp[i] = make([]int64, n+1)\n\t\tfor j := range dp[i] {\n\t\t\tdp[i][j] = INF\n\t\t}\n\t}\n\tdp[0][0] = 0\n\n\tfor pos := 0; pos < n; pos++ {\n\t\tfor bal := 0; bal <= n; bal++ {\n\t\t\tif dp[pos][bal] == INF {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\t// open\n\t\t\tif bal+1 <= n {\n\t\t\t\tcost := dp[pos][bal] + a[pos]\n\t\t\t\tif cost < dp[pos+1][bal+1] {\n\t\t\t\t\tdp[pos+1][bal+1] = cost\n\t\t\t\t}\n\t\t\t}\n\t\t\t// close\n\t\t\tif bal > 0 {\n\t\t\t\tcost := dp[pos][bal] + b[pos]\n\t\t\t\tif cost < dp[pos+1][bal-1] {\n\t\t\t\t\tdp[pos+1][bal-1] = cost\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\t// build transition matrix T of size (n+1)x(n+1)\n\tsize := n + 1\n\tT := make([][]int64, size)\n\tfor i := 0; i < size; i++ {\n\t\tT[i] = make([]int64, size)\n\t\tfor j := 0; j < size; j++ {\n\t\t\tT[i][j] = INF\n\t\t}\n\t}\n\tfor startBal := 0; startBal <= n; startBal++ {\n\t\tif startBal > n {\n\t\t\tcontinue\n\t\t}\n\t\t// run DP for block with starting balance startBal\n\t\tblock := make([][]int64, n+1)\n\t\tfor i := range block {\n\t\t\tblock[i] = make([]int64, n+1)\n\t\t\tfor j := range block[i] {\n\t\t\t\tblock[i][j] = INF\n\t\t\t}\n\t\t}\n\t\tblock[0][startBal] = 0\n\t\tfor pos := 0; pos < n; pos++ {\n\t\t\tfor bal := 0; bal <= n; bal++ {\n\t\t\t\tif block[pos][bal] == INF {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\t// open\n\t\t\t\tif bal+1 <= n {\n\t\t\t\t\tcost := block[pos][bal] + a[pos]\n\t\t\t\t\tif cost < block[pos+1][bal+1] {\n\t\t\t\t\t\tblock[pos+1][bal+1] = cost\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\t// close\n\t\t\t\tif bal > 0 {\n\t\t\t\t\tcost := block[pos][bal] + b[pos]\n\t\t\t\t\tif cost < block[pos+1][bal-1] {\n\t\t\t\t\t\tblock[pos+1][bal-1] = cost\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tfor endBal := 0; endBal <= n; endBal++ {\n\t\t\tT[startBal][endBal] = block[n][endBal]\n\t\t}\n\t}\n\n\t// min-plus matrix exponentiation of T to power m/n\n\tblocks := m / int64(n)\n\n\t// result vector: cost to reach balance from initial 0\n\tvec := make([]int64, size)\n\tfor i := range vec {\n\t\tvec[i] = INF\n\t}\n\tvec[0] = 0\n\n\t// fast exponentiation\n\tfor blocks > 0 {\n\t\tif blocks&1 == 1 {\n\t\t\tvec = minPlusMatVec(T, vec)\n\t\t}\n\t\tT = minPlusMatMul(T, T)\n\t\tblocks >>= 1\n\t}\n\n\t// answer is cost to end with balance 0\n\tfmt.Println(vec[0])\n}\n\nfunc minPlusMatMul(A, B [][]int64) [][]int64 {\n\tn := len(A)\n\tC := make([][]int64, n)\n\tfor i := 0; i < n; i++ {\n\t\tC[i] = make([]int64, n)\n\t\tfor j := 0; j < n; j++ {\n\t\t\tC[i][j] = INF\n\t\t}\n\t}\n\tfor i := 0; i < n; i++ {\n\t\tfor k := 0; k < n; k++ {\n\t\t\tif A[i][k] == INF {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tak := A[i][k]\n\t\t\trowB := B[k]\n\t\t\trowC := C[i]\n\t\t\tfor j := 0; j < n; j++ {\n\t\t\t\tif rowB[j] == INF {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tval := ak + rowB[j]\n\t\t\t\tif val < rowC[j] {\n\t\t\t\t\trowC[j] = val\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\treturn C\n}\n\nfunc minPlusMatVec(A [][]int64, v []int64) []int64 {\n\tn := len(A)\n\tres := make([]int64, n)\n\tfor i := 0; i < n; i++ {\n\t\tres[i] = INF\n\t}\n\tfor i := 0; i < n; i++ {\n\t\trow := A[i]\n\t\tfor j := 0; j < n; j++ {\n\t\t\tif row[j] == INF || v[i] == INF {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tval := v[i] + row[j]\n\t\t\tif val < res[j] {\n\t\t\t\tres[j] = val\n\t\t\t}\n\t\t}\n\t}\n\treturn res\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst INF int64 = 1<<60\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\n\tvar n int\n\tvar m int64\n\tif _, err := fmt.Fscan(in, &n, &m); err != nil {\n\t\treturn\n\t}\n\n\ta := make([]int64, n)\n\tb := make([]int64, n)\n\tfor i := 0; i < n; i++ {\n\t\tfmt.Fscan(in, &a[i])\n\t}\n\tfor i := 0; i < n; i++ {\n\t\tfmt.Fscan(in, &b[i])\n\t}\n\n\t// dp[pos][balance] for one block of length n\n\tdp := make([][]int64, n+1)\n\tfor i := range dp {\n\t\tdp[i] = make([]int64, n+1)\n\t\tfor j := range dp[i] {\n\t\t\tdp[i][j] = INF\n\t\t}\n\t}\n\tdp[0][0] = 0\n\n\tfor pos := 0; pos < n; pos++ {\n\t\tfor bal := 0; bal <= n; bal++ {\n\t\t\tif dp[pos][bal] == INF {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\t// open\n\t\t\tnb := bal + 1\n\t\t\tif nb <= n {\n\t\t\t\tcost := dp[pos][bal] + a[pos]\n\t\t\t\tif cost < dp[pos+1][nb] {\n\t\t\t\t\tdp[pos+1][nb] = cost\n\t\t\t\t}\n\t\t\t}\n\t\t\t// close\n\t\t\tif bal > 0 {\n\t\t\t\tnb = bal - 1\n\t\t\t\tcost := dp[pos][bal] + b[pos]\n\t\t\t\tif cost < dp[pos+1][nb] {\n\t\t\t\t\tdp[pos+1][nb] = cost\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\t// transition matrix T[bal][bal'] = minimal cost to go from bal to bal' in one block\n\tT := make([][]int64, n+1)\n\tfor i := range T {\n\t\tT[i] = make([]int64, n+1)\n\t\tfor j := range T[i] {\n\t\t\tT[i][j] = INF\n\t\t}\n\t}\n\tfor bal := 0; bal <= n; bal++ {\n\t\tfor nb := 0; nb <= n; nb++ {\n\t\t\tif dp[n][nb] == INF {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\t// shift dp by starting balance bal\n\t\t\t// we need sequences where balance never negative and never exceeds n\n\t\t\t// This is ensured by original DP, so we can just add bal to all balances.\n\t\t\t// Starting from bal, ending at bal + (nb - 0) = bal + nb\n\t\t\tend := bal + nb\n\t\t\tif end < 0 || end > n {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tif dp[n][nb] < T[bal][end] {\n\t\t\t\tT[bal][end] = dp[n][nb]\n\t\t\t}\n\t\t}\n\t}\n\n\t// DP over blocks: f[k][bal] minimal cost after k blocks with balance bal\n\tblocks := int64(m) / int64(n)\n\tf := make([][]int64, blocks+1)\n\tfor i := range f {\n\t\tf[i] = make([]int64, n+1)\n\t\tfor j := range f[i] {\n\t\t\tf[i][j] = INF\n\t\t}\n\t}\n\tf[0][0] = 0\n\n\tfor k := int64(0); k < blocks; k++ {\n\t\tfor bal := 0; bal <= n; bal++ {\n\t\t\tif f[k][bal] == INF {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tfor nb := 0; nb <= n; nb++ {\n\t\t\t\tif T[bal][nb] == INF {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tcost := f[k][bal] + T[bal][nb]\n\t\t\t\tif cost < f[k+1][nb] {\n\t\t\t\t\tf[k+1][nb] = cost\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tfmt.Println(f[blocks][0])\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst INF int64 = 1<<60\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\n\tvar n int\n\tvar m int64\n\tif _, err := fmt.Fscan(in, &n, &m); err != nil {\n\t\treturn\n\t}\n\n\ta := make([]int64, n)\n\tb := make([]int64, n)\n\tfor i := 0; i < n; i++ {\n\t\tfmt.Fscan(in, &a[i])\n\t}\n\tfor i := 0; i < n; i++ {\n\t\tfmt.Fscan(in, &b[i])\n\t}\n\n\t// dp[pos][balance] minimal cost for one block of length n\n\tdp := make([][]int64, n+1)\n\tfor i := 0; i <= n; i++ {\n\t\tdp[i] = make([]int64, n+1)\n\t\tfor j := 0; j <= n; j++ {\n\t\t\tdp[i][j] = INF\n\t\t}\n\t}\n\tdp[0][0] = 0\n\n\tfor i := 0; i < n; i++ {\n\t\tfor bal := 0; bal <= n; bal++ {\n\t\t\tif dp[i][bal] == INF {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\t// open\n\t\t\tif bal+1 <= n {\n\t\t\t\tcost := dp[i][bal] + a[i]\n\t\t\t\tif cost < dp[i+1][bal+1] {\n\t\t\t\t\tdp[i+1][bal+1] = cost\n\t\t\t\t}\n\t\t\t}\n\t\t\t// close\n\t\t\tif bal > 0 {\n\t\t\t\tcost := dp[i][bal] + b[i]\n\t\t\t\tif cost < dp[i+1][bal-1] {\n\t\t\t\t\tdp[i+1][bal-1] = cost\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\t// build transition matrix T of size (n+1)x(n+1)\n\tT := make([][]int64, n+1)\n\tfor i := 0; i <= n; i++ {\n\t\tT[i] = make([]int64, n+1)\n\t\tfor j := 0; j <= n; j++ {\n\t\t\tT[i][j] = INF\n\t\t}\n\t}\n\tfor s := 0; s <= n; s++ {\n\t\tfor t := 0; t <= n; t++ {\n\t\t\tif dp[n][t] == INF {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tif s+t <= n {\n\t\t\t\tT[s][s+t] = dp[n][t]\n\t\t\t}\n\t\t}\n\t}\n\n\t// matrix exponentiation of T to power mBlocks\n\tmBlocks := m / int64(n)\n\n\t// identity matrix\n\tres := make([][]int64, n+1)\n\tfor i := 0; i <= n; i++ {\n\t\tres[i] = make([]int64, n+1)\n\t\tfor j := 0; j <= n; j++ {\n\t\t\tif i == j {\n\t\t\t\tres[i][j] = 0\n\t\t\t} else {\n\t\t\t\tres[i][j] = INF\n\t\t\t}\n\t\t}\n\t}\n\n\t// fast exponentiation\n\tfor mBlocks > 0 {\n\t\tif mBlocks&1 == 1 {\n\t\t\tres = minPlusMul(res, T)\n\t\t}\n\t\tT = minPlusMul(T, T)\n\t\tmBlocks >>= 1\n\t}\n\n\tans := res[0][0]\n\tfmt.Println(ans)\n}\n\nfunc minPlusMul(A, B [][]int64) [][]int64 {\n\tn := len(A) - 1\n\tC := make([][]int64, n+1)\n\tfor i := 0; i <= n; i++ {\n\t\tC[i] = make([]int64, n+1)\n\t\tfor j := 0; j <= n; j++ {\n\t\t\tC[i][j] = INF\n\t\t}\n\t}\n\tfor i := 0; i <= n; i++ {\n\t\tfor k := 0; k <= n; k++ {\n\t\t\tif A[i][k] == INF {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tak := A[i][k]\n\t\t\trowB := B[k]\n\t\t\tfor j := 0; j <= n; j++ {\n\t\t\t\tif rowB[j] == INF {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tval := ak + rowB[j]\n\t\t\t\tif val < C[i][j] {\n\t\t\t\t\tC[i][j] = val\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\treturn C\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 8524,
+            "prompt_tokens": 372,
+            "total_tokens": 8896,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 3,
+                "engine_ttft_ms": 311,
+                "engine_ttlt_ms": 21667,
+                "pre_inference_ms": 207,
+                "service_tbt_ms": 3,
+                "service_ttft_ms": 651,
+                "service_ttlt_ms": 21962,
+                "total_duration_ms": 21806,
+                "user_visible_ttft_ms": 444
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Go to solve this programming problem:\nDescription: Jeff loves regular bracket sequences.Today Jeff is going to take a piece of paper and write out the regular bracket sequence, consisting of nm brackets. Let's number all brackets of this sequence from 0 to nm - 1 from left to right. Jeff knows that he is going to spend ai mod n liters of ink on the i-th bracket of the sequence if he paints it opened and bi mod n liters if he paints it closed.You've got sequences a, b and numbers n, m. What minimum amount of ink will Jeff need to paint a regular bracket sequence of length nm?Operation x mod y means taking the remainder after dividing number x by number y.\nInput Specification: The first line contains two integers n and m (1\u2009\u2264\u2009n\u2009\u2264\u200920;\u00a01\u2009\u2264\u2009m\u2009\u2264\u2009107; m is even). The next line contains n integers: a0, a1, ..., an\u2009-\u20091 (1\u2009\u2264\u2009ai\u2009\u2264\u200910). The next line contains n integers: b0, b1, ..., bn\u2009-\u20091 (1\u2009\u2264\u2009bi\u2009\u2264\u200910). The numbers are separated by spaces.\nOutput Specification: In a single line print the answer to the problem \u2014 the minimum required amount of ink in liters.\n\nSample Input:\n2 6\n1 2\n2 1\nSample Output:\n12\n\nSample Input:\n1 10000000\n2\n3\nSample Output:\n25000000\n\nNotes: NoteIn the first test the optimal sequence is: ()()()()()(), the required number of ink liters is 12.\nTake input from standard input and output to standard output\nProvide the Go code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "f40900973f4ebeb6fdafd75ebe4e9601",
+        "difficulty": 2500,
+        "prob_desc_sample_inputs": [
+            "2 6\n1 2\n2 1",
+            "1 10000000\n2\n3"
+        ],
+        "prob_desc_time_limit": "1 second",
+        "tags": [
+            "dp",
+            "matrices"
+        ],
+        "prob_desc_output_spec": "In a single line print the answer to the problem \u2014 the minimum required amount of ink in liters.",
+        "prob_desc_input_spec": "The first line contains two integers n and m (1\u2009\u2264\u2009n\u2009\u2264\u200920;\u00a01\u2009\u2264\u2009m\u2009\u2264\u2009107; m is even). The next line contains n integers: a0, a1, ..., an\u2009-\u20091 (1\u2009\u2264\u2009ai\u2009\u2264\u200910). The next line contains n integers: b0, b1, ..., bn\u2009-\u20091 (1\u2009\u2264\u2009bi\u2009\u2264\u200910). The numbers are separated by spaces.",
+        "lang_cluster": "Go",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first test the optimal sequence is: ()()()()()(), the required number of ink liters is 12.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Jeff loves regular bracket sequences.Today Jeff is going to take a piece of paper and write out the regular bracket sequence, consisting of nm brackets. Let's number all brackets of this sequence from 0 to nm - 1 from left to right. Jeff knows that he is going to spend ai mod n liters of ink on the i-th bracket of the sequence if he paints it opened and bi mod n liters if he paints it closed.You've got sequences a, b and numbers n, m. What minimum amount of ink will Jeff need to paint a regular bracket sequence of length nm?Operation x mod y means taking the remainder after dividing number x by number y.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1380900600",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "12",
+            "25000000"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"2 6\\r\\n1 2\\r\\n2 1\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1 10000000\\r\\n2\\r\\n3\\r\\n\", \"output\": [\"25000000\"]}, {\"input\": \"3 184\\r\\n3 2 8\\r\\n3 9 2\\r\\n\", \"output\": [\"1288\"]}, {\"input\": \"4 26\\r\\n10 2 5 9\\r\\n5 4 2 5\\r\\n\", \"output\": [\"444\"]}, {\"input\": \"3 76\\r\\n4 7 9\\r\\n10 1 1\\r\\n\", \"output\": [\"684\"]}, {\"input\": \"3 98\\r\\n6 1 9\\r\\n10 2 4\\r\\n\", \"output\": [\"1127\"]}, {\"input\": \"5 114\\r\\n7 5 8 10 10\\r\\n2 7 9 4 5\\r\\n\", \"output\": [\"3021\"]}, {\"input\": \"1 14\\r\\n7\\r\\n6\\r\\n\", \"output\": [\"91\"]}, {\"input\": \"5 142\\r\\n8 7 6 2 2\\r\\n8 2 6 1 7\\r\\n\", \"output\": [\"2703\"]}, {\"input\": \"1 184\\r\\n8\\r\\n8\\r\\n\", \"output\": [\"1472\"]}, {\"input\": \"2 1900670\\r\\n10 3\\r\\n9 6\\r\\n\", \"output\": [\"22808044\"]}, {\"input\": \"6 17656\\r\\n2 7 4 7 7 3\\r\\n3 5 3 6 9 10\\r\\n\", \"output\": [\"459064\"]}, {\"input\": \"16 3273408\\r\\n3 2 8 8 10 1 1 7 1 4 5 7 5 8 10 10\\r\\n4 4 3 4 7 9 5 1 7 10 7 2 7 9 4 5\\r\\n\", \"output\": [\"186584261\"]}, {\"input\": \"11 4532614\\r\\n7 3 4 1 8 3 5 2 8 10 9\\r\\n6 10 3 7 5 1 1 8 4 9 7\\r\\n\", \"output\": [\"201701323\"]}, {\"input\": \"7 3952828\\r\\n1 1 9 3 5 9 2\\r\\n3 5 6 2 7 9 4\\r\\n\", \"output\": [\"106726356\"]}, {\"input\": \"20 807878\\r\\n9 4 2 5 2 7 9 3 4 4 9 2 8 3 8 9 5 7 4 7\\r\\n8 4 8 7 10 4 10 6 8 1 7 9 3 10 2 2 6 7 3 9\\r\\n\", \"output\": [\"67053877\"]}, {\"input\": \"3 3684044\\r\\n8 6 4\\r\\n3 1 2\\r\\n\", \"output\": [\"38682465\"]}, {\"input\": \"9 7683580\\r\\n4 6 8 5 10 6 3 4 7\\r\\n6 7 3 10 3 10 1 4 10\\r\\n\", \"output\": [\"303501412\"]}, {\"input\": \"10 6007734\\r\\n4 7 6 7 4 3 4 7 7 6\\r\\n8 9 5 7 6 3 2 2 10 4\\r\\n\", \"output\": [\"270348030\"]}, {\"input\": \"7 859320\\r\\n10 1 4 9 2 5 5\\r\\n5 10 3 6 6 5 10\\r\\n\", \"output\": [\"23201650\"]}, {\"input\": \"20 10000000\\r\\n10 3 2 6 2 3 9 2 8 4 4 4 3 4 7 9 5 1 7 10\\r\\n9 6 2 8 3 2 8 10 6 3 2 8 8 10 1 1 7 1 4 5\\r\\n\", \"output\": [\"730000001\"]}, {\"input\": \"20 10000000\\r\\n7 10 9 2 9 7 6 10 3 7 5 1 1 8 4 9 7 9 6 8\\r\\n9 4 3 6 1 7 3 4 1 8 3 5 2 8 10 9 1 2 10 4\\r\\n\", \"output\": [\"780000008\"]}, {\"input\": \"20 10000000\\r\\n2 7 9 4 1 9 8 4 6 10 5 10 4 5 9 9 10 9 1 6\\r\\n5 9 2 9 8 9 1 10 1 9 5 6 4 9 1 10 3 9 9 7\\r\\n\", \"output\": [\"890000001\"]}, {\"input\": \"20 10000000\\r\\n6 7 3 9 10 10 1 9 4 6 8 5 10 6 3 4 7 8 6 6\\r\\n7 4 7 2 7 3 10 10 6 7 3 10 3 10 1 4 10 10 7 3\\r\\n\", \"output\": [\"920000004\"]}, {\"input\": \"20 10000000\\r\\n7 4 3 4 7 7 6 5 4 6 5 8 3 5 3 8 4 3 4 8\\r\\n7 6 3 2 2 10 4 3 5 7 9 9 8 5 4 9 4 3 3 4\\r\\n\", \"output\": [\"880000001\"]}, {\"input\": \"1 2\\r\\n1\\r\\n1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"20 10000000\\r\\n1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1\\r\\n1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1\\r\\n\", \"output\": [\"200000000\"]}, {\"input\": \"20 10000000\\r\\n10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10\\r\\n10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10\\r\\n\", \"output\": [\"2000000000\"]}]"
+    }
+}

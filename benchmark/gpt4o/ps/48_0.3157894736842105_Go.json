@@ -1,0 +1,354 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEHngYL2GDAgeL935jrV04YpCa6Ph",
+        "created": 1787073724,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc max(a, b int64) int64 {\n\tif a > b {\n\t\treturn a\n\t}\n\treturn b\n}\n\nfunc min(a, b int64) int64 {\n\tif a < b {\n\t\treturn a\n\t}\n\treturn b\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar a, b, c, l int64\n\tfmt.Fscan(in, &a, &b, &c, &l)\n\n\t// sort a,b,c\n\tif a > b {\n\t\ta, b = b, a\n\t}\n\tif b > c {\n\t\tb, c = c, b\n\t}\n\tif a > b {\n\t\ta, b = b, a\n\t}\n\n\tvar ans int64\n\n\t// iterate over possible increase of the largest side\n\tfor x := int64(0); x <= l; x++ {\n\t\tC := c + x\n\t\trem := l - x\n\n\t\t// total ways to distribute rem to two sticks: (rem+1)(rem+2)/2\n\t\ttotal := (rem + 1) * (rem + 2) / 2\n\n\t\t// count invalid where C >= A+B\n\t\t// A = a + da, B = b + db, da+db <= rem\n\t\t// inequality: a + b + da + db <= C  => da+db <= C - a - b\n\t\tt := C - a - b\n\t\tif t < 0 {\n\t\t\t// no invalid\n\t\t\tans += total\n\t\t\tcontinue\n\t\t}\n\t\tif t >= rem {\n\t\t\t// all distributions invalid\n\t\t\tcontinue\n\t\t}\n\t\t// number of (da,db>=0, da+db<=rem) with da+db<=t\n\t\tinvalid := (t + 1) * (t + 2) / 2\n\t\tans += total - invalid\n\t}\n\n\tfmt.Println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc min(a, b int64) int64 {\n\tif a < b {\n\t\treturn a\n\t}\n\treturn b\n}\n\nfunc max(a, b int64) int64 {\n\tif a > b {\n\t\treturn a\n\t}\n\treturn b\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar a, b, c, l int64\n\tfmt.Fscan(in, &a, &b, &c, &l)\n\n\tvar ans int64 = 0\n\n\t// iterate over which stick is the largest after increase\n\tfor t := 0; t < 3; t++ {\n\t\tvar x, y, z int64\n\t\tif t == 0 {\n\t\t\tx, y, z = a, b, c\n\t\t} else if t == 1 {\n\t\t\tx, y, z = b, a, c\n\t\t} else {\n\t\t\tx, y, z = c, a, b\n\t\t}\n\n\t\t// x is the \"largest\" side after increase\n\t\t// we iterate over dx (increase of x)\n\t\tfor dx := int64(0); dx <= l; dx++ {\n\t\t\tX := x + dx\n\t\t\trem := l - dx\n\n\t\t\t// y' = y + dy, z' = z + dz, dy+dz <= rem\n\t\t\t// need triangle inequalities:\n\t\t\t// 1) y' + z' > X\n\t\t\t// 2) y' + X > z'\n\t\t\t// 3) z' + X > y'\n\t\t\t//\n\t\t\t// Since X is intended to be the largest side, we only need:\n\t\t\t// y' + z' > X and y' + z' > X ensures non-degenerate.\n\t\t\t// Other inequalities automatically hold if X is max.\n\n\t\t\t// dy, dz >= 0, dy+dz <= rem\n\t\t\t// (y+dy) + (z+dz) > X\n\t\t\t// dy + dz > X - y - z\n\t\t\tneed := X - y - z + 1 // minimal dy+dz to satisfy strict >\n\t\t\tif need <= 0 {\n\t\t\t\tneed = 0\n\t\t\t}\n\t\t\tif need > rem {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\t// number of (dy,dz) with dy+dz in [need, rem]\n\t\t\t// For fixed s = dy+dz, number of pairs is s+1 (dy from 0..s)\n\t\t\t// sum_{s=need..rem} (s+1) = (rem+1+need)*(rem-need+1)/2\n\t\t\tn := rem - need + 1\n\t\t\tsum := n*(need+rem+1)/2\n\t\t\tans += sum\n\n\t\t\t// subtract configurations where X is not actually the largest side:\n\t\t\t// need to ensure y' <= X and z' <= X\n\t\t\t// y+dy <= X => dy <= X - y\n\t\t\t// z+dz <= X => dz <= X - z\n\t\t\t// count pairs violating these and subtract\n\n\t\t\t// case where y' > X\n\t\t\tif y < X {\n\t\t\t\tmaxDy := rem\n\t\t\t\tminDy := X - y + 1\n\t\t\t\tif minDy <= maxDy {\n\t\t\t\t\t// dy in [minDy..maxDy], dz in [0..rem-dy]\n\t\t\t\t\t// count = sum_{dy=minDy..maxDy} (rem-dy+1)\n\t\t\t\t\t// = sum_{k=0..maxDy-minDy} (rem-(minDy+k)+1)\n\t\t\t\t\t// = sum_{k=0..n1-1} (rem-minDy+1 - k)\n\t\t\t\t\tn1 := maxDy - minDy + 1\n\t\t\t\t\tfirst := rem - minDy + 1\n\t\t\t\t\t// arithmetic series: n1*first - n1*(n1-1)/2\n\t\t\t\t\tbad := n1*first - n1*(n1-1)/2\n\t\t\t\t\tans -= bad\n\t\t\t\t}\n\t\t\t} else {\n\t\t\t\t// y >= X, any positive dy makes y' > X\n\t\t\t\tif rem > 0 {\n\t\t\t\t\t// dy in [1..rem], dz in [0..rem-dy]\n\t\t\t\t\tn1 := rem\n\t\t\t\t\tfirst := rem\n\t\t\t\t\tbad := n1*first - n1*(n1-1)/2\n\t\t\t\t\tans -= bad\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// case where z' > X\n\t\t\tif z < X {\n\t\t\t\tmaxDz := rem\n\t\t\t\tminDz := X - z + 1\n\t\t\t\tif minDz <= maxDz {\n\t\t\t\t\tn1 := maxDz - minDz + 1\n\t\t\t\t\tfirst := rem - minDz + 1\n\t\t\t\t\tbad := n1*first - n1*(n1-1)/2\n\t\t\t\t\tans -= bad\n\t\t\t\t}\n\t\t\t} else {\n\t\t\t\tif rem > 0 {\n\t\t\t\t\tn1 := rem\n\t\t\t\t\tfirst := rem\n\t\t\t\t\tbad := n1*first - n1*(n1-1)/2\n\t\t\t\t\tans -= bad\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tfmt.Println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar a, b, c, l int64\n\tfmt.Fscan(in, &a, &b, &c, &l)\n\n\t// sort a,b,c\n\tif a > b {\n\t\ta, b = b, a\n\t}\n\tif b > c {\n\t\tb, c = c, b\n\t}\n\tif a > b {\n\t\ta, b = b, a\n\t}\n\n\ttotal := (l + 1) * (l + 2) / 2\n\n\t// helper to compute invalid count for given base sides x,y,z (sorted) and extra t\n\tinvalid := func(x, y, z, t int64) int64 {\n\t\tvar res int64 = 0\n\t\t// we consider increments dx,dy,dz with dx+dy+dz<=t\n\t\t// invalid when x+dx >= y+dy+z+dz  => dx - dy - dz >= y+z-x\n\t\tneed := y + z - x\n\t\tif need <= 0 {\n\t\t\t// even without increments already invalid or degenerate, but we count only configurations\n\t\t\tneed = 1\n\t\t}\n\t\t// iterate dx\n\t\tfor dx := int64(0); dx <= t; dx++ {\n\t\t\t// inequality: dx - dy - dz >= need\n\t\t\t// with dy+dz = s, s<=t-dx\n\t\t\t// dx - s >= need  => s <= dx-need\n\t\t\tmaxS := dx - need\n\t\t\tif maxS < 0 {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tif maxS > t-dx {\n\t\t\t\tmaxS = t - dx\n\t\t\t}\n\t\t\tif maxS < 0 {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tres += maxS + 1\n\t\t}\n\t\treturn res\n\t}\n\n\tans := total\n\tans -= invalid(a, b, c, l)\n\tans -= invalid(b, c, a, l)\n\tans -= invalid(c, a, b, l)\n\n\tfmt.Println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc max(a, b int64) int64 {\n\tif a > b {\n\t\treturn a\n\t}\n\treturn b\n}\n\nfunc min(a, b int64) int64 {\n\tif a < b {\n\t\treturn a\n\t}\n\treturn b\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar a, b, c, l int64\n\tfmt.Fscan(in, &a, &b, &c, &l)\n\n\tans := int64(0)\n\n\tfor i := int64(0); i <= l; i++ {\n\t\tx := a + i\n\t\trem := l - i\n\n\t\t// y ranges from b to b+rem, z from c to c+rem, with y+z <= b+c+rem\n\t\t// total pairs (y,z) with y,z >= base and y+z <= baseSum+rem\n\t\tbaseY, baseZ := b, c\n\t\tbaseSum := baseY + baseZ\n\n\t\t// total pairs without triangle constraint\n\t\t// number of (dy,dz) with dy,dz>=0 and dy+dz<=rem is (rem+1)(rem+2)/2\n\t\ttotal := (rem + 1) * (rem + 2) / 2\n\n\t\t// subtract bad pairs where x >= y+z\n\t\t// i.e., y+z <= x\n\t\t// but also y+z >= baseSum\n\t\t// so baseSum <= y+z <= min(x, baseSum+rem)\n\t\tupper := min(x, baseSum+rem)\n\t\tif upper >= baseSum {\n\t\t\t// number of sums s in [baseSum, upper]\n\t\t\tfor s := baseSum; s <= upper; s++ {\n\t\t\t\t// count pairs (y,z) with y,z>=base and y+z=s\n\t\t\t\t// y in [base, s-base], z = s-y, must also <= base+rem\n\t\t\t\t// dy = y-base, dz = z-base => dy+dz = s-baseSum\n\t\t\t\t// dy in [0, s-baseSum], dz = s-baseSum-dy\n\t\t\t\t// also dy<=rem, dz<=rem\n\t\t\t\tt := s - baseSum\n\t\t\t\tif t < 0 || t > rem*2 {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tlowDy := int64(0)\n\t\t\t\thighDy := t\n\t\t\t\tif highDy > rem {\n\t\t\t\t\thighDy = rem\n\t\t\t\t}\n\t\t\t\tif t-lowDy > rem {\n\t\t\t\t\tlowDy = t - rem\n\t\t\t\t}\n\t\t\t\tif highDy >= lowDy {\n\t\t\t\t\tbad := highDy - lowDy + 1\n\t\t\t\t\ttotal -= bad\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\tans += total\n\t}\n\n\tfmt.Println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc max(a, b int64) int64 {\n\tif a > b {\n\t\treturn a\n\t}\n\treturn b\n}\n\nfunc min(a, b int64) int64 {\n\tif a < b {\n\t\treturn a\n\t}\n\treturn b\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar a, b, c, l int64\n\tfmt.Fscan(in, &a, &b, &c, &l)\n\n\tans := int64(0)\n\n\tfor i := int64(0); i <= l; i++ {\n\t\tx := a + i\n\t\trem := l - i\n\n\t\t// y ranges from b to b+rem, z from c to c+rem, with y+z <= b+c+rem\n\t\t// total pairs (j,k) with j+k<=rem is (rem+1)(rem+2)/2\n\t\ttotal := (rem + 1) * (rem + 2) / 2\n\n\t\t// subtract invalid where x >= y+z  =>  j+k <= b+c - x - 1\n\t\tlimit := b + c - x - 1\n\t\tif limit >= 0 {\n\t\t\tlimit = min(limit, rem)\n\t\t\tinvalid := (limit + 1) * (limit + 2) / 2\n\t\t\ttotal -= invalid\n\t\t}\n\n\t\t// subtract invalid where y >= x+z  =>  b+j >= x + c + k +1\n\t\t// j - k >= x + c +1 - b\n\t\td := x + c + 1 - b\n\t\tif d <= rem {\n\t\t\t// j-k >= d\n\t\t\t// transform to u=j-k, v=k, with j=k+u\n\t\t\t// j,k>=0, j+k<=rem => (k+u)+k<=rem => 2k+u<=rem => k<= (rem-u)/2\n\t\t\t// u ranges from max(d,-rem) to rem\n\t\t\tudMin := max(d, -rem)\n\t\t\tudMax := rem\n\t\t\tif udMin <= udMax {\n\t\t\t\tinvalid2 := int64(0)\n\t\t\t\tfor u := udMin; u <= udMax; u++ {\n\t\t\t\t\tmaxK := (rem - u) / 2\n\t\t\t\t\tif maxK >= 0 {\n\t\t\t\t\t\tinvalid2 += maxK + 1\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\ttotal -= invalid2\n\t\t\t}\n\t\t}\n\n\t\t// subtract invalid where z >= x+y  =>  c+k >= x + b + j +1\n\t\t// k - j >= x + b +1 - c\n\t\td2 := x + b + 1 - c\n\t\tif d2 <= rem {\n\t\t\tudMin := max(d2, -rem)\n\t\t\tudMax := rem\n\t\t\tif udMin <= udMax {\n\t\t\t\tinvalid3 := int64(0)\n\t\t\t\tfor u := udMin; u <= udMax; u++ {\n\t\t\t\t\tmaxJ := (rem - u) / 2\n\t\t\t\t\tif maxJ >= 0 {\n\t\t\t\t\t\tinvalid3 += maxJ + 1\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\ttotal -= invalid3\n\t\t\t}\n\t\t}\n\n\t\tans += total\n\t}\n\n\tfmt.Println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc max(a, b int64) int64 {\n\tif a > b {\n\t\treturn a\n\t}\n\treturn b\n}\n\nfunc min(a, b int64) int64 {\n\tif a < b {\n\t\treturn a\n\t}\n\treturn b\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar a, b, c, l int64\n\tfmt.Fscan(in, &a, &b, &c, &l)\n\n\t// total number of non-negative integer triples (x,y,z) with x+y+z<=l\n\tL := l + 2\n\ttotal := L * (L + 1) / 2\n\n\tans := total\n\n\t// function to subtract invalid configurations for one inequality\n\tsubtract := func(A, B, C int64) {\n\t\t// inequality: A + x >= B + y + C + z  -> invalid when A + x <= B + y + C + z\n\t\t// rearranged: x - y - z <= B + C - A\n\t\t// we consider when A + x <= B + y + C + z, i.e. A + x <= B + C + y + z\n\t\t// minimal x that can violate triangle: x0 = B + C - A + 1\n\t\tx0 := B + C - A + 1\n\t\tif x0 <= 0 {\n\t\t\treturn\n\t\t}\n\t\tif x0 > l {\n\t\t\treturn\n\t\t}\n\t\t// for x in [x0, l], count pairs (y,z) with y+z <= l-x and A+x <= B+C+y+z\n\t\tfor x := x0; x <= l; x++ {\n\t\t\trem := l - x\n\t\t\t// need y+z >= A + x - (B + C)\n\t\t\tneed := A + x - (B + C)\n\t\t\tif need <= 0 {\n\t\t\t\t// all pairs with y+z<=rem are invalid\n\t\t\t\tans -= (rem + 1) * (rem + 2) / 2\n\t\t\t} else if need <= rem {\n\t\t\t\t// pairs with sum s from need to rem\n\t\t\t\t// count = sum_{s=need..rem} (s+1) = (rem+1)(rem+2)/2 - need(need+1)/2\n\t\t\t\ttotalPairs := (rem + 1) * (rem + 2) / 2\n\t\t\t\tvalidPairs := need * (need + 1) / 2\n\t\t\t\tans -= totalPairs - validPairs\n\t\t\t}\n\t\t}\n\t}\n\n\tsubtract(a, b, c)\n\tsubtract(b, a, c)\n\tsubtract(c, a, b)\n\n\tfmt.Println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar a, b, c, l int64\n\tfmt.Fscan(in, &a, &b, &c, &l)\n\n\t// sort a,b,c\n\tif a > b {\n\t\ta, b = b, a\n\t}\n\tif b > c {\n\t\tb, c = c, b\n\t}\n\tif a > b {\n\t\ta, b = b, a\n\t}\n\n\tvar total int64 = (l + 1) * (l + 2) / 2\n\n\t// function to count invalid (degenerate or impossible) configurations\n\t// where one side >= sum of other two\n\tcountInvalid := func(x, y, z int64) int64 {\n\t\tvar res int64 = 0\n\t\t// we consider x as the potentially largest side\n\t\t// increments: dx, dy, dz >= 0, dx+dy+dz <= l\n\t\t// condition: x+dx >= y+dy + z+dz  =>  dx - dy - dz >= y+z - x\n\t\tneed := y + z - x\n\t\t// if need <= 0, then even with dx=0, dy=dz=0 we already have invalid,\n\t\t// but original sticks are fixed; we still must count all increments\n\t\t// satisfying inequality.\n\t\tfor dx := int64(0); dx <= l; dx++ {\n\t\t\t// dx - dy - dz >= need  =>  dy + dz <= dx - need\n\t\t\tlimit := dx - need\n\t\t\tif limit < 0 {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tif limit > l-dx {\n\t\t\t\tlimit = l - dx\n\t\t\t}\n\t\t\tif limit < 0 {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\t// number of (dy,dz) with dy,dz>=0, dy+dz<=limit is (limit+1)(limit+2)/2\n\t\t\tres += (limit + 1) * (limit + 2) / 2\n\t\t}\n\t\treturn res\n\t}\n\n\t// count invalid for each side being the largest\n\tans := total\n\tans -= countInvalid(a, b, c)\n\tans -= countInvalid(b, a, c)\n\tans -= countInvalid(c, a, b)\n\n\tfmt.Println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc max(a, b int64) int64 {\n\tif a > b {\n\t\treturn a\n\t}\n\treturn b\n}\n\nfunc min(a, b int64) int64 {\n\tif a < b {\n\t\treturn a\n\t}\n\treturn b\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar a, b, c, l int64\n\tfmt.Fscan(in, &a, &b, &c, &l)\n\n\tbase := a + b + c\n\ttotal := (l + 1) * (l + 2) / 2\n\n\tvar ans int64 = 0\n\n\t// process each side as the largest\n\tprocess := func(x, y, z int64) {\n\t\tfor dx := int64(0); dx <= l; dx++ {\n\t\t\trem := l - dx\n\t\t\t// inequality: x+dx < y+dy+z+dz => dy+dz > x+dx-y-z\n\t\t\tneed := x + dx - y - z + 1\n\t\t\tif need <= 0 {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tif need > rem {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\t// number of (dy,dz) with dy+dz >= need and dy+dz <= rem\n\t\t\t// total pairs with sum <= rem: (rem+1)(rem+2)/2\n\t\t\t// pairs with sum <= need-1: (need)(need+1)/2\n\t\t\ttotalPairs := (rem + 1) * (rem + 2) / 2\n\t\t\tbadPairs := need * (need + 1) / 2\n\t\t\tans += totalPairs - badPairs\n\t\t}\n\t}\n\n\tprocess(a, b, c)\n\tprocess(b, a, c)\n\tprocess(c, a, b)\n\n\tfmt.Println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 4918,
+            "prompt_tokens": 373,
+            "total_tokens": 5291,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 2,
+                "engine_ttft_ms": 43,
+                "engine_ttlt_ms": 8502,
+                "pre_inference_ms": 187,
+                "service_tbt_ms": 2,
+                "service_ttft_ms": 341,
+                "service_ttlt_ms": 8782,
+                "total_duration_ms": 8603,
+                "user_visible_ttft_ms": 154
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Go to solve this programming problem:\nDescription: You are given three sticks with positive integer lengths of a,\u2009b, and c centimeters. You can increase length of some of them by some positive integer number of centimeters (different sticks can be increased by a different length), but in total by at most l centimeters. In particular, it is allowed not to increase the length of any stick.Determine the number of ways to increase the lengths of some sticks so that you can form from them a non-degenerate (that is, having a positive area) triangle. Two ways are considered different, if the length of some stick is increased by different number of centimeters in them.\nInput Specification: The single line contains 4 integers a,\u2009b,\u2009c,\u2009l (1\u2009\u2264\u2009a,\u2009b,\u2009c\u2009\u2264\u20093\u00b7105, 0\u2009\u2264\u2009l\u2009\u2264\u20093\u00b7105).\nOutput Specification: Print a single integer \u2014 the number of ways to increase the sizes of the sticks by the total of at most l centimeters, so that you can make a non-degenerate triangle from it.\n\nSample Input:\n1 1 1 2\nSample Output:\n4\n\nSample Input:\n1 2 3 1\nSample Output:\n2\n\nSample Input:\n10 2 1 7\nSample Output:\n0\n\nNotes: NoteIn the first sample test you can either not increase any stick or increase any two sticks by 1 centimeter.In the second sample test you can increase either the first or the second stick by one centimeter. Note that the triangle made from the initial sticks is degenerate and thus, doesn't meet the conditions.\nTake input from standard input and output to standard output\nProvide the Go code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "185ff90a8b0ae0e2b75605f772589410",
+        "difficulty": 2100,
+        "prob_desc_sample_inputs": [
+            "1 1 1 2",
+            "1 2 3 1",
+            "10 2 1 7"
+        ],
+        "prob_desc_time_limit": "1 second",
+        "tags": [
+            "math",
+            "combinatorics",
+            "brute force",
+            "dp",
+            "implementation"
+        ],
+        "prob_desc_output_spec": "Print a single integer \u2014 the number of ways to increase the sizes of the sticks by the total of at most l centimeters, so that you can make a non-degenerate triangle from it.",
+        "prob_desc_input_spec": "The single line contains 4 integers a,\u2009b,\u2009c,\u2009l (1\u2009\u2264\u2009a,\u2009b,\u2009c\u2009\u2264\u20093\u00b7105, 0\u2009\u2264\u2009l\u2009\u2264\u20093\u00b7105).",
+        "lang_cluster": "Go",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first sample test you can either not increase any stick or increase any two sticks by 1 centimeter.In the second sample test you can increase either the first or the second stick by one centimeter. Note that the triangle made from the initial sticks is degenerate and thus, doesn't meet the conditions.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "You are given three sticks with positive integer lengths of a,\u2009b, and c centimeters. You can increase length of some of them by some positive integer number of centimeters (different sticks can be increased by a different length), but in total by at most l centimeters. In particular, it is allowed not to increase the length of any stick.Determine the number of ways to increase the lengths of some sticks so that you can form from them a non-degenerate (that is, having a positive area) triangle. Two ways are considered different, if the length of some stick is increased by different number of centimeters in them.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1440261000",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "4",
+            "2",
+            "0"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"1 1 1 2\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"1 2 3 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"10 2 1 7\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"1 2 1 5\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"10 15 17 10\\r\\n\", \"output\": [\"281\"]}, {\"input\": \"5 5 5 10000\\r\\n\", \"output\": [\"41841675001\"]}, {\"input\": \"5 7 30 100\\r\\n\", \"output\": [\"71696\"]}, {\"input\": \"5 5 5 300000\\r\\n\", \"output\": [\"1125157500250001\"]}, {\"input\": \"4 2 5 28\\r\\n\", \"output\": [\"1893\"]}, {\"input\": \"2 7 8 4\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"85 50 17 89\\r\\n\", \"output\": [\"68620\"]}, {\"input\": \"17 28 19 5558\\r\\n\", \"output\": [\"7396315389\"]}, {\"input\": \"5276 8562 1074 8453\\r\\n\", \"output\": [\"49093268246\"]}, {\"input\": \"9133 7818 3682 82004\\r\\n\", \"output\": [\"38306048676255\"]}, {\"input\": \"81780 54799 231699 808\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"53553 262850 271957 182759\\r\\n\", \"output\": [\"834977070873802\"]}, {\"input\": \"300000 300000 300000 300000\\r\\n\", \"output\": [\"4500090000549998\"]}, {\"input\": \"1 1 300000 300000\\r\\n\", \"output\": [\"599999\"]}, {\"input\": \"300000 300000 1 300000\\r\\n\", \"output\": [\"2250045000350001\"]}, {\"input\": \"300000 300000 1 24234\\r\\n\", \"output\": [\"1186319275394\"]}, {\"input\": \"1 1 1 300000\\r\\n\", \"output\": [\"1125022500250001\"]}, {\"input\": \"3 5 7 300000\\r\\n\", \"output\": [\"1125157499050009\"]}, {\"input\": \"63 5 52 78\\r\\n\", \"output\": [\"46502\"]}, {\"input\": \"2 42 49 93\\r\\n\", \"output\": [\"72542\"]}, {\"input\": \"61 100 3 8502\\r\\n\", \"output\": [\"27050809786\"]}, {\"input\": \"30 918 702 591\\r\\n\", \"output\": [\"14315560\"]}, {\"input\": \"98406 37723 3 257918\\r\\n\", \"output\": [\"1154347569149860\"]}, {\"input\": \"552 250082 77579 278985\\r\\n\", \"output\": [\"596240712378446\"]}, {\"input\": \"183808 8 8 294771\\r\\n\", \"output\": [\"622921327009564\"]}, {\"input\": \"2958 4133 233463 259655\\r\\n\", \"output\": [\"65797591388150\"]}, {\"input\": \"300000 200000 100000 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"300000 200000 100000 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"100000 300000 100000 100000\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"100000 300000 100000 100001\\r\\n\", \"output\": [\"100002\"]}, {\"input\": \"100000 300000 100000 100002\\r\\n\", \"output\": [\"200005\"]}, {\"input\": \"100000 300000 100000 100003\\r\\n\", \"output\": [\"400012\"]}, {\"input\": \"100000 300000 100000 100010\\r\\n\", \"output\": [\"3000195\"]}, {\"input\": \"100000 300000 100000 100100\\r\\n\", \"output\": [\"255131325\"]}, {\"input\": \"100000 300000 199999 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"100000 300000 200001 0\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"3 1 29 1\\r\\n\", \"output\": [\"0\"]}]"
+    }
+}

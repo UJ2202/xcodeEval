@@ -1,0 +1,388 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-a74ee971722dfe3a",
+        "created": 1787073464,
+        "model": "laguna-nvfp4",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.27.1-tp2-af6339fc",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <cstring>\nusing namespace std;\n\nint n, t;\nlong long dp[21][5][5][11][11];\n\nint main() {\n    cin >> n >> t;\n    if (n < 3) {\n        cout << 0 << endl;\n        return 0;\n    }\n    memset(dp, 0, sizeof(dp));\n    for (int y1 = 1; y1 <= 4; y1++) {\n        for (int y2 = 1; y2 <= 4; y2++) {\n            if (y1 == y2) continue;\n            dp[2][y1][y2][0][0] = 1;\n        }\n    }\n    for (int i = 2; i < n; i++) {\n        for (int y_prev_prev = 1; y_prev_prev <= 4; y_prev_prev++) {\n            for (int y_prev = 1; y_prev <= 4; y_prev++) {\n                if (y_prev_prev == y_prev) continue;\n                for (int humps = 0; humps <= t; humps++) {\n                    for (int valleys = 0; valleys <= t; valleys++) {\n                        if (dp[i][y_prev_prev][y_prev][humps][valleys] == 0) continue;\n                        for (int y_curr = 1; y_curr <= 4; y_curr++) {\n                            if (y_prev == y_curr) continue;\n                            int new_humps = humps;\n                            int new_valleys = valleys;\n                            if (y_prev > y_prev_prev && y_prev > y_curr) {\n                                new_humps++;\n                            } else if (y_prev < y_prev_prev && y_prev < y_curr) {\n                                new_valleys++;\n                            }\n                            if (new_humps > t || new_valleys > t) continue;\n                            dp[i+1][y_prev][y_curr][new_humps][new_valleys] += dp[i][y_prev_prev][y_prev][humps][valleys];\n                        }\n                    }\n                }\n            }\n        }\n    }\n    long long ans = 0;\n    for (int y_prev_prev = 1; y_prev_prev <= 4; y_prev_prev++) {\n        for (int y_prev = 1; y_prev <= 4; y_prev++) {\n            if (y_prev_prev == y_prev) continue;\n            ans += dp[n][y_prev_prev][y_prev][t][t-1];\n        }\n    }\n    cout << ans << endl;\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <cstring>\nusing namespace std;\n\nint n, t;\nlong long dp[21][4][4][11][11];\n\nint main() {\n    cin >> n >> t;\n    memset(dp, 0, sizeof(dp));\n    for (int a = 0; a < 4; a++) {\n        for (int b = 0; b < 4; b++) {\n            if (a != b) {\n                dp[2][a][b][0][0] = 1;\n            }\n        }\n    }\n    for (int i = 2; i < n; i++) {\n        for (int a = 0; a < 4; a++) {\n            for (int b = 0; b < 4; b++) {\n                for (int h = 0; h <= t; h++) {\n                    for (int l = 0; l <= t; l++) {\n                        if (dp[i][a][b][h][l] == 0) continue;\n                        for (int c = 0; c < 4; c++) {\n                            if (c == b) continue;\n                            int new_h = h;\n                            int new_l = l;\n                            if (a < b && b > c) {\n                                new_h++;\n                            } else if (a > b && b < c) {\n                                new_l++;\n                            }\n                            if (new_h > t || new_l > t) continue;\n                            dp[i+1][b][c][new_h][new_l] += dp[i][a][b][h][l];\n                        }\n                    }\n                }\n            }\n        }\n    }\n    long long ans = 0;\n    for (int a = 0; a < 4; a++) {\n        for (int b = 0; b < 4; b++) {\n            ans += dp[n][a][b][t][t-1];\n        }\n    }\n    cout << ans << endl;\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```cpp\n#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n, t;\n    cin >> n >> t;\n    if (n < 3) {\n        cout << 0 << endl;\n        return 0;\n    }\n\n    // dp[pos][prev_y][humps][dips][last_dir]\n    // last_dir: -1 = down, 1 = up, 0 = none (only at pos=1)\n    long long dp[21][5][11][11][3];\n    memset(dp, 0, sizeof(dp));\n\n    // Base case: position 1, y1 can be 1..4\n    for (int y = 1; y <= 4; ++y) {\n        dp[1][y][0][0][0] = 1;\n    }\n\n    for (int pos = 1; pos < n; ++pos) {\n        for (int prev_y = 1; prev_y <= 4; ++prev_y) {\n            for (int humps = 0; humps <= t; ++humps) {\n                for (int dips = 0; dips <= t - 1; ++dips) {\n                    for (int last_dir = 0; last_dir <= 2; ++last_dir) {\n                        if (dp[pos][prev_y][humps][dips][last_dir] == 0) continue;\n\n                        for (int curr_y = 1; curr_y <= 4; ++curr_y) {\n                            if (curr_y == prev_y) continue; // no horizontal segments\n\n                            int new_dir = (curr_y > prev_y) ? 1 : -1;\n                            int new_humps = humps;\n                            int new_dips = dips;\n\n                            if (pos >= 2) {\n                                // Check if previous direction was opposite to current\n                                if (last_dir == 1 && new_dir == -1) {\n                                    // Peak at pos\n                                    new_humps++;\n                                } else if (last_dir == -1 && new_dir == 1) {\n                                    // Valley at pos\n                                    new_dips++;\n                                }\n                            }\n\n                            if (new_humps > t || new_dips > t - 1) continue;\n\n                            int new_last_dir = (new_dir == 1) ? 1 : 2;\n                            dp[pos + 1][curr_y][new_humps][new_dips][new_last_dir] +=\n                                dp[pos][prev_y][humps][dips][last_dir];\n                        }\n                    }\n                }\n            }\n        }\n    }\n\n    long long ans = 0;\n    for (int y = 1; y <= 4; ++y) {\n        for (int last_dir = 1; last_dir <= 2; ++last_dir) {\n            ans += dp[n][y][t][t - 1][last_dir];\n        }\n    }\n\n    cout << ans << endl;\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <cstring>\nusing namespace std;\n\nint n, t;\nlong long dp[21][4][4][11][11]; // dp[pos][prev_y][prev_prev_y][humps][valleys]\n\nint main() {\n    cin >> n >> t;\n    if (n < 3) {\n        cout << 0 << endl;\n        return 0;\n    }\n    memset(dp, 0, sizeof(dp));\n    // Initialize for positions 1 and 2\n    for (int y1 = 1; y1 <= 4; y1++) {\n        for (int y2 = 1; y2 <= 4; y2++) {\n            if (y1 == y2) continue; // no horizontal segments\n            dp[2][y2][y1][0][0] = 1;\n        }\n    }\n    // Fill DP\n    for (int pos = 2; pos < n; pos++) {\n        for (int prev_y = 1; prev_y <= 4; prev_y++) {\n            for (int prev_prev_y = 1; prev_prev_y <= 4; prev_prev_y++) {\n                if (prev_y == prev_prev_y) continue;\n                for (int h = 0; h <= t; h++) {\n                    for (int v = 0; v <= t-1; v++) {\n                        if (dp[pos][prev_y][prev_prev_y][h][v] == 0) continue;\n                        for (int curr_y = 1; curr_y <= 4; curr_y++) {\n                            if (curr_y == prev_y) continue; // no horizontal segments\n                            int new_h = h, new_v = v;\n                            if (pos >= 2) {\n                                if (prev_prev_y < prev_y && prev_y > curr_y) new_h++;\n                                if (prev_prev_y > prev_y && prev_y < curr_y) new_v++;\n                            }\n                            if (new_h > t || new_v > t-1) continue;\n                            dp[pos+1][curr_y][prev_y][new_h][new_v] += dp[pos][prev_y][prev_prev_y][h][v];\n                        }\n                    }\n                }\n            }\n        }\n    }\n    // Sum all states at position n with exactly t humps and t-1 valleys\n    long long ans = 0;\n    for (int prev_y = 1; prev_y <= 4; prev_y++) {\n        for (int prev_prev_y = 1; prev_prev_y <= 4; prev_prev_y++) {\n            if (prev_y == prev_prev_y) continue;\n            ans += dp[n][prev_y][prev_prev_y][t][t-1];\n        }\n    }\n    cout << ans << endl;\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <cstring>\nusing namespace std;\n\nint n, t;\nlong long dp[21][4][11][11][2][2];\n\nint main() {\n    cin >> n >> t;\n    if (n < 3 || t < 1) {\n        cout << 0 << endl;\n        return 0;\n    }\n    memset(dp, 0, sizeof(dp));\n    for (int y = 0; y < 4; ++y) {\n        dp[1][y][0][0][0][0] = 1;\n    }\n    for (int i = 1; i < n; ++i) {\n        for (int y_prev = 0; y_prev < 4; ++y_prev) {\n            for (int humps = 0; humps <= t; ++humps) {\n                for (int valleys = 0; valleys <= t - 1; ++valleys) {\n                    for (int prev_dir = 0; prev_dir < 2; ++prev_dir) {\n                        for (int started = 0; started < 2; ++started) {\n                            if (dp[i][y_prev][humps][valleys][prev_dir][started] == 0) continue;\n                            for (int y_curr = 0; y_curr < 4; ++y_curr) {\n                                if (y_curr == y_prev) continue;\n                                int curr_dir = (y_curr > y_prev) ? 1 : 0;\n                                int new_started = started;\n                                int new_humps = humps;\n                                int new_valleys = valleys;\n                                if (started) {\n                                    if (prev_dir == 1 && curr_dir == 0) {\n                                        new_humps++;\n                                    } else if (prev_dir == 0 && curr_dir == 1) {\n                                        new_valleys++;\n                                    }\n                                } else {\n                                    new_started = 1;\n                                }\n                                if (new_humps > t || new_valleys > t - 1) continue;\n                                dp[i + 1][y_curr][new_humps][new_valleys][curr_dir][new_started] +=\n                                    dp[i][y_prev][humps][valleys][prev_dir][started];\n                            }\n                        }\n                    }\n                }\n            }\n        }\n    }\n    long long ans = 0;\n    for (int y = 0; y < 4; ++y) {\n        for (int prev_dir = 0; prev_dir < 2; ++prev_dir) {\n            for (int started = 0; started < 2; ++started) {\n                ans += dp[n][y][t][t - 1][prev_dir][started];\n            }\n        }\n    }\n    cout << ans << endl;\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <cstring>\nusing namespace std;\n\nint n, t;\nlong long dp[21][5][5][11][11];\n\nlong long solve(int pos, int prev_y, int curr_y, int peaks, int valleys) {\n    if (pos == n) {\n        return (peaks == t && valleys == t - 1) ? 1 : 0;\n    }\n    if (dp[pos][prev_y][curr_y][peaks][valleys] != -1) {\n        return dp[pos][prev_y][curr_y][peaks][valleys];\n    }\n    long long res = 0;\n    for (int next_y = 1; next_y <= 4; next_y++) {\n        if (next_y == curr_y) continue;\n        int new_peaks = peaks;\n        int new_valleys = valleys;\n        if (pos >= 2) {\n            if (prev_y < curr_y && curr_y > next_y) {\n                new_peaks++;\n            } else if (prev_y > curr_y && curr_y < next_y) {\n                new_valleys++;\n            }\n        }\n        if (new_peaks > t || new_valleys > t - 1) continue;\n        res += solve(pos + 1, curr_y, next_y, new_peaks, new_valleys);\n    }\n    return dp[pos][prev_y][curr_y][peaks][valleys] = res;\n}\n\nint main() {\n    cin >> n >> t;\n    memset(dp, -1, sizeof(dp));\n    long long ans = 0;\n    for (int y1 = 1; y1 <= 4; y1++) {\n        for (int y2 = 1; y2 <= 4; y2++) {\n            if (y1 == y2) continue;\n            ans += solve(2, y1, y2, 0, 0);\n        }\n    }\n    cout << ans << endl;\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main() {\n    int n, t;\n    cin >> n >> t;\n    if (n < 3) {\n        cout << 0 << endl;\n        return 0;\n    }\n    vector<vector<vector<vector<int>>>> dp(n+1, vector<vector<vector<int>>>(5, vector<vector<int>>(5, vector<int>(11))));\n    for (int a = 1; a <= 4; a++) {\n        for (int b = 1; b <= 4; b++) {\n            if (a == b) continue;\n            int h = 0, v = 0;\n            dp[2][a][b][h][v] = 1;\n        }\n    }\n    for (int i = 2; i < n; i++) {\n        for (int a = 1; a <= 4; a++) {\n            for (int b = 1; b <= 4; b++) {\n                for (int h = 0; h <= t; h++) {\n                    for (int v = 0; v <= t-1; v++) {\n                        if (dp[i][a][b][h][v] == 0) continue;\n                        for (int c = 1; c <= 4; c++) {\n                            if (b == c) continue;\n                            int new_h = h, new_v = v;\n                            if (a < b && b > c) new_h++;\n                            if (a > b && b < c) new_v++;\n                            if (new_h > t || new_v > t-1) continue;\n                            dp[i+1][b][c][new_h][new_v] += dp[i][a][b][h][v];\n                        }\n                    }\n                }\n            }\n        }\n    }\n    int ans = 0;\n    for (int a = 1; a <= 4; a++) {\n        for (int b = 1; b <= 4; b++) {\n            if (a == b) continue;\n            ans += dp[n][a][b][t][t-1];\n        }\n    }\n    cout << ans << endl;\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <cstring>\nusing namespace std;\n\nint n, t;\nlong long dp[21][4][4][11][11];\n\nint main() {\n    cin >> n >> t;\n    if (n < 3) {\n        cout << 0 << endl;\n        return 0;\n    }\n    memset(dp, 0, sizeof(dp));\n    for (int y1 = 1; y1 <= 4; y1++) {\n        for (int y2 = 1; y2 <= 4; y2++) {\n            if (y1 == y2) continue;\n            int h = 0, v = 0;\n            dp[2][y1][y2][h][v] = 1;\n        }\n    }\n    for (int i = 2; i < n; i++) {\n        for (int y_prev_prev = 1; y_prev_prev <= 4; y_prev_prev++) {\n            for (int y_prev = 1; y_prev <= 4; y_prev++) {\n                if (y_prev_prev == y_prev) continue;\n                for (int h = 0; h <= t; h++) {\n                    for (int v = 0; v <= t; v++) {\n                        if (dp[i][y_prev_prev][y_prev][h][v] == 0) continue;\n                        for (int y_curr = 1; y_curr <= 4; y_curr++) {\n                            if (y_prev == y_curr) continue;\n                            int new_h = h, new_v = v;\n                            if (y_prev > y_prev_prev && y_prev > y_curr) {\n                                new_h++;\n                            } else if (y_prev < y_prev_prev && y_prev < y_curr) {\n                                new_v++;\n                            }\n                            if (new_h > t || new_v > t) continue;\n                            dp[i+1][y_prev][y_curr][new_h][new_v] += dp[i][y_prev_prev][y_prev][h][v];\n                        }\n                    }\n                }\n            }\n        }\n    }\n    long long ans = 0;\n    for (int y_prev_prev = 1; y_prev_prev <= 4; y_prev_prev++) {\n        for (int y_prev = 1; y_prev <= 4; y_prev++) {\n            if (y_prev_prev == y_prev) continue;\n            ans += dp[n][y_prev_prev][y_prev][t][t-1];\n        }\n    }\n    cout << ans << endl;\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 8,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <cstring>\nusing namespace std;\n\nint n, t;\nlong long dp[21][5][5][11][11];\n\nint main() {\n    cin >> n >> t;\n    memset(dp, 0, sizeof(dp));\n    for (int y1 = 1; y1 <= 4; y1++) {\n        for (int y2 = 1; y2 <= 4; y2++) {\n            if (y1 == y2) continue;\n            dp[2][y1][y2][0][0] = 1;\n        }\n    }\n    for (int i = 2; i < n; i++) {\n        for (int y_prev = 1; y_prev <= 4; y_prev++) {\n            for (int y_curr = 1; y_curr <= 4; y_curr++) {\n                if (y_prev == y_curr) continue;\n                for (int humps = 0; humps <= t; humps++) {\n                    for (int valleys = 0; valleys <= t - 1; valleys++) {\n                        if (dp[i][y_prev][y_curr][humps][valleys] == 0) continue;\n                        for (int y_next = 1; y_next <= 4; y_next++) {\n                            if (y_curr == y_next) continue;\n                            int new_humps = humps;\n                            int new_valleys = valleys;\n                            if (y_prev < y_curr && y_curr > y_next) {\n                                new_humps++;\n                            } else if (y_prev > y_curr && y_curr < y_next) {\n                                new_valleys++;\n                            }\n                            if (new_humps > t || new_valleys > t - 1) continue;\n                            dp[i + 1][y_curr][y_next][new_humps][new_valleys] += dp[i][y_prev][y_curr][humps][valleys];\n                        }\n                    }\n                }\n            }\n        }\n    }\n    long long ans = 0;\n    for (int y_prev = 1; y_prev <= 4; y_prev++) {\n        for (int y_curr = 1; y_curr <= 4; y_curr++) {\n            if (y_prev == y_curr) continue;\n            ans += dp[n][y_prev][y_curr][t][t - 1];\n        }\n    }\n    cout << ans << endl;\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 9,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <cstring>\nusing namespace std;\n\nint n, t;\nlong long dp[21][5][5][11][11];\n\nint main() {\n    cin >> n >> t;\n    if (t == 0) {\n        cout << 0 << endl;\n        return 0;\n    }\n    memset(dp, 0, sizeof(dp));\n    for (int y1 = 1; y1 <= 4; y1++) {\n        for (int y2 = 1; y2 <= 4; y2++) {\n            if (y1 == y2) continue;\n            int h = 0, l = 0;\n            dp[2][y1][y2][h][l] = 1;\n        }\n    }\n    for (int i = 2; i < n; i++) {\n        for (int y_prev = 1; y_prev <= 4; y_prev++) {\n            for (int y_curr = 1; y_curr <= 4; y_curr++) {\n                if (y_prev == y_curr) continue;\n                for (int h = 0; h <= t; h++) {\n                    for (int l = 0; l <= t - 1; l++) {\n                        if (dp[i][y_prev][y_curr][h][l] == 0) continue;\n                        for (int y_next = 1; y_next <= 4; y_next++) {\n                            if (y_curr == y_next) continue;\n                            int new_h = h, new_l = l;\n                            if (y_prev < y_curr && y_curr > y_next) new_h++;\n                            else if (y_prev > y_curr && y_curr < y_next) new_l++;\n                            if (new_h > t || new_l > t - 1) continue;\n                            dp[i + 1][y_curr][y_next][new_h][new_l] += dp[i][y_prev][y_curr][h][l];\n                        }\n                    }\n                }\n            }\n        }\n    }\n    long long ans = 0;\n    for (int y_prev = 1; y_prev <= 4; y_prev++) {\n        for (int y_curr = 1; y_curr <= 4; y_curr++) {\n            if (y_prev == y_curr) continue;\n            ans += dp[n][y_prev][y_curr][t][t - 1];\n        }\n    }\n    cout << ans << endl;\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 10,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <cstring>\nusing namespace std;\n\nint n, t;\nlong long dp[21][5][5][11][11];\n\nint main() {\n    cin >> n >> t;\n    memset(dp, 0, sizeof(dp));\n    \n    for (int y1 = 1; y1 <= 4; y1++) {\n        for (int y2 = 1; y2 <= 4; y2++) {\n            if (y1 == y2) continue;\n            dp[2][y1][y2][0][0] = 1;\n        }\n    }\n    \n    for (int i = 2; i < n; i++) {\n        for (int prev_prev = 1; prev_prev <= 4; prev_prev++) {\n            for (int prev = 1; prev <= 4; prev++) {\n                if (prev_prev == prev) continue;\n                for (int humps = 0; humps <= t; humps++) {\n                    for (int valleys = 0; valleys <= t - 1; valleys++) {\n                        if (dp[i][prev_prev][prev][humps][valleys] == 0) continue;\n                        for (int curr = 1; curr <= 4; curr++) {\n                            if (prev == curr) continue;\n                            int new_humps = humps;\n                            int new_valleys = valleys;\n                            if (prev > prev_prev && prev > curr) {\n                                new_humps++;\n                            } else if (prev < prev_prev && prev < curr) {\n                                new_valleys++;\n                            }\n                            if (new_humps > t || new_valleys > t - 1) continue;\n                            dp[i + 1][prev][curr][new_humps][new_valleys] += dp[i][prev_prev][prev][humps][valleys];\n                        }\n                    }\n                }\n            }\n        }\n    }\n    \n    long long ans = 0;\n    for (int prev_prev = 1; prev_prev <= 4; prev_prev++) {\n        for (int prev = 1; prev <= 4; prev++) {\n            if (prev_prev == prev) continue;\n            ans += dp[n][prev_prev][prev][t][t - 1];\n        }\n    }\n    cout << ans << endl;\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 11,
+                "message": {
+                    "content": "```cpp\n#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n, t;\n    cin >> n >> t;\n    if (n < 3) {\n        cout << 0 << endl;\n        return 0;\n    }\n    int m = n - 2;\n    if (m < 0) {\n        cout << 0 << endl;\n        return 0;\n    }\n    // dp[pos][prev_y][humps][dips]\n    long long dp[21][5][11][11];\n    memset(dp, 0, sizeof(dp));\n    for (int y = 1; y <= 4; y++) {\n        dp[1][y][0][0] = 1;\n    }\n    for (int pos = 1; pos <= m; pos++) {\n        for (int prev_y = 1; prev_y <= 4; prev_y++) {\n            for (int h = 0; h <= t; h++) {\n                for (int d = 0; d <= t; d++) {\n                    if (dp[pos][prev_y][h][d] == 0) continue;\n                    for (int curr_y = 1; curr_y <= 4; curr_y++) {\n                        if (curr_y == prev_y) continue;\n                        int new_h = h;\n                        int new_d = d;\n                        if (pos >= 2) {\n                            int prev_prev_y = prev_y;\n                            if (prev_prev_y < prev_y && prev_y > curr_y) {\n                                new_h++;\n                            } else if (prev_prev_y > prev_y && prev_y < curr_y) {\n                                new_d++;\n                            }\n                        }\n                        if (new_h > t || new_d > t) continue;\n                        dp[pos + 1][curr_y][new_h][new_d] += dp[pos][prev_y][h][d];\n                    }\n                }\n            }\n        }\n    }\n    long long ans = 0;\n    for (int y = 1; y <= 4; y++) {\n        ans += dp[m + 1][y][t][t - 1];\n    }\n    cout << ans << endl;\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 12,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <cstring>\nusing namespace std;\n\nint n, t;\nlong long dp[21][5][5][11][11];\n\nint main() {\n    cin >> n >> t;\n    if (n < 3 || t > n - 2 || t < 1) {\n        cout << 0 << endl;\n        return 0;\n    }\n    memset(dp, 0, sizeof(dp));\n    for (int y1 = 1; y1 <= 4; y1++) {\n        for (int y2 = 1; y2 <= 4; y2++) {\n            if (y1 == y2) continue;\n            dp[2][y1][y2][0][0] = 1;\n        }\n    }\n    for (int i = 2; i < n; i++) {\n        for (int prev_prev = 1; prev_prev <= 4; prev_prev++) {\n            for (int prev = 1; prev <= 4; prev++) {\n                if (prev_prev == prev) continue;\n                for (int humps = 0; humps <= t; humps++) {\n                    for (int valleys = 0; valleys <= t - 1; valleys++) {\n                        if (dp[i][prev_prev][prev][humps][valleys] == 0) continue;\n                        for (int curr = 1; curr <= 4; curr++) {\n                            if (prev == curr) continue;\n                            int new_humps = humps;\n                            int new_valleys = valleys;\n                            if (i >= 2) {\n                                if (prev_prev < prev && prev > curr) {\n                                    new_humps++;\n                                } else if (prev_prev > prev && prev < curr) {\n                                    new_valleys++;\n                                }\n                            }\n                            if (new_humps > t || new_valleys > t - 1) continue;\n                            dp[i + 1][prev][curr][new_humps][new_valleys] += dp[i][prev_prev][prev][humps][valleys];\n                        }\n                    }\n                }\n            }\n        }\n    }\n    long long ans = 0;\n    for (int prev_prev = 1; prev_prev <= 4; prev_prev++) {\n        for (int prev = 1; prev <= 4; prev++) {\n            if (prev_prev == prev) continue;\n            ans += dp[n][prev_prev][prev][t][t - 1];\n        }\n    }\n    cout << ans << endl;\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 13,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <cstring>\nusing namespace std;\n\nint n, t;\nlong long dp[21][5][5][11][11];\n\nint main() {\n    cin >> n >> t;\n    memset(dp, 0, sizeof(dp));\n    for (int y1 = 1; y1 <= 4; y1++) {\n        for (int y2 = 1; y2 <= 4; y2++) {\n            if (y1 != y2) {\n                dp[2][y1][y2][0][0] = 1;\n            }\n        }\n    }\n    for (int i = 2; i < n; i++) {\n        for (int y_prev = 1; y_prev <= 4; y_prev++) {\n            for (int y_curr = 1; y_curr <= 4; y_curr++) {\n                if (y_prev == y_curr) continue;\n                for (int humps = 0; humps <= t; humps++) {\n                    for (int valleys = 0; valleys <= t; valleys++) {\n                        if (dp[i][y_prev][y_curr][humps][valleys] == 0) continue;\n                        for (int y_next = 1; y_next <= 4; y_next++) {\n                            if (y_curr == y_next) continue;\n                            int new_humps = humps;\n                            int new_valleys = valleys;\n                            if (y_prev < y_curr && y_curr > y_next) {\n                                new_humps++;\n                            } else if (y_prev > y_curr && y_curr < y_next) {\n                                new_valleys++;\n                            }\n                            if (new_humps <= t && new_valleys <= t) {\n                                dp[i+1][y_curr][y_next][new_humps][new_valleys] += dp[i][y_prev][y_curr][humps][valleys];\n                            }\n                        }\n                    }\n                }\n            }\n        }\n    }\n    long long ans = 0;\n    for (int y_prev = 1; y_prev <= 4; y_prev++) {\n        for (int y_curr = 1; y_curr <= 4; y_curr++) {\n            if (y_prev != y_curr) {\n                ans += dp[n][y_prev][y_curr][t][t-1];\n            }\n        }\n    }\n    cout << ans << endl;\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 14,
+                "message": {
+                    "content": "```cpp\n#include <bits/stdc++.h>\nusing namespace std;\n\nint n, t;\nint dp[21][5][5][11][11];\n\nint main() {\n    cin >> n >> t;\n    memset(dp, 0, sizeof(dp));\n    for (int y1 = 1; y1 <= 4; y1++)\n        for (int y2 = 1; y2 <= 4; y2++)\n            if (y1 != y2)\n                dp[2][y2][y1][0][0] = 1;\n    for (int i = 2; i < n; i++) {\n        for (int y = 1; y <= 4; y++) {\n            for (int py = 1; py <= 4; py++) {\n                if (y == py) continue;\n                for (int h = 0; h <= t; h++) {\n                    for (int v = 0; v <= t - 1; v++) {\n                        if (dp[i][y][py][h][v] == 0) continue;\n                        for (int ny = 1; ny <= 4; ny++) {\n                            if (ny == y) continue;\n                            int nh = h, nv = v;\n                            if (py < y && y > ny) nh++;\n                            else if (py > y && y < ny) nv++;\n                            if (nh <= t && nv <= t - 1)\n                                dp[i + 1][ny][y][nh][nv] += dp[i][y][py][h][v];\n                        }\n                    }\n                }\n            }\n        }\n    }\n    int ans = 0;\n    for (int y = 1; y <= 4; y++)\n        for (int py = 1; py <= 4; py++)\n            if (y != py)\n                ans += dp[n][y][py][t][t - 1];\n    cout << ans << endl;\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 15,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <cstring>\n\nusing namespace std;\n\nint n, t;\nlong long dp[21][5][5][11][11];\n\nint main() {\n    cin >> n >> t;\n    if (n < 3) {\n        cout << 0 << endl;\n        return 0;\n    }\n    memset(dp, 0, sizeof(dp));\n    for (int y1 = 1; y1 <= 4; y1++) {\n        for (int y2 = 1; y2 <= 4; y2++) {\n            if (y1 == y2) continue;\n            dp[2][y1][y2][0][0] = 1;\n        }\n    }\n    for (int i = 2; i < n; i++) {\n        for (int y_prev_prev = 1; y_prev_prev <= 4; y_prev_prev++) {\n            for (int y_prev = 1; y_prev <= 4; y_prev++) {\n                if (y_prev_prev == y_prev) continue;\n                for (int humps = 0; humps <= t; humps++) {\n                    for (int valleys = 0; valleys <= t; valleys++) {\n                        if (dp[i][y_prev_prev][y_prev][humps][valleys] == 0) continue;\n                        for (int y_curr = 1; y_curr <= 4; y_curr++) {\n                            if (y_prev == y_curr) continue;\n                            int new_humps = humps;\n                            int new_valleys = valleys;\n                            if (y_prev > y_prev_prev && y_prev > y_curr) {\n                                new_humps++;\n                            } else if (y_prev < y_prev_prev && y_prev < y_curr) {\n                                new_valleys++;\n                            }\n                            if (new_humps > t || new_valleys > t) continue;\n                            dp[i+1][y_prev][y_curr][new_humps][new_valleys] += dp[i][y_prev_prev][y_prev][humps][valleys];\n                        }\n                    }\n                }\n            }\n        }\n    }\n    long long ans = 0;\n    for (int y_prev_prev = 1; y_prev_prev <= 4; y_prev_prev++) {\n        for (int y_prev = 1; y_prev <= 4; y_prev++) {\n            if (y_prev_prev == y_prev) continue;\n            ans += dp[n][y_prev_prev][y_prev][t][t-1];\n        }\n    }\n    cout << ans << endl;\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 16,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <cstring>\nusing namespace std;\n\nint n, t;\nlong long dp[21][4][11][11][2];\n\nlong long solve(int pos, int prev_y, int humps, int valleys, int last_dir) {\n    if (humps > t || valleys > t - 1) return 0;\n    if (pos == n) {\n        return (humps == t && valleys == t - 1) ? 1 : 0;\n    }\n    long long &res = dp[pos][prev_y][humps][valleys][last_dir];\n    if (res != -1) return res;\n    res = 0;\n    for (int y = 0; y < 4; y++) {\n        if (y == prev_y) continue;\n        int dir = (y > prev_y) ? 1 : 0;\n        int new_humps = humps, new_valleys = valleys;\n        if (pos >= 2) {\n            if (last_dir == 1 && dir == 0) new_humps++;\n            if (last_dir == 0 && dir == 1) new_valleys++;\n        }\n        res += solve(pos + 1, y, new_humps, new_valleys, dir);\n    }\n    return res;\n}\n\nint main() {\n    cin >> n >> t;\n    memset(dp, -1, sizeof(dp));\n    long long ans = 0;\n    for (int y1 = 0; y1 < 4; y1++) {\n        for (int y2 = 0; y2 < 4; y2++) {\n            if (y1 == y2) continue;\n            int dir = (y2 > y1) ? 1 : 0;\n            ans += solve(2, y2, 0, 0, dir);\n        }\n    }\n    cout << ans << endl;\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 17,
+                "message": {
+                    "content": "```cpp\n#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n, t;\n    cin >> n >> t;\n    if (n < 3) {\n        cout << 0 << endl;\n        return 0;\n    }\n    long long dp[21][5][5][11][11];\n    memset(dp, 0, sizeof(dp));\n    for (int y1 = 1; y1 <= 4; y1++) {\n        for (int y2 = 1; y2 <= 4; y2++) {\n            if (y1 == y2) continue;\n            dp[2][y1][y2][0][0] = 1;\n        }\n    }\n    for (int i = 2; i < n; i++) {\n        for (int y_prev_prev = 1; y_prev_prev <= 4; y_prev_prev++) {\n            for (int y_prev = 1; y_prev <= 4; y_prev++) {\n                if (y_prev_prev == y_prev) continue;\n                for (int h = 0; h <= t; h++) {\n                    for (int v = 0; v <= t - 1; v++) {\n                        if (dp[i][y_prev_prev][y_prev][h][v] == 0) continue;\n                        for (int y_curr = 1; y_curr <= 4; y_curr++) {\n                            if (y_prev == y_curr) continue;\n                            int new_h = h;\n                            int new_v = v;\n                            if (y_prev > y_prev_prev && y_prev > y_curr) {\n                                new_h++;\n                            } else if (y_prev < y_prev_prev && y_prev < y_curr) {\n                                new_v++;\n                            }\n                            if (new_h > t || new_v > t - 1) continue;\n                            dp[i + 1][y_prev][y_curr][new_h][new_v] += dp[i][y_prev_prev][y_prev][h][v];\n                        }\n                    }\n                }\n            }\n        }\n    }\n    long long ans = 0;\n    for (int y_prev_prev = 1; y_prev_prev <= 4; y_prev_prev++) {\n        for (int y_prev = 1; y_prev <= 4; y_prev++) {\n            if (y_prev_prev == y_prev) continue;\n            ans += dp[n][y_prev_prev][y_prev][t][t - 1];\n        }\n    }\n    cout << ans << endl;\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 18,
+                "message": {
+                    "content": "```cpp\n#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n, t;\n    cin >> n >> t;\n    if (n < 3) {\n        cout << 0 << endl;\n        return 0;\n    }\n    int m = n - 2;\n    if (t > m || t < 0) {\n        cout << 0 << endl;\n        return 0;\n    }\n    int max_t = m;\n    vector<vector<vector<vector<long long>>>> dp(\n        m + 1,\n        vector<vector<vector<long long>>>(\n            5,\n            vector<vector<long long>>(\n                max_t + 1,\n                vector<long long>(2, 0)\n            )\n        )\n    );\n    for (int y_prev = 1; y_prev <= 4; ++y_prev) {\n        for (int y_curr = 1; y_curr <= 4; ++y_curr) {\n            if (y_curr == y_prev) continue;\n            int delta = (y_curr > y_prev) ? 1 : 0;\n            dp[1][y_curr][0][delta] += 1;\n        }\n    }\n    for (int i = 1; i < m; ++i) {\n        for (int y_curr = 1; y_curr <= 4; ++y_curr) {\n            for (int cnt = 0; cnt <= max_t; ++cnt) {\n                for (int delta = 0; delta <= 1; ++delta) {\n                    if (dp[i][y_curr][cnt][delta] == 0) continue;\n                    for (int y_next = 1; y_next <= 4; ++y_next) {\n                        if (y_next == y_curr) continue;\n                        int new_delta = (y_next > y_curr) ? 1 : 0;\n                        int new_cnt = cnt;\n                        if (delta == 1 && new_delta == 0) {\n                            new_cnt++;\n                            if (new_cnt > max_t) continue;\n                        }\n                        dp[i + 1][y_next][new_cnt][new_delta] += dp[i][y_curr][cnt][delta];\n                    }\n                }\n            }\n        }\n    }\n    long long ans = 0;\n    for (int y = 1; y <= 4; ++y) {\n        for (int delta = 0; delta <= 1; ++delta) {\n            ans += dp[m][y][t][delta];\n        }\n    }\n    cout << ans << endl;\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 19,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <cstring>\nusing namespace std;\n\nint n, t;\nlong long dp[21][5][5][11][11]; // dp[pos][prev_prev][prev][humps][valleys]\n\nint main() {\n    cin >> n >> t;\n    if (n < 3) {\n        cout << 0 << endl;\n        return 0;\n    }\n    memset(dp, 0, sizeof(dp));\n    \n    // Initialize for position 2 (second element)\n    for (int y2 = 1; y2 <= 4; ++y2) {\n        for (int y1 = 1; y1 <= 4; ++y1) {\n            if (y1 != y2) {\n                dp[2][y1][y2][0][0] = 1;\n            }\n        }\n    }\n    \n    for (int pos = 2; pos < n; ++pos) {\n        for (int y_prev_prev = 1; y_prev_prev <= 4; ++y_prev_prev) {\n            for (int y_prev = 1; y_prev <= 4; ++y_prev) {\n                for (int h = 0; h <= t; ++h) {\n                    for (int v = 0; v <= t-1; ++v) {\n                        if (dp[pos][y_prev_prev][y_prev][h][v] == 0) continue;\n                        for (int y_curr = 1; y_curr <= 4; ++y_curr) {\n                            if (y_curr == y_prev) continue; // No horizontal segments\n                            int new_h = h;\n                            int new_v = v;\n                            if (pos >= 2) { // Check for peak or valley at y_prev\n                                if (y_prev_prev < y_prev && y_prev > y_curr) {\n                                    new_h++;\n                                } else if (y_prev_prev > y_prev && y_prev < y_curr) {\n                                    new_v++;\n                                }\n                            }\n                            if (new_h > t || new_v > t-1) continue;\n                            dp[pos+1][y_prev][y_curr][new_h][new_v] += dp[pos][y_prev_prev][y_prev][h][v];\n                        }\n                    }\n                }\n            }\n        }\n    }\n    \n    long long ans = 0;\n    for (int y_prev_prev = 1; y_prev_prev <= 4; ++y_prev_prev) {\n        for (int y_prev = 1; y_prev <= 4; ++y_prev) {\n            ans += dp[n][y_prev_prev][y_prev][t][t-1];\n        }\n    }\n    cout << ans << endl;\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 11409,
+            "prompt_tokens": 554,
+            "total_tokens": 11963
+        },
+        "prompt": "Write a program in C++ to solve this programming problem:\nDescription: Bob likes to draw camels: with a single hump, two humps, three humps, etc. He draws a camel by connecting points on a coordinate plane. Now he's drawing camels with t humps, representing them as polylines in the plane. Each polyline consists of n vertices with coordinates (x1,\u2009y1), (x2,\u2009y2), ..., (xn,\u2009yn). The first vertex has a coordinate x1\u2009=\u20091, the second \u2014 x2\u2009=\u20092, etc. Coordinates yi might be any, but should satisfy the following conditions:  there should be t humps precisely, i.e. such indexes j (2\u2009\u2264\u2009j\u2009\u2264\u2009n\u2009-\u20091), so that yj\u2009-\u20091\u2009&lt;\u2009yj\u2009&gt;\u2009yj\u2009+\u20091,  there should be precisely t\u2009-\u20091 such indexes j (2\u2009\u2264\u2009j\u2009\u2264\u2009n\u2009-\u20091), so that yj\u2009-\u20091\u2009&gt;\u2009yj\u2009&lt;\u2009yj\u2009+\u20091,  no segment of a polyline should be parallel to the Ox-axis,  all yi are integers between 1 and 4. For a series of his drawings of camels with t humps Bob wants to buy a notebook, but he doesn't know how many pages he will need. Output the amount of different polylines that can be drawn to represent camels with t humps for a given number n.\nInput Specification: The first line contains a pair of integers n and t (3\u2009\u2264\u2009n\u2009\u2264\u200920, 1\u2009\u2264\u2009t\u2009\u2264\u200910).\nOutput Specification: Output the required amount of camels with t humps.\n\nSample Input:\n6 1\nSample Output:\n6\n\nSample Input:\n4 2\nSample Output:\n0\n\nNotes: NoteIn the first sample test sequences of y-coordinates for six camels are: 123421, 123431, 123432, 124321, 134321 \u0438 234321 (each digit corresponds to one value of yi).\nTake input from standard input and output to standard output\nProvide the C++ code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "6d67559744583229455c5eafe68f7952",
+        "difficulty": 1900,
+        "prob_desc_sample_inputs": [
+            "6 1",
+            "4 2"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "dp"
+        ],
+        "prob_desc_output_spec": "Output the required amount of camels with t humps.",
+        "prob_desc_input_spec": "The first line contains a pair of integers n and t (3\u2009\u2264\u2009n\u2009\u2264\u200920, 1\u2009\u2264\u2009t\u2009\u2264\u200910).",
+        "lang_cluster": "C++",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first sample test sequences of y-coordinates for six camels are: 123421, 123431, 123432, 124321, 134321 \u0438 234321 (each digit corresponds to one value of yi).",
+        "prob_desc_memory_limit": "64 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Bob likes to draw camels: with a single hump, two humps, three humps, etc. He draws a camel by connecting points on a coordinate plane. Now he's drawing camels with t humps, representing them as polylines in the plane. Each polyline consists of n vertices with coordinates (x1,\u2009y1), (x2,\u2009y2), ..., (xn,\u2009yn). The first vertex has a coordinate x1\u2009=\u20091, the second \u2014 x2\u2009=\u20092, etc. Coordinates yi might be any, but should satisfy the following conditions:  there should be t humps precisely, i.e. such indexes j (2\u2009\u2264\u2009j\u2009\u2264\u2009n\u2009-\u20091), so that yj\u2009-\u20091\u2009&lt;\u2009yj\u2009&gt;\u2009yj\u2009+\u20091,  there should be precisely t\u2009-\u20091 such indexes j (2\u2009\u2264\u2009j\u2009\u2264\u2009n\u2009-\u20091), so that yj\u2009-\u20091\u2009&gt;\u2009yj\u2009&lt;\u2009yj\u2009+\u20091,  no segment of a polyline should be parallel to the Ox-axis,  all yi are integers between 1 and 4. For a series of his drawings of camels with t humps Bob wants to buy a notebook, but he doesn't know how many pages he will need. Output the amount of different polylines that can be drawn to represent camels with t humps for a given number n.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1274283000",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "6",
+            "0"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"6 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"4 2\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 1\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"3 2\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 3\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 10\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"4 1\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"4 3\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"4 9\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"5 2\\r\\n\", \"output\": [\"70\"]}, {\"input\": \"5 3\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 5\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 9\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 10\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"6 2\\r\\n\", \"output\": [\"232\"]}, {\"input\": \"6 3\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6 4\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6 10\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"19 1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"19 2\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"19 3\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"19 4\\r\\n\", \"output\": [\"32632\"]}, {\"input\": \"19 5\\r\\n\", \"output\": [\"4594423\"]}, {\"input\": \"19 6\\r\\n\", \"output\": [\"69183464\"]}, {\"input\": \"19 7\\r\\n\", \"output\": [\"197939352\"]}, {\"input\": \"19 8\\r\\n\", \"output\": [\"109824208\"]}, {\"input\": \"19 9\\r\\n\", \"output\": [\"5846414\"]}, {\"input\": \"19 10\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"20 1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"20 2\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"20 3\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"20 4\\r\\n\", \"output\": [\"12628\"]}, {\"input\": \"20 5\\r\\n\", \"output\": [\"3715462\"]}, {\"input\": \"20 6\\r\\n\", \"output\": [\"96046590\"]}, {\"input\": \"20 7\\r\\n\", \"output\": [\"468541040\"]}, {\"input\": \"20 8\\r\\n\", \"output\": [\"503245466\"]}, {\"input\": \"20 9\\r\\n\", \"output\": [\"90700276\"]}, {\"input\": \"20 10\\r\\n\", \"output\": [\"0\"]}]"
+    }
+}

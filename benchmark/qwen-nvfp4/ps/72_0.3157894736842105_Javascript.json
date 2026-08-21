@@ -1,0 +1,390 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-bcd64e05ab5570bc",
+        "created": 1787080930,
+        "model": "qwen-nvfp4",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.27.1-d7a14dad",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n    if (lines.length === 2) {\n        const n = parseInt(lines[0]);\n        const arr = lines[1].split(' ').map(Number);\n        \n        // Count initial ones\n        let initialOnes = 0;\n        for (let i = 0; i < n; i++) {\n            if (arr[i] === 1) initialOnes++;\n        }\n        \n        // We need to find the maximum gain from flipping a contiguous subarray.\n        // Flipping a 0 to 1 gives +1, flipping a 1 to 0 gives -1.\n        // So we want to find the subarray with maximum sum where 0 -> 1 and 1 -> -1.\n        // This is equivalent to finding the maximum subarray sum of an array b where:\n        // b[i] = 1 if arr[i] == 0, -1 if arr[i] == 1\n        \n        let maxGain = 0; // At minimum, we can flip a segment that doesn't change anything (if we choose a single element and it's already optimal, but we must flip exactly one segment)\n        // Actually, we must flip exactly one segment. The gain can be negative, but we want max ones.\n        // Let's use Kadane's algorithm to find max subarray sum of b.\n        \n        let currentSum = 0;\n        let maxSubarraySum = -Infinity;\n        \n        for (let i = 0; i < n; i++) {\n            const val = (arr[i] === 0) ? 1 : -1;\n            currentSum = Math.max(val, currentSum + val);\n            if (currentSum > maxSubarraySum) {\n                maxSubarraySum = currentSum;\n            }\n        }\n        \n        // The maximum number of ones after flipping is initialOnes + maxSubarraySum\n        const result = initialOnes + maxSubarraySum;\n        console.log(result);\n        rl.close();\n    }\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nlet lines = [];\nlet lineCount = 0;\n\nrl.on('line', function (line) {\n    lines.push(line);\n    lineCount++;\n    if (lineCount === 2) {\n        const n = parseInt(lines[0]);\n        const arr = lines[1].split(' ').map(Number);\n        \n        // Count initial ones\n        let ones = 0;\n        for (let i = 0; i < n; i++) {\n            if (arr[i] === 1) ones++;\n        }\n        \n        // We need to find a segment [i, j] to flip that maximizes the number of ones.\n        // Flipping a segment changes 0s to 1s and 1s to 0s.\n        // Let gain = (number of 0s in segment) - (number of 1s in segment)\n        // We want to maximize gain.\n        // This is equivalent to finding the maximum subarray sum where:\n        // - 0 contributes +1\n        // - 1 contributes -1\n        \n        let maxGain = 0;\n        let currentGain = 0;\n        \n        for (let i = 0; i < n; i++) {\n            // If arr[i] is 0, flipping it gives +1 (gain)\n            // If arr[i] is 1, flipping it gives -1 (loss)\n            let val = arr[i] === 0 ? 1 : -1;\n            \n            currentGain += val;\n            if (currentGain < 0) {\n                currentGain = 0;\n            }\n            if (currentGain > maxGain) {\n                maxGain = currentGain;\n            }\n        }\n        \n        // The maximum number of ones after one move is initial ones + maxGain\n        // Note: We must do exactly one move. If maxGain is 0, it means we can't improve,\n        // but we still have to flip something. However, if maxGain is 0, it means\n        // the best we can do is not change the count (or we flip a segment with equal 0s and 1s).\n        // Actually, if all elements are 1, we must flip at least one, so we lose one.\n        // Let's re-evaluate: The problem says \"exactly one move\".\n        // If the array is all 1s, we must flip a segment. The best is to flip a single element,\n        // so we lose 1. So the answer would be n - 1.\n        // In our Kadane's algorithm approach, if all are 1s, val is always -1.\n        // currentGain will be 0 (reset every time), maxGain will be 0.\n        // So ones + maxGain = n + 0 = n. But that's wrong because we must flip.\n        \n        // Wait, let's think about this more carefully.\n        // If we flip a segment, the change in the number of ones is:\n        // (zeros in segment) - (ones in segment)\n        // We want to maximize this change.\n        // If the maximum change is negative, we still have to pick the least negative one?\n        // No, we can always pick a segment of length 1.\n        // If we pick a segment with a single 0, change is +1.\n        // If we pick a segment with a single 1, change is -1.\n        // So if there's at least one 0, we can get a positive or zero gain.\n        // If there are no 0s (all 1s), we must flip a 1, so gain is -1.\n        \n        // Let's check: if maxGain is 0, does it mean we can achieve 0 change?\n        // Yes, if there's a segment with equal 0s and 1s, or if we flip a segment that results in 0 net change.\n        // But if all are 1s, the best we can do is -1.\n        \n        // Actually, the standard approach for this problem is:\n        // Find the maximum subarray sum where 0 -> 1, 1 -> -1.\n        // If the maximum sum is negative, we still have to take the least negative (i.e., the maximum value, which is the closest to 0).\n        // But wait, if all are 1s, the values are all -1. The max subarray sum is -1 (single element).\n        // So maxGain would be -1 in that case.\n        \n        // Let's redo the Kadane's to allow negative values if all are negative.\n        \n        let maxGain2 = -Infinity;\n        let currentGain2 = 0;\n        \n        for (let i = 0; i < n; i++) {\n            let val = arr[i] === 0 ? 1 : -1;\n            currentGain2 += val;\n            if (currentGain2 > maxGain2) {\n                maxGain2 = currentGain2;\n            }\n            if (currentGain2 < 0) {\n                currentGain2 = 0;\n            }\n        }\n        \n        // If maxGain2 is still -Infinity, it means n=0, but n>=1.\n        // If all values are -1, currentGain2 will be -1, then reset to 0. maxGain2 will be -1.\n        // So maxGain2 will be the maximum subarray sum, which can be negative.\n        \n        let result = ones + maxGain2;\n        \n        console.log(result);\n        rl.close();\n    }\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n    if (lines.length === 2) {\n        const n = parseInt(lines[0]);\n        const arr = lines[1].split(' ').map(Number);\n        \n        // Count initial ones\n        let totalOnes = arr.filter(x => x === 1).length;\n        \n        // We need to find the maximum gain from flipping a subarray\n        // Flipping a subarray: ones become zeros, zeros become ones\n        // Gain = (zeros in subarray) - (ones in subarray)\n        // We want to maximize totalOnes + gain\n        // So we want to maximize gain\n        \n        // Transform: for each element, if it's 0, flipping adds 1 (gain +1)\n        // if it's 1, flipping subtracts 1 (gain -1)\n        // So we want to find the maximum subarray sum of the transformed array\n        // where transformed[i] = arr[i] === 0 ? 1 : -1\n        \n        let transformed = arr.map(x => x === 0 ? 1 : -1);\n        \n        // Find maximum subarray sum (Kadane's algorithm)\n        // But we must flip exactly one move, so the subarray must be non-empty\n        let maxGain = transformed[0];\n        let currentMax = transformed[0];\n        \n        for (let i = 1; i < n; i++) {\n            currentMax = Math.max(transformed[i], currentMax + transformed[i]);\n            maxGain = Math.max(maxGain, currentMax);\n        }\n        \n        // The answer is totalOnes + maxGain\n        // But wait, we must do exactly one move. The move can be any subarray including single elements.\n        // Kadane's algorithm with non-empty subarray handles this.\n        \n        console.log(totalOnes + maxGain);\n        rl.close();\n    }\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nlet lines = [];\nlet lineCount = 0;\n\nrl.on('line', function (line) {\n    lines.push(line);\n    lineCount++;\n    if (lineCount === 2) {\n        const n = parseInt(lines[0]);\n        const arr = lines[1].split(' ').map(Number);\n        \n        // Count total ones\n        let totalOnes = 0;\n        for (let i = 0; i < n; i++) {\n            if (arr[i] === 1) totalOnes++;\n        }\n        \n        // We need to find the maximum gain from flipping a subarray.\n        // Flipping a subarray: \n        // - 1s in the subarray become 0s (loss of 1)\n        // - 0s in the subarray become 1s (gain of 1)\n        // Net change = (number of 0s in subarray) - (number of 1s in subarray)\n        // We want to maximize this net change.\n        \n        // Let's map: 1 -> -1, 0 -> +1\n        // Then we want to find the maximum subarray sum of this mapped array.\n        \n        let mapped = arr.map(x => x === 1 ? -1 : 1);\n        \n        // Kadane's algorithm to find max subarray sum\n        let maxSum = mapped[0];\n        let currentSum = mapped[0];\n        \n        for (let i = 1; i < n; i++) {\n            currentSum = Math.max(mapped[i], currentSum + mapped[i]);\n            maxSum = Math.max(maxSum, currentSum);\n        }\n        \n        // The maximum number of ones after one flip is totalOnes + maxSum\n        // But note: we must do exactly one move. If maxSum is negative, we still have to flip.\n        // However, since we can choose any i <= j, the minimum flip is a single element.\n        // If all elements are 1, flipping any single element will reduce the count by 1.\n        // So maxSum would be -1 in that case (flipping a single 1 gives -1).\n        \n        let result = totalOnes + maxSum;\n        \n        console.log(result);\n        rl.close();\n    }\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n    if (lines.length === 2) {\n        const n = parseInt(lines[0]);\n        const arr = lines[1].split(' ').map(Number);\n        \n        // Count initial ones\n        let totalOnes = arr.filter(x => x === 1).length;\n        \n        // We need to find the maximum gain from flipping a contiguous subarray.\n        // Flipping a 0 to 1 gives +1 gain, flipping a 1 to 0 gives -1 gain.\n        // So we want to find the subarray with maximum sum where:\n        // value = 1 if arr[i] === 0, -1 if arr[i] === 1\n        \n        let maxGain = 0; // We must do exactly one move, but the move could be flipping a single element.\n        // Actually, we need to find the maximum subarray sum of the transformed array.\n        // But note: we must flip at least one element (i <= j), so the subarray length is at least 1.\n        \n        let currentSum = 0;\n        let bestGain = -Infinity;\n        \n        for (let i = 0; i < n; i++) {\n            // Transform: 0 -> 1, 1 -> -1\n            let val = arr[i] === 0 ? 1 : -1;\n            \n            // Kadane's algorithm\n            if (i === 0) {\n                currentSum = val;\n            } else {\n                currentSum = Math.max(val, currentSum + val);\n            }\n            \n            if (currentSum > bestGain) {\n                bestGain = currentSum;\n            }\n        }\n        \n        // The maximum number of ones after flipping is totalOnes + bestGain\n        // But wait: if bestGain is negative, we still have to do the move.\n        // However, since we can choose any i <= j, and the gain for flipping a single 1 is -1,\n        // and for flipping a single 0 is +1, the bestGain will be at least 1 if there's any 0,\n        // or -1 if all are 1s.\n        \n        // Actually, let's reconsider. The problem says \"exactly one move\".\n        // So we must flip some non-empty contiguous subarray.\n        // The gain is (number of zeros in subarray) - (number of ones in subarray).\n        // We want to maximize totalOnes + gain.\n        \n        // If bestGain is negative, it means all elements are 1s, and we have to flip at least one,\n        // so the best we can do is flip a single 1, giving gain = -1.\n        \n        let result = totalOnes + bestGain;\n        \n        console.log(result);\n        rl.close();\n    }\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n    if (lines.length === 2) {\n        const n = parseInt(lines[0]);\n        const arr = lines[1].split(' ').map(Number);\n        \n        // Count initial ones\n        let totalOnes = arr.filter(x => x === 1).length;\n        \n        // We need to find the maximum number of ones after flipping exactly one contiguous subarray.\n        // Flipping a subarray [i, j] changes:\n        // - 1s in the subarray become 0s (lose 1s)\n        // - 0s in the subarray become 1s (gain 1s)\n        // Net change = (number of 0s in subarray) - (number of 1s in subarray)\n        // We want to maximize: totalOnes + netChange\n        // Which is equivalent to maximizing: netChange\n        // Let's transform the array: for each element, if it's 0, it contributes +1 to netChange if included; if it's 1, it contributes -1.\n        // So we want to find the maximum subarray sum of the transformed array where:\n        //   transformed[i] = arr[i] === 0 ? 1 : -1\n        // But note: we must flip exactly one subarray. The subarray can be of length at least 1.\n        \n        // However, there's a subtlety: what if flipping a subarray doesn't help? We still have to do exactly one move.\n        // But the problem says \"exactly one move\", so we must choose some i <= j.\n        // The best case might be to flip a single element that is 0 (gaining 1) or a single element that is 1 (losing 1).\n        // But we want to maximize the final number of ones.\n        \n        // Let's use Kadane's algorithm on the transformed array to find the maximum subarray sum.\n        // But we must ensure we pick at least one element.\n        \n        let maxGain = -Infinity;\n        let currentGain = 0;\n        \n        for (let i = 0; i < n; i++) {\n            // If arr[i] is 0, flipping it gives +1 gain; if 1, flipping gives -1 gain.\n            let val = arr[i] === 0 ? 1 : -1;\n            \n            // Start a new subarray or extend\n            if (currentGain < 0) {\n                currentGain = val;\n            } else {\n                currentGain += val;\n            }\n            \n            if (currentGain > maxGain) {\n                maxGain = currentGain;\n            }\n        }\n        \n        // It's possible that maxGain is negative, but we still have to flip something.\n        // The minimum loss would be flipping a single 1 (gain = -1) or if all are 0, we gain positive.\n        // Actually, Kadane's as above handles the case where we must pick at least one element.\n        // But let's verify: if all elements are 1, then val is always -1.\n        // maxGain would be -1 (flipping a single element).\n        // Then totalOnes + maxGain = n - 1, which is correct.\n        \n        let result = totalOnes + maxGain;\n        \n        // Edge case: what if n=0? But n>=1.\n        \n        console.log(result);\n        rl.close();\n    }\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n    if (lines.length === 2) {\n        const n = parseInt(lines[0]);\n        const arr = lines[1].split(' ').map(Number);\n        \n        // Count initial ones\n        let totalOnes = arr.filter(x => x === 1).length;\n        \n        // We need to find the maximum gain from flipping a subarray.\n        // Flipping a 1 to 0 gives -1, flipping a 0 to 1 gives +1.\n        // So we want to find the subarray with maximum sum where:\n        // value = 1 if arr[i] === 0, -1 if arr[i] === 1\n        \n        let maxGain = 0;\n        let currentGain = 0;\n        \n        for (let i = 0; i < n; i++) {\n            let val = arr[i] === 0 ? 1 : -1;\n            currentGain += val;\n            if (currentGain > maxGain) {\n                maxGain = currentGain;\n            }\n            if (currentGain < 0) {\n                currentGain = 0;\n            }\n        }\n        \n        // The maximum number of ones after exactly one move\n        let result = totalOnes + maxGain;\n        \n        // But we must do exactly one move. If maxGain is 0, it means we didn't find a positive gain.\n        // However, we must flip at least one element. If all elements are 1, flipping any single element \n        // will reduce the count by 1. So the minimum gain is -1 (flipping a single 1).\n        // Actually, if maxGain is 0, it could be that we have a subarray with sum 0, or we reset to 0.\n        // Let's think: if the array is all 1s, totalOnes = n. Flipping any subarray of length L \n        // will change L ones to zeros, so gain = -L. The best is to flip a subarray of length 1, gain = -1.\n        // So if maxGain is 0, it means no positive gain was found. But we must flip.\n        // The minimum possible gain is -1 (flip a single 1) or if there's a 0, flipping a single 0 gives +1.\n        // Wait, if there's any 0, then maxGain would be at least 1. So if maxGain is 0, it means there are no 0s? \n        // No, if there's a 0, val=1, so currentGain would be at least 1 at some point.\n        // So maxGain = 0 only if there are no 0s (all 1s) OR the best subarray sum is 0? \n        // Actually, if there's a 0, maxGain >= 1. So maxGain = 0 implies all are 1s.\n        // In that case, we must flip at least one element, so the best we can do is flip one element, \n        // resulting in n - 1 ones.\n        \n        if (maxGain === 0) {\n            // This means no positive gain. But we must flip.\n            // If there are any 0s, maxGain would be > 0. So all are 1s.\n            // Then flipping any single element gives -1 gain.\n            result = totalOnes - 1;\n        }\n        \n        console.log(result);\n        rl.close();\n    }\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nlet lines = [];\nlet lineCount = 0;\n\nrl.on('line', function (line) {\n    lines.push(line);\n    lineCount++;\n    if (lineCount === 2) {\n        const n = parseInt(lines[0]);\n        const arr = lines[1].split(' ').map(Number);\n        \n        // Count initial ones\n        let ones = 0;\n        for (let i = 0; i < n; i++) {\n            if (arr[i] === 1) ones++;\n        }\n        \n        // We need to find the maximum gain from flipping a subarray.\n        // Flipping a subarray changes 0s to 1s (gain +1) and 1s to 0s (loss -1).\n        // So we want to maximize the sum of (1 - 2*a[i]) for the subarray.\n        // Let b[i] = 1 if a[i] is 0, -1 if a[i] is 1.\n        // We want to find the maximum subarray sum of b.\n        \n        let maxGain = 0;\n        let currentGain = 0;\n        \n        for (let i = 0; i < n; i++) {\n            let val = arr[i] === 0 ? 1 : -1;\n            currentGain += val;\n            if (currentGain > maxGain) {\n                maxGain = currentGain;\n            }\n            if (currentGain < 0) {\n                currentGain = 0;\n            }\n        }\n        \n        // The maximum number of ones after one flip is ones + maxGain\n        console.log(ones + maxGain);\n        rl.close();\n    }\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 8,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nlet lines = [];\nlet lineCount = 0;\n\nrl.on('line', function (line) {\n    lines.push(line);\n    lineCount++;\n    if (lineCount === 2) {\n        const n = parseInt(lines[0]);\n        const arr = lines[1].split(' ').map(Number);\n        \n        // Count initial ones\n        let totalOnes = 0;\n        for (let i = 0; i < n; i++) {\n            if (arr[i] === 1) totalOnes++;\n        }\n        \n        // We need to find a segment [i, j] such that flipping it maximizes the number of ones.\n        // Flipping a segment changes 1s to 0s and 0s to 1s.\n        // Let's define a new array where:\n        //   if arr[k] == 1, flipping it loses 1 (contribution -1)\n        //   if arr[k] == 0, flipping it gains 1 (contribution +1)\n        // So we want to find the maximum subarray sum in this transformed array.\n        \n        const diff = [];\n        for (let i = 0; i < n; i++) {\n            if (arr[i] === 1) {\n                diff.push(-1);\n            } else {\n                diff.push(1);\n            }\n        }\n        \n        // Find maximum subarray sum (Kadane's algorithm)\n        // But we must flip at least one element, so the segment length must be >= 1.\n        // Kadane's algorithm naturally handles this if we initialize properly.\n        \n        let maxGain = diff[0];\n        let currentMax = diff[0];\n        \n        for (let i = 1; i < n; i++) {\n            currentMax = Math.max(diff[i], currentMax + diff[i]);\n            maxGain = Math.max(maxGain, currentMax);\n        }\n        \n        // The maximum number of ones after flipping is totalOnes + maxGain\n        const result = totalOnes + maxGain;\n        console.log(result);\n        rl.close();\n    }\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 9,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n    if (lines.length === 2) {\n        const n = parseInt(lines[0]);\n        const arr = lines[1].split(' ').map(Number);\n        \n        // Count total ones\n        let totalOnes = 0;\n        for (let i = 0; i < n; i++) {\n            if (arr[i] === 1) totalOnes++;\n        }\n        \n        // We need to find the maximum gain from flipping a contiguous subarray.\n        // Flipping a subarray: \n        // - Each 1 in the subarray becomes 0 (loss of 1)\n        // - Each 0 in the subarray becomes 1 (gain of 1)\n        // So the net change in the number of ones is: (# of zeros in subarray) - (# of ones in subarray)\n        // We want to maximize this net change.\n        \n        // Let's transform the array:\n        // If arr[i] is 0, flipping it gives +1 to the count of ones.\n        // If arr[i] is 1, flipping it gives -1 to the count of ones.\n        // So we want to find the maximum subarray sum of the transformed array.\n        \n        let transformed = [];\n        for (let i = 0; i < n; i++) {\n            if (arr[i] === 0) {\n                transformed.push(1);\n            } else {\n                transformed.push(-1);\n            }\n        }\n        \n        // Find maximum subarray sum (Kadane's algorithm)\n        // But note: we must flip exactly one move, and the move must be on a valid range [i, j] with i <= j.\n        // So the subarray must be non-empty.\n        \n        let maxGain = transformed[0];\n        let currentSum = transformed[0];\n        \n        for (let i = 1; i < n; i++) {\n            currentSum = Math.max(transformed[i], currentSum + transformed[i]);\n            maxGain = Math.max(maxGain, currentSum);\n        }\n        \n        // The maximum number of ones after the move is totalOnes + maxGain\n        let result = totalOnes + maxGain;\n        \n        console.log(result);\n        rl.close();\n    }\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 10,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n    if (lines.length === 2) {\n        const n = parseInt(lines[0]);\n        const arr = lines[1].split(' ').map(Number);\n        \n        // Count initial ones\n        let initialOnes = arr.filter(x => x === 1).length;\n        \n        // We need to find the maximum number of ones after flipping exactly one segment.\n        // Flipping a segment [i, j] changes:\n        // - 0s in the segment become 1s (gain)\n        // - 1s in the segment become 0s (loss)\n        // Net change = (number of 0s in segment) - (number of 1s in segment)\n        // Total ones = initialOnes + net change\n        // So we want to maximize net change over all possible segments.\n        \n        // Let's transform the array: \n        // If element is 0, flipping it gives +1 (gain)\n        // If element is 1, flipping it gives -1 (loss)\n        // So we create an array where 0 -> 1, 1 -> -1\n        // Then we find the maximum subarray sum (Kadane's algorithm)\n        \n        const transformed = arr.map(x => x === 0 ? 1 : -1);\n        \n        // Find maximum subarray sum\n        let maxSum = transformed[0];\n        let currentSum = transformed[0];\n        \n        for (let i = 1; i < n; i++) {\n            currentSum = Math.max(transformed[i], currentSum + transformed[i]);\n            maxSum = Math.max(maxSum, currentSum);\n        }\n        \n        // The maximum number of ones is initialOnes + maxSum\n        const result = initialOnes + maxSum;\n        \n        console.log(result);\n        rl.close();\n    }\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 11,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n    if (lines.length === 2) {\n        const n = parseInt(lines[0]);\n        const arr = lines[1].split(' ').map(Number);\n        \n        // Count initial ones\n        let initialOnes = arr.filter(x => x === 1).length;\n        \n        // We need to find a segment [i, j] such that flipping it maximizes the number of ones.\n        // Flipping a segment changes 0s to 1s and 1s to 0s.\n        // The change in the number of ones is: (number of 0s in segment) - (number of 1s in segment)\n        // So we want to maximize: initialOnes + (zeros_in_segment - ones_in_segment)\n        // Let's define a new array where 0 becomes +1 and 1 becomes -1.\n        // Then we want to find the maximum subarray sum of this new array.\n        \n        let transformed = arr.map(x => x === 0 ? 1 : -1);\n        \n        // Find maximum subarray sum using Kadane's algorithm\n        let maxSum = transformed[0];\n        let currentSum = transformed[0];\n        \n        for (let i = 1; i < n; i++) {\n            currentSum = Math.max(transformed[i], currentSum + transformed[i]);\n            maxSum = Math.max(maxSum, currentSum);\n        }\n        \n        // The maximum number of ones after one flip\n        let result = initialOnes + maxSum;\n        \n        console.log(result);\n        rl.close();\n    }\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 12,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n    if (lines.length === 2) {\n        const n = parseInt(lines[0]);\n        const arr = lines[1].split(' ').map(Number);\n        \n        // Count initial ones\n        let initialOnes = arr.filter(x => x === 1).length;\n        \n        // We need to find the maximum gain from flipping a subarray.\n        // Flipping a 0 to 1 gives +1, flipping a 1 to 0 gives -1.\n        // So we want to find the subarray with maximum sum where:\n        // 0 -> +1, 1 -> -1\n        // This is similar to maximum subarray sum (Kadane's algorithm)\n        \n        let maxGain = 0;\n        let currentGain = 0;\n        \n        for (let i = 0; i < n; i++) {\n            let val = arr[i] === 0 ? 1 : -1;\n            currentGain = Math.max(val, currentGain + val);\n            maxGain = Math.max(maxGain, currentGain);\n        }\n        \n        // The maximum number of ones after one flip is initialOnes + maxGain\n        // Note: maxGain is at least 0 (if we flip a single element, we can always gain at least 0? \n        // Actually, if all are 1s, flipping any single element gives -1, but we must do exactly one move.\n        // Wait, the problem says \"exactly one move\". So we must flip at least one element.\n        // If all elements are 1, flipping any single element reduces the count by 1.\n        // So maxGain could be negative? Let's check.\n        // If arr = [1, 1, 1], initialOnes = 3.\n        // Flipping [1,1] (indices 0-1): becomes [0,0,1] -> 1 one. Gain = -2.\n        // Flipping [0] (index 0): becomes [0,1,1] -> 2 ones. Gain = -1.\n        // So maxGain would be -1 in this case.\n        // But in Kadane's, if all values are negative, maxGain would be the least negative.\n        // Let's re-examine: val is +1 for 0, -1 for 1.\n        // If all are 1, all vals are -1. Max subarray sum is -1 (single element).\n        // So initialOnes + maxGain = 3 + (-1) = 2. Correct.\n        \n        // But wait, what if n=1 and arr=[0]? initialOnes=0, val=1, maxGain=1, result=1. Correct.\n        // What if n=1 and arr=[1]? initialOnes=1, val=-1, maxGain=-1, result=0. Correct.\n        \n        console.log(initialOnes + maxGain);\n        rl.close();\n    }\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 13,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n    if (lines.length === 2) {\n        const n = parseInt(lines[0]);\n        const arr = lines[1].split(' ').map(Number);\n        \n        // Count initial ones\n        let totalOnes = 0;\n        for (let i = 0; i < n; i++) {\n            if (arr[i] === 1) totalOnes++;\n        }\n        \n        // We need to find a segment [i, j] such that flipping it maximizes the number of ones.\n        // Flipping a segment changes 0s to 1s and 1s to 0s.\n        // The change in the number of ones is: (number of 0s in segment) - (number of 1s in segment)\n        // Let's define a new array where:\n        //   if arr[k] == 0, value = +1 (flipping it adds a one)\n        //   if arr[k] == 1, value = -1 (flipping it removes a one)\n        // We want to find the maximum subarray sum of this new array.\n        \n        let maxGain = 0; // At least we can flip a segment that doesn't decrease the count (or we must flip exactly one move, but we can choose a segment where gain is 0 if all are 1s? No, we must do exactly one move. But if all are 1s, flipping any single element gives -1. Wait, the problem says \"exactly one move\". So we must flip some non-empty segment.\n        \n        // Actually, let's re-read: \"he chooses two indices i and j (1 \u2264 i \u2264 j \u2264 n)\". So the segment is non-empty.\n        // If all are 1s, flipping any segment will reduce the count. The best is to flip a segment of length 1 (gain -1).\n        // So we need to find the maximum subarray sum, but if all values in the transformed array are negative, we still have to pick the least negative one.\n        \n        // Let's use Kadane's algorithm but track the maximum sum, allowing negative values.\n        \n        let currentMax = 0;\n        let bestMax = -Infinity;\n        \n        for (let i = 0; i < n; i++) {\n            let val = (arr[i] === 0) ? 1 : -1;\n            currentMax = Math.max(val, currentMax + val);\n            bestMax = Math.max(bestMax, currentMax);\n        }\n        \n        let result = totalOnes + bestMax;\n        console.log(result);\n        rl.close();\n    }\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 14,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n    if (lines.length === 2) {\n        const n = parseInt(lines[0]);\n        const arr = lines[1].split(' ').map(Number);\n        \n        // Count initial ones\n        let initialOnes = arr.filter(x => x === 1).length;\n        \n        // We need to find the maximum number of ones after exactly one flip\n        // Flipping a segment [i, j] changes:\n        // - 1s in the segment become 0s (lose 1s)\n        // - 0s in the segment become 1s (gain 1s)\n        // Net change = (number of 0s in segment) - (number of 1s in segment)\n        // We want to maximize: initialOnes + netChange\n        // Which is equivalent to maximizing: (number of 0s in segment) - (number of 1s in segment)\n        \n        // Transform the array: for each element, if it's 0, assign +1 (flipping it gains a 1)\n        // if it's 1, assign -1 (flipping it loses a 1)\n        // Then find the maximum subarray sum (Kadane's algorithm)\n        \n        let transformed = arr.map(x => x === 0 ? 1 : -1);\n        \n        // Find maximum subarray sum\n        let maxSum = 0;\n        let currentSum = 0;\n        for (let i = 0; i < n; i++) {\n            currentSum += transformed[i];\n            if (currentSum > maxSum) {\n                maxSum = currentSum;\n            }\n            if (currentSum < 0) {\n                currentSum = 0;\n            }\n        }\n        \n        // The answer is initialOnes + maxSum\n        console.log(initialOnes + maxSum);\n    }\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 15,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0].trim());\n    const arr = lines[1].trim().split(' ').map(Number);\n    \n    // Count initial ones\n    let totalOnes = arr.filter(x => x === 1).length;\n    \n    // We need to find the maximum gain from flipping a contiguous subarray.\n    // Flipping a subarray changes 0s to 1s and 1s to 0s.\n    // The change in the number of ones is: (number of 0s in subarray) - (number of 1s in subarray)\n    // So we want to maximize this difference.\n    // Let's transform the array: for each element, if it's 0, we gain +1 by flipping; if it's 1, we lose -1 by flipping.\n    // So we want to find the maximum subarray sum of the transformed array.\n    \n    let transformed = arr.map(x => x === 0 ? 1 : -1);\n    \n    // Find maximum subarray sum (Kadane's algorithm)\n    let maxGain = 0;\n    let currentSum = 0;\n    for (let i = 0; i < n; i++) {\n        currentSum += transformed[i];\n        if (currentSum > maxGain) {\n            maxGain = currentSum;\n        }\n        if (currentSum < 0) {\n            currentSum = 0;\n        }\n    }\n    \n    // The maximum number of ones after one flip is totalOnes + maxGain\n    // But note: we must do exactly one move. The minimum subarray length is 1.\n    // Kadane's algorithm as written allows empty subarray (sum 0). \n    // However, since we must flip at least one element, we need to ensure we pick a non-empty subarray.\n    // But if all gains are negative, we still have to flip something. The best would be the least negative.\n    // Let's handle this properly.\n    \n    // Actually, let's recompute with the constraint that subarray must be non-empty.\n    let maxGainNonEmpty = transformed[0];\n    let currentSumNonEmpty = transformed[0];\n    for (let i = 1; i < n; i++) {\n        currentSumNonEmpty = Math.max(transformed[i], currentSumNonEmpty + transformed[i]);\n        if (currentSumNonEmpty > maxGainNonEmpty) {\n            maxGainNonEmpty = currentSumNonEmpty;\n        }\n    }\n    \n    const result = totalOnes + maxGainNonEmpty;\n    console.log(result);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 16,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0].trim());\n    const arr = lines[1].trim().split(' ').map(Number);\n    \n    // Count initial ones\n    let initialOnes = arr.filter(x => x === 1).length;\n    \n    // We need to find a segment [i, j] to flip that maximizes the number of ones.\n    // Flipping a segment changes 0s to 1s and 1s to 0s.\n    // The change in the number of ones is: (number of 0s in segment) - (number of 1s in segment)\n    // We want to maximize this change.\n    // This is equivalent to finding the maximum subarray sum where:\n    // - 0 contributes +1 (because flipping it to 1 increases ones by 1)\n    // - 1 contributes -1 (because flipping it to 0 decreases ones by 1)\n    \n    // Use Kadane's algorithm to find the maximum subarray sum\n    let maxGain = 0; // At least we can flip a segment that doesn't decrease ones (or we must flip exactly one segment, but we can choose a segment of length 1 if it's a 0, gaining +1; if all are 1, we must flip at least one, losing 1)\n    // Actually, we must do exactly one move. So we need to find the best segment to flip.\n    // The gain can be negative if all elements are 1.\n    \n    let currentGain = 0;\n    let bestGain = -Infinity;\n    \n    for (let i = 0; i < n; i++) {\n        // Value contribution: if arr[i] is 0, flipping gives +1; if arr[i] is 1, flipping gives -1\n        let val = arr[i] === 0 ? 1 : -1;\n        \n        // Kadane's: either start new subarray here or extend previous\n        currentGain = Math.max(val, currentGain + val);\n        bestGain = Math.max(bestGain, currentGain);\n    }\n    \n    let result = initialOnes + bestGain;\n    \n    console.log(result);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 17,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout,\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0].trim());\n    const arr = lines[1].trim().split(' ').map(Number);\n    \n    // Count initial ones\n    let initialOnes = arr.filter(x => x === 1).length;\n    \n    // We need to find the best segment to flip\n    // Flipping a segment changes 0s to 1s and 1s to 0s\n    // The change in number of ones = (number of 0s in segment) - (number of 1s in segment)\n    // We want to maximize this change\n    \n    // Let's transform: for each element, if it's 0, flipping gives +1; if it's 1, flipping gives -1\n    // So we want to find the maximum subarray sum of the transformed array\n    const transformed = arr.map(x => x === 0 ? 1 : -1);\n    \n    // Find maximum subarray sum using Kadane's algorithm\n    let maxSum = transformed[0];\n    let currentSum = transformed[0];\n    for (let i = 1; i < n; i++) {\n        currentSum = Math.max(transformed[i], currentSum + transformed[i]);\n        maxSum = Math.max(maxSum, currentSum);\n    }\n    \n    // The maximum number of ones after one flip\n    const result = initialOnes + maxSum;\n    \n    console.log(result);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 18,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout,\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0].trim());\n    const arr = lines[1].trim().split(' ').map(Number);\n    \n    // Count initial ones\n    let initialOnes = arr.reduce((sum, val) => sum + val, 0);\n    \n    // We need to find the maximum gain from flipping a contiguous subarray.\n    // Flipping a segment [i, j]:\n    // - Each 1 in the segment becomes 0 (loss of 1)\n    // - Each 0 in the segment becomes 1 (gain of 1)\n    // Net change = (number of 0s in segment) - (number of 1s in segment)\n    //            = (length of segment) - 2 * (number of 1s in segment)\n    // Alternatively, we can think of it as: for each element, if it's 0, flipping gives +1; if it's 1, flipping gives -1.\n    // So we want to find the maximum subarray sum where 0 -> +1 and 1 -> -1.\n    \n    // Let's create an array where 0 becomes 1 and 1 becomes -1\n    let transformed = arr.map(val => val === 0 ? 1 : -1);\n    \n    // Find maximum subarray sum (Kadane's algorithm)\n    let maxGain = 0; // At least we can flip a segment that gives 0 gain? No, we must flip exactly one move.\n    // But note: we must do exactly one move. The move can be any valid [i, j].\n    // If all gains are negative, we still have to pick the least negative one.\n    \n    let currentSum = 0;\n    let maxSubarraySum = -Infinity;\n    \n    for (let i = 0; i < n; i++) {\n        currentSum += transformed[i];\n        if (maxSubarraySum < currentSum) {\n            maxSubarraySum = currentSum;\n        }\n        if (currentSum < 0) {\n            currentSum = 0;\n        }\n    }\n    \n    // The maximum number of ones after flipping is initialOnes + maxSubarraySum\n    let result = initialOnes + maxSubarraySum;\n    \n    console.log(result);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 19,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout,\n});\n\nlet lines = [];\nrl.on('line', line => {\n    lines.push(line);\n});\n\nrl.on('close', () => {\n    const n = parseInt(lines[0].trim());\n    const arr = lines[1].trim().split(' ').map(Number);\n    \n    // Count initial ones\n    let totalOnes = 0;\n    for (let i = 0; i < n; i++) {\n        if (arr[i] === 1) totalOnes++;\n    }\n    \n    // We need to find the best segment to flip.\n    // Flipping a segment [i, j] changes:\n    // - 1s in the segment become 0s (lose 1s)\n    // - 0s in the segment become 1s (gain 1s)\n    // Net change = (number of 0s in segment) - (number of 1s in segment)\n    // We want to maximize: totalOnes + netChange\n    // Which is equivalent to maximizing: netChange\n    // netChange = sum over k in [i,j] of (arr[k] === 0 ? 1 : -1)\n    // Let's define b[k] = 1 if arr[k] === 0, else -1\n    // Then we want to find the maximum subarray sum of b.\n    \n    const b = new Array(n);\n    for (let i = 0; i < n; i++) {\n        b[i] = arr[i] === 0 ? 1 : -1;\n    }\n    \n    // Find maximum subarray sum using Kadane's algorithm\n    // But note: we must flip exactly one segment, so the segment must be non-empty.\n    // Kadane's algorithm for maximum subarray sum (non-empty)\n    let maxSum = b[0];\n    let currentSum = b[0];\n    for (let i = 1; i < n; i++) {\n        currentSum = Math.max(b[i], currentSum + b[i]);\n        maxSum = Math.max(maxSum, currentSum);\n    }\n    \n    const result = totalOnes + maxSum;\n    console.log(result);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 12035,
+            "prompt_tokens": 491,
+            "total_tokens": 12526
+        },
+        "prompt": "Write a program in Javascript to solve this programming problem:\nDescription: Iahub got bored, so he invented a game to be played on paper. He writes n integers a1,\u2009a2,\u2009...,\u2009an. Each of those integers can be either 0 or 1. He's allowed to do exactly one move: he chooses two indices i and j (1\u2009\u2264\u2009i\u2009\u2264\u2009j\u2009\u2264\u2009n) and flips all values ak for which their positions are in range [i,\u2009j] (that is i\u2009\u2264\u2009k\u2009\u2264\u2009j). Flip the value of x means to apply operation x\u2009=\u20091 - x.The goal of the game is that after exactly one move to obtain the maximum number of ones. Write a program to solve the little game of Iahub.\nInput Specification: The first line of the input contains an integer n (1\u2009\u2264\u2009n\u2009\u2264\u2009100). In the second line of the input there are n integers: a1,\u2009a2,\u2009...,\u2009an. It is guaranteed that each of those n values is either 0 or 1.\nOutput Specification: Print an integer \u2014 the maximal number of 1s that can be obtained after exactly one move. \n\nSample Input:\n5\n1 0 0 1 0\nSample Output:\n4\n\nSample Input:\n4\n1 0 0 1\nSample Output:\n4\n\nNotes: NoteIn the first case, flip the segment from 2 to 5 (i\u2009=\u20092,\u2009j\u2009=\u20095). That flip changes the sequence, it becomes: [1 1 1 0 1]. So, it contains four ones. There is no way to make the whole sequence equal to [1 1 1 1 1].In the second case, flipping only the second and the third element (i\u2009=\u20092,\u2009j\u2009=\u20093) will turn all numbers into 1.\nTake input from standard input and output to standard output\nProvide the Javascript code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "9b543e07e805fe1dd8fa869d5d7c8b99",
+        "difficulty": 1200,
+        "prob_desc_sample_inputs": [
+            "5\n1 0 0 1 0",
+            "4\n1 0 0 1"
+        ],
+        "prob_desc_time_limit": "1 second",
+        "tags": [
+            "brute force",
+            "dp",
+            "implementation"
+        ],
+        "prob_desc_output_spec": "Print an integer \u2014 the maximal number of 1s that can be obtained after exactly one move. ",
+        "prob_desc_input_spec": "The first line of the input contains an integer n (1\u2009\u2264\u2009n\u2009\u2264\u2009100). In the second line of the input there are n integers: a1,\u2009a2,\u2009...,\u2009an. It is guaranteed that each of those n values is either 0 or 1.",
+        "lang_cluster": "Javascript",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first case, flip the segment from 2 to 5 (i\u2009=\u20092,\u2009j\u2009=\u20095). That flip changes the sequence, it becomes: [1 1 1 0 1]. So, it contains four ones. There is no way to make the whole sequence equal to [1 1 1 1 1].In the second case, flipping only the second and the third element (i\u2009=\u20092,\u2009j\u2009=\u20093) will turn all numbers into 1.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Iahub got bored, so he invented a game to be played on paper. He writes n integers a1,\u2009a2,\u2009...,\u2009an. Each of those integers can be either 0 or 1. He's allowed to do exactly one move: he chooses two indices i and j (1\u2009\u2264\u2009i\u2009\u2264\u2009j\u2009\u2264\u2009n) and flips all values ak for which their positions are in range [i,\u2009j] (that is i\u2009\u2264\u2009k\u2009\u2264\u2009j). Flip the value of x means to apply operation x\u2009=\u20091 - x.The goal of the game is that after exactly one move to obtain the maximum number of ones. Write a program to solve the little game of Iahub.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1372941000",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "4",
+            "4"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"5\\r\\n1 0 0 1 0\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"4\\r\\n1 0 0 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"1\\r\\n1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"1\\r\\n0\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"8\\r\\n1 0 0 0 1 0 0 0\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"18\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"23\\r\\n1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"100\\r\\n0 1 0 1 1 1 0 1 0 1 0 0 1 1 1 1 0 0 1 1 1 1 1 1 1 0 0 1 1 1 0 1 1 0 0 0 1 1 1 1 0 0 1 1 1 0 0 1 1 0 1 1 1 0 0 0 1 0 0 0 0 0 1 1 0 0 1 1 1 1 1 1 1 1 0 1 1 1 0 1 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 0 1\\r\\n\", \"output\": [\"70\"]}, {\"input\": \"100\\r\\n0 1 1 0 1 0 0 1 0 0 0 1 1 0 0 0 1 1 1 0 1 0 0 0 0 0 1 0 1 0 1 0 1 0 1 0 0 0 1 0 0 0 0 0 1 1 0 1 0 1 0 1 1 1 0 1 0 1 1 0 0 1 1 0 0 1 1 1 0 0 1 0 0 1 1 0 1 0 0 1 1 0 1 0 0 1 1 0 0 0 0 1 0 0 0 0 1 1 1 1\\r\\n\", \"output\": [\"60\"]}, {\"input\": \"18\\r\\n0 1 0 1 0 1 0 1 0 1 1 0 1 1 0 1 1 0\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"25\\r\\n0 1 0 0 0 0 0 1 0 1 0 1 0 0 0 0 1 1 1 0 0 1 1 0 1\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"55\\r\\n0 0 1 1 0 0 0 1 0 1 1 0 1 1 1 0 1 1 1 1 1 0 0 1 0 0 1 0 1 1 0 0 1 0 1 1 0 1 1 1 1 0 1 1 0 0 0 0 1 1 0 1 1 1 1\\r\\n\", \"output\": [\"36\"]}, {\"input\": \"75\\r\\n1 1 0 1 0 1 1 0 0 0 0 0 1 1 1 1 1 0 1 0 1 0 0 0 0 1 1 1 0 1 0 0 1 1 0 1 0 0 1 1 0 1 0 1 0 1 0 0 0 0 1 0 0 1 1 1 0 0 1 0 1 1 0 0 0 0 1 1 0 0 0 1 0 0 0\\r\\n\", \"output\": [\"44\"]}, {\"input\": \"100\\r\\n0 0 1 0 1 0 0 1 1 0 1 1 0 1 0 1 1 0 0 0 0 0 1 0 0 1 1 0 0 0 1 0 0 1 1 0 0 1 1 1 0 0 0 0 1 0 1 1 1 0 0 1 0 1 1 1 1 1 1 1 0 1 0 1 0 0 1 0 1 1 1 0 0 0 0 1 0 1 1 0 0 1 1 0 1 1 1 1 0 1 1 1 0 0 1 1 0 1 0 1\\r\\n\", \"output\": [\"61\"]}, {\"input\": \"100\\r\\n0 0 0 1 0 0 0 1 0 1 1 0 1 1 1 1 1 0 1 0 1 1 0 0 1 1 0 1 0 1 0 1 0 1 1 0 1 1 0 0 0 1 1 1 1 0 1 1 0 1 1 1 1 0 1 0 0 1 0 1 0 0 0 0 1 1 0 0 1 0 0 1 1 0 1 1 0 1 0 0 1 1 0 1 1 1 1 0 1 0 0 1 0 1 1 1 0 1 1 0\\r\\n\", \"output\": [\"61\"]}, {\"input\": \"100\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\\r\\n\", \"output\": [\"100\"]}, {\"input\": \"100\\r\\n1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1\\r\\n\", \"output\": [\"99\"]}, {\"input\": \"100\\r\\n0 0 1 1 1 0 1 1 0 0 1 0 1 0 1 0 0 1 0 1 1 0 0 1 1 1 1 1 1 0 1 0 0 1 0 0 0 0 1 1 1 0 1 1 1 0 1 1 1 0 0 1 0 0 1 1 0 0 0 1 1 1 0 1 1 0 0 0 0 1 0 0 1 0 1 0 0 0 0 0 0 1 1 1 0 1 1 1 0 1 1 1 1 1 0 0 0 0 1 0\\r\\n\", \"output\": [\"61\"]}, {\"input\": \"100\\r\\n0 1 1 1 1 1 1 0 0 0 1 1 0 0 0 1 0 0 0 0 0 0 1 1 1 0 0 0 1 1 1 0 1 0 0 1 1 0 0 0 1 1 1 1 1 1 1 1 1 1 0 0 1 0 1 0 0 0 0 1 0 1 0 1 0 0 1 0 1 0 1 1 0 0 0 0 0 1 1 1 0 1 1 0 1 1 0 0 0 1 0 1 1 0 0 0 0 0 0 1\\r\\n\", \"output\": [\"59\"]}, {\"input\": \"99\\r\\n1 1 0 0 0 1 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 0 1 1 0 0 0 0 0 0 1 1 0 0 1 0 1 1 1 0 0 0 0 0 1 0 0 0 0 0 0 1 0 1 1 0 1 0 0 1 1 0 1 0 0 0 1 1 1 1 0 1 1 1 0 0 1 1 0 0 0 0 1 0 0 0 0 0 1 0 1 1 1\\r\\n\", \"output\": [\"61\"]}, {\"input\": \"2\\r\\n1 1\\r\\n\", \"output\": [\"1\"]}]"
+    }
+}

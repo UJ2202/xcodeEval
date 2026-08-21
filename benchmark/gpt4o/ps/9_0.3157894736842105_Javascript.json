@@ -1,0 +1,353 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEHzhf8eEoweaRLmLakOtwvsrPqmM",
+        "created": 1787074469,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst MOD = 1000000007n;\n\nfunction modPow(base, exp, mod) {\n    base %= mod;\n    let res = 1n;\n    while (exp > 0n) {\n        if (exp & 1n) res = (res * base) % mod;\n        base = (base * base) % mod;\n        exp >>= 1n;\n    }\n    return res;\n}\n\nfunction modInv(a) {\n    return modPow(a, MOD - 2n, MOD);\n}\n\n// Miller-Rabin primality test for 64-bit integers\nfunction isPrime(n) {\n    if (n < 2n) return false;\n    const smallPrimes = [2n,3n,5n,7n,11n,13n,17n,19n,23n,29n,31n,37n];\n    for (let p of smallPrimes) {\n        if (n === p) return true;\n        if (n % p === 0n) return n === p;\n    }\n    let d = n - 1n;\n    let s = 0n;\n    while ((d & 1n) === 0n) {\n        d >>= 1n;\n        s++;\n    }\n    function check(a) {\n        if (a % n === 0n) return true;\n        let x = modPow(a, d, n);\n        if (x === 1n || x === n - 1n) return true;\n        for (let r = 1n; r < s; r++) {\n            x = (x * x) % n;\n            if (x === n - 1n) return true;\n        }\n        return false;\n    }\n    const bases = [2n,325n,9375n,28178n,450775n,9780504n,1795265022n];\n    for (let a of bases) {\n        if (!check(a)) return false;\n    }\n    return true;\n}\n\n// Pollard-Rho\nfunction pollardRho(n) {\n    if (n % 2n === 0n) return 2n;\n    let x = 2n;\n    let y = 2n;\n    let c = 1n;\n    let d = 1n;\n    function f(v) {\n        return (modPow(v, 2n, n) + c) % n;\n    }\n    while (d === 1n) {\n        x = f(x);\n        y = f(f(y));\n        d = gcd(abs(x - y), n);\n        if (d === n) {\n            c++;\n            x = 2n;\n            y = 2n;\n            d = 1n;\n        }\n    }\n    return d;\n}\n\nfunction abs(x) { return x < 0n ? -x : x; }\n\nfunction gcd(a,b) {\n    while (b) {\n        let t = a % b;\n        a = b;\n        b = t;\n    }\n    return a;\n}\n\nfunction factor(n, res) {\n    if (n === 1n) return;\n    if (isPrime(n)) {\n        res.push(n);\n        return;\n    }\n    let d = pollardRho(n);\n    factor(d, res);\n    factor(n / d, res);\n}\n\n// main\nconst input = fs.readFileSync(0,'utf8').trim().split(/\\s+/);\nif (input.length < 2) process.exit(0);\nlet n = BigInt(input[0]);\nlet k = parseInt(input[1],10);\n\n// factor n\nlet primes = [];\nfactor(n, primes);\nprimes.sort((a,b)=> (a<b?-1:a>b?1:0));\n\n// count exponents\nlet primePowers = [];\nfor (let i=0;i<primes.length;) {\n    let p = primes[i];\n    let e = 0;\n    while (i<primes.length && primes[i]===p) { e++; i++; }\n    primePowers.push({p, e});\n}\n\n// for each prime power, compute expected value after k steps\nlet ans = 1n;\nfor (let {p,e} of primePowers) {\n    const maxExp = e;\n    // dp[step][exp]\n    let dp = new Array(maxExp+1);\n    for (let i=0;i<=maxExp;i++) dp[i] = 0n;\n    dp[maxExp] = 1n;\n\n    // precompute inv[1..maxExp+1]\n    let inv = new Array(maxExp+2);\n    for (let i=1;i<=maxExp+1;i++) inv[i] = modInv(BigInt(i));\n\n    for (let step=0; step<k; step++) {\n        let pref = new Array(maxExp+2);\n        pref[0] = 0n;\n        for (let i=0;i<=maxExp;i++) {\n            pref[i+1] = (pref[i] + dp[i]) % MOD;\n        }\n        let ndp = new Array(maxExp+1);\n        for (let i=0;i<=maxExp;i++) {\n            let sum = pref[i+1]; // sum_{j=0..i} dp[j]\n            ndp[i] = (sum * inv[i+1]) % MOD;\n        }\n        dp = ndp;\n    }\n\n    // expected value for this prime power: sum dp[i] * p^i\n    let pow = 1n;\n    let cur = 0n;\n    for (let i=0;i<=maxExp;i++) {\n        cur = (cur + dp[i] * pow) % MOD;\n        pow = (pow * p) % MOD;\n    }\n    ans = (ans * cur) % MOD;\n}\n\nconsole.log(ans.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst MOD = 1000000007n;\n\n// Fast modular exponentiation\nfunction modPow(base, exp, mod) {\n    base %= mod;\n    let res = 1n;\n    while (exp > 0n) {\n        if (exp & 1n) res = (res * base) % mod;\n        base = (base * base) % mod;\n        exp >>= 1n;\n    }\n    return res;\n}\n\nfunction modInv(a) {\n    return modPow(a, MOD - 2n, MOD);\n}\n\n// Miller-Rabin primality test for 64-bit integers\nfunction isPrime(n) {\n    if (n < 2n) return false;\n    const smallPrimes = [2n, 3n, 5n, 7n, 11n, 13n, 17n, 19n, 23n, 29n, 31n, 37n];\n    for (let p of smallPrimes) {\n        if (n === p) return true;\n        if (n % p === 0n) return n === p;\n    }\n\n    let d = n - 1n;\n    let s = 0n;\n    while ((d & 1n) === 0n) {\n        d >>= 1n;\n        s++;\n    }\n\n    function check(a) {\n        if (a % n === 0n) return true;\n        let x = modPow(a, d, n);\n        if (x === 1n || x === n - 1n) return true;\n        for (let r = 1n; r < s; r++) {\n            x = (x * x) % n;\n            if (x === n - 1n) return true;\n        }\n        return false;\n    }\n\n    const bases = [2n, 325n, 9375n, 28178n, 450775n, 9780504n, 1795265022n];\n    for (let a of bases) {\n        if (a % n === 0n) continue;\n        if (!check(a)) return false;\n    }\n    return true;\n}\n\n// Pollard's Rho\nfunction pollardsRho(n) {\n    if (n % 2n === 0n) return 2n;\n    if (n % 3n === 0n) return 3n;\n    let c = 1n;\n    while (true) {\n        let x = 2n, y = 2n, d = 1n;\n        const f = (v) => (modPow(v, 2n, n) + c) % n;\n        while (d === 1n) {\n            x = f(x);\n            y = f(f(y));\n            d = gcd(abs(x - y), n);\n        }\n        if (d !== n) return d;\n        c++;\n    }\n}\n\nfunction abs(x) {\n    return x < 0n ? -x : x;\n}\n\nfunction gcd(a, b) {\n    while (b !== 0n) {\n        let t = a % b;\n        a = b;\n        b = t;\n    }\n    return a;\n}\n\n// Factorization using Pollard's Rho\nfunction factor(n, res) {\n    if (n === 1n) return;\n    if (isPrime(n)) {\n        res.push(n);\n        return;\n    }\n    let d = pollardsRho(n);\n    factor(d, res);\n    factor(n / d, res);\n}\n\n// Main\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/);\nlet n = BigInt(input[0]);\nlet k = parseInt(input[1], 10);\n\n// Factor n\nlet primes = [];\nfactor(n, primes);\nprimes.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));\n\n// Count exponents\nlet primeExps = [];\nfor (let p of primes) {\n    if (primeExps.length === 0 || primeExps[primeExps.length - 1].p !== p) {\n        primeExps.push({ p: p, e: 1 });\n    } else {\n        primeExps[primeExps.length - 1].e++;\n    }\n}\n\n// For each prime factor, compute expected exponent after k steps\nlet result = 1n;\n\nfor (let { p, e } of primeExps) {\n    let maxExp = e;\n    // DP over exponents: dp[step][exp]\n    let dp = new Array(maxExp + 1);\n    for (let i = 0; i <= maxExp; i++) dp[i] = 0n;\n    dp[maxExp] = 1n;\n\n    for (let step = 0; step < k; step++) {\n        let prefix = new Array(maxExp + 2);\n        prefix[0] = 0n;\n        for (let i = 0; i <= maxExp; i++) {\n            prefix[i + 1] = (prefix[i] + dp[i]) % MOD;\n        }\n        let next = new Array(maxExp + 1);\n        for (let i = 0; i <= maxExp; i++) next[i] = 0n;\n        for (let i = 0; i <= maxExp; i++) {\n            if (dp[i] === 0n) continue;\n            let cnt = BigInt(i + 1);\n            let invCnt = modInv(cnt);\n            // distribute dp[i] equally to exponents 0..i\n            // contribution to exponent j is dp[i] * invCnt\n            // we can accumulate via prefix sums:\n            // next[j] += dp[i] * invCnt for j in [0..i]\n            // So we add dp[i]*invCnt to prefix range [0..i]\n            let add = (dp[i] * invCnt) % MOD;\n            next[0] = (next[0] + add) % MOD;\n            if (i + 1 <= maxExp) {\n                next[i + 1] = (next[i + 1] - add + MOD) % MOD;\n            }\n        }\n        // Build next via prefix sums\n        let cur = 0n;\n        for (let i = 0; i <= maxExp; i++) {\n            cur = (cur + next[i]) % MOD;\n            dp[i] = cur;\n        }\n    }\n\n    // Expected exponent = sum i * dp[i]\n    let expectedExp = 0n;\n    for (let i = 0; i <= maxExp; i++) {\n        expectedExp = (expectedExp + BigInt(i) * dp[i]) % MOD;\n    }\n\n    // Multiply result by p^{expectedExp}\n    result = (result * modPow(p % MOD, expectedExp, MOD)) % MOD;\n}\n\nconsole.log(result.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst MOD = 1000000007n;\n\nfunction modPow(base, exp, mod) {\n    base %= mod;\n    let res = 1n;\n    while (exp > 0n) {\n        if (exp & 1n) res = (res * base) % mod;\n        base = (base * base) % mod;\n        exp >>= 1n;\n    }\n    return res;\n}\n\nfunction modInv(a) {\n    return modPow(a, MOD - 2n, MOD);\n}\n\n// Miller-Rabin primality test for 64-bit integers\nfunction isPrime(n) {\n    if (n < 2n) return false;\n    const smallPrimes = [2n,3n,5n,7n,11n,13n,17n,19n,23n,29n,31n,37n];\n    for (let p of smallPrimes) {\n        if (n === p) return true;\n        if (n % p === 0n) return false;\n    }\n    let d = n - 1n;\n    let s = 0n;\n    while ((d & 1n) === 0n) {\n        d >>= 1n;\n        s++;\n    }\n    function check(a) {\n        if (a % n === 0n) return true;\n        let x = modPow(a, d, n);\n        if (x === 1n || x === n - 1n) return true;\n        for (let r = 1n; r < s; r++) {\n            x = (x * x) % n;\n            if (x === n - 1n) return true;\n        }\n        return false;\n    }\n    const bases = [2n,325n,9375n,28178n,450775n,9780504n,1795265022n];\n    for (let a of bases) {\n        if (a >= n) continue;\n        if (!check(a)) return false;\n    }\n    return true;\n}\n\n// Pollard-Rho\nfunction pollardRho(n) {\n    if (n % 2n === 0n) return 2n;\n    if (n % 3n === 0n) return 3n;\n    let c = 1n;\n    while (true) {\n        let x = 2n, y = 2n, d = 1n;\n        const f = (v) => (modPow(v, 2n, n) + c) % n;\n        while (d === 1n) {\n            x = f(x);\n            y = f(f(y));\n            d = gcd(abs(x - y), n);\n        }\n        if (d !== n) return d;\n        c++;\n    }\n}\n\nfunction abs(x) { return x < 0n ? -x : x; }\n\nfunction gcd(a,b) {\n    while (b) {\n        let t = a % b;\n        a = b;\n        b = t;\n    }\n    return a;\n}\n\nfunction factor(n, res) {\n    if (n === 1n) return;\n    if (isPrime(n)) {\n        res.push(n);\n        return;\n    }\n    let d = pollardRho(n);\n    factor(d, res);\n    factor(n / d, res);\n}\n\n// read input\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/);\nlet n = BigInt(input[0]);\nconst k = Number(input[1]);\n\n// factorize n\nlet primes = [];\nfactor(n, primes);\nprimes.sort((a,b)=> (a<b?-1:a>b?1:0));\n\n// count exponents\nlet factors = [];\nfor (let p of primes) {\n    if (factors.length === 0 || factors[factors.length-1][0] !== p) {\n        factors.push([p,1]);\n    } else {\n        factors[factors.length-1][1]++;\n    }\n}\n\n// DP per prime\nlet result = 1n;\nfor (let [p, e] of factors) {\n    const maxExp = e;\n    let dp = new Array(maxExp+1);\n    for (let i=0;i<=maxExp;i++) dp[i] = 0n;\n    dp[maxExp] = 1n;\n    for (let step=0; step<k; step++) {\n        let prefix = new Array(maxExp+2);\n        prefix[0] = 0n;\n        for (let i=0;i<=maxExp;i++) {\n            prefix[i+1] = prefix[i] + dp[i];\n        }\n        let newDp = new Array(maxExp+1);\n        for (let i=0;i<=maxExp;i++) {\n            let sum = prefix[i+1]; // sum_{j=0..i} dp[j]\n            let inv = modInv(BigInt(i+1));\n            newDp[i] = (sum % MOD) * inv % MOD;\n        }\n        dp = newDp;\n    }\n    // compute expected p^exp\n    let expVal = 0n;\n    let curPow = 1n;\n    for (let i=0;i<=maxExp;i++) {\n        expVal = (expVal + dp[i] * curPow) % MOD;\n        curPow = curPow * (p % MOD) % MOD;\n    }\n    result = result * expVal % MOD;\n}\n\nconsole.log(String(result));",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst MOD = 1000000007n;\n\nfunction modPow(base, exp, mod) {\n    base %= mod;\n    let res = 1n;\n    while (exp > 0n) {\n        if (exp & 1n) res = (res * base) % mod;\n        base = (base * base) % mod;\n        exp >>= 1n;\n    }\n    return res;\n}\n\nfunction modInv(a) {\n    return modPow(a, MOD - 2n, MOD);\n}\n\n// Miller-Rabin primality test for 64-bit integers\nfunction isPrime(n) {\n    if (n < 2n) return false;\n    const smallPrimes = [2n,3n,5n,7n,11n,13n,17n,19n,23n,29n,31n,37n];\n    for (let p of smallPrimes) {\n        if (n === p) return true;\n        if (n % p === 0n) return false;\n    }\n    let d = n - 1n;\n    let s = 0n;\n    while ((d & 1n) === 0n) {\n        d >>= 1n;\n        s++;\n    }\n    const bases = [2n,325n,9375n,28178n,450775n,9780504n,1795265022n];\n    for (let a of bases) {\n        if (a % n === 0n) continue;\n        let x = modPow(a, d, n);\n        if (x === 1n || x === n - 1n) continue;\n        let skip = false;\n        for (let r = 1n; r < s; r++) {\n            x = (x * x) % n;\n            if (x === n - 1n) { skip = true; break; }\n        }\n        if (!skip) return false;\n    }\n    return true;\n}\n\n// Pollard's Rho\nfunction pollardsRho(n) {\n    if (n % 2n === 0n) return 2n;\n    if (n % 3n === 0n) return 3n;\n    let c = 1n;\n    while (true) {\n        let x = 2n, y = 2n, d = 1n;\n        const f = (v) => ( (v * v + c) % n );\n        while (d === 1n) {\n            x = f(x);\n            y = f(f(y));\n            d = gcd(abs(x - y), n);\n        }\n        if (d !== n) return d;\n        c++;\n    }\n}\n\nfunction abs(x) { return x < 0n ? -x : x; }\n\nfunction gcd(a,b) {\n    while (b) {\n        let t = a % b;\n        a = b;\n        b = t;\n    }\n    return a;\n}\n\nfunction factor(n, res) {\n    if (n === 1n) return;\n    if (isPrime(n)) {\n        res.push(n);\n        return;\n    }\n    let d = pollardsRho(n);\n    factor(d, res);\n    factor(n / d, res);\n}\n\n// main\nconst input = fs.readFileSync(0,'utf8').trim().split(/\\s+/);\nif (input.length < 2) process.exit(0);\nlet n = BigInt(input[0]);\nlet k = parseInt(input[1],10);\n\n// factorize n\nlet primes = [];\nfactor(n, primes);\n\n// count exponents\nprimes.sort((a,b)=> (a<b?-1:a>b?1:0));\nlet fac = [];\nfor (let p of primes) {\n    if (fac.length === 0 || fac[fac.length-1][0] !== p) {\n        fac.push([p,1]);\n    } else {\n        fac[fac.length-1][1]++;\n    }\n}\n\n// precompute factorials up to max exponent\nlet maxE = 0;\nfor (let [p,e] of fac) if (e > maxE) maxE = e;\nlet fact = new Array(maxE+1);\nlet invFact = new Array(maxE+1);\nfact[0] = 1n;\nfor (let i=1;i<=maxE;i++) fact[i] = (fact[i-1]*BigInt(i))%MOD;\ninvFact[maxE] = modInv(fact[maxE]);\nfor (let i=maxE;i>0;i--) invFact[i-1] = (invFact[i]*BigInt(i))%MOD;\n\nfunction comb(nC,kC){\n    if (kC<0 || kC>nC) return 0n;\n    return (((fact[nC]*invFact[kC])%MOD)*invFact[nC-kC])%MOD;\n}\n\n// compute expected value\nlet result = 1n;\nfor (let [p,e] of fac) {\n    let dp = new Array(e+1).fill(0n);\n    dp[e] = 1n;\n    let invLen = new Array(e+1);\n    for (let i=0;i<=e;i++){\n        invLen[i] = modInv(BigInt(i+1));\n    }\n    for (let step=0; step<k; step++){\n        let prefix = new Array(e+2).fill(0n);\n        for (let i=0;i<=e;i++){\n            prefix[i+1] = (prefix[i] + dp[i])%MOD;\n        }\n        let ndp = new Array(e+1).fill(0n);\n        for (let i=0;i<=e;i++){\n            let sum = prefix[i+1];\n            ndp[i] = (sum * invLen[i])%MOD;\n        }\n        dp = ndp;\n    }\n    let expectedExp = 0n;\n    for (let i=0;i<=e;i++){\n        expectedExp = (expectedExp + dp[i]*BigInt(i))%MOD;\n    }\n    let pMod = p % MOD;\n    let term = modPow(pMod, expectedExp, MOD);\n    result = (result * term)%MOD;\n}\n\nconsole.log(result.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst MOD = 1000000007n;\n\nfunction modPow(base, exp, mod) {\n    base %= mod;\n    let res = 1n;\n    while (exp > 0n) {\n        if (exp & 1n) res = (res * base) % mod;\n        base = (base * base) % mod;\n        exp >>= 1n;\n    }\n    return res;\n}\n\nfunction modInv(a) {\n    return modPow(a, MOD - 2n, MOD);\n}\n\n// Miller-Rabin for 64-bit\nfunction isPrime(n) {\n    if (n < 2n) return false;\n    const smallPrimes = [2n,3n,5n,7n,11n,13n,17n,19n,23n,29n,31n,37n];\n    for (let p of smallPrimes) {\n        if (n === p) return true;\n        if (n % p === 0n) return false;\n    }\n    let d = n - 1n;\n    let s = 0n;\n    while ((d & 1n) === 0n) {\n        d >>= 1n;\n        s++;\n    }\n    const bases = [2n,325n,9375n,28178n,450775n,9780504n,1795265022n];\n    for (let a of bases) {\n        if (a % n === 0n) continue;\n        let x = modPow(a, d, n);\n        if (x === 1n || x === n - 1n) continue;\n        let skip = false;\n        for (let r = 1n; r < s; r++) {\n            x = (x * x) % n;\n            if (x === n - 1n) { skip = true; break; }\n        }\n        if (!skip) return false;\n    }\n    return true;\n}\n\n// Pollard Rho\nfunction pollardRho(n) {\n    if (n % 2n === 0n) return 2n;\n    if (n % 3n === 0n) return 3n;\n    let c = 1n;\n    while (true) {\n        let x = 2n, y = 2n, d = 1n;\n        const f = (v) => ( (v * v + c) % n );\n        while (d === 1n) {\n            x = f(x);\n            y = f(f(y));\n            d = gcd(abs(x - y), n);\n        }\n        if (d !== n) return d;\n        c++;\n    }\n}\n\nfunction abs(x) { return x < 0n ? -x : x; }\n\nfunction gcd(a,b) {\n    while (b) {\n        let t = a % b;\n        a = b; b = t;\n    }\n    return a;\n}\n\nfunction factor(n, res) {\n    if (n === 1n) return;\n    if (isPrime(n)) {\n        res.push(n);\n        return;\n    }\n    let d = pollardRho(n);\n    factor(d, res);\n    factor(n / d, res);\n}\n\nconst input = fs.readFileSync(0,'utf8').trim().split(/\\s+/);\nlet n = BigInt(input[0]);\nlet k = parseInt(input[1],10);\n\n// factor n\nlet primes = [];\nfactor(n, primes);\nprimes.sort((a,b)=> (a<b?-1:a>b?1:0));\n\n// count exponents\nlet pf = [];\nfor (let p of primes) {\n    if (pf.length && pf[pf.length-1].p === p) {\n        pf[pf.length-1].e++;\n    } else {\n        pf.push({p, e:1});\n    }\n}\n\n// For each prime factor, compute expected exponent after k steps\nlet result = 1n;\n\nfor (let {p, e} of pf) {\n    let maxE = e;\n    // dp[t][i] for t step, exponent i\n    let dp = new Array(maxE+1);\n    for (let i=0;i<=maxE;i++) dp[i]=0n;\n    dp[maxE]=1n;\n\n    for (let step=0; step<k; step++) {\n        let prefix = new Array(maxE+2);\n        prefix[0]=0n;\n        for (let i=0;i<=maxE;i++) prefix[i+1]=prefix[i]+dp[i];\n        let next = new Array(maxE+1);\n        for (let j=0;j<=maxE;j++) {\n            let cnt = BigInt(maxE - j + 1);\n            let sum = prefix[maxE+1]-prefix[j];\n            next[j] = sum / cnt;\n        }\n        dp = next;\n    }\n\n    // expected exponent\n    let expE = 0n;\n    for (let i=0;i<=maxE;i++) {\n        expE += BigInt(i) * dp[i];\n    }\n    // dp probabilities sum to 1, but we are in rationals; we used exact division above (BigInt).\n    // expE is rational; but divisions were exact since sums divisible by cnt.\n    // expE is integer? Not necessarily; but due to process, it is rational with denominator product of divisors.\n    // However, we used integer division, so it's exact BigInt rational? Actually division may truncate.\n    // To avoid this, we must work modulo MOD with inverses. Re-do DP modulo MOD.\n\n    // Recompute DP modulo MOD\n    let dpM = new Array(maxE+1).fill(0n);\n    dpM[maxE]=1n;\n    for (let step=0; step<k; step++) {\n        let prefixM = new Array(maxE+2);\n        prefixM[0]=0n;\n        for (let i=0;i<=maxE;i++) prefixM[i+1]=(prefixM[i]+dpM[i])%MOD;\n        let nextM = new Array(maxE+1);\n        for (let j=0;j<=maxE;j++) {\n            let cnt = BigInt(maxE - j + 1);\n            let sum = (prefixM[maxE+1]-prefixM[j]+MOD)%MOD;\n            nextM[j] = (sum * modInv(cnt%MOD))%MOD;\n        }\n        dpM = nextM;\n    }\n    let expEM = 0n;\n    for (let i=0;i<=maxE;i++) {\n        expEM = (expEM + BigInt(i)*dpM[i])%MOD;\n    }\n    let pPow = modPow(p%MOD, expEM, MOD);\n    result = (result * pPow)%MOD;\n}\n\nconsole.log(result.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst MOD = 1000000007n;\n\nfunction modPow(base, exp, mod) {\n    base %= mod;\n    let res = 1n;\n    while (exp > 0n) {\n        if (exp & 1n) res = (res * base) % mod;\n        base = (base * base) % mod;\n        exp >>= 1n;\n    }\n    return res;\n}\n\nfunction modInv(a) {\n    return modPow(a, MOD - 2n, MOD);\n}\n\n// Miller-Rabin primality test for 64-bit\nfunction isPrime(n) {\n    if (n < 2n) return false;\n    const smallPrimes = [2n,3n,5n,7n,11n,13n,17n,19n,23n,29n,31n,37n];\n    for (let p of smallPrimes) {\n        if (n === p) return true;\n        if (n % p === 0n) return false;\n    }\n    let d = n - 1n;\n    let s = 0n;\n    while ((d & 1n) === 0n) {\n        d >>= 1n;\n        s++;\n    }\n    const bases = [2n,325n,9375n,28178n,450775n,9780504n,1795265022n];\n    for (let a of bases) {\n        if (a % n === 0n) continue;\n        let x = modPow(a, d, n);\n        if (x === 1n || x === n - 1n) continue;\n        let skip = false;\n        for (let r = 1n; r < s; r++) {\n            x = (x * x) % n;\n            if (x === n - 1n) { skip = true; break; }\n        }\n        if (!skip) return false;\n    }\n    return true;\n}\n\nfunction gcd(a,b){ while(b){ let t=a%b; a=b; b=t;} return a;}\n\nfunction pollardsRho(n) {\n    if (n % 2n === 0n) return 2n;\n    if (n % 3n === 0n) return 3n;\n    let c = 1n;\n    while (true) {\n        let x = 2n, y = 2n, d = 1n;\n        const f = (v) => ( (v*v % n) + c ) % n;\n        while (d === 1n) {\n            x = f(x);\n            y = f(f(y));\n            d = gcd(x>y?x-y:y-x, n);\n        }\n        if (d !== n) return d;\n        c++;\n    }\n}\n\nfunction factor(n, res) {\n    if (n === 1n) return;\n    if (isPrime(n)) { res.push(n); return; }\n    let d = pollardsRho(n);\n    factor(d, res);\n    factor(n/d, res);\n}\n\nfunction getPrimeFactors(n) {\n    let arr = [];\n    factor(n, arr);\n    arr.sort((a,b)=> (a<b?-1:a>b?1:0));\n    let res = [];\n    for (let p of arr) {\n        if (res.length===0 || res[res.length-1][0]!==p) res.push([p,1]);\n        else res[res.length-1][1]++;\n    }\n    return res;\n}\n\nconst input = fs.readFileSync(0,'utf8').trim().split(/\\s+/);\nlet n = BigInt(input[0]);\nlet k = parseInt(input[1],10);\n\nlet pf = getPrimeFactors(n);\nlet m = pf.length;\n\n// Precompute factorials up to k\nlet fact = Array(k+1);\nlet invFact = Array(k+1);\nfact[0]=1n;\nfor(let i=1;i<=k;i++) fact[i]=(fact[i-1]*BigInt(i))%MOD;\ninvFact[k]=modInv(fact[k]);\nfor(let i=k;i>0;i--) invFact[i-1]=(invFact[i]*BigInt(i))%MOD;\n\nfunction comb(nBig, r) {\n    if (r<0 || r>nBig) return 0n;\n    let nb = BigInt(nBig);\n    // nBig <= k here\n    return (((fact[nb] * invFact[r])%MOD) * invFact[nb-BigInt(r)])%MOD;\n}\n\nlet ans = 1n;\nfor (let [p,e] of pf) {\n    let dp = Array(k+1);\n    dp[0]=BigInt(e);\n    for(let i=1;i<=k;i++){\n        let sum = 0n;\n        for(let j=0;j<=dp[i-1];j++){\n            let c = comb(dp[i-1], j);\n            sum = (sum + BigInt(j)*c)%MOD;\n        }\n        let inv = modInv(BigInt(dp[i-1]+1));\n        dp[i] = (sum*inv)%MOD;\n    }\n    let exp = dp[k];\n    ans = (ans * modPow(p%MOD, exp, MOD))%MOD;\n}\n\nconsole.log(ans.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst MOD = 1000000007n;\n\nfunction modPow(base, exp, mod) {\n    base %= mod;\n    let res = 1n;\n    while (exp > 0n) {\n        if (exp & 1n) res = (res * base) % mod;\n        base = (base * base) % mod;\n        exp >>= 1n;\n    }\n    return res;\n}\n\nfunction modInv(a) {\n    return modPow(a, MOD - 2n, MOD);\n}\n\n// Miller-Rabin primality test for 64-bit integers\nfunction isPrime(n) {\n    if (n < 2n) return false;\n    const smallPrimes = [2n,3n,5n,7n,11n,13n,17n,19n,23n,29n,31n,37n];\n    for (let p of smallPrimes) {\n        if (n === p) return true;\n        if (n % p === 0n) return false;\n    }\n    let d = n - 1n;\n    let s = 0n;\n    while ((d & 1n) === 0n) {\n        d >>= 1n;\n        s++;\n    }\n    const bases = [2n,325n,9375n,28178n,450775n,9780504n,1795265022n];\n    for (let a of bases) {\n        if (a % n === 0n) continue;\n        let x = modPow(a, d, n);\n        if (x === 1n || x === n - 1n) continue;\n        let skip = false;\n        for (let r = 1n; r < s; r++) {\n            x = (x * x) % n;\n            if (x === n - 1n) { skip = true; break; }\n        }\n        if (!skip) return false;\n    }\n    return true;\n}\n\n// Pollard-Rho\nfunction pollardRho(n) {\n    if (n % 2n === 0n) return 2n;\n    let c = 1n;\n    while (true) {\n        let x = 2n, y = 2n, d = 1n;\n        const f = (v) => ( (v * v + c) % n );\n        while (d === 1n) {\n            x = f(x);\n            y = f(f(y));\n            d = gcd(abs(x - y), n);\n        }\n        if (d !== n) return d;\n        c++;\n    }\n}\n\nfunction abs(x) { return x < 0n ? -x : x; }\n\nfunction gcd(a,b){\n    while (b) {\n        let t = a % b;\n        a = b;\n        b = t;\n    }\n    return a;\n}\n\nfunction factor(n, res) {\n    if (n === 1n) return;\n    if (isPrime(n)) {\n        res.push(n);\n        return;\n    }\n    let d = pollardRho(n);\n    factor(d, res);\n    factor(n / d, res);\n}\n\n// main\nconst input = fs.readFileSync(0,'utf8').trim().split(/\\s+/);\nlet n = BigInt(input[0]);\nlet k = parseInt(input[1],10);\n\n// factorize n\nlet primes = [];\nfactor(n, primes);\nprimes.sort((a,b)=> (a<b?-1:a>b?1:0));\n\n// count exponents\nlet factors = [];\nfor (let p of primes) {\n    if (factors.length === 0 || factors[factors.length-1][0] !== p) {\n        factors.push([p,1]);\n    } else {\n        factors[factors.length-1][1]++;\n    }\n}\n\n// precompute inverse of 2\nconst inv2 = modInv(2n);\n\nlet answer = 1n;\n\nfor (let [p, e] of factors) {\n    let maxExp = e;\n    let dp = new Array(maxExp+1);\n    for (let i=0;i<=maxExp;i++) dp[i] = 0n;\n    dp[maxExp] = 1n;\n\n    for (let step=0; step<k; step++) {\n        let prefix = new Array(maxExp+2);\n        prefix[0] = 0n;\n        for (let i=0;i<=maxExp;i++) {\n            prefix[i+1] = (prefix[i] + dp[i]) % MOD;\n        }\n        let next = new Array(maxExp+1);\n        for (let i=0;i<=maxExp;i++) {\n            // dp'[i] = sum_{j=i..maxExp} dp[j] / (j+1)\n            let sum = (prefix[maxExp+1] - prefix[i] + MOD) % MOD;\n            let denom = BigInt(i+1);\n            let invDen = modInv(denom);\n            next[i] = (sum * invDen) % MOD;\n        }\n        dp = next;\n    }\n\n    // expected exponent = sum i * dp[i]\n    let expVal = 0n;\n    for (let i=0;i<=maxExp;i++) {\n        expVal = (expVal + BigInt(i) * dp[i]) % MOD;\n    }\n\n    // contribution of this prime: p^{expVal}\n    let pMod = p % MOD;\n    let contrib = modPow(pMod, expVal, MOD);\n    answer = (answer * contrib) % MOD;\n}\n\nconsole.log(String(answer));",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst MOD = 1000000007n;\n\nfunction modPow(base, exp, mod) {\n    base %= mod;\n    let res = 1n;\n    while (exp > 0n) {\n        if (exp & 1n) res = (res * base) % mod;\n        base = (base * base) % mod;\n        exp >>= 1n;\n    }\n    return res;\n}\n\nfunction modInv(a) {\n    return modPow(a, MOD - 2n, MOD);\n}\n\n// Miller-Rabin primality test for 64-bit integers\nfunction isPrime(n) {\n    if (n < 2n) return false;\n    const smallPrimes = [2n,3n,5n,7n,11n,13n,17n,19n,23n,29n,31n,37n];\n    for (let p of smallPrimes) {\n        if (n === p) return true;\n        if (n % p === 0n) return false;\n    }\n    let d = n - 1n;\n    let s = 0n;\n    while ((d & 1n) === 0n) {\n        d >>= 1n;\n        s++;\n    }\n    function check(a) {\n        if (a % n === 0n) return true;\n        let x = modPow(a, d, n);\n        if (x === 1n || x === n - 1n) return true;\n        for (let r = 1n; r < s; r++) {\n            x = (x * x) % n;\n            if (x === n - 1n) return true;\n        }\n        return false;\n    }\n    const bases = [2n,325n,9375n,28178n,450775n,9780504n,1795265022n];\n    for (let a of bases) {\n        if (a >= n) continue;\n        if (!check(a)) return false;\n    }\n    return true;\n}\n\n// Pollard-Rho\nfunction pollardRho(n) {\n    if (n % 2n === 0n) return 2n;\n    if (n % 3n === 0n) return 3n;\n    let c = 1n + BigInt(Math.floor(Math.random() * 10) + 1);\n    let x = 2n, y = 2n, d = 1n;\n    function f(v) {\n        return ( (v * v) % n + c ) % n;\n    }\n    while (d === 1n) {\n        x = f(x);\n        y = f(f(y));\n        let diff = x > y ? x - y : y - x;\n        d = gcd(diff, n);\n        if (d === n) return pollardRho(n);\n    }\n    return d;\n}\n\nfunction gcd(a,b){\n    while (b) {\n        let t = a % b;\n        a = b;\n        b = t;\n    }\n    return a;\n}\n\nfunction factor(n, res) {\n    if (n === 1n) return;\n    if (isPrime(n)) {\n        res.push(n);\n        return;\n    }\n    let d = pollardRho(n);\n    factor(d, res);\n    factor(n / d, res);\n}\n\n// read input\nconst input = fs.readFileSync(0,'utf8').trim().split(/\\s+/);\nlet n = BigInt(input[0]);\nlet k = parseInt(input[1],10);\n\n// factorize n\nlet primes = [];\nfactor(n, primes);\nprimes.sort((a,b)=> (a<b?-1:a>b?1:0));\n\n// count exponents\nlet factors = [];\nfor (let p of primes) {\n    if (factors.length === 0 || factors[factors.length-1].p !== p) {\n        factors.push({p, e:1});\n    } else {\n        factors[factors.length-1].e++;\n    }\n}\n\n// for each prime factor, compute expected exponent after k steps\nlet result = 1n;\nfor (let {p, e} of factors) {\n    let maxE = e;\n    let dp = new Array(maxE+1).fill(0n);\n    dp[maxE] = 1n;\n    for (let step = 0; step < k; step++) {\n        let prefix = new Array(maxE+2).fill(0n);\n        for (let i = 0; i <= maxE; i++) {\n            prefix[i+1] = (prefix[i] + dp[i]) % MOD;\n        }\n        let next = new Array(maxE+1).fill(0n);\n        for (let i = 0; i <= maxE; i++) {\n            let cnt = BigInt(i+1);\n            let invCnt = modInv(cnt);\n            // sum dp[j] for j>=i: prefix[maxE+1]-prefix[i]\n            let sum = (prefix[maxE+1] - prefix[i] + MOD) % MOD;\n            next[i] = (sum * invCnt) % MOD;\n        }\n        dp = next;\n    }\n    let expectedExp = 0n;\n    for (let i = 0; i <= maxE; i++) {\n        expectedExp = (expectedExp + BigInt(i) * dp[i]) % MOD;\n    }\n    let pMod = p % MOD;\n    let contrib = modPow(pMod, expectedExp, MOD);\n    result = (result * contrib) % MOD;\n}\n\nconsole.log(result.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 10292,
+            "prompt_tokens": 552,
+            "total_tokens": 10844,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 1,
+                "engine_ttft_ms": 48,
+                "engine_ttlt_ms": 8862,
+                "pre_inference_ms": 272,
+                "service_tbt_ms": 1,
+                "service_ttft_ms": 467,
+                "service_ttlt_ms": 9269,
+                "total_duration_ms": 9007,
+                "user_visible_ttft_ms": 195
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Javascript to solve this programming problem:\nDescription: Makoto has a big blackboard with a positive integer $$$n$$$ written on it. He will perform the following action exactly $$$k$$$ times:Suppose the number currently written on the blackboard is $$$v$$$. He will randomly pick one of the divisors of $$$v$$$ (possibly $$$1$$$ and $$$v$$$) and replace $$$v$$$ with this divisor. As Makoto uses his famous random number generator (RNG) and as he always uses $$$58$$$ as his generator seed, each divisor is guaranteed to be chosen with equal probability.He now wonders what is the expected value of the number written on the blackboard after $$$k$$$ steps.It can be shown that this value can be represented as $$$\\frac{P}{Q}$$$ where $$$P$$$ and $$$Q$$$ are coprime integers and $$$Q \\not\\equiv 0 \\pmod{10^9+7}$$$. Print the value of $$$P \\cdot Q^{-1}$$$ modulo $$$10^9+7$$$.\nInput Specification: The only line of the input contains two integers $$$n$$$ and $$$k$$$ ($$$1 \\leq n \\leq 10^{15}$$$, $$$1 \\leq k \\leq 10^4$$$).\nOutput Specification: Print a single integer \u2014 the expected value of the number on the blackboard after $$$k$$$ steps as $$$P \\cdot Q^{-1} \\pmod{10^9+7}$$$ for $$$P$$$, $$$Q$$$ defined above.\n\nSample Input:\n6 1\nSample Output:\n3\n\nSample Input:\n6 2\nSample Output:\n875000008\n\nSample Input:\n60 5\nSample Output:\n237178099\n\nNotes: NoteIn the first example, after one step, the number written on the blackboard is $$$1$$$, $$$2$$$, $$$3$$$ or $$$6$$$ \u2014 each occurring with equal probability. Hence, the answer is $$$\\frac{1+2+3+6}{4}=3$$$.In the second example, the answer is equal to $$$1 \\cdot \\frac{9}{16}+2 \\cdot \\frac{3}{16}+3 \\cdot \\frac{3}{16}+6 \\cdot \\frac{1}{16}=\\frac{15}{8}$$$.\nTake input from standard input and output to standard output\nProvide the Javascript code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "dc466d9c24b7dcb37c0e99337b4124d2",
+        "difficulty": 2200,
+        "prob_desc_sample_inputs": [
+            "6 1",
+            "6 2",
+            "60 5"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "math",
+            "number theory",
+            "probabilities",
+            "dp"
+        ],
+        "prob_desc_output_spec": "Print a single integer \u2014 the expected value of the number on the blackboard after $$$k$$$ steps as $$$P \\cdot Q^{-1} \\pmod{10^9+7}$$$ for $$$P$$$, $$$Q$$$ defined above.",
+        "prob_desc_input_spec": "The only line of the input contains two integers $$$n$$$ and $$$k$$$ ($$$1 \\leq n \\leq 10^{15}$$$, $$$1 \\leq k \\leq 10^4$$$).",
+        "lang_cluster": "Javascript",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first example, after one step, the number written on the blackboard is $$$1$$$, $$$2$$$, $$$3$$$ or $$$6$$$ \u2014 each occurring with equal probability. Hence, the answer is $$$\\frac{1+2+3+6}{4}=3$$$.In the second example, the answer is equal to $$$1 \\cdot \\frac{9}{16}+2 \\cdot \\frac{3}{16}+3 \\cdot \\frac{3}{16}+6 \\cdot \\frac{1}{16}=\\frac{15}{8}$$$.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Makoto has a big blackboard with a positive integer $$$n$$$ written on it. He will perform the following action exactly $$$k$$$ times:Suppose the number currently written on the blackboard is $$$v$$$. He will randomly pick one of the divisors of $$$v$$$ (possibly $$$1$$$ and $$$v$$$) and replace $$$v$$$ with this divisor. As Makoto uses his famous random number generator (RNG) and as he always uses $$$58$$$ as his generator seed, each divisor is guaranteed to be chosen with equal probability.He now wonders what is the expected value of the number written on the blackboard after $$$k$$$ steps.It can be shown that this value can be represented as $$$\\frac{P}{Q}$$$ where $$$P$$$ and $$$Q$$$ are coprime integers and $$$Q \\not\\equiv 0 \\pmod{10^9+7}$$$. Print the value of $$$P \\cdot Q^{-1}$$$ modulo $$$10^9+7$$$.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1546613100",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "3",
+            "875000008",
+            "237178099"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"6 1\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"6 2\\r\\n\", \"output\": [\"875000008\"]}, {\"input\": \"60 5\\r\\n\", \"output\": [\"237178099\"]}, {\"input\": \"2 4\\r\\n\", \"output\": [\"562500005\"]}, {\"input\": \"12 3\\r\\n\", \"output\": [\"775462970\"]}, {\"input\": \"55 5\\r\\n\", \"output\": [\"789062507\"]}, {\"input\": \"935 9\\r\\n\", \"output\": [\"658825880\"]}, {\"input\": \"1 10000\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"120 1\\r\\n\", \"output\": [\"500000026\"]}, {\"input\": \"1000000000000000 10000\\r\\n\", \"output\": [\"215514159\"]}, {\"input\": \"671058194037157 8673\\r\\n\", \"output\": [\"298638658\"]}, {\"input\": \"900018062553298 4801\\r\\n\", \"output\": [\"345432320\"]}, {\"input\": \"128973636102142 5521\\r\\n\", \"output\": [\"99152648\"]}, {\"input\": \"999999999999993 8123\\r\\n\", \"output\": [\"868053217\"]}, {\"input\": \"260858031033600 9696\\r\\n\", \"output\": [\"692221824\"]}, {\"input\": \"562949953421312 9779\\r\\n\", \"output\": [\"98057767\"]}, {\"input\": \"357933504618282 1649\\r\\n\", \"output\": [\"197730476\"]}, {\"input\": \"586884783199831 5073\\r\\n\", \"output\": [\"883678085\"]}, {\"input\": \"187877211524483 8497\\r\\n\", \"output\": [\"562808746\"]}, {\"input\": \"866421317361600 10000\\r\\n\", \"output\": [\"82212846\"]}, {\"input\": \"782574093100800 9999\\r\\n\", \"output\": [\"293217028\"]}, {\"input\": \"577614211574400 9998\\r\\n\", \"output\": [\"681915605\"]}, {\"input\": \"65214507758400 9997\\r\\n\", \"output\": [\"677959603\"]}, {\"input\": \"963761198400 9996\\r\\n\", \"output\": [\"669401143\"]}, {\"input\": \"5587021440 9995\\r\\n\", \"output\": [\"360750834\"]}, {\"input\": \"17297280 9994\\r\\n\", \"output\": [\"94383698\"]}, {\"input\": \"7560 9993\\r\\n\", \"output\": [\"412712546\"]}, {\"input\": \"120 9992\\r\\n\", \"output\": [\"167656619\"]}, {\"input\": \"1 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"609359740010496 1337\\r\\n\", \"output\": [\"263703037\"]}, {\"input\": \"912750790581630 9876\\r\\n\", \"output\": [\"291557094\"]}, {\"input\": \"617673396283947 7777\\r\\n\", \"output\": [\"488769014\"]}, {\"input\": \"890604418498560 9119\\r\\n\", \"output\": [\"185509970\"]}, {\"input\": \"524288004718592 8888\\r\\n\", \"output\": [\"851726115\"]}, {\"input\": \"999999999999989 8998\\r\\n\", \"output\": [\"391873310\"]}, {\"input\": \"999999999999999 8123\\r\\n\", \"output\": [\"41003922\"]}, {\"input\": \"817237005720659 4233\\r\\n\", \"output\": [\"533017938\"]}, {\"input\": \"1000000007 1\\r\\n\", \"output\": [\"500000004\"]}, {\"input\": \"1000000007 2\\r\\n\", \"output\": [\"750000006\"]}, {\"input\": \"999999999999970 8998\\r\\n\", \"output\": [\"939941657\"]}, {\"input\": \"900000060000001 8123\\r\\n\", \"output\": [\"865356488\"]}, {\"input\": \"999011322032079 4233\\r\\n\", \"output\": [\"546309400\"]}, {\"input\": \"999005327998113 9119\\r\\n\", \"output\": [\"106270540\"]}, {\"input\": \"900000720000023 9876\\r\\n\", \"output\": [\"511266473\"]}]"
+    }
+}

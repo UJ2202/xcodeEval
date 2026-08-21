@@ -1,0 +1,350 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEICEHOTKSSvx2yOp7NVFL27xcdi0",
+        "created": 1787075246,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "<?php\n// Read n and m\nlist($n, $m) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n\n// Read actions\n$actions = array_map('intval', explode(' ', trim(fgets(STDIN))));\narray_unshift($actions, 0); // 1-based indexing\n\n// Graphs\n$g = array_fill(0, $n + 1, []);\n$rg = array_fill(0, $n + 1, []);\n\n// Read edges\nfor ($i = 0; $i < $m; $i++) {\n    $line = trim(fgets(STDIN));\n    if ($line === '') { $i--; continue; }\n    list($a, $b) = array_map('intval', explode(' ', $line));\n    $g[$a][] = $b;\n    $rg[$b][] = $a;\n}\n\n// Kosaraju to find SCCs\n$visited = array_fill(0, $n + 1, false);\n$order = [];\n\nfor ($i = 1; $i <= $n; $i++) {\n    if (!$visited[$i]) {\n        $stack = [[$i, 0]];\n        while ($stack) {\n            [$v, $state] = array_pop($stack);\n            if ($state == 0) {\n                if ($visited[$v]) continue;\n                $visited[$v] = true;\n                $stack[] = [$v, 1];\n                foreach ($g[$v] as $to) {\n                    if (!$visited[$to]) $stack[] = [$to, 0];\n                }\n            } else {\n                $order[] = $v;\n            }\n        }\n    }\n}\n\n$scc_id = array_fill(0, $n + 1, -1);\n$scc_count = 0;\n\nfor ($i = count($order) - 1; $i >= 0; $i--) {\n    $v = $order[$i];\n    if ($scc_id[$v] != -1) continue;\n    $stack = [$v];\n    $scc_id[$v] = $scc_count;\n    while ($stack) {\n        $u = array_pop($stack);\n        foreach ($rg[$u] as $to) {\n            if ($scc_id[$to] == -1) {\n                $scc_id[$to] = $scc_count;\n                $stack[] = $to;\n            }\n        }\n    }\n    $scc_count++;\n}\n\n// Build SCC DAG\n$scc_g = array_fill(0, $scc_count, []);\n$assign = array_fill(0, $scc_count, false);\n$use = array_fill(0, $scc_count, false);\n\nfor ($v = 1; $v <= $n; $v++) {\n    $cid = $scc_id[$v];\n    if ($actions[$v] == 1) $assign[$cid] = true;\n    if ($actions[$v] == 2) $use[$cid] = true;\n    foreach ($g[$v] as $to) {\n        $ct = $scc_id[$to];\n        if ($ct != $cid) {\n            $scc_g[$cid][$ct] = true; // use associative to avoid duplicates\n        }\n    }\n}\n\n// Convert adjacency sets to lists\nfor ($i = 0; $i < $scc_count; $i++) {\n    $scc_g[$i] = array_keys($scc_g[$i]);\n}\n\n// Topological order of SCC DAG (Kahn)\n$indeg = array_fill(0, $scc_count, 0);\nfor ($u = 0; $u < $scc_count; $u++) {\n    foreach ($scc_g[$u] as $v) {\n        $indeg[$v]++;\n    }\n}\n\n$queue = [];\nfor ($i = 0; $i < $scc_count; $i++) {\n    if ($indeg[$i] == 0) $queue[] = $i;\n}\n\n$topo = [];\nfor ($head = 0; $head < count($queue); $head++) {\n    $v = $queue[$head];\n    $topo[] = $v;\n    foreach ($scc_g[$v] as $to) {\n        if (--$indeg[$to] == 0) {\n            $queue[] = $to;\n        }\n    }\n}\n\n// DP over DAG\n$has_assign = array_fill(0, $scc_count, false);\n$has_use = array_fill(0, $scc_count, false);\n\nforeach ($topo as $v) {\n    if ($assign[$v]) $has_assign[$v] = true;\n    if ($use[$v]) $has_use[$v] = true;\n    foreach ($scc_g[$v] as $to) {\n        if ($has_assign[$v]) $has_assign[$to] = true;\n        if ($has_use[$v]) $has_use[$to] = true;\n    }\n}\n\n// Determine interesting SCCs\n$interesting_scc = array_fill(0, $scc_count, false);\nfor ($i = 0; $i < $scc_count; $i++) {\n    if ($has_assign[$i] && $has_use[$i] && !$assign[$i]) {\n        $interesting_scc[$i] = true;\n    }\n}\n\n// Output per node\n$out = [];\nfor ($v = 1; $v <= $n; $v++) {\n    $cid = $scc_id[$v];\n    $out[] = $interesting_scc[$cid] ? '1' : '0';\n}\necho implode(PHP_EOL, $out);\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "<?php\nfscanf(STDIN, \"%d %d\", $n, $m);\n$line = trim(fgets(STDIN));\n$f = array_map('intval', preg_split('/\\s+/', $line));\n\n$adj = array_fill(0, $n, []);\n$radj = array_fill(0, $n, []);\n\nfor ($i = 0; $i < $m; $i++) {\n    fscanf(STDIN, \"%d %d\", $a, $b);\n    $a--; $b--;\n    $adj[$a][] = $b;\n    $radj[$b][] = $a;\n}\n\n$interesting = array_fill(0, $n, 0);\n\n// BFS from all use states (f[i]==2) on reverse graph\n$queue = new SplQueue();\n$inQueue = array_fill(0, $n, false);\n\nfor ($i = 0; $i < $n; $i++) {\n    if ($f[$i] == 2) {\n        $queue->enqueue($i);\n        $inQueue[$i] = true;\n    }\n}\n\nwhile (!$queue->isEmpty()) {\n    $v = $queue->dequeue();\n    $interesting[$v] = 1;\n    foreach ($radj[$v] as $u) {\n        if ($f[$u] == 1) continue; // assignment breaks chain\n        if (!$inQueue[$u]) {\n            $inQueue[$u] = true;\n            $queue->enqueue($u);\n        }\n    }\n}\n\n// Output\nfor ($i = 0; $i < $n; $i++) {\n    echo $interesting[$i] . PHP_EOL;\n}\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "<?php\n// Read n and m\nlist($n, $m) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n\n// Read actions\n$actions = array_map('intval', explode(' ', trim(fgets(STDIN))));\narray_unshift($actions, 0); // 1-based indexing\n\n// Graphs\n$g = array_fill(0, $n + 1, []);\n$rg = array_fill(0, $n + 1, []); // reversed graph\n\nfor ($i = 0; $i < $m; $i++) {\n    $line = trim(fgets(STDIN));\n    if ($line === '') { $i--; continue; }\n    list($a, $b) = array_map('intval', explode(' ', $line));\n    $g[$a][] = $b;\n    $rg[$b][] = $a;\n}\n\n// Step 1: find nodes reachable from any assign (f[i] == 1)\n$reachableFromAssign = array_fill(0, $n + 1, false);\n$queue = [];\n\n// Multi-source BFS from all assign nodes\nfor ($i = 1; $i <= $n; $i++) {\n    if ($actions[$i] == 1) {\n        $reachableFromAssign[$i] = true;\n        $queue[] = $i;\n    }\n}\n\nfor ($head = 0; $head < count($queue); $head++) {\n    $v = $queue[$head];\n    foreach ($g[$v] as $to) {\n        if (!$reachableFromAssign[$to]) {\n            $reachableFromAssign[$to] = true;\n            $queue[] = $to;\n        }\n    }\n}\n\n// Step 2: find nodes that can reach any use (f[i] == 2) via paths with no assign (except maybe start)\n$canReachUseNoAssign = array_fill(0, $n + 1, false);\n$queue = [];\n\n// Multi-source BFS on reversed graph from all use nodes\nfor ($i = 1; $i <= $n; $i++) {\n    if ($actions[$i] == 2) {\n        $canReachUseNoAssign[$i] = true;\n        $queue[] = $i;\n    }\n}\n\nfor ($head = 0; $head < count($queue); $head++) {\n    $v = $queue[$head];\n    foreach ($rg[$v] as $from) {\n        // We cannot pass through assign nodes (f[from] == 1), they can only be starting points\n        if ($actions[$from] == 1) continue;\n        if (!$canReachUseNoAssign[$from]) {\n            $canReachUseNoAssign[$from] = true;\n            $queue[] = $from;\n        }\n    }\n}\n\n// Step 3: determine interesting states\n// A state is interesting if it lies on some path from an assign to a use with no other assign in between.\n// That is: reachableFromAssign[i] && canReachUseNoAssign[i]\n$out = [];\nfor ($i = 1; $i <= $n; $i++) {\n    $out[$i] = ($reachableFromAssign[$i] && $canReachUseNoAssign[$i]) ? 1 : 0;\n}\n\n// Output\nfor ($i = 1; $i <= $n; $i++) {\n    echo $out[$i] . PHP_EOL;\n}\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "<?php\n// Read n and m\nlist($n, $m) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n\n// Read actions\n$f = array_map('intval', explode(' ', trim(fgets(STDIN))));\narray_unshift($f, 0); // 1-based\n\n// Graphs\n$g = array_fill(0, $n + 1, []);\n$rg = array_fill(0, $n + 1, []); // reversed graph\n\nfor ($i = 0; $i < $m; $i++) {\n    $line = trim(fgets(STDIN));\n    if ($line === '') { $i--; continue; }\n    list($a, $b) = array_map('intval', explode(' ', $line));\n    $g[$a][] = $b;\n    $rg[$b][] = $a;\n}\n\n// Step 1: find all nodes reachable from any assign (f[i] == 1)\n$reachableFromAssign = array_fill(0, $n + 1, false);\n$queue = [];\n\n// multi-source BFS from all assign nodes\nfor ($i = 1; $i <= $n; $i++) {\n    if ($f[$i] == 1) {\n        $reachableFromAssign[$i] = true;\n        $queue[] = $i;\n    }\n}\n\nfor ($head = 0; $head < count($queue); $head++) {\n    $v = $queue[$head];\n    foreach ($g[$v] as $to) {\n        if (!$reachableFromAssign[$to]) {\n            $reachableFromAssign[$to] = true;\n            $queue[] = $to;\n        }\n    }\n}\n\n// Step 2: find all nodes that can reach some use (f[i] == 2) via reverse graph\n$canReachUse = array_fill(0, $n + 1, false);\n$queue = [];\n\n// multi-source BFS from all use nodes in reversed graph\nfor ($i = 1; $i <= $n; $i++) {\n    if ($f[$i] == 2) {\n        $canReachUse[$i] = true;\n        $queue[] = $i;\n    }\n}\n\nfor ($head = 0; $head < count($queue); $head++) {\n    $v = $queue[$head];\n    foreach ($rg[$v] as $to) {\n        if (!$canReachUse[$to]) {\n            $canReachUse[$to] = true;\n            $queue[] = $to;\n        }\n    }\n}\n\n// Step 3: build subgraph of nodes that are both reachableFromAssign and canReachUse\n$subNodes = array_fill(0, $n + 1, false);\nfor ($i = 1; $i <= $n; $i++) {\n    if ($reachableFromAssign[$i] && $canReachUse[$i]) {\n        $subNodes[$i] = true;\n    }\n}\n\n// Step 4: find SCCs in this subgraph using Kosaraju\n$visited = array_fill(0, $n + 1, false);\n$order = [];\n\n// DFS1 on subgraph\n$stack = [];\nfor ($i = 1; $i <= $n; $i++) {\n    if ($subNodes[$i] && !$visited[$i]) {\n        // iterative DFS\n        $stack[] = [$i, 0]; // node, state 0=enter,1=exit\n        while ($stack) {\n            $top = array_pop($stack);\n            $v = $top[0];\n            $state = $top[1];\n            if ($state == 0) {\n                if ($visited[$v]) continue;\n                $visited[$v] = true;\n                $stack[] = [$v, 1];\n                foreach ($g[$v] as $to) {\n                    if ($subNodes[$to] && !$visited[$to]) {\n                        $stack[] = [$to, 0];\n                    }\n                }\n            } else {\n                $order[] = $v;\n            }\n        }\n    }\n}\n\n// DFS2 on reversed graph to get components\n$compId = array_fill(0, $n + 1, -1);\n$compCount = 0;\n\nfor ($i = count($order) - 1; $i >= 0; $i--) {\n    $v = $order[$i];\n    if ($compId[$v] != -1) continue;\n\n    // iterative DFS on reversed graph\n    $stack = [$v];\n    $compId[$v] = $compCount;\n    while ($stack) {\n        $u = array_pop($stack);\n        foreach ($rg[$u] as $to) {\n            if ($subNodes[$to] && $compId[$to] == -1) {\n                $compId[$to] = $compCount;\n                $stack[] = $to;\n            }\n        }\n    }\n    $compCount++;\n}\n\n// Step 5: analyze each component\n$compHasAssign = array_fill(0, $compCount, false);\n$compHasUse = array_fill(0, $compCount, false);\n\nfor ($i = 1; $i <= $n; $i++) {\n    if (!$subNodes[$i]) continue;\n    $cid = $compId[$i];\n    if ($f[$i] == 1) $compHasAssign[$cid] = true;\n    if ($f[$i] == 2) $compHasUse[$cid] = true;\n}\n\n// Step 6: mark interesting nodes\n$res = array_fill(0, $n + 1, 0);\nfor ($i = 1; $i <= $n; $i++) {\n    if (!$subNodes[$i]) continue;\n    $cid = $compId[$i];\n    if ($compHasAssign[$cid] && $compHasUse[$cid]) {\n        $res[$i] = 1;\n    }\n}\n\n// Output\nfor ($i = 1; $i <= $n; $i++) {\n    echo $res[$i] . PHP_EOL;\n}\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "<?php\n// Read n and m\nlist($n, $m) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n\n// Read actions\n$f = array_map('intval', explode(' ', trim(fgets(STDIN))));\narray_unshift($f, 0); // 1-based\n\n// Graphs\n$g = array_fill(0, $n + 1, []);\n$rg = array_fill(0, $n + 1, []); // reversed graph\n\nfor ($i = 0; $i < $m; $i++) {\n    $line = trim(fgets(STDIN));\n    if ($line === '') { $i--; continue; }\n    list($a, $b) = array_map('intval', explode(' ', $line));\n    $g[$a][] = $b;\n    $rg[$b][] = $a;\n}\n\n// Step 1: nodes reachable from any assign (f[i] == 1)\n$fromAssign = array_fill(0, $n + 1, false);\n$queue = [];\n$head = 0;\n\nfor ($i = 1; $i <= $n; $i++) {\n    if ($f[$i] == 1) {\n        $fromAssign[$i] = true;\n        $queue[] = $i;\n    }\n}\n\nwhile ($head < count($queue)) {\n    $v = $queue[$head++];\n    foreach ($g[$v] as $to) {\n        if (!$fromAssign[$to]) {\n            $fromAssign[$to] = true;\n            $queue[] = $to;\n        }\n    }\n}\n\n// Step 2: nodes that can reach any use (f[i] == 2), using reverse graph\n$toUse = array_fill(0, $n + 1, false);\n$queue = [];\n$head = 0;\n\nfor ($i = 1; $i <= $n; $i++) {\n    if ($f[$i] == 2) {\n        $toUse[$i] = true;\n        $queue[] = $i;\n    }\n}\n\nwhile ($head < count($queue)) {\n    $v = $queue[$head++];\n    foreach ($rg[$v] as $from) {\n        if (!$toUse[$from]) {\n            $toUse[$from] = true;\n            $queue[] = $from;\n        }\n    }\n}\n\n// Step 3: nodes that are on some path from assign to use\n$onPath = array_fill(0, $n + 1, false);\nfor ($i = 1; $i <= $n; $i++) {\n    if ($fromAssign[$i] && $toUse[$i]) {\n        $onPath[$i] = true;\n    }\n}\n\n// Step 4: build subgraph of nodes onPath and find SCCs (Kosaraju)\n$visited = array_fill(0, $n + 1, false);\n$order = [];\n\n// DFS1 on subgraph\n$stack = [];\nfor ($i = 1; $i <= $n; $i++) {\n    if ($onPath[$i] && !$visited[$i]) {\n        // iterative DFS\n        $stack[] = [$i, 0];\n        $visited[$i] = true;\n        while ($stack) {\n            $top = array_pop($stack);\n            $v = $top[0];\n            $idx = $top[1];\n            $adj = $g[$v];\n            $len = count($adj);\n            if ($idx < $len) {\n                $stack[]([$v, $idx + 1]);\n                $to = $adj[$idx];\n                if ($onPath[$to] && !$visited[$to]) {\n                    $visited[$to] = true;\n                    $stack[]([$to, 0]);\n                }\n            } else {\n                $order[] = $v;\n            }\n        }\n    }\n}\n\n// DFS2 on reversed subgraph\n$compId = array_fill(0, $n + 1, -1);\n$compCount = 0;\n\nfor ($i = count($order) - 1; $i >= 0; $i--) {\n    $v = $order[$i];\n    if ($compId[$v] != -1) continue;\n\n    $stack = [$v];\n    $compId[$v] = $compCount;\n    while ($stack) {\n        $u = array_pop($stack);\n        foreach ($rg[$u] as $to) {\n            if ($onPath[$to] && $compId[$to] == -1) {\n                $compId[$to] = $compCount;\n                $stack[] = $to;\n            }\n        }\n    }\n    $compCount++;\n}\n\n// Step 5: mark SCCs that contain assign or use\n$compHasAssign = array_fill(0, $compCount, false);\n$compHasUse = array_fill(0, $compCount, false);\n\nfor ($i = 1; $i <= $n; $i++) {\n    if (!$onPath[$i]) continue;\n    $cid = $compId[$i];\n    if ($f[$i] == 1) $compHasAssign[$cid] = true;\n    if ($f[$i] == 2) $compHasUse[$cid] = true;\n}\n\n// Step 6: build SCC DAG and mark components reachable from assign and to use\n$compGraph = array_fill(0, $compCount, []);\n$revCompGraph = array_fill(0, $compCount, []);\n\nfor ($v = 1; $v <= $n; $v++) {\n    if (!$onPath[$v]) continue;\n    $cv = $compId[$v];\n    foreach ($g[$v] as $to) {\n        if (!$onPath[$to]) continue;\n        $cu = $compId[$to];\n        if ($cv != $cu) {\n            $compGraph[$cv][] = $cu;\n            $revCompGraph[$cu][] = $cv;\n        }\n    }\n}\n\n// Remove duplicate edges\nfor ($i = 0; $i < $compCount; $i++) {\n    if ($compGraph[$i]) {\n        $compGraph[$i] = array_values(array_unique($compGraph[$i]));\n    }\n    if ($revCompGraph[$i]) {\n        $revCompGraph[$i] = array_values(array_unique($revCompGraph[$i]));\n    }\n}\n\n// fromAssignComp\n$fromAssignComp = array_fill(0, $compCount, false);\n$queue = [];\n$head = 0;\nfor ($i = 0; $i < $compCount; $i++) {\n    if ($compHasAssign[$i]) {\n        $fromAssignComp[$i] = true;\n        $queue[] = $i;\n    }\n}\nwhile ($head < count($queue)) {\n    $c = $queue[$head++];\n    foreach ($compGraph[$c] as $to) {\n        if (!$fromAssignComp[$to]) {\n            $fromAssignComp[$to] = true;\n            $queue[] = $to;\n        }\n    }\n}\n\n// toUseComp\n$toUseComp = array_fill(0, $compCount, false);\n$queue = [];\n$head = 0;\nfor ($i = 0; $i < $compCount; $i++) {\n    if ($compHasUse[$i]) {\n        $toUseComp[$i] = true;\n        $queue[] = $i;\n    }\n}\nwhile ($head < count($queue)) {\n    $c = $queue[$head++];\n    foreach ($revCompGraph[$c] as $from) {\n        if (!$toUseComp[$from]) {\n            $toUseComp[$from] = true;\n            $queue[] = $from;\n        }\n    }\n}\n\n// Step 7: final result\n$res = array_fill(1, $n, 0);\nfor ($i = 1; $i <= $n; $i++) {\n    if (!$onPath[$i]) continue;\n    $cid = $compId[$i];\n    if ($fromAssignComp[$cid] && $toUseComp[$cid]) {\n        $res[$i] = 1;\n    }\n}\n\n// Output\nfor ($i = 1; $i <= $n; $i++) {\n    echo $res[$i] . PHP_EOL;\n}\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "<?php\nfscanf(STDIN, \"%d %d\", $n, $m);\n$f = array_map('intval', explode(' ', trim(fgets(STDIN))));\n\n$g = array_fill(0, $n, []);\n$rg = array_fill(0, $n, []);\n\nfor ($i = 0; $i < $m; $i++) {\n    fscanf(STDIN, \"%d %d\", $a, $b);\n    --$a; --$b;\n    $g[$a][] = $b;\n    $rg[$b][] = $a;\n}\n\n$interesting = array_fill(0, $n, 0);\n\n// BFS from all use states (fi == 2) on reversed graph\n$queue = [];\n$head = 0;\nfor ($i = 0; $i < $n; $i++) {\n    if ($f[$i] == 2) {\n        $interesting[$i] = 1;\n        $queue[] = $i;\n    }\n}\n\nwhile ($head < count($queue)) {\n    $v = $queue[$head++];\n    foreach ($rg[$v] as $u) {\n        if ($interesting[$u]) continue;\n        if ($f[$u] == 1) continue; // assignment breaks the chain\n        $interesting[$u] = 1;\n        $queue[] = $u;\n    }\n}\n\n// Output\nfor ($i = 0; $i < $n; $i++) {\n    echo $interesting[$i] . PHP_EOL;\n}\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "<?php\n// Read n and m\nlist($n, $m) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n\n// Read actions\n$f = array_map('intval', explode(' ', trim(fgets(STDIN))));\narray_unshift($f, 0); // 1-based indexing\n\n// Graphs\n$g = array_fill(0, $n + 1, []);\n$rg = array_fill(0, $n + 1, []); // reverse graph\n\nfor ($i = 0; $i < $m; $i++) {\n    $line = trim(fgets(STDIN));\n    if ($line === '') { $i--; continue; }\n    list($a, $b) = array_map('intval', explode(' ', $line));\n    $g[$a][] = $b;\n    $rg[$b][] = $a;\n}\n\n// Kosaraju to find SCCs\n$visited = array_fill(0, $n + 1, false);\n$order = [];\n\nfunction dfs1($v, &$g, &$visited, &$order) {\n    $visited[$v] = true;\n    foreach ($g[$v] as $to) {\n        if (!$visited[$to]) dfs1($to, $g, $visited, $order);\n    }\n    $order[] = $v;\n}\n\nfor ($i = 1; $i <= $n; $i++) {\n    if (!$visited[$i]) dfs1($i, $g, $visited, $order);\n}\n\n$comp = array_fill(0, $n + 1, -1);\n$compCnt = 0;\n\nfunction dfs2($v, $cl, &$rg, &$comp) {\n    $comp[$v] = $cl;\n    foreach ($rg[$v] as $to) {\n        if ($comp[$to] == -1) dfs2($to, $cl, $rg, $comp);\n    }\n}\n\nfor ($i = count($order) - 1; $i >= 0; $i--) {\n    $v = $order[$i];\n    if ($comp[$v] == -1) {\n        dfs2($v, $compCnt, $rg, $comp);\n        $compCnt++;\n    }\n}\n\n// Build condensation DAG\n$cg = array_fill(0, $compCnt, []);\n$rcg = array_fill(0, $compCnt, []);\n$hasEdge = [];\n\nfor ($v = 1; $v <= $n; $v++) {\n    $cv = $comp[$v];\n    foreach ($g[$v] as $to) {\n        $cu = $comp[$to];\n        if ($cv != $cu) {\n            $key = $cv . ',' . $cu;\n            if (!isset($hasEdge[$key])) {\n                $hasEdge[$key] = true;\n                $cg[$cv][] = $cu;\n                $rcg[$cu][] = $cv;\n            }\n        }\n    }\n}\n\n// Mark components with assignment and usage\n$hasAssign = array_fill(0, $compCnt, false);\n$hasUse = array_fill(0, $compCnt, false);\n\nfor ($v = 1; $v <= $n; $v++) {\n    $c = $comp[$v];\n    if ($f[$v] == 1) $hasAssign[$c] = true;\n    if ($f[$v] == 2) $hasUse[$c] = true;\n}\n\n// DP: from assignment to usage without other assignments\n$good = array_fill(0, $compCnt, false);\n\n// Topological order of condensation DAG\n$indeg = array_fill(0, $compCnt, 0);\nfor ($i = 0; $i < $compCnt; $i++) {\n    foreach ($cg[$i] as $to) $indeg[$to]++;\n}\n$queue = [];\nfor ($i = 0; $i < $compCnt; $i++) {\n    if ($indeg[$i] == 0) $queue[] = $i;\n}\n$topo = [];\nfor ($qi = 0; $qi < count($queue); $qi++) {\n    $v = $queue[$qi];\n    $topo[] = $v;\n    foreach ($cg[$v] as $to) {\n        $indeg[$to]--;\n        if ($indeg[$to] == 0) $queue[] = $to;\n    }\n}\n\n// Forward DP: from assignments forward until another assignment\n$canReachUse = array_fill(0, $compCnt, false);\n$fromAssign = array_fill(0, $compCnt, false);\n\nfor ($i = 0; $i < $compCnt; $i++) {\n    if ($hasAssign[$i]) {\n        $fromAssign[$i] = true;\n    }\n}\n\nforeach ($topo as $v) {\n    if ($fromAssign[$v]) {\n        if ($hasUse[$v]) $canReachUse[$v] = true;\n        foreach ($cg[$v] as $to) {\n            if (!$hasAssign[$to]) {\n                if ($fromAssign[$to] == false) $fromAssign[$to] = true;\n            }\n        }\n    }\n}\n\n// Backward DP: from usages backward until another assignment\n$canReachAssign = array_fill(0, $compCnt, false);\n$toUse = array_fill(0, $compCnt, false);\n\nfor ($i = 0; $i < $compCnt; $i++) {\n    if ($hasUse[$i]) {\n        $toUse[$i] = true;\n    }\n}\n\nfor ($i = count($topo) - 1; $i >= 0; $i--) {\n    $v = $topo[$i];\n    if ($toUse[$v]) {\n        if ($hasAssign[$v]) $canReachAssign[$v] = true;\n        foreach ($rcg[$v] as $from) {\n            if (!$hasAssign[$from]) {\n                if ($toUse[$from] == false) $toUse[$from] = true;\n            }\n        }\n    }\n}\n\n// A component is good if it's on some path from assign to use without other assigns\nfor ($i = 0; $i < $compCnt; $i++) {\n    if ($fromAssign[$i] && $toUse[$i]) $good[$i] = true;\n}\n\n// Output per node\n$out = [];\nfor ($v = 1; $v <= $n; $v++) {\n    $out[] = $good[$comp[$v]] ? '1' : '0';\n}\necho implode(PHP_EOL, $out);\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "<?php\n// Read n and m\nlist($n, $m) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n\n// Read actions\n$f = array_map('intval', explode(' ', trim(fgets(STDIN))));\narray_unshift($f, 0); // 1-based indexing\n\n// Graphs\n$g = array_fill(0, $n + 1, []);\n$rg = array_fill(0, $n + 1, []); // reverse graph\n\nfor ($i = 0; $i < $m; $i++) {\n    $line = trim(fgets(STDIN));\n    if ($line === '') { $i--; continue; }\n    list($a, $b) = array_map('intval', explode(' ', $line));\n    $g[$a][] = $b;\n    $rg[$b][] = $a;\n}\n\n// Step 1: find nodes reachable from any assign (f[i] == 1)\n$fromAssign = array_fill(0, $n + 1, false);\n$queue = [];\n\nfor ($i = 1; $i <= $n; $i++) {\n    if ($f[$i] == 1 && !$fromAssign[$i]) {\n        $fromAssign[$i] = true;\n        $queue[] = $i;\n    }\n}\n\nfor ($qi = 0; $qi < count($queue); $qi++) {\n    $v = $queue[$qi];\n    foreach ($g[$v] as $to) {\n        if (!$fromAssign[$to]) {\n            $fromAssign[$to] = true;\n            $queue[] = $to;\n        }\n    }\n}\n\n// Step 2: find nodes that can reach any use (f[i] == 2) using reverse graph\n$toUse = array_fill(0, $n + 1, false);\n$queue = [];\n\nfor ($i = 1; $i <= $n; $i++) {\n    if ($f[$i] == 2 && !$toUse[$i]) {\n        $toUse[$i] = true;\n        $queue[] = $i;\n    }\n}\n\nfor ($qi = 0; $qi < count($queue); $qi++) {\n    $v = $queue[$qi];\n    foreach ($rg[$v] as $from) {\n        if (!$toUse[$from]) {\n            $toUse[$from] = true;\n            $queue[] = $from;\n        }\n    }\n}\n\n// Step 3: mark candidate nodes that lie on some path from assign to use\n$candidate = array_fill(0, $n + 1, false);\nfor ($i = 1; $i <= $n; $i++) {\n    if ($fromAssign[$i] && $toUse[$i]) {\n        $candidate[$i] = true;\n    }\n}\n\n// Step 4: build subgraph of candidate nodes and compute SCCs (Kosaraju)\n$cg = array_fill(0, $n + 1, []);\n$crg = array_fill(0, $n + 1, []);\n\nfor ($v = 1; $v <= $n; $v++) {\n    if (!$candidate[$v]) continue;\n    foreach ($g[$v] as $to) {\n        if ($candidate[$to]) {\n            $cg[$v][] = $to;\n            $crg[$to][] = $v;\n        }\n    }\n}\n\n// First DFS order\n$visited = array_fill(0, $n + 1, false);\n$order = [];\n\nfunction dfs1($v, &$cg, &$visited, &$order) {\n    $visited[$v] = true;\n    foreach ($cg[$v] as $to) {\n        if (!$visited[$to]) dfs1($to, $cg, $visited, $order);\n    }\n    $order[] = $v;\n}\n\nfor ($v = 1; $v <= $n; $v++) {\n    if ($candidate[$v] && !$visited[$v]) {\n        dfs1($v, $cg, $visited, $order);\n    }\n}\n\n// Second DFS on reversed graph to get components\n$compId = array_fill(0, $n + 1, -1);\n$compCount = 0;\n\nfunction dfs2($v, $cid, &$crg, &$compId) {\n    $compId[$v] = $cid;\n    foreach ($crg[$v] as $to) {\n        if ($compId[$to] == -1) dfs2($to, $cid, $crg, $compId);\n    }\n}\n\nfor ($i = count($order) - 1; $i >= 0; $i--) {\n    $v = $order[$i];\n    if ($compId[$v] == -1) {\n        dfs2($v, $compCount, $crg, $compId);\n        $compCount++;\n    }\n}\n\n// Info per component\n$compHasAssign = array_fill(0, $compCount, false);\n$compHasUse = array_fill(0, $compCount, false);\n\nfor ($v = 1; $v <= $n; $v++) {\n    if (!$candidate[$v]) continue;\n    $cid = $compId[$v];\n    if ($f[$v] == 1) $compHasAssign[$cid] = true;\n    if ($f[$v] == 2) $compHasUse[$cid] = true;\n}\n\n// Build condensation DAG\n$dag = array_fill(0, $compCount, []);\n$rad = array_fill(0, $compCount, []);\n\nfor ($v = 1; $v <= $n; $v++) {\n    if (!$candidate[$v]) continue;\n    $cv = $compId[$v];\n    foreach ($cg[$v] as $to) {\n        $cu = $compId[$to];\n        if ($cv != $cu) {\n            $dag[$cv][] = $cu;\n            $rad[$cu][] = $cv;\n        }\n    }\n}\n\n// Remove duplicate edges in DAG\nfor ($i = 0; $i < $compCount; $i++) {\n    if (count($dag[$i]) > 1) {\n        $dag[$i] = array_values(array_unique($dag[$i]));\n    }\n    if (count($rad[$i]) > 1) {\n        $rad[$i] = array_values(array_unique($rad[$i]));\n    }\n}\n\n// DP: fromAssignComp and toUseComp on condensation DAG\n$fromAssignComp = array_fill(0, $compCount, false);\n$toUseComp = array_fill(0, $compCount, false);\n\n// Topological order of condensation DAG (using order of components from Kosaraju)\n$topo = range(0, $compCount - 1);\n\n// Forward DP for fromAssignComp\nfor ($i = 0; $i < $compCount; $i++) {\n    $c = $topo[$i];\n    if ($compHasAssign[$c]) $fromAssignComp[$c] = true;\n    foreach ($rad[$c] as $p) {\n        if ($fromAssignComp[$p]) {\n            $fromAssignComp[$c] = true;\n            break;\n        }\n    }\n}\n\n// Backward DP for toUseComp\nfor ($i = $compCount - 1; $i >= 0; $i--) {\n    $c = $topo[$i];\n    if ($compHasUse[$c]) $toUseComp[$c] = true;\n    foreach ($dag[$c] as $nxt) {\n        if ($toUseComp[$nxt]) {\n            $toUseComp[$c] = true;\n            break;\n        }\n    }\n}\n\n// Final answer\n$res = array_fill(1, $n, 0);\n\nfor ($v = 1; $v <= $n; $v++) {\n    if (!$candidate[$v]) {\n        $res[$v] = 0;\n        continue;\n    }\n    $cid = $compId[$v];\n    if ($fromAssignComp[$cid] && $toUseComp[$cid]) {\n        $res[$v] = 1;\n    } else {\n        $res[$v] = 0;\n    }\n}\n\n// Output\nfor ($i = 1; $i <= $n; $i++) {\n    echo $res[$i] . PHP_EOL;\n}\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 8946,
+            "prompt_tokens": 734,
+            "total_tokens": 9680,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 3,
+                "engine_ttft_ms": 312,
+                "engine_ttlt_ms": 26406,
+                "pre_inference_ms": 174,
+                "service_tbt_ms": 3,
+                "service_ttft_ms": 637,
+                "service_ttlt_ms": 26725,
+                "total_duration_ms": 26562,
+                "user_visible_ttft_ms": 463
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in PHP to solve this programming problem:\nDescription: Life is not easy for the perfectly common variable named Vasya. Wherever it goes, it is either assigned a value, or simply ignored, or is being used!Vasya's life goes in states of a program. In each state, Vasya can either be used (for example, to calculate the value of another variable), or be assigned a value, or ignored. Between some states are directed (oriented) transitions.A path is a sequence of states v1,\u2009v2,\u2009...,\u2009vx, where for any 1\u2009\u2264\u2009i\u2009&lt;\u2009x exists a transition from vi to vi\u2009+\u20091.Vasya's value in state v is interesting to the world, if exists path p1,\u2009p2,\u2009...,\u2009pk such, that pi\u2009=\u2009v for some i (1\u2009\u2264\u2009i\u2009\u2264\u2009k), in state p1 Vasya gets assigned a value, in state pk Vasya is used and there is no state pi (except for p1) where Vasya gets assigned a value.Help Vasya, find the states in which Vasya's value is interesting to the world.\nInput Specification: The first line contains two space-separated integers n and m (1\u2009\u2264\u2009n,\u2009m\u2009\u2264\u2009105) \u2014 the numbers of states and transitions, correspondingly. The second line contains space-separated n integers f1,\u2009f2,\u2009...,\u2009fn (0\u2009\u2264\u2009fi\u2009\u2264\u20092), fi described actions performed upon Vasya in state i: 0 represents ignoring, 1 \u2014 assigning a value, 2 \u2014 using. Next m lines contain space-separated pairs of integers ai,\u2009bi (1\u2009\u2264\u2009ai,\u2009bi\u2009\u2264\u2009n, ai\u2009\u2260\u2009bi), each pair represents the transition from the state number ai to the state number bi. Between two states can be any number of transitions.\nOutput Specification: Print n integers r1,\u2009r2,\u2009...,\u2009rn, separated by spaces or new lines. Number ri should equal 1, if Vasya's value in state i is interesting to the world and otherwise, it should equal 0. The states are numbered from 1 to n in the order, in which they are described in the input.\n\nSample Input:\n4 3\n1 0 0 2\n1 2\n2 3\n3 4\nSample Output:\n1\n1\n1\n1\n\nSample Input:\n3 1\n1 0 2\n1 3\nSample Output:\n1\n0\n1\n\nSample Input:\n3 1\n2 0 1\n1 3\nSample Output:\n0\n0\n0\n\nNotes: NoteIn the first sample the program states can be used to make the only path in which the value of Vasya interests the world, 1  2  3  4; it includes all the states, so in all of them Vasya's value is interesting to the world.The second sample the only path in which Vasya's value is interesting to the world is , \u2014 1  3; state 2 is not included there.In the third sample we cannot make from the states any path in which the value of Vasya would be interesting to the world, so the value of Vasya is never interesting to the world.\nTake input from standard input and output to standard output\nProvide the PHP code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "87d869a0fd4a510c5e7e310886b86a57",
+        "difficulty": 1700,
+        "prob_desc_sample_inputs": [
+            "4 3\n1 0 0 2\n1 2\n2 3\n3 4",
+            "3 1\n1 0 2\n1 3",
+            "3 1\n2 0 1\n1 3"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "graphs"
+        ],
+        "prob_desc_output_spec": "Print n integers r1,\u2009r2,\u2009...,\u2009rn, separated by spaces or new lines. Number ri should equal 1, if Vasya's value in state i is interesting to the world and otherwise, it should equal 0. The states are numbered from 1 to n in the order, in which they are described in the input.",
+        "prob_desc_input_spec": "The first line contains two space-separated integers n and m (1\u2009\u2264\u2009n,\u2009m\u2009\u2264\u2009105) \u2014 the numbers of states and transitions, correspondingly. The second line contains space-separated n integers f1,\u2009f2,\u2009...,\u2009fn (0\u2009\u2264\u2009fi\u2009\u2264\u20092), fi described actions performed upon Vasya in state i: 0 represents ignoring, 1 \u2014 assigning a value, 2 \u2014 using. Next m lines contain space-separated pairs of integers ai,\u2009bi (1\u2009\u2264\u2009ai,\u2009bi\u2009\u2264\u2009n, ai\u2009\u2260\u2009bi), each pair represents the transition from the state number ai to the state number bi. Between two states can be any number of transitions.",
+        "lang_cluster": "PHP",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first sample the program states can be used to make the only path in which the value of Vasya interests the world, 1  2  3  4; it includes all the states, so in all of them Vasya's value is interesting to the world.The second sample the only path in which Vasya's value is interesting to the world is , \u2014 1  3; state 2 is not included there.In the third sample we cannot make from the states any path in which the value of Vasya would be interesting to the world, so the value of Vasya is never interesting to the world.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Life is not easy for the perfectly common variable named Vasya. Wherever it goes, it is either assigned a value, or simply ignored, or is being used!Vasya's life goes in states of a program. In each state, Vasya can either be used (for example, to calculate the value of another variable), or be assigned a value, or ignored. Between some states are directed (oriented) transitions.A path is a sequence of states v1,\u2009v2,\u2009...,\u2009vx, where for any 1\u2009\u2264\u2009i\u2009&lt;\u2009x exists a transition from vi to vi\u2009+\u20091.Vasya's value in state v is interesting to the world, if exists path p1,\u2009p2,\u2009...,\u2009pk such, that pi\u2009=\u2009v for some i (1\u2009\u2264\u2009i\u2009\u2264\u2009k), in state p1 Vasya gets assigned a value, in state pk Vasya is used and there is no state pi (except for p1) where Vasya gets assigned a value.Help Vasya, find the states in which Vasya's value is interesting to the world.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1333897500",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "1\n1\n1\n1",
+            "1\n0\n1",
+            "0\n0\n0"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"4 3\\r\\n1 0 0 2\\r\\n1 2\\r\\n2 3\\r\\n3 4\\r\\n\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\"]}, {\"input\": \"3 1\\r\\n1 0 2\\r\\n1 3\\r\\n\", \"output\": [\"1\\r\\n0\\r\\n1\"]}, {\"input\": \"3 1\\r\\n2 0 1\\r\\n1 3\\r\\n\", \"output\": [\"0\\r\\n0\\r\\n0\"]}, {\"input\": \"4 4\\r\\n1 0 2 0\\r\\n1 2\\r\\n2 3\\r\\n3 4\\r\\n4 1\\r\\n\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n0\"]}, {\"input\": \"10000 10000\\r\\n0 1 2 2 2 0 1 0 1 0 0 0 1 2 2 0 0 0 2 1 2 0 1 0 2 1 1 1 1 0 1 1 0 2 1 2 0 1 0 1 2 2 0 0 0 1 0 0 0 2 2 2 1 2 2 1 0 2 2 1 1 2 0 2 1 1 2 2 1 0 0 2 1 0 1 0 2 0 2 0 2 0 0 0 0 0 0 0 2 0 0 0 1 2 2 2 1 2 2 1 2 1 1 1 0 1 2 0 2 2 0 0 1 0 0 0 1 0 2 2 1 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"10000 10000\\r\\n1 1 1 2 1 2 2 1 2 1 2 1 1 1 1 1 2 1 2 1 1 2 2 2 2 2 1 1 2 2 1 1 2 1 1 2 1 1 2 1 2 1 1 1 1 2 1 2 2 2 2 1 1 1 2 1 1 2 1 2 2 1 1 1 2 1 1 1 1 1 1 2 1 2 2 2 1 2 1 2 2 2 2 2 2 2 2 2 2 2 1 1 1 2 2 1 2 2 2 2 2 2 2 2 1 2 1 1 2 2 1 2 1 2 1 1 1 2 1 1 2 ...\", \"output\": [\"0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n...\"]}, {\"input\": \"10000 100000\\r\\n0 1 2 1 1 2 2 0 0 2 1 0 1 1 2 2 0 1 1 2 1 2 2 1 2 2 0 0 2 1 1 2 1 1 2 1 2 0 1 2 0 1 0 1 2 1 0 0 1 2 2 0 1 0 1 2 2 1 0 0 1 1 2 2 1 2 2 2 2 2 2 2 2 2 0 1 2 2 1 0 1 1 0 0 2 2 1 0 1 2 2 0 1 0 2 2 2 1 1 1 0 1 1 0 1 0 0 2 1 1 2 0 1 1 2 2 0 0 1 0 0...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"2 100000\\r\\n1 0\\r\\n2 1\\r\\n1 2\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n1 2\\r\\n...\", \"output\": [\"0\\r\\n0\"]}, {\"input\": \"100000 100000\\r\\n0 2 1 1 1 2 0 0 1 0 1 1 2 1 0 1 2 0 1 2 2 2 2 1 1 1 0 2 1 1 2 0 0 2 1 0 0 0 0 2 1 0 2 2 1 0 0 1 2 0 0 2 0 1 2 1 0 1 0 2 0 0 1 1 0 0 2 2 0 1 1 0 2 2 2 1 1 2 2 1 1 1 1 0 0 0 1 0 2 0 2 2 2 2 0 2 0 2 0 1 0 1 0 1 1 1 2 0 0 1 2 0 0 2 1 0 2 0 0 1 ...\", \"output\": [\"0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n2 2 2 1 1 2 1 1 1 1 2 2 1 2 1 1 2 1 2 2 1 2 2 2 1 1 1 2 2 1 1 2 1 1 1 1 1 1 2 2 1 1 1 2 2 1 2 1 2 1 2 1 1 1 1 2 2 1 2 1 1 2 2 1 2 2 1 2 2 1 1 1 1 1 2 2 1 1 2 2 1 1 1 1 1 1 1 1 2 1 2 2 1 1 1 1 1 2 1 2 1 1 2 1 1 1 1 2 2 2 1 1 1 1 1 2 1 1 2 1 ...\", \"output\": [\"0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\", \"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n1 1 0 0 1 0 1 0 1 0 1 0 1 1 0 1 1 1 1 0 0 0 0 1 0 0 0 1 0 1 1 1 1 0 1 1 0 1 1 1 0 0 1 0 0 1 0 1 1 1 0 0 0 0 1 1 0 1 0 0 1 0 1 0 1 1 0 1 1 1 0 0 1 0 1 1 1 1 0 0 1 1 0 1 1 1 1 0 0 1 1 1 0 1 1 0 1 0 1 0 0 0 1 0 1 1 1 0 0 1 0 0 1 1 0 0 0 1 0 0 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n0 0 2 2 0 2 2 0 0 0 2 0 0 2 2 0 0 2 2 2 0 2 0 2 0 2 2 0 2 2 2 0 2 2 2 0 2 0 2 2 2 0 0 0 2 0 0 2 2 0 2 2 2 0 0 0 2 2 2 2 0 0 2 0 0 2 2 0 2 0 0 2 0 0 2 0 2 0 2 0 0 2 0 0 2 2 0 2 0 2 0 2 2 2 2 2 0 0 2 0 2 0 2 2 0 2 2 2 0 2 2 0 0 0 0 0 2 2 0 0 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"2 1\\r\\n2 1\\r\\n2 1\\r\\n\", \"output\": [\"1\\r\\n1\"]}, {\"input\": \"100000 99999\\r\\n2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"100000 10\\r\\n2 2 2 2 2 2 1 1 1 2 2 2 1 1 1 2 1 1 2 2 1 2 1 1 2 1 2 2 2 2 1 2 2 2 1 2 2 2 2 1 2 2 2 1 1 1 2 2 1 2 2 1 1 1 1 1 1 2 1 2 2 2 1 2 2 1 1 1 1 1 1 2 1 2 2 1 2 1 2 1 1 2 1 2 1 1 1 2 2 2 2 2 2 1 2 2 2 2 2 1 1 1 1 2 2 1 2 2 2 1 2 1 1 1 1 2 2 2 2 2 1 1 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"3 2\\r\\n1 2 0\\r\\n1 2\\r\\n3 2\\r\\n\", \"output\": [\"1\\r\\n1\\r\\n0\"]}, {\"input\": \"50000 99997\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"100000 99999\\r\\n0 0 2 0 2 2 2 2 2 1 1 0 1 0 2 0 2 0 2 1 0 1 2 0 0 2 0 2 0 1 0 2 1 1 1 2 2 0 1 2 2 0 1 0 2 1 0 0 1 1 2 2 2 1 2 2 2 0 0 1 0 0 0 0 1 0 1 0 0 2 2 2 0 2 0 2 0 1 2 2 2 0 0 0 1 0 0 1 1 0 0 0 1 1 0 2 0 1 1 2 0 0 1 1 2 1 1 1 2 2 0 0 1 0 0 0 2 1 1 1 0...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"99991 100000\\r\\n1 1 2 0 1 2 0 0 0 2 2 2 0 0 1 0 1 0 0 0 0 2 1 1 2 0 2 2 2 2 1 2 2 2 0 2 0 2 0 1 2 2 2 0 2 1 2 1 2 0 1 0 0 2 0 2 1 2 1 1 1 1 0 0 2 2 0 2 1 1 1 0 2 2 0 0 2 1 1 1 2 2 1 1 2 0 1 0 1 2 2 1 1 0 1 2 1 0 0 1 0 1 1 0 1 0 1 1 0 0 1 2 2 2 0 2 1 2 0 1 0...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"99001 100000\\r\\n0 1 1 1 1 1 2 0 1 0 2 1 2 2 2 1 2 1 2 1 2 2 0 2 1 1 0 1 2 2 0 2 2 1 2 0 0 0 1 2 2 1 2 1 2 1 2 0 0 2 0 0 1 0 1 1 1 2 2 1 2 2 2 1 2 1 0 0 2 1 2 1 1 2 0 0 2 0 2 2 2 2 1 2 1 2 2 0 2 0 2 0 0 0 1 1 2 0 2 2 0 0 0 1 2 2 2 1 1 0 2 1 2 2 2 0 2 1 2 1 2...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"99001 100000\\r\\n1 2 2 0 1 1 2 0 1 1 0 1 0 0 0 0 1 2 1 2 2 1 1 2 1 0 1 0 0 0 2 1 1 1 0 2 2 2 1 2 2 1 0 1 0 1 2 0 1 1 1 0 1 0 1 0 0 0 1 2 0 1 2 0 0 2 1 2 1 0 0 0 2 2 0 2 1 1 2 2 2 0 0 2 1 2 1 0 0 1 0 1 0 0 1 0 1 0 1 2 2 0 1 1 0 2 2 0 2 2 2 0 2 2 2 0 1 1 2 0 2...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"100000 99999\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n...\"]}, {\"input\": \"99001 100000\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0...\", \"output\": [\"0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"99001 100000\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0...\", \"output\": [\"1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n...\"]}, {\"input\": \"90001 100000\\r\\n1 0 0 0 1 2 0 0 0 0 0 0 0 2 0 0 0 0 0 1 0 2 2 1 0 0 1 1 0 0 0 0 0 1 0 0 0 1 0 2 0 1 0 0 0 0 2 0 0 0 0 0 2 0 0 2 0 0 0 0 0 2 0 0 0 0 0 0 1 2 1 0 0 0 0 1 1 0 0 2 0 0 0 2 2 0 0 0 2 0 0 0 0 0 0 0 1 2 0 2 0 0 0 2 2 1 0 0 0 0 0 0 1 2 0 0 0 0 0 0 0...\", \"output\": [\"0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"99001 100000\\r\\n0 2 0 1 2 1 1 2 2 0 1 1 2 1 2 0 0 0 0 0 2 1 1 2 2 1 2 2 0 0 1 2 2 2 0 0 0 2 1 0 1 0 0 2 0 1 2 2 0 1 2 2 0 2 0 2 2 2 2 2 0 2 2 2 0 1 0 1 1 0 0 0 0 2 0 2 2 0 1 1 0 0 2 0 0 2 0 1 1 2 0 0 0 1 1 2 0 1 2 2 1 0 1 0 0 1 0 2 2 2 2 1 1 0 1 2 2 1 0 2 1...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"90001 100000\\r\\n0 0 1 1 0 1 2 1 2 1 0 0 0 2 2 0 2 1 1 1 1 1 1 0 0 1 0 0 0 0 2 1 2 2 0 1 1 1 1 0 2 2 0 2 1 0 1 0 1 2 0 2 1 2 2 1 2 0 1 2 1 1 1 2 1 1 0 1 2 1 1 1 2 1 2 1 0 2 0 0 0 1 2 0 0 2 0 1 2 0 0 1 2 0 2 0 2 2 2 1 0 1 0 1 0 2 0 2 2 1 0 2 1 1 1 1 0 2 1 1 1...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n...\"]}, {\"input\": \"30000 74999\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"8 8\\r\\n1 0 0 2 1 0 0 2\\r\\n1 2\\r\\n2 3\\r\\n3 2\\r\\n2 4\\r\\n6 8\\r\\n7 6\\r\\n6 7\\r\\n5 6\\r\\n\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\"]}, {\"input\": \"6 6\\r\\n1 0 0 0 0 2\\r\\n1 2\\r\\n2 3\\r\\n3 4\\r\\n4 5\\r\\n5 2\\r\\n3 6\\r\\n\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\"]}, {\"input\": \"100000 99999\\r\\n1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}]"
+    }
+}

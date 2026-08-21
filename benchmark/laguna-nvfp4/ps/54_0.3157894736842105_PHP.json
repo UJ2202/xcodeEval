@@ -1,0 +1,388 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-af0d69a84cad284d",
+        "created": 1787078835,
+        "model": "laguna-nvfp4",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.27.1-tp2-af6339fc",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```php\n<?php\n// Read input values\nlist($a, $ta) = array_map('intval', explode(' ', trim(fgets(STDIN))));\nlist($b, $tb) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n$departureTime = trim(fgets(STDIN));\n\n// Parse departure time into total minutes since midnight\n$timeParts = explode(':', $departureTime);\n$departureMinutes = $timeParts[0] * 60 + $timeParts[1];\n\n// Calculate arrival time at city B\n$arrivalMinutes = $departureMinutes + $ta;\n\n// Calculate the earliest and latest departure times of buses from B that Simion could meet\n$earliestDeparture = $departureMinutes - $tb;\n$latestDeparture = $arrivalMinutes;\n\n// Adjust earliest departure to be within the valid range [300, 1439]\nif ($earliestDeparture < 300) {\n    $earliestDeparture = 300;\n}\n\n// Adjust latest departure to be within the valid range [300, 1439]\nif ($latestDeparture > 1439) {\n    $latestDeparture = 1439;\n}\n\n// If the adjusted range is invalid, there are no buses to meet\nif ($earliestDeparture > $latestDeparture) {\n    echo 0;\n    exit;\n}\n\n// Calculate the number of buses departing from B within the valid range\n// Buses depart at 05:00 AM (300 minutes) and every b minutes thereafter\n$firstBus = 300;\n$lastBus = 1439;\n\n// Find the first bus departure time >= earliestDeparture\n$firstValid = $firstBus + ceil(($earliestDeparture - $firstBus) / $b) * $b;\nif ($firstValid < $firstBus) {\n    $firstValid = $firstBus;\n}\n\n// Find the last bus departure time <= latestDeparture\n$lastValid = $firstBus + floor(($latestDeparture - $firstBus) / $b) * $b;\nif ($lastValid > $lastBus) {\n    $lastValid = $lastBus;\n}\n\n// Calculate the number of buses\nif ($firstValid > $lastValid) {\n    echo 0;\n} else {\n    echo (int)(($lastValid - $firstValid) / $b) + 1;\n}\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\nlist($a, $ta) = array_map('intval', explode(' ', trim(fgets(STDIN))));\nlist($b, $tb) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n$departureTime = trim(fgets(STDIN));\n\n// Parse departure time\nlist($h, $m) = array_map('intval', explode(':', $departureTime));\n$departureMinutes = $h * 60 + $m;\n\n// Calculate arrival time\n$arrivalMinutes = $departureMinutes + $ta;\n\n// Calculate the earliest and latest departure times of buses from B that Simion will meet\n$earliestDepartureFromB = $departureMinutes - $tb;\n$latestDepartureFromB = $arrivalMinutes;\n\n// Adjust earliest departure to be within the operating hours (05:00 AM to 11:59 PM)\n$earliestDepartureFromB = max($earliestDepartureFromB, 5 * 60);\n\n// Adjust latest departure to be within the operating hours\n$latestDepartureFromB = min($latestDepartureFromB, 23 * 60 + 59);\n\n// If no buses meet the criteria, output 0\nif ($earliestDepartureFromB > $latestDepartureFromB) {\n    echo 0;\n    exit;\n}\n\n// Calculate the number of buses from B that departed in the valid time range\n// Buses from B depart every b minutes starting from 05:00 AM (300 minutes)\n$firstBusTime = 5 * 60; // 05:00 AM in minutes\n$lastBusTime = 23 * 60 + 59; // 11:59 PM in minutes\n\n// Find the first bus from B that departs at or after earliestDepartureFromB\n$firstBus = $firstBusTime + ceil(($earliestDepartureFromB - $firstBusTime) / $b) * $b;\nif ($firstBus < $earliestDepartureFromB) {\n    $firstBus += $b;\n}\n\n// Find the last bus from B that departs at or before latestDepartureFromB\n$lastBus = $firstBusTime + floor(($latestDepartureFromB - $firstBusTime) / $b) * $b;\n\n// If no buses in range, output 0\nif ($firstBus > $latestDepartureFromB || $lastBus < $earliestDepartureFromB) {\n    echo 0;\n    exit;\n}\n\n// Count the number of buses\n$count = floor(($lastBus - $firstBus) / $b) + 1;\n\necho $count;\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```php\n<?php\n\nlist($a, $ta) = array_map('intval', explode(' ', trim(fgets(STDIN))));\nlist($b, $tb) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n$departure = trim(fgets(STDIN));\n\n// Parse Simion's departure time\nlist($h, $m) = array_map('intval', explode(':', $departure));\n$departureTime = $h * 60 + $m;\n$arrivalTime = $departureTime + $ta;\n\n// Count buses from B that Simion meets\n$count = 0;\n\n// Buses from B depart from 05:00 (300) to 23:59 (1439)\n// A bus departing at time t from B arrives at A at t + tb\n// Simion meets this bus if their paths overlap, i.e., the bus departs B before Simion arrives at B\n// and the bus arrives at A after Simion departs from A\n\n// The bus departs B at time t, arrives at A at t + tb\n// Simion departs A at departureTime, arrives at B at arrivalTime\n// They meet if: t < arrivalTime AND t + tb > departureTime\n// Which simplifies to: t < arrivalTime AND t > departureTime - tb\n\n$start = max(300, $departureTime - $tb + 1);\n$end = min(1439, $arrivalTime - 1);\n\nif ($start <= $end) {\n    // Find the first bus departure time >= start\n    $firstBus = 300;\n    while ($firstBus < $start) {\n        $firstBus += $b;\n    }\n    \n    // Count buses from firstBus to end with interval b\n    if ($firstBus <= $end) {\n        $count = floor(($end - $firstBus) / $b) + 1;\n    }\n}\n\necho $count . \"\\n\";\n\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```php\n<?php\n// Read input values\nlist($a, $ta) = array_map('intval', explode(' ', trim(fgets(STDIN))));\nlist($b, $tb) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n$departureTime = trim(fgets(STDIN));\n\n// Parse departure time into total minutes since midnight\nlist($h, $m) = array_map('intval', explode(':', $departureTime));\n$departureMinutes = $h * 60 + $m;\n\n// Calculate arrival time at city B\n$arrivalMinutes = $departureMinutes + $ta;\n\n// Calculate the earliest and latest departure times of buses from B that Simion could meet\n$earliestDeparture = $departureMinutes - $tb;\n$latestDeparture = $arrivalMinutes;\n\n// Adjust earliest departure to be within operating hours (05:00 AM = 300 minutes)\nif ($earliestDeparture < 300) {\n    $earliestDeparture = 300;\n}\n\n// Adjust latest departure to be within operating hours (11:59 PM = 1439 minutes)\nif ($latestDeparture > 1439) {\n    $latestDeparture = 1439;\n}\n\n// If earliest departure is after latest departure, no buses are met\nif ($earliestDeparture > $latestDeparture) {\n    echo 0;\n    exit;\n}\n\n// Calculate the number of buses departing from B within the time range\n// Buses depart every $b minutes starting from 05:00 AM (300 minutes)\n$firstBus = 300;\n$lastBus = 1439;\n\n// Find the first bus departure time >= earliestDeparture\n$firstBusTime = $firstBus + ceil(($earliestDeparture - $firstBus) / $b) * $b;\nif ($firstBusTime < $earliestDeparture) {\n    $firstBusTime += $b;\n}\n\n// Find the last bus departure time <= latestDeparture\n$lastBusTime = $lastBus - floor(($lastBus - $latestDeparture) / $b) * $b;\nif ($lastBusTime > $latestDeparture) {\n    $lastBusTime -= $b;\n}\n\n// If no buses in range\nif ($firstBusTime > $latestDeparture || $lastBusTime < $earliestDeparture) {\n    echo 0;\n    exit;\n}\n\n// Calculate number of buses\n$count = floor(($lastBusTime - $firstBusTime) / $b) + 1;\n\necho $count;\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\nlist($a, $ta) = array_map('intval', explode(' ', trim(fgets(STDIN))));\nlist($b, $tb) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n$departureTime = trim(fgets(STDIN));\n\n// Parse departure time\nlist($hours, $minutes) = array_map('intval', explode(':', $departureTime));\n$departureMinutes = $hours * 60 + $minutes;\n\n// Calculate arrival time at city B\n$arrivalMinutes = $departureMinutes + $ta;\n\n// Count buses from city B that Simion will meet\n$count = 0;\n\n// Buses from city B depart from 05:00 AM (300 minutes) to 11:59 PM (1439 minutes)\n// They run every b minutes\n// A bus departing at time T from B will be on the road from T to T + tb\n// Simion departs at departureMinutes and arrives at arrivalMinutes\n// We need buses where T < arrivalMinutes AND T + tb > departureMinutes\n// Which means T > departureMinutes - tb AND T < arrivalMinutes\n\n$firstBusTime = 300; // 05:00 AM\n$lastBusTime = 1439; // 11:59 PM\n\n// Find the earliest bus from B that could meet Simion\n// T > departureMinutes - tb\n$earliestPossible = $departureMinutes - $tb + 1;\n\n// Find the latest bus from B that could meet Simion\n// T < arrivalMinutes\n$latestPossible = $arrivalMinutes - 1;\n\n// Find first bus departure time >= earliestPossible\nif ($earliestPossible <= $firstBusTime) {\n    $firstMeetingBus = $firstBusTime;\n} else {\n    $diff = $earliestPossible - $firstBusTime;\n    $intervals = ceil($diff / $b);\n    $firstMeetingBus = $firstBusTime + $intervals * $b;\n}\n\n// Find last bus departure time <= latestPossible\nif ($latestPossible >= $lastBusTime) {\n    $lastMeetingBus = $lastBusTime;\n} else {\n    $diff = $lastBusTime - $latestPossible;\n    $intervals = ceil($diff / $b);\n    $lastMeetingBus = $lastBusTime - $intervals * $b;\n}\n\n// Count buses between firstMeetingBus and lastMeetingBus (inclusive)\nif ($firstMeetingBus <= $lastMeetingBus && $firstMeetingBus >= $firstBusTime && $lastMeetingBus <= $lastBusTime) {\n    $count = floor(($lastMeetingBus - $firstMeetingBus) / $b) + 1;\n}\n\necho $count . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```php\n<?php\n$lines = file('php://stdin');\n$a = (int)$lines[0];\n$ta = (int)$lines[1];\n$b = (int)$lines[2];\n$tb = (int)$lines[3];\n$timeStr = trim($lines[4]);\nlist($h, $m) = explode(':', $timeStr);\n$departure = (int)$h * 60 + (int)$m;\n$arrival = $departure + $ta;\n$count = 0;\n$startB = 300; // 05:00 AM\n$endB = 23 * 60 + 59; // 11:59 PM\nfor ($t = $startB; $t <= $endB; $t += $b) {\n    $busArrival = $t + $tb;\n    if ($t < $arrival && $busArrival > $departure) {\n        $count++;\n    }\n}\necho $count . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\n$line1 = trim(fgets(STDIN));\n$line2 = trim(fgets(STDIN));\n$line3 = trim(fgets(STDIN));\n\nlist($a, $ta) = explode(' ', $line1);\nlist($b, $tb) = explode(' ', $line2);\nlist($h, $m) = explode(':', $line3);\n\n// Convert Simion's departure time to minutes since midnight\n$departure = $h * 60 + $m;\n$arrival = $departure + $ta;\n\n// Count buses from B that Simion meets\n$count = 0;\n\n// Buses from B start at 05:00 (300 minutes) and run until 23:59 (1439 minutes)\nfor ($t = 300; $t <= 1439; $t += $b) {\n    // Bus departs B at time $t, arrives at A at $t + $tb\n    // Simion departs A at $departure, arrives at B at $arrival\n    // They meet if the bus is on the road during Simion's trip\n    if ($t < $arrival && ($t + $tb) > $departure) {\n        $count++;\n    }\n}\n\necho $count . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\nlist($a, $ta) = array_map('intval', explode(' ', trim(fgets(STDIN))));\nlist($b, $tb) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n$departure = trim(fgets(STDIN));\n\n// Parse departure time\nlist($h, $m) = array_map('intval', explode(':', $departure));\n$departure_time = $h * 60 + $m;\n\n// Calculate arrival time at city B\n$arrival_time = $departure_time + $ta;\n\n// Calculate the earliest and latest departure times of buses from B that Simion could meet\n$earliest_departure = $departure_time - $tb;\n$latest_departure = $arrival_time;\n\n// Adjust earliest_departure to be within the operating hours (05:00 AM to 11:59 PM)\n$earliest_departure = max($earliest_departure, 5 * 60);\n$latest_departure = min($latest_departure, 23 * 60 + 59);\n\n// Calculate the number of buses from B that departed within this time range\n// Buses from B depart every b minutes starting from 05:00 AM (300 minutes)\n$count = 0;\n\n// Find the first bus from B that departs at or after earliest_departure\n$first_bus = 5 * 60; // 05:00 AM in minutes\nif ($earliest_departure > $first_bus) {\n    $diff = $earliest_departure - $first_bus;\n    $first_bus += ceil($diff / $b) * $b;\n}\n\n// Count buses from B that depart between earliest_departure and latest_departure (inclusive)\nif ($first_bus <= $latest_departure) {\n    $count = floor(($latest_departure - $first_bus) / $b) + 1;\n}\n\necho $count . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 8,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\n$line1 = trim(fgets(STDIN));\nlist($a, $ta) = array_map('intval', explode(' ', $line1));\n\n$line2 = trim(fgets(STDIN));\nlist($b, $tb) = array_map('intval', explode(' ', $line2));\n\n$line3 = trim(fgets(STDIN));\nlist($h, $m) = array_map('intval', explode(':', $line3));\n$departure = $h * 60 + $m;\n\n$arrival = $departure + $ta;\n\n// Calculate earliest and latest departure times of B buses that Simion could meet\n$earliest = $departure - $tb;\n$latest = $arrival;\n\n// Adjust earliest to be within valid operating hours (05:00 to 23:59)\n$earliest = max($earliest, 5 * 60);\n$latest = min($latest, 23 * 60 + 59);\n\n// If no valid time range, output 0\nif ($earliest > $latest) {\n    echo 0;\n    exit;\n}\n\n// Calculate the first valid departure time of B buses >= earliest\n$first = 5 * 60;\n$offset = $earliest - $first;\nif ($offset < 0) {\n    $first_valid = $first;\n} else {\n    $steps = (int)ceil($offset / $b);\n    $first_valid = $first + $steps * $b;\n}\n\n// Check if first_valid is within the valid range\nif ($first_valid > $latest) {\n    echo 0;\n    exit;\n}\n\n// Calculate the number of buses\n$count = (int)(($latest - $first_valid) / $b) + 1;\n\necho $count;\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 9,
+                "message": {
+                    "content": "```php\n<?php\n// Read input values\nlist($a, $ta) = array_map('intval', explode(' ', trim(fgets(STDIN))));\nlist($b, $tb) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n$departureTime = trim(fgets(STDIN));\n\n// Parse departure time\nlist($hours, $minutes) = array_map('intval', explode(':', $departureTime));\n$departureMinutes = $hours * 60 + $minutes;\n\n// Calculate arrival time at city B\n$arrivalMinutes = $departureMinutes + $ta;\n\n// Calculate the earliest and latest departure times of buses from B that Simion could meet\n// Buses from B that departed before Simion's arrival and after Simion's departure (considering travel time)\n$earliestDeparture = $departureMinutes - $tb;\n$latestDeparture = $arrivalMinutes;\n\n// Adjust earliest departure to be within the valid range (05:00 AM to 11:59 PM)\n$earliestDeparture = max($earliestDeparture, 5 * 60); // 05:00 AM = 300 minutes\n$latestDeparture = min($latestDeparture, 23 * 60 + 59); // 11:59 PM = 1439 minutes\n\n// Count buses from B that departed in the range [earliestDeparture, latestDeparture]\n// Buses from B depart every b minutes starting from 05:00 AM (300 minutes)\n$count = 0;\n$firstBusTime = 300; // First bus from B departs at 05:00 AM\n$lastBusTime = 23 * 60 + 59; // Last bus from B departs at 11:59 PM\n\n// Find the first bus from B that departs at or after earliestDeparture\n$firstMeetTime = $firstBusTime;\nwhile ($firstMeetTime < $earliestDeparture) {\n    $firstMeetTime += $b;\n}\n\n// Count buses from B that depart in the range [earliestDeparture, latestDeparture]\nif ($firstMeetTime <= $latestDeparture) {\n    $count = floor(($latestDeparture - $firstMeetTime) / $b) + 1;\n}\n\necho $count . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 10,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\nlist($a, $ta) = array_map('intval', explode(' ', trim(fgets(STDIN))));\nlist($b, $tb) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n$departureTime = trim(fgets(STDIN));\n\n// Parse departure time\nlist($hh, $mm) = array_map('intval', explode(':', $departureTime));\n$departureMinutes = $hh * 60 + $mm;\n\n// Calculate arrival time at city B\n$arrivalMinutes = $departureMinutes + $ta;\n\n// Calculate the earliest and latest departure times of buses from B that Simion could meet\n// A bus from B departs at time t, arrives at A at t + tb\n// For Simion to meet it, the bus must be on the road during Simion's trip\n// Bus from B departs at t, Simion departs at departureMinutes, arrives at arrivalMinutes\n// They meet if: t < arrivalMinutes AND t + tb > departureMinutes\n// So: t > departureMinutes - tb AND t < arrivalMinutes\n\n$earliestBusTime = $departureMinutes - $tb;\n$latestBusTime = $arrivalMinutes;\n\n// Count buses from B that departed in the valid time range\n// Buses from B run from 05:00 (300 minutes) to 23:59 (1439 minutes)\n$firstBusB = 300; // 05:00 AM\n$lastBusB = 1439; // 11:59 PM\n\n// Find the first bus from B that could be met\n// Bus departure times: firstBusB, firstBusB + b, firstBusB + 2*b, ...\n// We need the first bus time >= earliestBusTime\n$firstValidBus = max($firstBusB, $earliestBusTime);\n// Find the first multiple of b after firstBusB that is >= firstValidBus\n$offset = ($firstValidBus - $firstBusB) % $b;\nif ($offset < 0) {\n    $offset += $b;\n}\n$firstMeetingBus = $firstValidBus + (($offset == 0) ? 0 : ($b - $offset));\n\n// Find the last bus from B that could be met\n// We need the last bus time < latestBusTime\n$lastValidBus = min($lastBusB, $latestBusTime - 1); // strictly less than latestBusTime\n// Find the last multiple of b after firstBusB that is <= lastValidBus\nif ($lastValidBus < $firstBusB) {\n    $count = 0;\n} else {\n    $offset = ($lastValidBus - $firstBusB) % $b;\n    if ($offset < 0) {\n        $offset += $b;\n    }\n    $lastMeetingBus = $lastValidBus - $offset;\n    \n    if ($lastMeetingBus < $firstMeetingBus) {\n        $count = 0;\n    } else {\n        $count = intval(($lastMeetingBus - $firstMeetingBus) / $b) + 1;\n    }\n}\n\necho $count . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 11,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\n$line1 = trim(fgets(STDIN));\n$line2 = trim(fgets(STDIN));\n$line3 = trim(fgets(STDIN));\n\nlist($a, $ta) = array_map('intval', explode(' ', $line1));\nlist($b, $tb) = array_map('intval', explode(' ', $line2));\n$departureTime = $line3;\n\n// Parse departure time\nlist($h, $m) = array_map('intval', explode(':', $departureTime));\n$departureMinutes = $h * 60 + $m;\n\n// Calculate arrival time at B\n$arrivalMinutes = $departureMinutes + $ta;\n\n// Calculate start and end times for buses from B that Simion could meet\n$start = $departureMinutes - $tb;\n$end = $arrivalMinutes;\n\n// Adjust start to be at least 300 (5:00 AM)\nif ($start < 300) {\n    $start = 300;\n}\n\n// Adjust end to be at most 23*60 + 59 = 1439 (11:59 PM)\nif ($end > 1439) {\n    $end = 1439;\n}\n\n// Calculate number of buses from B that departed between start and end (inclusive)\nif ($start > $end) {\n    echo 0;\n} else {\n    $count = floor(($end - $start) / $b) + 1;\n    echo (int)$count;\n}\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 12,
+                "message": {
+                    "content": "```php\n<?php\n$handle = fopen(\"php://stdin\", \"stdin\");\n$line1 = fgets($handle);\n$line2 = fgets($handle);\n$line3 = fgets($handle);\nfclose($handle);\n\nlist($a, $ta) = explode(' ', trim($line1));\nlist($b, $tb) = explode(' ', trim($line2));\n$departureTime = trim($line3);\n\nlist($h, $m) = explode(':', $departureTime);\n$departureMinutes = $h * 60 + $m;\n$arrivalMinutes = $departureMinutes + $ta;\n\n$start = 300; // 05:00 AM\n$end = 1439;  // 11:59 PM\n\n$count = 0;\nfor ($t = $start; $t <= $end; $t += $b) {\n    $arrivalAtA = $t + $tb;\n    if ($t < $arrivalMinutes && $arrivalAtA > $departureMinutes) {\n        $count++;\n    }\n}\n\necho $count . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 13,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\n$line1 = trim(fgets(STDIN));\n$line2 = trim(fgets(STDIN));\n$line3 = trim(fgets(STDIN));\n\nlist($a, $ta) = array_map('intval', explode(' ', $line1));\nlist($b, $tb) = array_map('intval', explode(' ', $line2));\n\n// Parse departure time\n$parts = explode(':', $line3);\n$departureHour = intval($parts[0]);\n$departureMinute = intval($parts[1]);\n$departureTime = $departureHour * 60 + $departureMinute;\n\n// Calculate arrival time\n$arrivalTime = $departureTime + $ta;\n\n// Calculate the number of buses from B that Simion will meet\n$count = 0;\n\n// Buses from B depart from 05:00 (300 minutes) to 23:59 (1439 minutes)\n// A bus departing from B at time t will be on the road from t to t + tb\n// Simion is on the road from departureTime to arrivalTime\n// They meet if the bus's interval [t, t + tb] overlaps with [departureTime, arrivalTime]\n// and the meeting is not at the endpoints (cities A and B)\n\n// The bus from B must have departed before Simion arrives\n// and must arrive after Simion departs (to meet on the road)\n// Bus departs B at time t, arrives at A at time t + tb\n// For them to meet on the road:\n// t < arrivalTime (bus departs before Simion arrives at B)\n// t + tb > departureTime (bus arrives at A after Simion departs from A)\n\n// Find the range of bus departure times from B\n$earliestBus = 300; // 05:00 AM\n$latestBus = 1439; // 11:59 PM\n\n// Buses from B that could potentially meet Simion\n// They must depart between earliestBus and latestBus\n// And satisfy: t < arrivalTime and t + tb > departureTime\n\n// The first bus from B that can meet Simion\n// t + tb > departureTime => t > departureTime - tb\n$minT = max($earliestBus, $departureTime - $tb + 1);\n// The last bus from B that can meet Simion\n// t < arrivalTime\n$maxT = min($latestBus, $arrivalTime - 1);\n\nif ($minT <= $maxT) {\n    // Count buses departing from B in the range [minT, maxT]\n    // Buses depart every b minutes starting from 05:00 (300)\n    // First bus in range\n    $firstBus = 300;\n    while ($firstBus < $minT) {\n        $firstBus += $b;\n    }\n    \n    if ($firstBus <= $maxT) {\n        // Count buses: firstBus, firstBus + b, firstBus + 2b, ... <= maxT\n        $count = intval(($maxT - $firstBus) / $b) + 1;\n    }\n}\n\necho $count . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 14,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\nlist($a, $ta) = array_map('intval', explode(' ', trim(fgets(STDIN))));\nlist($b, $tb) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n$departure = trim(fgets(STDIN));\n\n// Parse departure time\n$parts = explode(':', $departure);\n$departureMinutes = intval($parts[0]) * 60 + intval($parts[1]);\n\n// Calculate arrival time\n$arrivalMinutes = $departureMinutes + $ta;\n\n// Calculate the number of buses from B that Simion will meet\n$count = 0;\n\n// Buses from B that departed before Simion's departure and are still on the road\n// These buses departed between (departureMinutes - tb) and (departureMinutes - 1)\n$start = $departureMinutes - $tb;\n$end = $departureMinutes - 1;\n\n// Find the first bus from B that could be on the road when Simion departs\n$firstBus = 5 * 60; // First bus from B departs at 05:00 AM\n$lastBus = 23 * 60 + 59; // Last bus from B departs at 11:59 PM\n\n// Adjust start to be at least the first bus time\n$start = max($start, $firstBus);\n\n// Adjust end to be at most the last bus time\n$end = min($end, $lastBus);\n\n// Count buses from B that departed in [start, end]\nif ($start <= $end) {\n    // Find the first bus from B that departed at or after 'start'\n    $firstDeparture = ceil(($start - $firstBus) / $b) * $b + $firstBus;\n    if ($firstDeparture < $start) {\n        $firstDeparture += $b;\n    }\n    \n    // Count buses from B that departed in [start, end]\n    if ($firstDeparture <= $end) {\n        $count += floor(($end - $firstDeparture) / $b) + 1;\n    }\n}\n\n// Buses from B that depart after Simion's departure but before his arrival\n// These buses departed between (departureMinutes + 1) and (arrivalMinutes - 1)\n$start = $departureMinutes + 1;\n$end = $arrivalMinutes - 1;\n\n// Adjust start to be at least the first bus time\n$start = max($start, $firstBus);\n\n// Adjust end to be at most the last bus time\n$end = min($end, $lastBus);\n\n// Count buses from B that departed in [start, end]\nif ($start <= $end) {\n    // Find the first bus from B that departed at or after 'start'\n    $firstDeparture = ceil(($start - $firstBus) / $b) * $b + $firstBus;\n    if ($firstDeparture < $start) {\n        $firstDeparture += $b;\n    }\n    \n    // Count buses from B that departed in [start, end]\n    if ($firstDeparture <= $end) {\n        $count += floor(($end - $firstDeparture) / $b) + 1;\n    }\n}\n\necho $count . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 15,
+                "message": {
+                    "content": "```php\n<?php\nfscanf(STDIN, \"%d %d\", $a, $ta);\nfscanf(STDIN, \"%d %d\", $b, $tb);\n$departure = trim(fgets(STDIN));\nlist($h, $m) = explode(':', $departure);\n$departureTime = (int)$h * 60 + (int)$m;\n$arrivalTime = $departureTime + $ta;\n\n$count = 0;\n$start = 300; // 05:00 AM\n$end = 1439;  // 11:59 PM\n\nfor ($t = $start; $t <= $end; $t += $b) {\n    $busArrival = $t + $tb;\n    if ($t < $arrivalTime && $busArrival > $departureTime) {\n        $count++;\n    }\n}\n\necho $count . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 16,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\nlist($a, $ta) = array_map('intval', explode(' ', trim(fgets(STDIN))));\nlist($b, $tb) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n$departure = trim(fgets(STDIN));\n\n// Parse departure time\nlist($h, $m) = array_map('intval', explode(':', $departure));\n$departTime = $h * 60 + $m;\n\n// Calculate arrival time\n$arriveTime = $departTime + $ta;\n\n// Count buses from B that Simion meets\n$count = 0;\n\n// Buses from B start at 05:00 (300 minutes) and run until 23:59 (1439 minutes)\n// A bus from B departs at time t if t >= 300 and t <= 1439\n// Simion meets a bus from B if the bus departs after (departTime - tb) and before arriveTime\n\n$start = max(300, $departTime - $tb);\n$end = min(1439, $arriveTime - 1);\n\nif ($start <= $end) {\n    // Find the first bus departure time >= start\n    $firstBus = 300 + ceil(($start - 300) / $b) * $b;\n    if ($firstBus < $start) {\n        $firstBus += $b;\n    }\n    \n    // Find the last bus departure time <= end\n    $lastBus = 300 + floor(($end - 300) / $b) * $b;\n    \n    if ($firstBus <= $lastBus) {\n        $count = ($lastBus - $firstBus) / $b + 1;\n    }\n}\n\necho $count . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 17,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\nlist($a, $ta) = array_map('intval', explode(' ', trim(fgets(STDIN))));\nlist($b, $tb) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n$departureTime = trim(fgets(STDIN));\n\n// Parse departure time\nlist($hours, $minutes) = array_map('intval', explode(':', $departureTime));\n$departureMinutes = $hours * 60 + $minutes;\n\n// Calculate arrival time\n$arrivalMinutes = $departureMinutes + $ta;\n\n// Count buses from B that Simion will meet\n$count = 0;\n\n// Buses from B start at 05:00 AM (300 minutes) and last until 11:59 PM (1439 minutes)\n$firstBusFromB = 300;\n$lastBusFromB = 1439;\n\n// Find the first bus from B that Simion can meet\n// A bus from B departing at time t will be on the road from t to t + tb\n// Simion is on the road from departureMinutes to arrivalMinutes\n// They meet if: t < arrivalMinutes AND t + tb > departureMinutes\n// Which means: t < arrivalMinutes AND t > departureMinutes - tb\n\n$earliestBusTime = max($firstBusFromB, $departureMinutes - $tb + 1);\n$latestBusTime = min($lastBusFromB, $arrivalMinutes - 1);\n\nif ($earliestBusTime <= $latestBusTime) {\n    // Count buses from B that depart in the range [earliestBusTime, latestBusTime]\n    // Buses depart every b minutes starting from 05:00 AM (300 minutes)\n    \n    // Find the first bus in our range\n    $firstInBuses = ceil(($earliestBusTime - $firstBusFromB) / $b) * $b + $firstBusFromB;\n    if ($firstInBuses < $earliestBusTime) {\n        $firstInBuses += $b;\n    }\n    \n    // Find the last bus in our range\n    $lastInBuses = floor(($latestBusTime - $firstBusFromB) / $b) * $b + $firstBusFromB;\n    \n    if ($firstInBuses <= $lastInBuses) {\n        $count = (($lastInBuses - $firstInBuses) / $b) + 1;\n    }\n}\n\necho $count . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 18,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\n$line1 = trim(fgets(STDIN));\nlist($a, $ta) = array_map('intval', explode(' ', $line1));\n$line2 = trim(fgets(STDIN));\nlist($b, $tb) = array_map('intval', explode(' ', $line2));\n$line3 = trim(fgets(STDIN));\nlist($h, $m) = array_map('intval', explode(':', $line3));\n\n// Convert Simion's departure time to minutes since midnight\n$departure = $h * 60 + $m;\n$arrival = $departure + $ta;\n\n// Calculate the earliest and latest departure times of B->A buses that Simion could meet\n$earliest = $departure - $tb;\n$latest = $arrival;\n\n// Count the number of B->A buses that departed between earliest and latest (exclusive)\n$count = 0;\n$firstBus = 5 * 60; // First bus from B departs at 05:00 AM\n$lastBus = 23 * 60 + 59; // Last bus from B departs at 11:59 PM\n\n// Adjust earliest and latest to be within valid bus operating hours\n$earliest = max($earliest, $firstBus);\n$latest = min($latest, $lastBus);\n\nif ($earliest <= $latest) {\n    // Find the first bus departure time >= earliest\n    $firstDeparture = $firstBus + ceil(($earliest - $firstBus) / $b) * $b;\n    if ($firstDeparture < $earliest) {\n        $firstDeparture += $b;\n    }\n    \n    // Find the last bus departure time <= latest\n    $lastDeparture = $firstBus + floor(($latest - $firstBus) / $b) * $b;\n    \n    if ($firstDeparture <= $lastDeparture) {\n        $count = ($lastDeparture - $firstDeparture) / $b + 1;\n    }\n}\n\necho $count . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 19,
+                "message": {
+                    "content": "```php\n<?php\nfscanf(STDIN, \"%d %d\", $a, $ta);\nfscanf(STDIN, \"%d %d\", $b, $tb);\n$departure = trim(fgets(STDIN));\nlist($h, $m) = explode(\":\", $departure);\n$departure_time = $h * 60 + $m;\n$arrival_time = $departure_time + $ta;\n\n$count = 0;\n$bus_start = 5 * 60; // 05:00 AM in minutes\n$bus_end = 23 * 60 + 59; // 11:59 PM in minutes\n\nfor ($t = $bus_start; $t <= $bus_end; $t += $b) {\n    $bus_arrival = $t + $tb;\n    if ($t < $arrival_time && $bus_arrival > $departure_time) {\n        $count++;\n    }\n}\n\necho $count . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 9665,
+            "prompt_tokens": 624,
+            "total_tokens": 10289
+        },
+        "prompt": "Write a program in PHP to solve this programming problem:\nDescription: Buses run between the cities A and B, the first one is at 05:00 AM and the last one departs not later than at 11:59 PM. A bus from the city A departs every a minutes and arrives to the city B in a ta minutes, and a bus from the city B departs every b minutes and arrives to the city A in a tb minutes.The driver Simion wants to make his job diverse, so he counts the buses going towards him. Simion doesn't count the buses he meet at the start and finish.You know the time when Simion departed from the city A to the city B. Calculate the number of buses Simion will meet to be sure in his counting.\nInput Specification: The first line contains two integers a,\u2009ta (1\u2009\u2264\u2009a,\u2009ta\u2009\u2264\u2009120) \u2014 the frequency of the buses from the city A to the city B and the travel time. Both values are given in minutes. The second line contains two integers b,\u2009tb (1\u2009\u2264\u2009b,\u2009tb\u2009\u2264\u2009120) \u2014 the frequency of the buses from the city B to the city A and the travel time. Both values are given in minutes. The last line contains the departure time of Simion from the city A in the format hh:mm. It is guaranteed that there are a bus from the city A at that time. Note that the hours and the minutes are given with exactly two digits.\nOutput Specification: Print the only integer z \u2014 the number of buses Simion will meet on the way. Note that you should not count the encounters in cities A and B.\n\nSample Input:\n10 30\n10 35\n05:20\nSample Output:\n5\n\nSample Input:\n60 120\n24 100\n13:00\nSample Output:\n9\n\nNotes: NoteIn the first example Simion departs form the city A at 05:20 AM and arrives to the city B at 05:50 AM. He will meet the first 5 buses from the city B that departed in the period [05:00 AM - 05:40 AM]. Also Simion will meet a bus in the city B at 05:50 AM, but he will not count it.Also note that the first encounter will be between 05:26 AM and 05:27 AM (if we suggest that the buses are go with the sustained speed).\nTake input from standard input and output to standard output\nProvide the PHP code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "1c4cf1c3cb464a483511a8a61f8685a7",
+        "difficulty": 1600,
+        "prob_desc_sample_inputs": [
+            "10 30\n10 35\n05:20",
+            "60 120\n24 100\n13:00"
+        ],
+        "prob_desc_time_limit": "1 second",
+        "tags": [
+            "implementation"
+        ],
+        "prob_desc_output_spec": "Print the only integer z \u2014 the number of buses Simion will meet on the way. Note that you should not count the encounters in cities A and B.",
+        "prob_desc_input_spec": "The first line contains two integers a,\u2009ta (1\u2009\u2264\u2009a,\u2009ta\u2009\u2264\u2009120) \u2014 the frequency of the buses from the city A to the city B and the travel time. Both values are given in minutes. The second line contains two integers b,\u2009tb (1\u2009\u2264\u2009b,\u2009tb\u2009\u2264\u2009120) \u2014 the frequency of the buses from the city B to the city A and the travel time. Both values are given in minutes. The last line contains the departure time of Simion from the city A in the format hh:mm. It is guaranteed that there are a bus from the city A at that time. Note that the hours and the minutes are given with exactly two digits.",
+        "lang_cluster": "PHP",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first example Simion departs form the city A at 05:20 AM and arrives to the city B at 05:50 AM. He will meet the first 5 buses from the city B that departed in the period [05:00 AM - 05:40 AM]. Also Simion will meet a bus in the city B at 05:50 AM, but he will not count it.Also note that the first encounter will be between 05:26 AM and 05:27 AM (if we suggest that the buses are go with the sustained speed).",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Buses run between the cities A and B, the first one is at 05:00 AM and the last one departs not later than at 11:59 PM. A bus from the city A departs every a minutes and arrives to the city B in a ta minutes, and a bus from the city B departs every b minutes and arrives to the city A in a tb minutes.The driver Simion wants to make his job diverse, so he counts the buses going towards him. Simion doesn't count the buses he meet at the start and finish.You know the time when Simion departed from the city A to the city B. Calculate the number of buses Simion will meet to be sure in his counting.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1461164400",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "5",
+            "9"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"10 30\\r\\n10 35\\r\\n05:20\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"60 120\\r\\n24 100\\r\\n13:00\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"30 60\\r\\n60 60\\r\\n22:30\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"30 60\\r\\n10 60\\r\\n23:30\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"5 45\\r\\n4 60\\r\\n21:00\\r\\n\", \"output\": [\"26\"]}, {\"input\": \"1 1\\r\\n1 1\\r\\n10:28\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"4 1\\r\\n5 4\\r\\n18:40\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"8 8\\r\\n1 1\\r\\n13:24\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"20 4\\r\\n1 20\\r\\n06:20\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"15 24\\r\\n23 6\\r\\n21:15\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"30 19\\r\\n21 4\\r\\n10:30\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"31 15\\r\\n36 25\\r\\n07:04\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"24 3\\r\\n54 9\\r\\n18:12\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"18 69\\r\\n62 54\\r\\n08:00\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"33 58\\r\\n70 78\\r\\n22:36\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"68 34\\r\\n84 78\\r\\n10:40\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"15 14\\r\\n32 65\\r\\n05:45\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"40 74\\r\\n100 42\\r\\n05:40\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"65 49\\r\\n24 90\\r\\n07:10\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"1 1\\r\\n1 1\\r\\n23:59\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"23 118\\r\\n118 20\\r\\n23:24\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 88\\r\\n17 38\\r\\n22:33\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"3 1\\r\\n2 3\\r\\n05:03\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"1 1\\r\\n3 2\\r\\n08:44\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"1 3\\r\\n1 2\\r\\n21:43\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"2 28\\r\\n2 12\\r\\n05:12\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"60 120\\r\\n17 120\\r\\n23:00\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"1 55\\r\\n1 54\\r\\n23:59\\r\\n\", \"output\": [\"54\"]}, {\"input\": \"66 75\\r\\n1 82\\r\\n06:06\\r\\n\", \"output\": [\"141\"]}, {\"input\": \"1 90\\r\\n1 88\\r\\n23:59\\r\\n\", \"output\": [\"88\"]}, {\"input\": \"1 120\\r\\n1 100\\r\\n23:59\\r\\n\", \"output\": [\"100\"]}]"
+    }
+}

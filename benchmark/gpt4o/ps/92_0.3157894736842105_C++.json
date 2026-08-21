@@ -1,0 +1,350 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEHhuzXQqXmhgfYkP8E4heaAOCGO3",
+        "created": 1787073366,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n, m;\n    if (!(cin >> n >> m)) return 0;\n    vector<int> f(n);\n    for (int i = 0; i < n; ++i) cin >> f[i];\n\n    vector<vector<int>> g(n), gr(n);\n    for (int i = 0; i < m; ++i) {\n        int a, b;\n        cin >> a >> b;\n        --a; --b;\n        g[a].push_back(b);\n        gr[b].push_back(a);\n    }\n\n    // Step 1: find all nodes that can reach a \"use\" (f[i] == 2)\n    vector<char> canReachUse(n, 0);\n    queue<int> q;\n    for (int i = 0; i < n; ++i) {\n        if (f[i] == 2) {\n            canReachUse[i] = 1;\n            q.push(i);\n        }\n    }\n    while (!q.empty()) {\n        int v = q.front(); q.pop();\n        for (int u : gr[v]) {\n            if (!canReachUse[u]) {\n                canReachUse[u] = 1;\n                q.push(u);\n            }\n        }\n    }\n\n    // Step 2: build graph without assignment nodes (f[i] == 1)\n    vector<vector<int>> g2(n), gr2(n);\n    for (int u = 0; u < n; ++u) {\n        if (f[u] == 1) continue;\n        for (int v : g[u]) {\n            if (f[v] == 1) continue;\n            g2[u].push_back(v);\n            gr2[v].push_back(u);\n        }\n    }\n\n    // Step 3: SCC on g2\n    vector<int> order;\n    vector<char> used(n, 0);\n    function<void(int)> dfs1 = [&](int v) {\n        used[v] = 1;\n        for (int to : g2[v]) if (!used[to]) dfs1(to);\n        order.push_back(v);\n    };\n    for (int i = 0; i < n; ++i)\n        if (!used[i] && f[i] != 1)\n            dfs1(i);\n\n    vector<int> comp(n, -1);\n    int compCnt = 0;\n    function<void(int,int)> dfs2 = [&](int v, int c) {\n        comp[v] = c;\n        for (int to : gr2[v]) if (comp[to] == -1) dfs2(to, c);\n    };\n    for (int i = (int)order.size() - 1; i >= 0; --i) {\n        int v = order[i];\n        if (comp[v] == -1)\n            dfs2(v, compCnt++);\n    }\n\n    if (compCnt == 0) {\n        // No nodes except assignments\n        for (int i = 0; i < n; ++i) cout << 0 << (i + 1 == n ? '\\n' : ' ');\n        return 0;\n    }\n\n    // Step 4: build condensation DAG\n    vector<vector<int>> dag(compCnt), rdag(compCnt);\n    for (int u = 0; u < n; ++u) {\n        if (f[u] == 1 || comp[u] == -1) continue;\n        for (int v : g2[u]) {\n            if (comp[v] != comp[u]) {\n                dag[comp[u]].push_back(comp[v]);\n                rdag[comp[v]].push_back(comp[u]);\n            }\n        }\n    }\n\n    // Step 5: mark components that can reach a \"use\"\n    vector<char> compCanReachUse(compCnt, 0);\n    queue<int> q2;\n    for (int v = 0; v < n; ++v) {\n        if (f[v] == 2 && comp[v] != -1 && !compCanReachUse[comp[v]]) {\n            compCanReachUse[comp[v]] = 1;\n            q2.push(comp[v]);\n        }\n    }\n    while (!q2.empty()) {\n        int c = q2.front(); q2.pop();\n        for (int pc : rdag[c]) {\n            if (!compCanReachUse[pc]) {\n                compCanReachUse[pc] = 1;\n                q2.push(pc);\n            }\n        }\n    }\n\n    // Step 6: mark components that can reach an assignment (in original graph)\n    vector<char> compCanReachAssign(compCnt, 0);\n    queue<int> q3;\n    for (int v = 0; v < n; ++v) {\n        if (f[v] == 1) {\n            for (int u : gr[v]) {\n                if (comp[u] != -1 && !compCanReachAssign[comp[u]]) {\n                    compCanReachAssign[comp[u]] = 1;\n                    q3.push(comp[u]);\n                }\n            }\n        }\n    }\n    while (!q3.empty()) {\n        int c = q3.front(); q3.pop();\n        for (int pc : rdag[c]) {\n            if (!compCanReachAssign[pc]) {\n                compCanReachAssign[pc] = 1;\n                q3.push(pc);\n            }\n        }\n    }\n\n    // Step 7: answer\n    vector<int> ans(n, 0);\n    for (int v = 0; v < n; ++v) {\n        if (f[v] == 1) {\n            // assignment node itself: needs path from it to use with no other assignments\n            if (canReachUse[v]) ans[v] = 1;\n        } else if (comp[v] != -1) {\n            int c = comp[v];\n            if (compCanReachUse[c] && !compCanReachAssign[c]) ans[v] = 1;\n        }\n    }\n\n    for (int i = 0; i < n; ++i)\n        cout << ans[i] << (i + 1 == n ? '\\n' : ' ');\n    return 0;\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n, m;\n    if (!(cin >> n >> m)) return 0;\n\n    vector<int> f(n);\n    for (int i = 0; i < n; ++i) cin >> f[i];\n\n    vector<vector<int>> g(n), gr(n);\n    for (int i = 0; i < m; ++i) {\n        int a, b;\n        cin >> a >> b;\n        --a; --b;\n        g[a].push_back(b);\n        gr[b].push_back(a);\n    }\n\n    // Step 1: nodes that can reach a \"use\" (f[i] == 2)\n    vector<char> canReachUse(n, 0);\n    queue<int> q;\n    for (int i = 0; i < n; ++i) {\n        if (f[i] == 2) {\n            canReachUse[i] = 1;\n            q.push(i);\n        }\n    }\n    while (!q.empty()) {\n        int v = q.front(); q.pop();\n        for (int u : gr[v]) {\n            if (!canReachUse[u]) {\n                canReachUse[u] = 1;\n                q.push(u);\n            }\n        }\n    }\n\n    // Step 2: forward BFS from assign nodes, avoiding other assign nodes\n    vector<char> interesting(n, 0);\n    vector<char> visited(n, 0);\n    for (int i = 0; i < n; ++i) {\n        if (f[i] == 1 && canReachUse[i] && !visited[i]) {\n            queue<int> qq;\n            visited[i] = 1;\n            qq.push(i);\n            while (!qq.empty()) {\n                int v = qq.front(); qq.pop();\n                if (canReachUse[v]) interesting[v] = 1;\n                for (int to : g[v]) {\n                    if (!visited[to] && f[to] != 1) {\n                        visited[to] = 1;\n                        qq.push(to);\n                    }\n                }\n            }\n        }\n    }\n\n    for (int i = 0; i < n; ++i) {\n        cout << (interesting[i] ? 1 : 0);\n        if (i + 1 < n) cout << '\\n';\n    }\n\n    return 0;\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n, m;\n    if (!(cin >> n >> m)) return 0;\n\n    vector<int> f(n);\n    for (int i = 0; i < n; ++i) cin >> f[i];\n\n    vector<vector<int>> g(n), gr(n);\n    for (int i = 0; i < m; ++i) {\n        int a, b;\n        cin >> a >> b;\n        --a; --b;\n        g[a].push_back(b);\n        gr[b].push_back(a);\n    }\n\n    // Kosaraju to find SCCs\n    vector<int> order, comp(n, -1);\n    vector<char> used(n, 0);\n\n    function<void(int)> dfs1 = [&](int v) {\n        used[v] = 1;\n        for (int to : g[v]) if (!used[to]) dfs1(to);\n        order.push_back(v);\n    };\n    for (int i = 0; i < n; ++i)\n        if (!used[i]) dfs1(i);\n\n    int scc_cnt = 0;\n    function<void(int)> dfs2 = [&](int v) {\n        comp[v] = scc_cnt;\n        for (int to : gr[v]) if (comp[to] == -1) dfs2(to);\n    };\n    for (int i = n - 1; i >= 0; --i) {\n        int v = order[i];\n        if (comp[v] == -1) {\n            dfs2(v);\n            ++scc_cnt;\n        }\n    }\n\n    // Build condensation DAG\n    vector<vector<int>> dag(scc_cnt), rdag(scc_cnt);\n    vector<int> has_assign(scc_cnt, 0), has_use(scc_cnt, 0);\n    for (int v = 0; v < n; ++v) {\n        int c = comp[v];\n        if (f[v] == 1) has_assign[c] = 1;\n        if (f[v] == 2) has_use[c] = 1;\n        for (int to : g[v]) {\n            int c2 = comp[to];\n            if (c != c2) {\n                dag[c].push_back(c2);\n                rdag[c2].push_back(c);\n            }\n        }\n    }\n\n    // Remove duplicate edges\n    for (int i = 0; i < scc_cnt; ++i) {\n        sort(dag[i].begin(), dag[i].end());\n        dag[i].erase(unique(dag[i].begin(), dag[i].end()), dag[i].end());\n        sort(rdag[i].begin(), rdag[i].end());\n        rdag[i].erase(unique(rdag[i].begin(), rdag[i].end()), rdag[i].end());\n    }\n\n    // Topological order of condensation DAG\n    vector<int> indeg(scc_cnt, 0);\n    for (int i = 0; i < scc_cnt; ++i)\n        for (int to : dag[i]) ++indeg[to];\n\n    queue<int> q;\n    for (int i = 0; i < scc_cnt; ++i)\n        if (indeg[i] == 0) q.push(i);\n\n    vector<int> topo;\n    while (!q.empty()) {\n        int v = q.front(); q.pop();\n        topo.push_back(v);\n        for (int to : dag[v]) {\n            if (--indeg[to] == 0) q.push(to);\n        }\n    }\n\n    // Forward DP: can reach a use without passing another assign\n    vector<char> canReachUse(scc_cnt, 0);\n    for (int i = 0; i < scc_cnt; ++i)\n        if (has_use[i]) canReachUse[i] = 1;\n\n    for (int i = (int)topo.size() - 1; i >= 0; --i) {\n        int v = topo[i];\n        if (has_assign[v]) continue; // cannot propagate past another assign\n        for (int to : dag[v]) {\n            if (canReachUse[to]) canReachUse[v] = 1;\n        }\n    }\n\n    // Reverse DP: can be reached from some assign without passing another assign\n    vector<char> canReachFromAssign(scc_cnt, 0);\n    for (int i = 0; i < scc_cnt; ++i)\n        if (has_assign[i]) canReachFromAssign[i] = 1;\n\n    for (int v : topo) {\n        if (!canReachFromAssign[v]) continue;\n        for (int to : dag[v]) {\n            if (has_assign[to]) continue; // another assign breaks the chain\n            if (!canReachFromAssign[to]) {\n                canReachFromAssign[to] = 1;\n            }\n        }\n    }\n\n    // Combine conditions\n    vector<int> ans(n, 0);\n    for (int v = 0; v < n; ++v) {\n        int c = comp[v];\n        if (canReachFromAssign[c] && canReachUse[c]) ans[v] = 1;\n    }\n\n    for (int i = 0; i < n; ++i) {\n        cout << ans[i] << (i + 1 == n ? '\\n' : ' ');\n    }\n\n    return 0;\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n, m;\n    if (!(cin >> n >> m)) return 0;\n\n    vector<int> f(n);\n    for (int i = 0; i < n; ++i) cin >> f[i];\n\n    vector<vector<int>> g(n), gr(n);\n    for (int i = 0; i < m; ++i) {\n        int a, b;\n        cin >> a >> b;\n        --a; --b;\n        g[a].push_back(b);\n        gr[b].push_back(a);\n    }\n\n    // Kosaraju for SCC\n    vector<int> order;\n    vector<int> vis(n, 0);\n    order.reserve(n);\n\n    function<void(int)> dfs1 = [&](int v) {\n        vis[v] = 1;\n        for (int to : g[v]) if (!vis[to]) dfs1(to);\n        order.push_back(v);\n    };\n\n    for (int i = 0; i < n; ++i)\n        if (!vis[i]) dfs1(i);\n\n    vector<int> comp(n, -1);\n    int compCnt = 0;\n\n    function<void(int,int)> dfs2 = [&](int v, int c) {\n        comp[v] = c;\n        for (int to : gr[v]) if (comp[to] == -1) dfs2(to, c);\n    };\n\n    for (int i = n - 1; i >= 0; --i) {\n        int v = order[i];\n        if (comp[v] == -1) {\n            dfs2(v, compCnt++);\n        }\n    }\n\n    int C = compCnt;\n    vector<vector<int>> dag(C), rdag(C);\n    vector<int> hasAssign(C, 0), hasUse(C, 0);\n\n    for (int v = 0; v < n; ++v) {\n        int c = comp[v];\n        if (f[v] == 1) hasAssign[c] = 1;\n        if (f[v] == 2) hasUse[c] = 1;\n    }\n\n    // Build condensation DAG\n    for (int v = 0; v < n; ++v) {\n        int cv = comp[v];\n        for (int to : g[v]) {\n            int cu = comp[to];\n            if (cv != cu) {\n                dag[cv].push_back(cu);\n                rdag[cu].push_back(cv);\n            }\n        }\n    }\n\n    // Remove duplicate edges\n    for (int i = 0; i < C; ++i) {\n        sort(dag[i].begin(), dag[i].end());\n        dag[i].erase(unique(dag[i].begin(), dag[i].end()), dag[i].end());\n        sort(rdag[i].begin(), rdag[i].end());\n        rdag[i].erase(unique(rdag[i].begin(), rdag[i].end()), rdag[i].end());\n    }\n\n    // Topological order of DAG\n    vector<int> indeg(C, 0);\n    for (int i = 0; i < C; ++i)\n        for (int to : dag[i]) indeg[to]++;\n\n    queue<int> q;\n    for (int i = 0; i < C; ++i)\n        if (indeg[i] == 0) q.push(i);\n\n    vector<int> topo;\n    topo.reserve(C);\n    while (!q.empty()) {\n        int v = q.front(); q.pop();\n        topo.push_back(v);\n        for (int to : dag[v]) {\n            if (--indeg[to] == 0) q.push(to);\n        }\n    }\n\n    // DP1: reachable from some assign without passing another assign\n    vector<char> reachFromAssign(C, 0);\n    for (int i = 0; i < C; ++i)\n        if (hasAssign[i]) reachFromAssign[i] = 1;\n\n    for (int v : topo) {\n        if (!reachFromAssign[v]) continue;\n        for (int to : dag[v]) {\n            if (hasAssign[to]) continue; // cannot pass another assign\n            if (!reachFromAssign[to]) {\n                reachFromAssign[to] = 1;\n            }\n        }\n    }\n\n    // DP2: can reach some use without passing assign\n    vector<char> reachUse(C, 0);\n    for (int i = 0; i < C; ++i)\n        if (hasUse[i]) reachUse[i] = 1;\n\n    for (int i = (int)topo.size() - 1; i >= 0; --i) {\n        int v = topo[i];\n        for (int to : dag[v]) {\n            if (hasAssign[to]) continue; // cannot pass assign\n            if (reachUse[to]) reachUse[v] = 1;\n        }\n    }\n\n    vector<int> ans(n, 0);\n    for (int v = 0; v < n; ++v) {\n        int c = comp[v];\n        if (reachFromAssign[c] && reachUse[c]) ans[v] = 1;\n    }\n\n    for (int i = 0; i < n; ++i) {\n        cout << ans[i] << (i + 1 == n ? '\\n' : ' ');\n    }\n\n    return 0;\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nconst int MAXN = 100000;\n\nint n, m;\nint f[MAXN + 1];\nvector<int> g[MAXN + 1], gr[MAXN + 1];\nint comp[MAXN + 1], order[MAXN + 1];\nbool used[MAXN + 1];\n\nvector<int> compNodes[MAXN + 1];\nvector<int> dag[MAXN + 1], rdag[MAXN + 1];\nint indeg[MAXN + 1], outdeg[MAXN + 1];\n\nbool hasAssign[MAXN + 1], hasUse[MAXN + 1];\nbool goodFromAssign[MAXN + 1], goodToUse[MAXN + 1];\nbool interestingComp[MAXN + 1];\n\nvoid dfs1(int v) {\n    used[v] = true;\n    for (int to : g[v])\n        if (!used[to]) dfs1(to);\n    order[++order[0]] = v;\n}\n\nvoid dfs2(int v, int c) {\n    comp[v] = c;\n    compNodes[c].push_back(v);\n    for (int to : gr[v])\n        if (!comp[to]) dfs2(to, c);\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    if (!(cin >> n >> m)) return 0;\n    for (int i = 1; i <= n; ++i) cin >> f[i];\n\n    for (int i = 0; i < m; ++i) {\n        int a, b;\n        cin >> a >> b;\n        g[a].push_back(b);\n        gr[b].push_back(a);\n    }\n\n    // Kosaraju\n    for (int i = 1; i <= n; ++i)\n        if (!used[i]) dfs1(i);\n\n    int compCnt = 0;\n    for (int i = order[0]; i >= 1; --i) {\n        int v = order[i];\n        if (!comp[v]) {\n            ++compCnt;\n            dfs2(v, compCnt);\n        }\n    }\n\n    // Build condensation DAG\n    for (int v = 1; v <= n; ++v) {\n        int cv = comp[v];\n        if (f[v] == 1) hasAssign[cv] = true;\n        if (f[v] == 2) hasUse[cv] = true;\n        for (int to : g[v]) {\n            int cu = comp[to];\n            if (cv != cu) {\n                dag[cv].push_back(cu);\n                rdag[cu].push_back(cv);\n            }\n        }\n    }\n\n    // Remove duplicate edges\n    for (int i = 1; i <= compCnt; ++i) {\n        sort(dag[i].begin(), dag[i].end());\n        dag[i].erase(unique(dag[i].begin(), dag[i].end()), dag[i].end());\n        sort(rdag[i].begin(), rdag[i].end());\n        rdag[i].erase(unique(rdag[i].begin(), rdag[i].end()), rdag[i].end());\n    }\n\n    // Topological order of condensation DAG\n    vector<int> topo;\n    topo.reserve(compCnt);\n    vector<int> indegree(compCnt + 1, 0);\n    for (int i = 1; i <= compCnt; ++i)\n        for (int to : dag[i]) indegree[to]++;\n\n    queue<int> q;\n    for (int i = 1; i <= compCnt; ++i)\n        if (indegree[i] == 0) q.push(i);\n\n    while (!q.empty()) {\n        int v = q.front(); q.pop();\n        topo.push_back(v);\n        for (int to : dag[v]) {\n            if (--indegree[to] == 0) q.push(to);\n        }\n    }\n\n    // DP forward: from assign to use without another assign\n    for (int v : topo) {\n        bool fromAssign = hasAssign[v];\n        for (int p : rdag[v])\n            if (goodFromAssign[p]) fromAssign = true;\n        goodFromAssign[v] = fromAssign;\n    }\n\n    // DP backward: to use without another assign\n    for (int i = (int)topo.size() - 1; i >= 0; --i) {\n        int v = topo[i];\n        bool toUse = hasUse[v];\n        for (int to : dag[v])\n            if (goodToUse[to] && !hasAssign[to]) toUse = true;\n        goodToUse[v] = toUse;\n    }\n\n    // Determine interesting components\n    for (int i = 1; i <= compCnt; ++i) {\n        if (goodFromAssign[i] && goodToUse[i]) interestingComp[i] = true;\n    }\n\n    // Output per node\n    for (int i = 1; i <= n; ++i) {\n        cout << (interestingComp[comp[i]] ? 1 : 0);\n        if (i < n) cout << '\\n';\n    }\n\n    return 0;\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n, m;\n    if (!(cin >> n >> m)) return 0;\n\n    vector<int> f(n);\n    for (int i = 0; i < n; ++i) cin >> f[i];\n\n    vector<vector<int>> g(n), gr(n);\n    for (int i = 0; i < m; ++i) {\n        int a, b;\n        cin >> a >> b;\n        --a; --b;\n        g[a].push_back(b);\n        gr[b].push_back(a);\n    }\n\n    // Step 1: find nodes reachable from any assign (f==1)\n    vector<char> fromAssign(n, 0);\n    queue<int> q;\n    for (int i = 0; i < n; ++i) {\n        if (f[i] == 1) {\n            if (!fromAssign[i]) {\n                fromAssign[i] = 1;\n                q.push(i);\n            }\n        }\n    }\n    while (!q.empty()) {\n        int v = q.front(); q.pop();\n        for (int to : g[v]) {\n            if (!fromAssign[to]) {\n                fromAssign[to] = 1;\n                q.push(to);\n            }\n        }\n    }\n\n    // Step 2: find nodes that can reach any use (f==2) without passing another assign\n    vector<char> canReachUseNoAssign(n, 0);\n    vector<char> visited(n, 0);\n    queue<int> q2;\n\n    for (int i = 0; i < n; ++i) {\n        if (f[i] == 2) {\n            canReachUseNoAssign[i] = 1;\n            visited[i] = 1;\n            q2.push(i);\n        }\n    }\n\n    while (!q2.empty()) {\n        int v = q2.front(); q2.pop();\n        for (int u : gr[v]) {\n            if (visited[u]) continue;\n            if (f[u] == 1 && !canReachUseNoAssign[u]) {\n                canReachUseNoAssign[u] = 1;\n                visited[u] = 1;\n                q2.push(u);\n            } else if (f[u] != 1) {\n                canReachUseNoAssign[u] = 1;\n                visited[u] = 1;\n                q2.push(u);\n            }\n        }\n    }\n\n    // Step 3: mark interesting states\n    vector<int> ans(n, 0);\n    for (int i = 0; i < n; ++i) {\n        if (!fromAssign[i]) continue;\n        if (!canReachUseNoAssign[i]) continue;\n        ans[i] = 1;\n    }\n\n    for (int i = 0; i < n; ++i) {\n        cout << ans[i] << (i + 1 == n ? '\\n' : ' ');\n    }\n\n    return 0;\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```cpp\n#include <bits/stdc++.h>\nusing namespace std;\n\n/*\nWe need states that lie on some path:\n  assign (1) ... (no other assign) ... use (2)\nWe can have ignore(0) or use(2) in between, but no assign(1).\n\nIdea:\n1) Build graph and reverse graph.\n2) From all use-states (f[i] == 2), BFS/DFS on reverse graph using only edges\n   that do NOT pass through assign-states (except starting nodes).\n   That gives us all states that can reach some use without encountering assign.\n3) From all assign-states (f[i] == 1), BFS/DFS on forward graph, again only\n   through non-assign states (except starting nodes).\n   That gives us all states reachable from some assign without encountering assign.\n4) Answer[i] = 1 if state i is both reachable from some assign (step 3)\n   and can reach some use (step 2), and there exists a path assign->...->use\n   with no intermediate assign. The intersection of the two visited sets\n   ensures that.\n\nWe must allow:\n- starting at assign node in step 3 even though it's assign\n- starting at use node in step 2 even though it's use\n- but we must not traverse *through* assign nodes as intermediates.\n*/\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n, m;\n    if (!(cin >> n >> m)) return 0;\n\n    vector<int> f(n);\n    for (int i = 0; i < n; ++i) cin >> f[i];\n\n    vector<vector<int>> g(n), gr(n);\n    for (int i = 0; i < m; ++i) {\n        int a, b;\n        cin >> a >> b;\n        --a; --b;\n        g[a].push_back(b);\n        gr[b].push_back(a);\n    }\n\n    // Step 2: reverse BFS from uses, avoiding passing through assigns\n    vector<char> canReachUse(n, 0);\n    queue<int> q;\n\n    for (int i = 0; i < n; ++i) {\n        if (f[i] == 2) {\n            canReachUse[i] = 1;\n            q.push(i);\n        }\n    }\n\n    while (!q.empty()) {\n        int v = q.front(); q.pop();\n        for (int u : gr[v]) {\n            if (canReachUse[u]) continue;\n            if (f[u] == 1) continue; // cannot pass through another assign\n            canReachUse[u] = 1;\n            q.push(u);\n        }\n    }\n\n    // Step 3: forward BFS from assigns, avoiding passing through assigns\n    vector<char> fromAssign(n, 0);\n\n    for (int i = 0; i < n; ++i) {\n        if (f[i] == 1) {\n            if (!fromAssign[i]) {\n                fromAssign[i] = 1;\n                q.push(i);\n            }\n        }\n    }\n\n    while (!q.empty()) {\n        int v = q.front(); q.pop();\n        for (int u : g[v]) {\n            if (fromAssign[u]) continue;\n            if (f[u] == 1) continue; // cannot pass through another assign\n            fromAssign[u] = 1;\n            q.push(u);\n        }\n    }\n\n    // Result: intersection\n    for (int i = 0; i < n; ++i) {\n        int ans = (fromAssign[i] && canReachUse[i]) ? 1 : 0;\n        cout << ans << (i + 1 == n ? '\\n' : ' ');\n    }\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```cpp\n#include <bits/stdc++.h>\nusing namespace std;\n\n/*\nWe need states v that lie on some path:\n  assign (1) ... (no other assign) ... use (2)\nWe must ensure no other assign on the path between the chosen assign and use.\n\nIdea:\nFor each assign node s, we propagate a \"clean\" reachability where we stop\nwhenever we meet another assign (including s itself only as start).\nBut doing this per assign is too big.\n\nObservation:\nWe only care about paths that do not pass through another assign.\nSo we consider the graph with all assign nodes removed as internal nodes.\nAssign nodes can only be start points, and use nodes only endpoints.\n\nWe can:\n1) Build graph G.\n2) Build reduced graph G' by removing all assign nodes as intermediates:\n   - For each edge u->v:\n       if f[u] != 1 and f[v] != 1: keep edge u->v\n   Assign nodes have no outgoing edges in G'.\n3) From all use nodes (f[i]==2), run reverse BFS/DFS on reversed G'\n   to find all nodes that can reach some use without passing an assign.\n   Let good[i]=1 for such nodes.\n4) Now, a node v is interesting if:\n   - v is assign node and there exists some path from v to a use without\n     another assign: i.e., some neighbor in G' reachable to use.\n   - or v is non-assign node and lies on some such path between assign and use:\n     i.e., good[v]==1 and there exists some assign node s that can reach v\n     without another assign. That means v is reachable from some assign in G'.\n\nTo compute reachability from assigns without passing another assign:\n   - On G', we start BFS/DFS from all neighbors of assign nodes? No, we need\n     to include assign nodes themselves as interesting if they can reach use.\n   - We'll create a super-source S connecting to all neighbors of assign nodes\n     and track which nodes are reachable from some assign.\n\nBut we also need to know for each node if it is reachable from at least one assign.\nWe can:\n   - Build G' as before.\n   - Create a queue with all neighbors v of each assign node u (edges u->v where v not assign).\n     Mark reachable_from_assign[v]=true, BFS over G'.\n   - Assign nodes themselves: if any neighbor v of u has good[v]==1 (i.e., v can reach use),\n     then u is interesting.\n\nFor intermediate nodes:\n   - Node x (non-assign) is interesting if good[x]==1 and reachable_from_assign[x]==1.\n\nEdge cases:\n   - Direct assign->use edge: u assign, v use.\n     v is non-assign (use) so in G' edge u->v exists (since v not assign).\n     good[v]=1 (use).\n     reachable_from_assign[v]=1 via BFS starting from v as neighbor of assign.\n     So v interesting.\n     u assign: neighbor v has good[v]==1, so u interesting.\n\n   - Path starting with assign and no edges (single node) and used in same node? Not allowed\n     since a node cannot be both assign and use simultaneously (fi is single value).\n\nComplexity: O(n+m).\n\n*/\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n, m;\n    if (!(cin >> n >> m)) return 0;\n    vector<int> f(n);\n    for (int i = 0; i < n; ++i) cin >> f[i];\n\n    vector<vector<int>> g(n), gr(n);\n    vector<pair<int,int>> edges;\n    edges.reserve(m);\n    for (int i = 0; i < m; ++i) {\n        int a, b;\n        cin >> a >> b;\n        --a; --b;\n        edges.push_back({a,b});\n    }\n\n    // Build reduced graph G' without internal assigns\n    for (auto &e : edges) {\n        int u = e.first, v = e.second;\n        if (f[u] != 1 && f[v] != 1) {\n            g[u].push_back(v);\n            gr[v].push_back(u);\n        }\n    }\n\n    // good[i]: can reach some use without passing assign\n    vector<char> good(n, 0);\n    queue<int> q;\n\n    // Start from all use nodes (f[i]==2)\n    for (int i = 0; i < n; ++i) {\n        if (f[i] == 2) {\n            good[i] = 1;\n            q.push(i);\n        }\n    }\n\n    // Reverse BFS on G'\n    while (!q.empty()) {\n        int v = q.front(); q.pop();\n        for (int u : gr[v]) {\n            if (!good[u]) {\n                good[u] = 1;\n                q.push(u);\n            }\n        }\n    }\n\n    // reachable_from_assign[i]: reachable from some assign via G'\n    vector<char> fromAssign(n, 0);\n    queue<int> qa;\n\n    // For each assign node, push its non-assign neighbors as BFS sources\n    vector<char> inQueue(n, 0);\n    for (auto &e : edges) {\n        int u = e.first, v = e.second;\n        if (f[u] == 1 && f[v] != 1) {\n            if (!fromAssign[v]) {\n                fromAssign[v] = 1;\n                qa.push(v);\n                inQueue[v] = 1;\n            }\n        }\n    }\n\n    while (!qa.empty()) {\n        int v = qa.front(); qa.pop();\n        inQueue[v] = 0;\n        for (int to : g[v]) {\n            if (!fromAssign[to]) {\n                fromAssign[to] = 1;\n                if (!inQueue[to]) {\n                    qa.push(to);\n                    inQueue[to] = 1;\n                }\n            }\n        }\n    }\n\n    vector<int> ans(n, 0);\n\n    // Non-assign nodes\n    for (int i = 0; i < n; ++i) {\n        if (f[i] != 1) {\n            if (good[i] && fromAssign[i]) ans[i] = 1;\n        }\n    }\n\n    // Assign nodes: check if they have a neighbor that is good\n    for (auto &e : edges) {\n        int u = e.first, v = e.second;\n        if (f[u] == 1 && f[v] != 1 && good[v]) {\n            ans[u] = 1;\n        }\n    }\n\n    for (int i = 0; i < n; ++i) {\n        cout << ans[i] << (i + 1 == n ? '\\n' : ' ');\n    }\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 8189,
+            "prompt_tokens": 736,
+            "total_tokens": 8925,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 3,
+                "engine_ttft_ms": 310,
+                "engine_ttlt_ms": 24714,
+                "pre_inference_ms": 196,
+                "service_tbt_ms": 3,
+                "service_ttft_ms": 629,
+                "service_ttlt_ms": 25029,
+                "total_duration_ms": 24842,
+                "user_visible_ttft_ms": 432
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in C++ to solve this programming problem:\nDescription: Life is not easy for the perfectly common variable named Vasya. Wherever it goes, it is either assigned a value, or simply ignored, or is being used!Vasya's life goes in states of a program. In each state, Vasya can either be used (for example, to calculate the value of another variable), or be assigned a value, or ignored. Between some states are directed (oriented) transitions.A path is a sequence of states v1,\u2009v2,\u2009...,\u2009vx, where for any 1\u2009\u2264\u2009i\u2009&lt;\u2009x exists a transition from vi to vi\u2009+\u20091.Vasya's value in state v is interesting to the world, if exists path p1,\u2009p2,\u2009...,\u2009pk such, that pi\u2009=\u2009v for some i (1\u2009\u2264\u2009i\u2009\u2264\u2009k), in state p1 Vasya gets assigned a value, in state pk Vasya is used and there is no state pi (except for p1) where Vasya gets assigned a value.Help Vasya, find the states in which Vasya's value is interesting to the world.\nInput Specification: The first line contains two space-separated integers n and m (1\u2009\u2264\u2009n,\u2009m\u2009\u2264\u2009105) \u2014 the numbers of states and transitions, correspondingly. The second line contains space-separated n integers f1,\u2009f2,\u2009...,\u2009fn (0\u2009\u2264\u2009fi\u2009\u2264\u20092), fi described actions performed upon Vasya in state i: 0 represents ignoring, 1 \u2014 assigning a value, 2 \u2014 using. Next m lines contain space-separated pairs of integers ai,\u2009bi (1\u2009\u2264\u2009ai,\u2009bi\u2009\u2264\u2009n, ai\u2009\u2260\u2009bi), each pair represents the transition from the state number ai to the state number bi. Between two states can be any number of transitions.\nOutput Specification: Print n integers r1,\u2009r2,\u2009...,\u2009rn, separated by spaces or new lines. Number ri should equal 1, if Vasya's value in state i is interesting to the world and otherwise, it should equal 0. The states are numbered from 1 to n in the order, in which they are described in the input.\n\nSample Input:\n4 3\n1 0 0 2\n1 2\n2 3\n3 4\nSample Output:\n1\n1\n1\n1\n\nSample Input:\n3 1\n1 0 2\n1 3\nSample Output:\n1\n0\n1\n\nSample Input:\n3 1\n2 0 1\n1 3\nSample Output:\n0\n0\n0\n\nNotes: NoteIn the first sample the program states can be used to make the only path in which the value of Vasya interests the world, 1  2  3  4; it includes all the states, so in all of them Vasya's value is interesting to the world.The second sample the only path in which Vasya's value is interesting to the world is , \u2014 1  3; state 2 is not included there.In the third sample we cannot make from the states any path in which the value of Vasya would be interesting to the world, so the value of Vasya is never interesting to the world.\nTake input from standard input and output to standard output\nProvide the C++ code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "87d869a0fd4a510c5e7e310886b86a57",
+        "difficulty": 1700,
+        "prob_desc_sample_inputs": [
+            "4 3\n1 0 0 2\n1 2\n2 3\n3 4",
+            "3 1\n1 0 2\n1 3",
+            "3 1\n2 0 1\n1 3"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "graphs"
+        ],
+        "prob_desc_output_spec": "Print n integers r1,\u2009r2,\u2009...,\u2009rn, separated by spaces or new lines. Number ri should equal 1, if Vasya's value in state i is interesting to the world and otherwise, it should equal 0. The states are numbered from 1 to n in the order, in which they are described in the input.",
+        "prob_desc_input_spec": "The first line contains two space-separated integers n and m (1\u2009\u2264\u2009n,\u2009m\u2009\u2264\u2009105) \u2014 the numbers of states and transitions, correspondingly. The second line contains space-separated n integers f1,\u2009f2,\u2009...,\u2009fn (0\u2009\u2264\u2009fi\u2009\u2264\u20092), fi described actions performed upon Vasya in state i: 0 represents ignoring, 1 \u2014 assigning a value, 2 \u2014 using. Next m lines contain space-separated pairs of integers ai,\u2009bi (1\u2009\u2264\u2009ai,\u2009bi\u2009\u2264\u2009n, ai\u2009\u2260\u2009bi), each pair represents the transition from the state number ai to the state number bi. Between two states can be any number of transitions.",
+        "lang_cluster": "C++",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first sample the program states can be used to make the only path in which the value of Vasya interests the world, 1  2  3  4; it includes all the states, so in all of them Vasya's value is interesting to the world.The second sample the only path in which Vasya's value is interesting to the world is , \u2014 1  3; state 2 is not included there.In the third sample we cannot make from the states any path in which the value of Vasya would be interesting to the world, so the value of Vasya is never interesting to the world.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Life is not easy for the perfectly common variable named Vasya. Wherever it goes, it is either assigned a value, or simply ignored, or is being used!Vasya's life goes in states of a program. In each state, Vasya can either be used (for example, to calculate the value of another variable), or be assigned a value, or ignored. Between some states are directed (oriented) transitions.A path is a sequence of states v1,\u2009v2,\u2009...,\u2009vx, where for any 1\u2009\u2264\u2009i\u2009&lt;\u2009x exists a transition from vi to vi\u2009+\u20091.Vasya's value in state v is interesting to the world, if exists path p1,\u2009p2,\u2009...,\u2009pk such, that pi\u2009=\u2009v for some i (1\u2009\u2264\u2009i\u2009\u2264\u2009k), in state p1 Vasya gets assigned a value, in state pk Vasya is used and there is no state pi (except for p1) where Vasya gets assigned a value.Help Vasya, find the states in which Vasya's value is interesting to the world.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1333897500",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "1\n1\n1\n1",
+            "1\n0\n1",
+            "0\n0\n0"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"4 3\\r\\n1 0 0 2\\r\\n1 2\\r\\n2 3\\r\\n3 4\\r\\n\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\"]}, {\"input\": \"3 1\\r\\n1 0 2\\r\\n1 3\\r\\n\", \"output\": [\"1\\r\\n0\\r\\n1\"]}, {\"input\": \"3 1\\r\\n2 0 1\\r\\n1 3\\r\\n\", \"output\": [\"0\\r\\n0\\r\\n0\"]}, {\"input\": \"4 4\\r\\n1 0 2 0\\r\\n1 2\\r\\n2 3\\r\\n3 4\\r\\n4 1\\r\\n\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n0\"]}, {\"input\": \"10000 10000\\r\\n0 1 2 2 2 0 1 0 1 0 0 0 1 2 2 0 0 0 2 1 2 0 1 0 2 1 1 1 1 0 1 1 0 2 1 2 0 1 0 1 2 2 0 0 0 1 0 0 0 2 2 2 1 2 2 1 0 2 2 1 1 2 0 2 1 1 2 2 1 0 0 2 1 0 1 0 2 0 2 0 2 0 0 0 0 0 0 0 2 0 0 0 1 2 2 2 1 2 2 1 2 1 1 1 0 1 2 0 2 2 0 0 1 0 0 0 1 0 2 2 1 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"10000 10000\\r\\n1 1 1 2 1 2 2 1 2 1 2 1 1 1 1 1 2 1 2 1 1 2 2 2 2 2 1 1 2 2 1 1 2 1 1 2 1 1 2 1 2 1 1 1 1 2 1 2 2 2 2 1 1 1 2 1 1 2 1 2 2 1 1 1 2 1 1 1 1 1 1 2 1 2 2 2 1 2 1 2 2 2 2 2 2 2 2 2 2 2 1 1 1 2 2 1 2 2 2 2 2 2 2 2 1 2 1 1 2 2 1 2 1 2 1 1 1 2 1 1 2 ...\", \"output\": [\"0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n...\"]}, {\"input\": \"10000 100000\\r\\n0 1 2 1 1 2 2 0 0 2 1 0 1 1 2 2 0 1 1 2 1 2 2 1 2 2 0 0 2 1 1 2 1 1 2 1 2 0 1 2 0 1 0 1 2 1 0 0 1 2 2 0 1 0 1 2 2 1 0 0 1 1 2 2 1 2 2 2 2 2 2 2 2 2 0 1 2 2 1 0 1 1 0 0 2 2 1 0 1 2 2 0 1 0 2 2 2 1 1 1 0 1 1 0 1 0 0 2 1 1 2 0 1 1 2 2 0 0 1 0 0...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"2 100000\\r\\n1 0\\r\\n2 1\\r\\n1 2\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n1 2\\r\\n...\", \"output\": [\"0\\r\\n0\"]}, {\"input\": \"100000 100000\\r\\n0 2 1 1 1 2 0 0 1 0 1 1 2 1 0 1 2 0 1 2 2 2 2 1 1 1 0 2 1 1 2 0 0 2 1 0 0 0 0 2 1 0 2 2 1 0 0 1 2 0 0 2 0 1 2 1 0 1 0 2 0 0 1 1 0 0 2 2 0 1 1 0 2 2 2 1 1 2 2 1 1 1 1 0 0 0 1 0 2 0 2 2 2 2 0 2 0 2 0 1 0 1 0 1 1 1 2 0 0 1 2 0 0 2 1 0 2 0 0 1 ...\", \"output\": [\"0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n2 2 2 1 1 2 1 1 1 1 2 2 1 2 1 1 2 1 2 2 1 2 2 2 1 1 1 2 2 1 1 2 1 1 1 1 1 1 2 2 1 1 1 2 2 1 2 1 2 1 2 1 1 1 1 2 2 1 2 1 1 2 2 1 2 2 1 2 2 1 1 1 1 1 2 2 1 1 2 2 1 1 1 1 1 1 1 1 2 1 2 2 1 1 1 1 1 2 1 2 1 1 2 1 1 1 1 2 2 2 1 1 1 1 1 2 1 1 2 1 ...\", \"output\": [\"0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\", \"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n1 1 0 0 1 0 1 0 1 0 1 0 1 1 0 1 1 1 1 0 0 0 0 1 0 0 0 1 0 1 1 1 1 0 1 1 0 1 1 1 0 0 1 0 0 1 0 1 1 1 0 0 0 0 1 1 0 1 0 0 1 0 1 0 1 1 0 1 1 1 0 0 1 0 1 1 1 1 0 0 1 1 0 1 1 1 1 0 0 1 1 1 0 1 1 0 1 0 1 0 0 0 1 0 1 1 1 0 0 1 0 0 1 1 0 0 0 1 0 0 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n0 0 2 2 0 2 2 0 0 0 2 0 0 2 2 0 0 2 2 2 0 2 0 2 0 2 2 0 2 2 2 0 2 2 2 0 2 0 2 2 2 0 0 0 2 0 0 2 2 0 2 2 2 0 0 0 2 2 2 2 0 0 2 0 0 2 2 0 2 0 0 2 0 0 2 0 2 0 2 0 0 2 0 0 2 2 0 2 0 2 0 2 2 2 2 2 0 0 2 0 2 0 2 2 0 2 2 2 0 2 2 0 0 0 0 0 2 2 0 0 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"2 1\\r\\n2 1\\r\\n2 1\\r\\n\", \"output\": [\"1\\r\\n1\"]}, {\"input\": \"100000 99999\\r\\n2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"100000 10\\r\\n2 2 2 2 2 2 1 1 1 2 2 2 1 1 1 2 1 1 2 2 1 2 1 1 2 1 2 2 2 2 1 2 2 2 1 2 2 2 2 1 2 2 2 1 1 1 2 2 1 2 2 1 1 1 1 1 1 2 1 2 2 2 1 2 2 1 1 1 1 1 1 2 1 2 2 1 2 1 2 1 1 2 1 2 1 1 1 2 2 2 2 2 2 1 2 2 2 2 2 1 1 1 1 2 2 1 2 2 2 1 2 1 1 1 1 2 2 2 2 2 1 1 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"3 2\\r\\n1 2 0\\r\\n1 2\\r\\n3 2\\r\\n\", \"output\": [\"1\\r\\n1\\r\\n0\"]}, {\"input\": \"50000 99997\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"100000 99999\\r\\n0 0 2 0 2 2 2 2 2 1 1 0 1 0 2 0 2 0 2 1 0 1 2 0 0 2 0 2 0 1 0 2 1 1 1 2 2 0 1 2 2 0 1 0 2 1 0 0 1 1 2 2 2 1 2 2 2 0 0 1 0 0 0 0 1 0 1 0 0 2 2 2 0 2 0 2 0 1 2 2 2 0 0 0 1 0 0 1 1 0 0 0 1 1 0 2 0 1 1 2 0 0 1 1 2 1 1 1 2 2 0 0 1 0 0 0 2 1 1 1 0...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"99991 100000\\r\\n1 1 2 0 1 2 0 0 0 2 2 2 0 0 1 0 1 0 0 0 0 2 1 1 2 0 2 2 2 2 1 2 2 2 0 2 0 2 0 1 2 2 2 0 2 1 2 1 2 0 1 0 0 2 0 2 1 2 1 1 1 1 0 0 2 2 0 2 1 1 1 0 2 2 0 0 2 1 1 1 2 2 1 1 2 0 1 0 1 2 2 1 1 0 1 2 1 0 0 1 0 1 1 0 1 0 1 1 0 0 1 2 2 2 0 2 1 2 0 1 0...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"99001 100000\\r\\n0 1 1 1 1 1 2 0 1 0 2 1 2 2 2 1 2 1 2 1 2 2 0 2 1 1 0 1 2 2 0 2 2 1 2 0 0 0 1 2 2 1 2 1 2 1 2 0 0 2 0 0 1 0 1 1 1 2 2 1 2 2 2 1 2 1 0 0 2 1 2 1 1 2 0 0 2 0 2 2 2 2 1 2 1 2 2 0 2 0 2 0 0 0 1 1 2 0 2 2 0 0 0 1 2 2 2 1 1 0 2 1 2 2 2 0 2 1 2 1 2...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"99001 100000\\r\\n1 2 2 0 1 1 2 0 1 1 0 1 0 0 0 0 1 2 1 2 2 1 1 2 1 0 1 0 0 0 2 1 1 1 0 2 2 2 1 2 2 1 0 1 0 1 2 0 1 1 1 0 1 0 1 0 0 0 1 2 0 1 2 0 0 2 1 2 1 0 0 0 2 2 0 2 1 1 2 2 2 0 0 2 1 2 1 0 0 1 0 1 0 0 1 0 1 0 1 2 2 0 1 1 0 2 2 0 2 2 2 0 2 2 2 0 1 1 2 0 2...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"100000 99999\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n...\"]}, {\"input\": \"99001 100000\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0...\", \"output\": [\"0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"99001 100000\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0...\", \"output\": [\"1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n...\"]}, {\"input\": \"90001 100000\\r\\n1 0 0 0 1 2 0 0 0 0 0 0 0 2 0 0 0 0 0 1 0 2 2 1 0 0 1 1 0 0 0 0 0 1 0 0 0 1 0 2 0 1 0 0 0 0 2 0 0 0 0 0 2 0 0 2 0 0 0 0 0 2 0 0 0 0 0 0 1 2 1 0 0 0 0 1 1 0 0 2 0 0 0 2 2 0 0 0 2 0 0 0 0 0 0 0 1 2 0 2 0 0 0 2 2 1 0 0 0 0 0 0 1 2 0 0 0 0 0 0 0...\", \"output\": [\"0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"99001 100000\\r\\n0 2 0 1 2 1 1 2 2 0 1 1 2 1 2 0 0 0 0 0 2 1 1 2 2 1 2 2 0 0 1 2 2 2 0 0 0 2 1 0 1 0 0 2 0 1 2 2 0 1 2 2 0 2 0 2 2 2 2 2 0 2 2 2 0 1 0 1 1 0 0 0 0 2 0 2 2 0 1 1 0 0 2 0 0 2 0 1 1 2 0 0 0 1 1 2 0 1 2 2 1 0 1 0 0 1 0 2 2 2 2 1 1 0 1 2 2 1 0 2 1...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"90001 100000\\r\\n0 0 1 1 0 1 2 1 2 1 0 0 0 2 2 0 2 1 1 1 1 1 1 0 0 1 0 0 0 0 2 1 2 2 0 1 1 1 1 0 2 2 0 2 1 0 1 0 1 2 0 2 1 2 2 1 2 0 1 2 1 1 1 2 1 1 0 1 2 1 1 1 2 1 2 1 0 2 0 0 0 1 2 0 0 2 0 1 2 0 0 1 2 0 2 0 2 2 2 1 0 1 0 1 0 2 0 2 2 1 0 2 1 1 1 1 0 2 1 1 1...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n...\"]}, {\"input\": \"30000 74999\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"8 8\\r\\n1 0 0 2 1 0 0 2\\r\\n1 2\\r\\n2 3\\r\\n3 2\\r\\n2 4\\r\\n6 8\\r\\n7 6\\r\\n6 7\\r\\n5 6\\r\\n\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\"]}, {\"input\": \"6 6\\r\\n1 0 0 0 0 2\\r\\n1 2\\r\\n2 3\\r\\n3 4\\r\\n4 5\\r\\n5 2\\r\\n3 6\\r\\n\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\"]}, {\"input\": \"100000 99999\\r\\n1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}]"
+    }
+}

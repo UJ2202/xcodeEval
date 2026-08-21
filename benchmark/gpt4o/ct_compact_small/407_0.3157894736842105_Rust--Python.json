@@ -1,0 +1,347 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EELdWzklpv0Y4zDOgYx8nwmza5VWk",
+        "created": 1787088470,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "import sys\nimport math\nfrom bisect import bisect_left\n\nclass FenwickTree:\n    def __init__(self, n):\n        self.val = [0] * (n + 1)\n\n    def add(self, x, v):\n        n = len(self.val)\n        while x < n:\n            self.val[x] += v\n            x += x & -x\n\n    def sum(self, x):\n        assert x < len(self.val)\n        ans = 0\n        while x > 0:\n            ans += self.val[x]\n            x -= x & -x\n        return ans\n\ndef sieve(n):\n    is_prime = [True] * (n + 1)\n    for i in range(2, n + 1):\n        if i * i > n:\n            break\n        if is_prime[i]:\n            j = i * i\n            while j <= n:\n                is_prime[j] = False\n                j += i\n    prime = []\n    for i in range(2, n + 1):\n        if is_prime[i]:\n            prime.append(i)\n    return prime\n\nclass PrimeCountSolver:\n    def __init__(self):\n        self.query = []\n        self.memo = []\n\n    def add(self, n):\n        self.query.append(n)\n\n    def build(self):\n        self.query.sort()\n        # dedup\n        q_unique = []\n        prev = None\n        for x in self.query:\n            if x != prev:\n                q_unique.append(x)\n                prev = x\n        self.query = q_unique\n\n        n = self.query[-1] if self.query else 1\n        m = 1\n        while (m + 1) * (m + 1) <= n:\n            m += 1\n        p = sieve(m)\n        bound = int(math.pow(n, 1/3.0) ** 2) + 2\n\n        stack = []\n        for v in self.query:\n            # binary_search_by(|&p| (p * p).cmp(&v))\n            squares = [x * x for x in p]\n            k = bisect_left(squares, v)\n            if k < len(squares) and squares[k] == v:\n                k += 1\n            stack.append((v, k))\n\n        query = []\n        while stack:\n            n_val, k = stack.pop()\n            if k == 0:\n                continue\n            q = p[k - 1]\n            if q * q > n_val:\n                squares = [x * x for x in p[:k]]\n                x = bisect_left(squares, n_val)\n                if x < len(squares) and squares[x] == n_val:\n                    x += 1\n                stack.append((n_val, x))\n            elif n_val <= bound:\n                query.append((k, n_val))\n            else:\n                stack.append((n_val, k - 1))\n                stack.append((n_val // q, k - 1))\n\n        query.sort()\n        # dedup\n        q_unique = []\n        prev = None\n        for x in query:\n            if x != prev:\n                q_unique.append(x)\n                prev = x\n        query = q_unique\n\n        m = bound\n        bit = FenwickTree(m)\n        for i in range(1, m + 1):\n            bit.add(i, 1)\n\n        is_prime = [True] * (m + 1)\n        memo = [0] * len(query)\n        pos = 0\n        for i, prime in enumerate(p):\n            pp = prime\n            j = pp\n            while j <= m:\n                if is_prime[j]:\n                    bit.add(j, -1)\n                is_prime[j] = False\n                j += pp\n            while pos < len(query):\n                k, n_val = query[pos]\n                if k > i + 1:\n                    break\n                memo[pos] = bit.sum(n_val)\n                pos += 1\n            if pos >= len(query):\n                break\n\n        self.memo = [0] * len(self.query)\n        stack = []\n        for i, n_val in enumerate(self.query):\n            squares = [x * x for x in p]\n            k = bisect_left(squares, n_val)\n            if k < len(squares) and squares[k] == n_val:\n                k += 1\n            self.memo[i] += k - 1\n            stack.append((n_val, k, 1, i))\n\n        while stack:\n            n_val, k, sign, idx = stack.pop()\n            if k == 0:\n                self.memo[idx] += sign * n_val\n                continue\n            q = p[k - 1]\n            if q * q > n_val:\n                squares = [x * x for x in p[:k]]\n                x = bisect_left(squares, n_val)\n                if x < len(squares) and squares[x] == n_val:\n                    x += 1\n                self.memo[idx] += -sign * (k - x)\n                stack.append((n_val, x, sign, idx))\n            elif n_val <= bound:\n                q_idx = query.index((k, n_val))\n                self.memo[idx] += sign * memo[q_idx]\n            else:\n                stack.append((n_val, k - 1, sign, idx))\n                stack.append((n_val // q, k - 1, -sign, idx))\n\n    def get(self, n):\n        i = bisect_left(self.query, n)\n        return self.memo[i]\n\ndef run():\n    s = sys.stdin.readline()\n    n = int(s.strip())\n    p = sieve(int(math.isqrt(n)) + 2)\n    ans = 0\n    for prime in p:\n        if prime ** 3 <= n:\n            ans += 1\n        else:\n            break\n    solver = PrimeCountSolver()\n    for i, prime in enumerate(p):\n        if prime ** 2 <= n:\n            ans -= i + 1\n            solver.add(n // prime)\n    solver.build()\n    for prime in p:\n        if prime ** 2 <= n:\n            ans += solver.get(n // prime)\n    print(ans)\n\ndef main():\n    run()\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "import sys\nimport math\nfrom bisect import bisect_left\n\nclass FenwickTree:\n    def __init__(self, n):\n        self.val = [0] * (n + 1)\n\n    def add(self, x, v):\n        n = len(self.val) - 1\n        while x <= n:\n            self.val[x] += v\n            x += x & -x\n\n    def sum(self, x):\n        assert x < len(self.val)\n        ans = 0\n        while x > 0:\n            ans += self.val[x]\n            x -= x & -x\n        return ans\n\ndef sieve(n):\n    is_prime = [True] * (n + 1)\n    for i in range(2, n + 1):\n        if i * i > n:\n            break\n        if is_prime[i]:\n            j = i * i\n            while j <= n:\n                is_prime[j] = False\n                j += i\n    prime = []\n    for i in range(2, n + 1):\n        if is_prime[i]:\n            prime.append(i)\n    return prime\n\nclass PrimeCountSolver:\n    def __init__(self):\n        self.query = []\n        self.memo = []\n\n    def add(self, n):\n        self.query.append(n)\n\n    def build(self):\n        self.query.sort()\n        # dedup\n        q_unique = []\n        prev = None\n        for x in self.query:\n            if x != prev:\n                q_unique.append(x)\n                prev = x\n        self.query = q_unique\n        n = self.query[-1] if self.query else 1\n        m = 1\n        while (m + 1) * (m + 1) <= n:\n            m += 1\n        p = sieve(m)\n        bound = int(math.cbrt(float(n)) ** 2) + 2\n        stack = []\n        for v in self.query:\n            # binary search for first p with p*p >= v\n            lo, hi = 0, len(p)\n            while lo < hi:\n                mid = (lo + hi) // 2\n                if p[mid] * p[mid] < v:\n                    lo = mid + 1\n                else:\n                    hi = mid\n            k = lo\n            if k < len(p) and p[k] * p[k] == v:\n                k += 1\n            stack.append((v, k))\n        query = []\n        while stack:\n            n_val, k = stack.pop()\n            if k == 0:\n                continue\n            q = p[k - 1]\n            if q * q > n_val:\n                lo, hi = 0, k\n                while lo < hi:\n                    mid = (lo + hi) // 2\n                    if p[mid] * p[mid] < n_val:\n                        lo = mid + 1\n                    else:\n                        hi = mid\n                x = lo\n                if x < k and p[x] * p[x] == n_val:\n                    x += 1\n                stack.append((n_val, x))\n            elif n_val <= bound:\n                query.append((k, n_val))\n            else:\n                stack.append((n_val, k - 1))\n                stack.append((n_val // q, k - 1))\n        query.sort()\n        # dedup query\n        q_unique = []\n        prev = None\n        for x in query:\n            if x != prev:\n                q_unique.append(x)\n                prev = x\n        query = q_unique\n        m = bound\n        bit = FenwickTree(m)\n        for i in range(1, m + 1):\n            bit.add(i, 1)\n        is_prime = [True] * (m + 1)\n        memo = [0] * len(query)\n        pos = 0\n        for i, prime in enumerate(p):\n            pp = prime\n            j = pp\n            while j <= m:\n                if is_prime[j]:\n                    bit.add(j, -1)\n                is_prime[j] = False\n                j += pp\n            while pos < len(query):\n                k, n_val = query[pos]\n                if k > i + 1:\n                    break\n                memo[pos] = bit.sum(n_val)\n                pos += 1\n            if pos >= len(query):\n                break\n        self.memo = [0] * len(self.query)\n        stack = []\n        for idx, n_val in enumerate(self.query):\n            lo, hi = 0, len(p)\n            while lo < hi:\n                mid = (lo + hi) // 2\n                if p[mid] * p[mid] < n_val:\n                    lo = mid + 1\n                else:\n                    hi = mid\n            k = lo\n            if k < len(p) and p[k] * p[k] == n_val:\n                k += 1\n            self.memo[idx] += k - 1\n            stack.append((n_val, k, 1, idx))\n        while stack:\n            n_val, k, sign, idx = stack.pop()\n            if k == 0:\n                self.memo[idx] += sign * n_val\n                continue\n            q = p[k - 1]\n            if q * q > n_val:\n                lo, hi = 0, k\n                while lo < hi:\n                    mid = (lo + hi) // 2\n                    if p[mid] * p[mid] < n_val:\n                        lo = mid + 1\n                    else:\n                        hi = mid\n                x = lo\n                if x < k and p[x] * p[x] == n_val:\n                    x += 1\n                self.memo[idx] += -sign * (k - x)\n                stack.append((n_val, x, sign, idx))\n            elif n_val <= bound:\n                pos = bisect_left(query, (k, n_val))\n                self.memo[idx] += sign * memo[pos]\n            else:\n                stack.append((n_val, k - 1, sign, idx))\n                stack.append((n_val // q, k - 1, -sign, idx))\n\n    def get(self, n):\n        pos = bisect_left(self.query, n)\n        return self.memo[pos]\n\ndef run():\n    s = sys.stdin.readline()\n    n = int(s.strip())\n    p = sieve(int(math.isqrt(n)) + 2)\n    ans = 0\n    for prime in p:\n        if prime ** 3 <= n:\n            ans += 1\n        else:\n            break\n    solver = PrimeCountSolver()\n    for i, prime in enumerate(p):\n        if prime * prime <= n:\n            ans -= i + 1\n            solver.add(n // prime)\n    solver.build()\n    for prime in p:\n        if prime * prime <= n:\n            ans += solver.get(n // prime)\n    print(ans)\n\ndef main():\n    run()\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "import sys\nimport math\nfrom bisect import bisect_left\n\nclass FenwickTree:\n    def __init__(self, n):\n        self.val = [0] * (n + 1)\n\n    def add(self, x, v):\n        n = len(self.val)\n        while x < n:\n            self.val[x] += v\n            x += x & -x\n\n    def sum(self, x):\n        assert x < len(self.val)\n        ans = 0\n        while x > 0:\n            ans += self.val[x]\n            x -= x & -x\n        return ans\n\ndef sieve(n):\n    is_prime = [True] * (n + 1)\n    for i in range(2, n + 1):\n        if i * i > n:\n            break\n        if is_prime[i]:\n            j = i * i\n            while j <= n:\n                is_prime[j] = False\n                j += i\n    prime = []\n    for i in range(2, n + 1):\n        if is_prime[i]:\n            prime.append(i)\n    return prime\n\nclass PrimeCountSolver:\n    def __init__(self):\n        self.query = []\n        self.memo = []\n\n    def add(self, n):\n        self.query.append(n)\n\n    def build(self):\n        self.query.sort()\n        self.query = list(dict.fromkeys(self.query))\n        n = self.query[-1] if self.query else 1\n        m = 1\n        while (m + 1) * (m + 1) <= n:\n            m += 1\n        p = sieve(m)\n        bound = int(round(n ** (1.0 / 3))) ** 2 + 2\n        stack = []\n        for v in self.query:\n            # binary search for smallest index k such that p[k]^2 >= v\n            lo, hi = 0, len(p)\n            while lo < hi:\n                mid = (lo + hi) // 2\n                if p[mid] * p[mid] < v:\n                    lo = mid + 1\n                else:\n                    hi = mid\n            k = lo\n            stack.append((v, k))\n        query = []\n        while stack:\n            n_val, k = stack.pop()\n            if k == 0:\n                continue\n            q = p[k - 1]\n            if q * q > n_val:\n                lo, hi = 0, k\n                while lo < hi:\n                    mid = (lo + hi) // 2\n                    if p[mid] * p[mid] < n_val:\n                        lo = mid + 1\n                    else:\n                        hi = mid\n                x = lo\n                stack.append((n_val, x))\n            elif n_val <= bound:\n                query.append((k, n_val))\n            else:\n                stack.append((n_val, k - 1))\n                stack.append((n_val // q, k - 1))\n        query = sorted(set(query))\n        m = bound\n        bit = FenwickTree(m)\n        for i in range(1, m + 1):\n            bit.add(i, 1)\n        is_prime = [True] * (m + 1)\n        memo = [0] * len(query)\n        pos = 0\n        for i, prime in enumerate(p):\n            pp = prime\n            j = pp\n            while j <= m:\n                if is_prime[j]:\n                    bit.add(j, -1)\n                is_prime[j] = False\n                j += pp\n            while pos < len(query):\n                k, n_val = query[pos]\n                if k > i + 1:\n                    break\n                memo[pos] = bit.sum(n_val)\n                pos += 1\n            if pos >= len(query):\n                break\n        self.memo = [0] * len(self.query)\n        stack = []\n        for idx, n_val in enumerate(self.query):\n            lo, hi = 0, len(p)\n            while lo < hi:\n                mid = (lo + hi) // 2\n                if p[mid] * p[mid] < n_val:\n                    lo = mid + 1\n                else:\n                    hi = mid\n            k = lo\n            self.memo[idx] += k - 1\n            stack.append((n_val, k, 1, idx))\n        while stack:\n            n_val, k, sign, idx = stack.pop()\n            if k == 0:\n                self.memo[idx] += sign * n_val\n                continue\n            q = p[k - 1]\n            if q * q > n_val:\n                lo, hi = 0, k\n                while lo < hi:\n                    mid = (lo + hi) // 2\n                    if p[mid] * p[mid] < n_val:\n                        lo = mid + 1\n                    else:\n                        hi = mid\n                x = lo\n                self.memo[idx] += -sign * (k - x)\n                stack.append((n_val, x, sign, idx))\n            elif n_val <= bound:\n                pos = query.index((k, n_val))\n                self.memo[idx] += sign * memo[pos]\n            else:\n                stack.append((n_val, k - 1, sign, idx))\n                stack.append((n_val // q, k - 1, -sign, idx))\n\n    def get(self, n):\n        idx = bisect_left(self.query, n)\n        return self.memo[idx]\n\ndef run():\n    s = sys.stdin.readline()\n    n = int(s.strip())\n    p = sieve(int(math.isqrt(n)) + 2)\n    ans = 0\n    for prime in p:\n        if prime ** 3 <= n:\n            ans += 1\n        else:\n            break\n    solver = PrimeCountSolver()\n    for i, prime in enumerate(p):\n        if prime * prime <= n:\n            ans -= i + 1\n            solver.add(n // prime)\n    solver.build()\n    for prime in p:\n        if prime * prime <= n:\n            ans += solver.get(n // prime)\n    print(ans)\n\ndef main():\n    run()\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "import sys\nimport math\nimport bisect\n\n\nclass FenwickTree:\n    def __init__(self, n):\n        self.val = [0] * (n + 1)\n\n    def add(self, x, v):\n        n = len(self.val) - 1\n        while x <= n:\n            self.val[x] += v\n            x += x & -x\n\n    def sum(self, x):\n        assert x < len(self.val)\n        ans = 0\n        while x > 0:\n            ans += self.val[x]\n            x -= x & -x\n        return ans\n\n\ndef sieve(n):\n    is_prime = [True] * (n + 1)\n    for i in range(2, n + 1):\n        if i * i > n:\n            break\n        if is_prime[i]:\n            j = i * i\n            while j <= n:\n                is_prime[j] = False\n                j += i\n    prime = []\n    for i in range(2, n + 1):\n        if is_prime[i]:\n            prime.append(i)\n    return prime\n\n\nclass PrimeCountSolver:\n    def __init__(self):\n        self.query = []\n        self.memo = []\n\n    def add(self, n):\n        self.query.append(n)\n\n    def build(self):\n        self.query.sort()\n        # dedup\n        q_unique = []\n        prev = None\n        for x in self.query:\n            if x != prev:\n                q_unique.append(x)\n                prev = x\n        self.query = q_unique\n\n        n = self.query[-1] if self.query else 1\n        m = 1\n        while (m + 1) * (m + 1) <= n:\n            m += 1\n        p = sieve(m)\n        bound = int(math.cbrt(n) ** 2) + 2\n\n        stack = []\n        for v in self.query:\n            # binary search for first p with p*p >= v\n            lo, hi = 0, len(p)\n            while lo < hi:\n                mid = (lo + hi) // 2\n                if p[mid] * p[mid] < v:\n                    lo = mid + 1\n                else:\n                    hi = mid\n            k = lo\n            stack.append((v, k))\n\n        query = []\n        while stack:\n            n_val, k = stack.pop()\n            if k == 0:\n                continue\n            q = p[k - 1]\n            if q * q > n_val:\n                lo, hi = 0, k\n                while lo < hi:\n                    mid = (lo + hi) // 2\n                    if p[mid] * p[mid] < n_val:\n                        lo = mid + 1\n                    else:\n                        hi = mid\n                x = lo\n                stack.append((n_val, x))\n            elif n_val <= bound:\n                query.append((k, n_val))\n            else:\n                stack.append((n_val, k - 1))\n                stack.append((n_val // q, k - 1))\n\n        query.sort()\n        # dedup\n        q2 = []\n        prev = None\n        for x in query:\n            if x != prev:\n                q2.append(x)\n                prev = x\n        query = q2\n\n        m = bound\n        bit = FenwickTree(m)\n        for i in range(1, m + 1):\n            bit.add(i, 1)\n\n        is_prime = [True] * (m + 1)\n        memo = [0] * len(query)\n        pos = 0\n\n        for i, prime in enumerate(p):\n            pp = prime\n            j = pp\n            while j <= m:\n                if is_prime[j]:\n                    bit.add(j, -1)\n                is_prime[j] = False\n                j += pp\n            while pos < len(query):\n                k, n_val = query[pos]\n                if k > i + 1:\n                    break\n                memo[pos] = bit.sum(n_val)\n                pos += 1\n            if pos >= len(query):\n                break\n\n        self.memo = [0] * len(self.query)\n        stack = []\n        for i, n_val in enumerate(self.query):\n            lo, hi = 0, len(p)\n            while lo < hi:\n                mid = (lo + hi) // 2\n                if p[mid] * p[mid] < n_val:\n                    lo = mid + 1\n                else:\n                    hi = mid\n            k = lo\n            self.memo[i] += k - 1\n            stack.append((n_val, k, 1, i))\n\n        while stack:\n            n_val, k, sign, idx = stack.pop()\n            if k == 0:\n                self.memo[idx] += sign * n_val\n                continue\n            q = p[k - 1]\n            if q * q > n_val:\n                lo, hi = 0, k\n                while lo < hi:\n                    mid = (lo + hi) // 2\n                    if p[mid] * p[mid] < n_val:\n                        lo = mid + 1\n                    else:\n                        hi = mid\n                x = lo\n                self.memo[idx] += -sign * (k - x)\n                stack.append((n_val, x, sign, idx))\n            elif n_val <= bound:\n                pos = bisect.bisect_left(query, (k, n_val))\n                self.memo[idx] += sign * memo[pos]\n            else:\n                stack.append((n_val, k - 1, sign, idx))\n                stack.append((n_val // q, k - 1, -sign, idx))\n\n    def get(self, n):\n        pos = bisect.bisect_left(self.query, n)\n        return self.memo[pos]\n\n\ndef run():\n    s = sys.stdin.readline()\n    n = int(s.strip())\n    p = sieve(int(math.isqrt(n)) + 2)\n    ans = 0\n    for prime in p:\n        if prime ** 3 <= n:\n            ans += 1\n        else:\n            break\n    solver = PrimeCountSolver()\n    for i, prime in enumerate(p):\n        if prime * prime <= n:\n            ans -= i + 1\n            solver.add(n // prime)\n    solver.build()\n    for prime in p:\n        if prime * prime <= n:\n            ans += solver.get(n // prime)\n    print(ans)\n\n\ndef main():\n    run()\n\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "import sys\nimport math\nfrom bisect import bisect_left\n\nclass FenwickTree:\n    def __init__(self, n):\n        self.val = [0] * (n + 1)\n\n    def add(self, x, v):\n        n = len(self.val) - 1\n        while x <= n:\n            self.val[x] += v\n            x += x & -x\n\n    def sum(self, x):\n        assert x < len(self.val)\n        ans = 0\n        while x > 0:\n            ans += self.val[x]\n            x -= x & -x\n        return ans\n\ndef sieve(n):\n    is_prime = [True] * (n + 1)\n    for i in range(2, n + 1):\n        if i * i > n:\n            break\n        if is_prime[i]:\n            j = i * i\n            while j <= n:\n                is_prime[j] = False\n                j += i\n    prime = []\n    for i in range(2, n + 1):\n        if is_prime[i]:\n            prime.append(i)\n    return prime\n\nclass PrimeCountSolver:\n    def __init__(self):\n        self.query = []\n        self.memo = []\n\n    def add(self, n):\n        self.query.append(n)\n\n    def build(self):\n        self.query.sort()\n        # dedup\n        q_unique = []\n        prev = None\n        for x in self.query:\n            if x != prev:\n                q_unique.append(x)\n                prev = x\n        self.query = q_unique\n\n        n = self.query[-1] if self.query else 1\n        m = 1\n        while (m + 1) * (m + 1) <= n:\n            m += 1\n        p = sieve(m)\n        bound = int(math.cbrt(float(n)) ** 2) + 2\n\n        stack = []\n        for v in self.query:\n            # find k such that p[k]^2 >= v\n            squares = [x * x for x in p]\n            k = bisect_left(squares, v)\n            stack.append((v, k))\n\n        query = []\n        while stack:\n            n_val, k = stack.pop()\n            if k == 0:\n                continue\n            q = p[k - 1]\n            if q * q > n_val:\n                squares_k = [x * x for x in p[:k]]\n                x = bisect_left(squares_k, n_val)\n                stack.append((n_val, x))\n            elif n_val <= bound:\n                query.append((k, n_val))\n            else:\n                stack.append((n_val, k - 1))\n                stack.append((n_val // q, k - 1))\n\n        query.sort()\n        # dedup\n        q2 = []\n        prev = None\n        for x in query:\n            if x != prev:\n                q2.append(x)\n                prev = x\n        query = q2\n\n        m = bound\n        bit = FenwickTree(m)\n        for i in range(1, m + 1):\n            bit.add(i, 1)\n\n        is_prime = [True] * (m + 1)\n        memo = [0] * len(query)\n        pos = 0\n        for i, prime_val in enumerate(p):\n            pv = prime_val\n            j = pv\n            while j <= m:\n                if is_prime[j]:\n                    bit.add(j, -1)\n                is_prime[j] = False\n                j += pv\n            while pos < len(query):\n                k, n_val = query[pos]\n                if k > i + 1:\n                    break\n                memo[pos] = bit.sum(n_val)\n                pos += 1\n            if pos >= len(query):\n                break\n\n        self.memo = [0] * len(self.query)\n        stack = []\n        squares = [x * x for x in p]\n        for i, n_val in enumerate(self.query):\n            k = bisect_left(squares, n_val)\n            self.memo[i] += k - 1\n            stack.append((n_val, k, 1, i))\n\n        while stack:\n            n_val, k, sign, idx = stack.pop()\n            if k == 0:\n                self.memo[idx] += sign * n_val\n                continue\n            q = p[k - 1]\n            if q * q > n_val:\n                squares_k = [x * x for x in p[:k]]\n                x = bisect_left(squares_k, n_val)\n                self.memo[idx] += -sign * (k - x)\n                stack.append((n_val, x, sign, idx))\n            elif n_val <= bound:\n                pos = query.index((k, n_val))\n                self.memo[idx] += sign * memo[pos]\n            else:\n                stack.append((n_val, k - 1, sign, idx))\n                stack.append((n_val // q, k - 1, -sign, idx))\n\n    def get(self, n):\n        pos = self.query.index(n)\n        return self.memo[pos]\n\ndef run():\n    s = sys.stdin.readline()\n    n = int(s.strip())\n    p = sieve(int(math.isqrt(n)) + 2)\n    ans = 0\n    for pv in p:\n        if pv ** 3 <= n:\n            ans += 1\n        else:\n            break\n    solver = PrimeCountSolver()\n    for i, pv in enumerate(p):\n        if pv * pv <= n:\n            ans -= i + 1\n            solver.add(n // pv)\n    solver.build()\n    for pv in p:\n        if pv * pv <= n:\n            ans += solver.get(n // pv)\n    print(ans)\n\ndef main():\n    run()\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "import sys\nimport math\nfrom bisect import bisect_left\n\nclass FenwickTree:\n    def __init__(self, n):\n        self.val = [0] * (n + 1)\n\n    def add(self, x, v):\n        n = len(self.val) - 1\n        while x <= n:\n            self.val[x] += v\n            x += x & -x\n\n    def sum(self, x):\n        assert x < len(self.val)\n        ans = 0\n        while x > 0:\n            ans += self.val[x]\n            x -= x & -x\n        return ans\n\ndef sieve(n):\n    is_prime = [True] * (n + 1)\n    for i in range(2, n + 1):\n        if i * i > n:\n            break\n        if is_prime[i]:\n            j = i * i\n            while j <= n:\n                is_prime[j] = False\n                j += i\n    prime = []\n    for i in range(2, n + 1):\n        if is_prime[i]:\n            prime.append(i)\n    return prime\n\nclass PrimeCountSolver:\n    def __init__(self):\n        self.query = []\n        self.memo = []\n\n    def add(self, n):\n        self.query.append(n)\n\n    def build(self):\n        self.query.sort()\n        # dedup\n        dedup_query = []\n        prev = None\n        for x in self.query:\n            if x != prev:\n                dedup_query.append(x)\n                prev = x\n        self.query = dedup_query\n\n        n = self.query[-1] if self.query else 1\n        m = 1\n        while (m + 1) * (m + 1) <= n:\n            m += 1\n        p = sieve(m)\n        bound = int(round(n ** (1.0 / 3))) ** 2 + 2\n\n        stack = []\n        for v in self.query:\n            # binary_search_by(|&p| (p * p).cmp(&v))\n            squares = [x * x for x in p]\n            k = bisect_left(squares, v)\n            if k < len(squares) and squares[k] == v:\n                k = k + 1\n            stack.append((v, k))\n\n        query = []\n        while stack:\n            n_val, k = stack.pop()\n            if k == 0:\n                continue\n            q = p[k - 1]\n            if q * q > n_val:\n                squares = [x * x for x in p[:k]]\n                x = bisect_left(squares, n_val)\n                if x < len(squares) and squares[x] == n_val:\n                    x = x + 1\n                stack.append((n_val, x))\n            elif n_val <= bound:\n                query.append((k, n_val))\n            else:\n                stack.append((n_val, k - 1))\n                stack.append((n_val // q, k - 1))\n\n        query.sort()\n        # dedup query\n        dedup_query = []\n        prev = None\n        for x in query:\n            if x != prev:\n                dedup_query.append(x)\n                prev = x\n        query = dedup_query\n\n        m = bound\n        bit = FenwickTree(m)\n        for i in range(1, m + 1):\n            bit.add(i, 1)\n\n        is_prime = [True] * (m + 1)\n        memo = [0] * len(query)\n        pos = 0\n\n        for i, prime_val in enumerate(p):\n            pv = prime_val\n            j = pv\n            while j <= m:\n                if is_prime[j]:\n                    bit.add(j, -1)\n                is_prime[j] = False\n                j += pv\n            while pos < len(query):\n                k, n_val = query[pos]\n                if k > i + 1:\n                    break\n                memo[pos] = bit.sum(n_val)\n                pos += 1\n            if pos >= len(query):\n                break\n\n        self.memo = [0] * len(self.query)\n        stack = []\n        squares_all = [x * x for x in p]\n        for i, n_val in enumerate(self.query):\n            k = bisect_left(squares_all, n_val)\n            if k < len(squares_all) and squares_all[k] == n_val:\n                k = k + 1\n            self.memo[i] += k - 1\n            stack.append((n_val, k, 1, i))\n\n        while stack:\n            n_val, k, sign, idx = stack.pop()\n            if k == 0:\n                self.memo[idx] += sign * n_val\n                continue\n            q = p[k - 1]\n            if q * q > n_val:\n                squares = [x * x for x in p[:k]]\n                x = bisect_left(squares, n_val)\n                if x < len(squares) and squares[x] == n_val:\n                    x = x + 1\n                self.memo[idx] += -sign * (k - x)\n                stack.append((n_val, x, sign, idx))\n            elif n_val <= bound:\n                pos = query.index((k, n_val))\n                self.memo[idx] += sign * memo[pos]\n            else:\n                stack.append((n_val, k - 1, sign, idx))\n                stack.append((n_val // q, k - 1, -sign, idx))\n\n    def get(self, n):\n        pos = self.query.index(n)\n        return self.memo[pos]\n\ndef run():\n    s = sys.stdin.readline()\n    n = int(s.strip())\n    p = sieve(int(math.isqrt(n)) + 2)\n    ans = 0\n    for prime_val in p:\n        if prime_val ** 3 <= n:\n            ans += 1\n        else:\n            break\n    solver = PrimeCountSolver()\n    for i, prime_val in enumerate(p):\n        if prime_val ** 2 <= n:\n            ans -= i + 1\n            solver.add(n // prime_val)\n    solver.build()\n    for prime_val in p:\n        if prime_val ** 2 <= n:\n            ans += solver.get(n // prime_val)\n    print(ans)\n\ndef main():\n    run()\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "import sys\nimport math\nfrom bisect import bisect_left\n\nclass FenwickTree:\n    def __init__(self, n):\n        self.val = [0] * (n + 1)\n\n    def add(self, x, v):\n        n = len(self.val) - 1\n        while x <= n:\n            self.val[x] += v\n            x += x & -x\n\n    def sum(self, x):\n        assert x < len(self.val)\n        ans = 0\n        while x > 0:\n            ans += self.val[x]\n            x -= x & -x\n        return ans\n\ndef sieve(n):\n    is_prime = [True] * (n + 1)\n    for i in range(2, n + 1):\n        if i * i > n:\n            break\n        if is_prime[i]:\n            j = i * i\n            while j <= n:\n                is_prime[j] = False\n                j += i\n    prime = []\n    for i in range(2, n + 1):\n        if is_prime[i]:\n            prime.append(i)\n    return prime\n\nclass PrimeCountSolver:\n    def __init__(self):\n        self.query = []\n        self.memo = []\n\n    def add(self, n):\n        self.query.append(n)\n\n    def build(self):\n        self.query.sort()\n        # dedup\n        q_unique = []\n        prev = None\n        for x in self.query:\n            if x != prev:\n                q_unique.append(x)\n                prev = x\n        self.query = q_unique\n        n = self.query[-1] if self.query else 1\n        m = 1\n        while (m + 1) * (m + 1) <= n:\n            m += 1\n        p = sieve(m)\n        bound = int(math.cbrt(n) ** 2) + 2\n        stack = []\n        for v in self.query:\n            # binary_search_by(|&p| (p * p).cmp(&v))\n            squares = [x * x for x in p]\n            k = bisect_left(squares, v)\n            if k < len(squares) and squares[k] == v:\n                k += 1\n            stack.append((v, k))\n        query = []\n        while stack:\n            n_val, k = stack.pop()\n            if k == 0:\n                continue\n            q = p[k - 1]\n            if q * q > n_val:\n                squares = [x * x for x in p[:k]]\n                x = bisect_left(squares, n_val)\n                if x < len(squares) and squares[x] == n_val:\n                    x += 1\n                stack.append((n_val, x))\n            elif n_val <= bound:\n                query.append((k, n_val))\n            else:\n                stack.append((n_val, k - 1))\n                stack.append((n_val // q, k - 1))\n        query.sort()\n        # dedup query\n        q_unique = []\n        prev = None\n        for x in query:\n            if x != prev:\n                q_unique.append(x)\n                prev = x\n        query = q_unique\n        m = bound\n        bit = FenwickTree(m)\n        for i in range(1, m + 1):\n            bit.add(i, 1)\n        is_prime = [True] * (m + 1)\n        memo = [0] * len(query)\n        pos = 0\n        for i, prime_val in enumerate(p):\n            pv = prime_val\n            j = pv\n            while j <= m:\n                if is_prime[j]:\n                    bit.add(j, -1)\n                is_prime[j] = False\n                j += pv\n            while pos < len(query):\n                k, n_val = query[pos]\n                if k > i + 1:\n                    break\n                memo[pos] = bit.sum(n_val)\n                pos += 1\n            if pos >= len(query):\n                break\n        self.memo = [0] * len(self.query)\n        stack = []\n        for idx, n_val in enumerate(self.query):\n            squares = [x * x for x in p]\n            k = bisect_left(squares, n_val)\n            if k < len(squares) and squares[k] == n_val:\n                k += 1\n            self.memo[idx] += k - 1\n            stack.append((n_val, k, 1, idx))\n        while stack:\n            n_val, k, sign, idx = stack.pop()\n            if k == 0:\n                self.memo[idx] += sign * n_val\n                continue\n            qv = p[k - 1]\n            if qv * qv > n_val:\n                squares = [x * x for x in p[:k]]\n                x = bisect_left(squares, n_val)\n                if x < len(squares) and squares[x] == n_val:\n                    x += 1\n                self.memo[idx] += -sign * (k - x)\n                stack.append((n_val, x, sign, idx))\n            elif n_val <= bound:\n                pos = query.index((k, n_val))\n                self.memo[idx] += sign * memo[pos]\n            else:\n                stack.append((n_val, k - 1, sign, idx))\n                stack.append((n_val // qv, k - 1, -sign, idx))\n\n    def get(self, n):\n        pos = self.query.index(n)\n        return self.memo[pos]\n\ndef run():\n    s = sys.stdin.readline()\n    n = int(s.strip())\n    p = sieve(int(math.isqrt(n)) + 2)\n    ans = 0\n    for pv in p:\n        if pv ** 3 <= n:\n            ans += 1\n        else:\n            break\n    solver = PrimeCountSolver()\n    for i, pv in enumerate(p):\n        if pv * pv <= n:\n            ans -= i + 1\n            solver.add(n // pv)\n    solver.build()\n    for pv in p:\n        if pv * pv <= n:\n            ans += solver.get(n // pv)\n    print(ans)\n\ndef main():\n    run()\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "import sys\nimport math\nfrom bisect import bisect_left\n\nclass FenwickTree:\n    def __init__(self, n):\n        self.val = [0] * (n + 1)\n\n    def add(self, x, v):\n        n = len(self.val) - 1\n        while x <= n:\n            self.val[x] += v\n            x += x & -x\n\n    def sum(self, x):\n        assert x < len(self.val)\n        ans = 0\n        while x > 0:\n            ans += self.val[x]\n            x -= x & -x\n        return ans\n\ndef sieve(n):\n    is_prime = [True] * (n + 1)\n    for i in range(2, n + 1):\n        if i * i > n:\n            break\n        if is_prime[i]:\n            j = i * i\n            while j <= n:\n                is_prime[j] = False\n                j += i\n    prime = []\n    for i in range(2, n + 1):\n        if is_prime[i]:\n            prime.append(i)\n    return prime\n\nclass PrimeCountSolver:\n    def __init__(self):\n        self.query = []\n        self.memo = []\n\n    def add(self, n):\n        self.query.append(n)\n\n    def build(self):\n        self.query.sort()\n        q_unique = []\n        prev = None\n        for x in self.query:\n            if x != prev:\n                q_unique.append(x)\n                prev = x\n        self.query = q_unique\n        n = self.query[-1] if self.query else 1\n        m = 1\n        while (m + 1) * (m + 1) <= n:\n            m += 1\n        p = sieve(m)\n        bound = int(round(math.cbrt(n) ** 2)) + 2\n        stack = []\n        for v in self.query:\n            def cmp_func(val):\n                return val * val\n            lo, hi = 0, len(p)\n            while lo < hi:\n                mid = (lo + hi) // 2\n                if p[mid] * p[mid] < v:\n                    lo = mid + 1\n                else:\n                    hi = mid\n            k = lo\n            if k < len(p) and p[k] * p[k] == v:\n                k += 1\n            stack.append((v, k))\n        query = []\n        while stack:\n            n_val, k = stack.pop()\n            if k == 0:\n                continue\n            q = p[k - 1]\n            if q * q > n_val:\n                lo, hi = 0, k\n                while lo < hi:\n                    mid = (lo + hi) // 2\n                    if p[mid] * p[mid] < n_val:\n                        lo = mid + 1\n                    else:\n                        hi = mid\n                x = lo\n                if x < k and p[x] * p[x] == n_val:\n                    x += 1\n                stack.append((n_val, x))\n            elif n_val <= bound:\n                query.append((k, n_val))\n            else:\n                stack.append((n_val, k - 1))\n                stack.append((n_val // q, k - 1))\n        query.sort()\n        q_unique = []\n        prev = None\n        for x in query:\n            if x != prev:\n                q_unique.append(x)\n                prev = x\n        query = q_unique\n        m = bound\n        bit = FenwickTree(m)\n        for i in range(1, m + 1):\n            bit.add(i, 1)\n        is_prime = [True] * (m + 1)\n        memo = [0] * len(query)\n        pos = 0\n        for i, prime in enumerate(p):\n            pp = prime\n            j = pp\n            while j <= m:\n                if is_prime[j]:\n                    bit.add(j, -1)\n                is_prime[j] = False\n                j += pp\n            while pos < len(query):\n                k, n_val = query[pos]\n                if k > i + 1:\n                    break\n                memo[pos] = bit.sum(n_val)\n                pos += 1\n            if pos >= len(query):\n                break\n        self.memo = [0] * len(self.query)\n        stack = []\n        for i, n_val in enumerate(self.query):\n            lo, hi = 0, len(p)\n            while lo < hi:\n                mid = (lo + hi) // 2\n                if p[mid] * p[mid] < n_val:\n                    lo = mid + 1\n                else:\n                    hi = mid\n            k = lo\n            if k < len(p) and p[k] * p[k] == n_val:\n                k += 1\n            self.memo[i] += k - 1\n            stack.append((n_val, k, 1, i))\n        while stack:\n            n_val, k, sign, idx = stack.pop()\n            if k == 0:\n                self.memo[idx] += sign * n_val\n                continue\n            q = p[k - 1]\n            if q * q > n_val:\n                lo, hi = 0, k\n                while lo < hi:\n                    mid = (lo + hi) // 2\n                    if p[mid] * p[mid] < n_val:\n                        lo = mid + 1\n                    else:\n                        hi = mid\n                x = lo\n                if x < k and p[x] * p[x] == n_val:\n                    x += 1\n                self.memo[idx] += -sign * (k - x)\n                stack.append((n_val, x, sign, idx))\n            elif n_val <= bound:\n                pos = bisect_left(query, (k, n_val))\n                self.memo[idx] += sign * memo[pos]\n            else:\n                stack.append((n_val, k - 1, sign, idx))\n                stack.append((n_val // q, k - 1, -sign, idx))\n\n    def get(self, n):\n        pos = bisect_left(self.query, n)\n        return self.memo[pos]\n\ndef run():\n    s = sys.stdin.readline()\n    n = int(s.strip())\n    p = sieve(int(math.isqrt(n)) + 2)\n    ans = 0\n    for prime in p:\n        if prime ** 3 <= n:\n            ans += 1\n        else:\n            break\n    solver = PrimeCountSolver()\n    for i, prime in enumerate(p):\n        if prime * prime <= n:\n            ans -= i + 1\n            solver.add(n // prime)\n    solver.build()\n    for prime in p:\n        if prime * prime <= n:\n            ans += solver.get(n // prime)\n    print(ans)\n\ndef main():\n    run()\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 10898,
+            "prompt_tokens": 1562,
+            "total_tokens": 12460,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 3,
+                "engine_ttft_ms": 315,
+                "engine_ttlt_ms": 27736,
+                "pre_inference_ms": 182,
+                "service_tbt_ms": 3,
+                "service_ttft_ms": 604,
+                "service_ttlt_ms": 28019,
+                "total_duration_ms": 27893,
+                "user_visible_ttft_ms": 422
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Here is code in Rust programming lanaguge. Translate the following code from Rust to Python programming lanaguge. Do not output any extra description or tokens other than the translated code. \n\nstruct FenwickTree {\n    val: Vec<i64>,\n}\n\nimpl FenwickTree {\n    fn new(n: usize) -> Self {\n        FenwickTree {\n            val: vec![0; n + 1],\n        }\n    }\n    fn add(&mut self, mut x: usize, v: i64) {\n        while let Some(p) = self.val.get_mut(x) {\n            *p += v;\n            x += x & (!x + 1);\n        }\n    }\n    fn sum(&mut self, mut x: usize) -> i64 {\n        assert!(x < self.val.len());\n        let mut ans = 0;\n        while x > 0 {\n            ans += self.val[x];\n            x -= x & (!x + 1);\n        }\n        ans\n    }\n}\n\nfn sieve(n: usize) -> Vec<i64> {\n    let mut is_prime = vec![true; n + 1];\n    for i in 2.. {\n        if i * i > n {\n            break;\n        }\n        if is_prime[i] {\n            let mut j = i * i;\n            while j <= n {\n                is_prime[j] = false;\n                j += i;\n            }\n        }\n    }\n    let len = is_prime.iter().skip(2).filter(|p| **p).count();\n    let mut prime = Vec::with_capacity(len);\n    for (i, is_prime) in is_prime.into_iter().enumerate().skip(2) {\n        if is_prime {\n            prime.push(i as i64);\n        }\n    }\n    prime\n}\n\nstruct PrimeCountSolver {\n    query: Vec<i64>,\n    memo: Vec<i64>,\n}\n\nimpl PrimeCountSolver {\n    fn new() -> Self {\n        PrimeCountSolver {\n            query: vec![],\n            memo: vec![],\n        }\n    }\n    fn add(&mut self, n: i64) {\n        self.query.push(n);\n    }\n    fn build(&mut self) {\n        self.query.sort();\n        self.query.dedup();\n        let n = self.query.last().map_or(1, |n| *n);\n        let mut m = 1;\n        while (m + 1) * (m + 1) <= n {\n            m += 1;\n        }\n        let p = sieve(m as usize);\n        let bound = (n as f64).cbrt().powi(2) as i64 + 2;\n        let mut stack = vec![];\n        for &v in self.query.iter() {\n            let k = match p.binary_search_by(|&p| (p * p).cmp(&v)) {\n                Ok(k) => k + 1,\n                Err(k) => k,\n            };\n            stack.push((v, k));\n        }\n        let mut query = vec![];\n        while let Some((n, k)) = stack.pop() {\n            if k == 0 {\n                continue;\n            }\n            let q = p[k - 1];\n            if q * q > n {\n                let x = match p[..k].binary_search_by(|&p| (p * p).cmp(&n)) {\n                    Ok(k) => k + 1,\n                    Err(k) => k,\n                };\n                stack.push((n, x));\n            } else if n <= bound {\n                query.push((k, n));\n            } else {\n                stack.push((n, k - 1));\n                stack.push((n / q, k - 1));\n            }\n        }\n        query.sort();\n        query.dedup();\n        let m = bound as usize;\n        let mut bit = FenwickTree::new(m);\n        for i in 1..=m {\n            bit.add(i, 1);\n        }\n        let mut is_prime = vec![true; m + 1];\n        let mut memo = vec![0; query.len()];\n        let mut pos = 0;\n        for (i, p) in p.iter().enumerate() {\n            let p = *p as usize;\n            let mut j = p;\n            while j <= m {\n                if is_prime[j] {\n                    bit.add(j, -1);\n                }\n                is_prime[j] = false;\n                j += p;\n            }\n            while let Some(&(k, n)) = query.get(pos) {\n                if k > i + 1 {\n                    break;\n                } else {\n                    memo[pos] = bit.sum(n as usize);\n                    pos += 1;\n                }\n            }\n            if pos >= query.len() {\n                break;\n            }\n        }\n        self.memo.clear();\n        self.memo.resize(self.query.len(), 0);\n        let mut stack = vec![];\n        for (i, &n) in self.query.iter().enumerate() {\n            let k = match p.binary_search_by(|&p| (p * p).cmp(&n)) {\n                Ok(k) => k + 1,\n                Err(k) => k,\n            };\n            self.memo[i] += k as i64 - 1;\n            stack.push((n, k, 1, i));\n        }\n        while let Some((n, k, sign, i)) = stack.pop() {\n            if k == 0 {\n                self.memo[i] += sign * n;\n                continue;\n            }\n            let q = p[k - 1];\n            if q * q > n {\n                let x = match p[..k].binary_search_by(|p| (p * p).cmp(&n)) {\n                    Ok(k) => k + 1,\n                    Err(k) => k,\n                };\n                self.memo[i] += -sign * (k - x) as i64;\n                stack.push((n, x, sign, i));\n            } else if n <= bound {\n                self.memo[i] += sign * memo[query.binary_search(&(k, n)).unwrap()];\n            } else {\n                stack.push((n, k - 1, sign, i));\n                stack.push((n / q, k - 1, -sign, i));\n            }\n        }\n    }\n    fn get(&self, n: i64) -> i64 {\n        self.memo[self.query.binary_search(&n).unwrap()]\n    }\n}\n\nfn run() {\n    let mut s = String::new();\n    std::io::stdin().read_line(&mut s).unwrap();\n    let n: i64 = s.trim().parse().unwrap();\n    let p = sieve((n as f64).sqrt() as usize + 2);\n    let mut ans = 0i64;\n    for p in p.iter() {\n        if p.pow(3) <= n {\n            ans += 1;\n        } else {\n            break;\n        }\n    }\n    let mut solver = PrimeCountSolver::new();\n    for (i, p) in p.iter().enumerate() {\n        if p.pow(2) <= n {\n            ans -= i as i64 + 1;\n            solver.add(n / *p);\n        }\n    }\n    solver.build();\n    for p in p.iter() {\n        if p.pow(2) <= n {\n            ans += solver.get(n / *p);\n        }\n    }\n    println!(\"{}\", ans);\n}\n\nfn main() {\n    run();\n}"
+    },
+    "source_data": {
+        "prob_desc_sample_outputs": [
+            "3",
+            "5"
+        ],
+        "file_name": "b828c8192a0edc4f10f10720d7cf939c5806cbbf9650f7fa5d17d5d0a0d36f77",
+        "prob_desc_input_from": "standard input",
+        "code_uid": "a937961db8db3b21eba06aae97af50e3",
+        "prob_desc_description": "If an integer a is divisible by another integer b, then b is called the divisor of a.For example: 12 has positive 6 divisors. They are 1, 2, 3, 4, 6 and 12.Let\u2019s define a function D(n) \u2014 number of integers between 1 and n (inclusive) which has exactly four positive divisors.Between 1 and 10 only the integers 6, 8 and 10 has exactly four positive divisors. So, D(10)\u2009=\u20093.You are given an integer n. You have to calculate D(n).",
+        "difficulty": 2400,
+        "lang": "Rust",
+        "src_uid": "ffb7762f1d60dc3f16e9b27ea0ecdd7d",
+        "prob_desc_output_spec": "Print the only integer c \u2014 the number of integers between 1 and n with exactly four divisors.",
+        "prob_desc_time_limit": "10 seconds",
+        "prob_desc_input_spec": "The only line contains integer n (1\u2009\u2264\u2009n\u2009\u2264\u20091011) \u2014 the parameter from the problem statement.",
+        "prob_desc_sample_inputs": [
+            "10",
+            "20"
+        ],
+        "lang_cluster": "Rust",
+        "source_code": "struct FenwickTree {\n    val: Vec<i64>,\n}\n\nimpl FenwickTree {\n    fn new(n: usize) -> Self {\n        FenwickTree {\n            val: vec![0; n + 1],\n        }\n    }\n    fn add(&mut self, mut x: usize, v: i64) {\n        while let Some(p) = self.val.get_mut(x) {\n            *p += v;\n            x += x & (!x + 1);\n        }\n    }\n    fn sum(&mut self, mut x: usize) -> i64 {\n        assert!(x < self.val.len());\n        let mut ans = 0;\n        while x > 0 {\n            ans += self.val[x];\n            x -= x & (!x + 1);\n        }\n        ans\n    }\n}\n\nfn sieve(n: usize) -> Vec<i64> {\n    let mut is_prime = vec![true; n + 1];\n    for i in 2.. {\n        if i * i > n {\n            break;\n        }\n        if is_prime[i] {\n            let mut j = i * i;\n            while j <= n {\n                is_prime[j] = false;\n                j += i;\n            }\n        }\n    }\n    let len = is_prime.iter().skip(2).filter(|p| **p).count();\n    let mut prime = Vec::with_capacity(len);\n    for (i, is_prime) in is_prime.into_iter().enumerate().skip(2) {\n        if is_prime {\n            prime.push(i as i64);\n        }\n    }\n    prime\n}\n\nstruct PrimeCountSolver {\n    query: Vec<i64>,\n    memo: Vec<i64>,\n}\n\nimpl PrimeCountSolver {\n    fn new() -> Self {\n        PrimeCountSolver {\n            query: vec![],\n            memo: vec![],\n        }\n    }\n    fn add(&mut self, n: i64) {\n        self.query.push(n);\n    }\n    fn build(&mut self) {\n        self.query.sort();\n        self.query.dedup();\n        let n = self.query.last().map_or(1, |n| *n);\n        let mut m = 1;\n        while (m + 1) * (m + 1) <= n {\n            m += 1;\n        }\n        let p = sieve(m as usize);\n        let bound = (n as f64).cbrt().powi(2) as i64 + 2;\n        let mut stack = vec![];\n        for &v in self.query.iter() {\n            let k = match p.binary_search_by(|&p| (p * p).cmp(&v)) {\n                Ok(k) => k + 1,\n                Err(k) => k,\n            };\n            stack.push((v, k));\n        }\n        let mut query = vec![];\n        while let Some((n, k)) = stack.pop() {\n            if k == 0 {\n                continue;\n            }\n            let q = p[k - 1];\n            if q * q > n {\n                let x = match p[..k].binary_search_by(|&p| (p * p).cmp(&n)) {\n                    Ok(k) => k + 1,\n                    Err(k) => k,\n                };\n                stack.push((n, x));\n            } else if n <= bound {\n                query.push((k, n));\n            } else {\n                stack.push((n, k - 1));\n                stack.push((n / q, k - 1));\n            }\n        }\n        query.sort();\n        query.dedup();\n        let m = bound as usize;\n        let mut bit = FenwickTree::new(m);\n        for i in 1..=m {\n            bit.add(i, 1);\n        }\n        let mut is_prime = vec![true; m + 1];\n        let mut memo = vec![0; query.len()];\n        let mut pos = 0;\n        for (i, p) in p.iter().enumerate() {\n            let p = *p as usize;\n            let mut j = p;\n            while j <= m {\n                if is_prime[j] {\n                    bit.add(j, -1);\n                }\n                is_prime[j] = false;\n                j += p;\n            }\n            while let Some(&(k, n)) = query.get(pos) {\n                if k > i + 1 {\n                    break;\n                } else {\n                    memo[pos] = bit.sum(n as usize);\n                    pos += 1;\n                }\n            }\n            if pos >= query.len() {\n                break;\n            }\n        }\n        self.memo.clear();\n        self.memo.resize(self.query.len(), 0);\n        let mut stack = vec![];\n        for (i, &n) in self.query.iter().enumerate() {\n            let k = match p.binary_search_by(|&p| (p * p).cmp(&n)) {\n                Ok(k) => k + 1,\n                Err(k) => k,\n            };\n            self.memo[i] += k as i64 - 1;\n            stack.push((n, k, 1, i));\n        }\n        while let Some((n, k, sign, i)) = stack.pop() {\n            if k == 0 {\n                self.memo[i] += sign * n;\n                continue;\n            }\n            let q = p[k - 1];\n            if q * q > n {\n                let x = match p[..k].binary_search_by(|p| (p * p).cmp(&n)) {\n                    Ok(k) => k + 1,\n                    Err(k) => k,\n                };\n                self.memo[i] += -sign * (k - x) as i64;\n                stack.push((n, x, sign, i));\n            } else if n <= bound {\n                self.memo[i] += sign * memo[query.binary_search(&(k, n)).unwrap()];\n            } else {\n                stack.push((n, k - 1, sign, i));\n                stack.push((n / q, k - 1, -sign, i));\n            }\n        }\n    }\n    fn get(&self, n: i64) -> i64 {\n        self.memo[self.query.binary_search(&n).unwrap()]\n    }\n}\n\nfn run() {\n    let mut s = String::new();\n    std::io::stdin().read_line(&mut s).unwrap();\n    let n: i64 = s.trim().parse().unwrap();\n    let p = sieve((n as f64).sqrt() as usize + 2);\n    let mut ans = 0i64;\n    for p in p.iter() {\n        if p.pow(3) <= n {\n            ans += 1;\n        } else {\n            break;\n        }\n    }\n    let mut solver = PrimeCountSolver::new();\n    for (i, p) in p.iter().enumerate() {\n        if p.pow(2) <= n {\n            ans -= i as i64 + 1;\n            solver.add(n / *p);\n        }\n    }\n    solver.build();\n    for p in p.iter() {\n        if p.pow(2) <= n {\n            ans += solver.get(n / *p);\n        }\n    }\n    println!(\"{}\", ans);\n}\n\nfn main() {\n    run();\n}\n",
+        "exec_outcome": "PASSED",
+        "prob_desc_created_at": "1461164400",
+        "prob_desc_memory_limit": "768 megabytes",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_notes": null,
+        "hidden_unit_tests": "[{\"input\": \"10\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"20\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"27\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"100\\r\\n\", \"output\": [\"32\"]}, {\"input\": \"1000\\r\\n\", \"output\": [\"292\"]}, {\"input\": \"10000\\r\\n\", \"output\": [\"2608\"]}, {\"input\": \"100000\\r\\n\", \"output\": [\"23327\"]}, {\"input\": \"1000000\\r\\n\", \"output\": [\"209892\"]}, {\"input\": \"100000000\\r\\n\", \"output\": [\"17426119\"]}, {\"input\": \"1000000000\\r\\n\", \"output\": [\"160785303\"]}, {\"input\": \"10000000000\\r\\n\", \"output\": [\"1493767176\"]}, {\"input\": \"100000000000\\r\\n\", \"output\": [\"13959963675\"]}, {\"input\": \"353964\\r\\n\", \"output\": [\"77787\"]}, {\"input\": \"437388\\r\\n\", \"output\": [\"95228\"]}, {\"input\": \"553516\\r\\n\", \"output\": [\"119256\"]}, {\"input\": \"636940\\r\\n\", \"output\": [\"136364\"]}, {\"input\": \"753068\\r\\n\", \"output\": [\"160058\"]}, {\"input\": \"803788\\r\\n\", \"output\": [\"170304\"]}, {\"input\": \"24403439\\r\\n\", \"output\": [\"4484483\"]}, {\"input\": \"907519567\\r\\n\", \"output\": [\"146391993\"]}, {\"input\": \"790635695\\r\\n\", \"output\": [\"128128652\"]}, {\"input\": \"968719119\\r\\n\", \"output\": [\"155921638\"]}, {\"input\": \"146802543\\r\\n\", \"output\": [\"25227297\"]}, {\"input\": \"324885967\\r\\n\", \"output\": [\"54280184\"]}, {\"input\": \"448485\\r\\n\", \"output\": [\"97564\"]}, {\"input\": \"324885968\\r\\n\", \"output\": [\"54280184\"]}]",
+        "source_lang": "Rust",
+        "target_lang": "Python"
+    }
+}

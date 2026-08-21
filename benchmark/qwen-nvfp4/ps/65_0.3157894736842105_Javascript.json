@@ -1,0 +1,389 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-a7dde491ba810c7f",
+        "created": 1787080861,
+        "model": "qwen-nvfp4",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.27.1-d7a14dad",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nrl.on('line', (line) => {\n    const x = parseInt(line.trim(), 10);\n    \n    // The image is rotated by -x degrees (counter-clockwise if x is positive clockwise camera rotation)\n    // We need to find k (0, 1, 2, 3) such that the deviation from vertical is minimized.\n    // After k clockwise 90-degree turns, the total rotation of the image is (-x + k * 90) degrees.\n    // The deviation from vertical is the minimum angle between this rotation and the nearest multiple of 360.\n    // Actually, deviation from vertical means how far the \"up\" direction is from true vertical.\n    // If the image is rotated by angle A, the deviation from vertical is min(A mod 360, 360 - (A mod 360)) but considering the shortest path.\n    // More precisely, deviation = min over all integers m of |A - m*360|, but since we want the angle from vertical, it's the absolute value of the normalized angle to [-180, 180].\n    \n    // Let's compute for each k in {0, 1, 2, 3}:\n    // total_rotation = -x + k * 90\n    // We need to find the deviation from vertical, which is the minimum absolute angle between total_rotation and any multiple of 360.\n    // This is equivalent to: normalize total_rotation to [-180, 180], then take absolute value.\n    \n    function deviation(angle) {\n        // Normalize angle to [-180, 180]\n        let a = angle % 360;\n        if (a > 180) a -= 360;\n        if (a < -180) a += 360;\n        return Math.abs(a);\n    }\n    \n    let minDev = Infinity;\n    let bestK = 0;\n    \n    for (let k = 0; k < 4; k++) {\n        const totalRotation = -x + k * 90;\n        const dev = deviation(totalRotation);\n        if (dev < minDev || (dev === minDev && k < bestK)) {\n            minDev = dev;\n            bestK = k;\n        }\n    }\n    \n    console.log(bestK);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "```javascript\nconst fs = require('fs');\nconst input = fs.readFileSync('/dev/stdin', 'utf8').trim();\nconst x = parseInt(input, 10);\n\n// The image is rotated by -x degrees (counter-clockwise if x is positive clockwise camera rotation)\n// We can apply k times 90 degrees clockwise rotation, where k is 0, 1, 2, or 3.\n// After k rotations, the total rotation of the image is (-x + k * 90) degrees.\n// We want to minimize the deviation from vertical, which is the minimum angle to 0 mod 360.\n// Deviation for a rotation angle a is min(a mod 360, 360 - (a mod 360)), but we need to handle negative values.\n\nfunction deviation(angle) {\n    // Normalize angle to [0, 360)\n    let a = angle % 360;\n    if (a < 0) a += 360;\n    // The deviation from vertical is min(a, 360 - a)\n    return Math.min(a, 360 - a);\n}\n\nlet minDev = Infinity;\nlet bestK = 0;\n\nfor (let k = 0; k < 4; k++) {\n    const totalRotation = -x + k * 90;\n    const dev = deviation(totalRotation);\n    if (dev < minDev) {\n        minDev = dev;\n        bestK = k;\n    }\n}\n\nconsole.log(bestK);\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nrl.on('line', (line) => {\n    const x = parseInt(line.trim());\n    \n    // The image is rotated by -x degrees (opposite to camera rotation)\n    // We can apply k times 90 degrees clockwise rotation\n    // Total rotation of image: -x + k * 90\n    // We want to minimize the deviation from vertical (0 or 180 degrees)\n    // Deviation is min(|angle mod 360|, 360 - |angle mod 360|) but we need to consider\n    // that vertical means 0 or 180, so deviation is min(angle mod 180, 180 - (angle mod 180))\n    // Actually, let's think more carefully.\n    \n    // The image content is rotated by -x degrees relative to true up.\n    // After k clockwise 90-degree turns, the image is rotated by -x + k*90 degrees.\n    // We want this rotation to be as close to 0 (or 180, 360, etc.) as possible.\n    // The deviation from vertical is the minimum angle between (-x + k*90) and the nearest multiple of 180.\n    // Actually, \"vertical\" means the up direction is aligned with true up or true down.\n    // So we want (-x + k*90) mod 360 to be as close to 0 or 180 as possible.\n    // The deviation is min(|((-x + k*90) mod 360)|, |360 - ((-x + k*90) mod 360)|) but also considering 180.\n    // More precisely, deviation = min over m of |(-x + k*90) - m*180| for integer m, but bounded to [0, 90].\n    \n    // Let's compute for k = 0, 1, 2, 3:\n    // For each k, compute total = (-x + k * 90) mod 360, normalized to [0, 360)\n    // Then deviation = min(total, 360 - total, |total - 180|) ... wait, no.\n    // The deviation from vertical: if the image is rotated by angle A, the deviation from vertical is min(A mod 180, 180 - (A mod 180)) where A mod 180 is in [0, 180).\n    \n    // Let me re-read: \"up direction deviation from vertical is minimum\"\n    // So we want the up direction of the image to be as close to true up (or true down) as possible.\n    // If the image is rotated by angle A, the up direction is at angle A from true up.\n    // Deviation from vertical = min(|A mod 360|, |360 - (A mod 360)|, |(A mod 360) - 180|, |360 - (A mod 360) - 180|)\n    // But since we can take mod 180, deviation = min(A mod 180, 180 - (A mod 180)) where A mod 180 is in [0, 180).\n    \n    // Let's just compute for k = 0, 1, 2, 3 and find the one with minimum deviation.\n    \n    function deviation(angle) {\n        // Normalize angle to [0, 360)\n        let a = angle % 360;\n        if (a < 0) a += 360;\n        // Deviation from vertical (0 or 180)\n        let d1 = a; // distance from 0\n        let d2 = 360 - a; // distance from 360 (which is 0)\n        let d3 = Math.abs(a - 180); // distance from 180\n        return Math.min(d1, d2, d3);\n    }\n    \n    let bestK = 0;\n    let bestDev = Infinity;\n    \n    for (let k = 0; k <= 3; k++) {\n        let total = -x + k * 90;\n        let dev = deviation(total);\n        if (dev < bestDev) {\n            bestDev = dev;\n            bestK = k;\n        }\n    }\n    \n    console.log(bestK);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nrl.on('line', (line) => {\n    const x = BigInt(line.trim());\n    \n    // The image is rotated by -x degrees (counter-clockwise if x is positive)\n    // We need to find k (0, 1, 2, 3) such that the total rotation deviation from vertical is minimized.\n    // After k clockwise 90-degree turns, the image rotation becomes: -x + k * 90\n    // We want to minimize the deviation from vertical, which means minimizing the absolute angle modulo 360, \n    // but considering the shortest path to 0 (i.e., min(angle, 360 - angle))\n    \n    // Let's compute the effective rotation for each k in 0..3\n    // The image rotation angle is (-x + k * 90) mod 360\n    // But we need to be careful with negative numbers and BigInt\n    \n    // Normalize an angle to [0, 360)\n    function normalizeAngle(angle) {\n        // angle is a BigInt\n        let a = angle % 360n;\n        if (a < 0n) {\n            a += 360n;\n        }\n        return a;\n    }\n    \n    // Compute deviation from vertical: min(a, 360 - a) where a is in [0, 360)\n    function deviation(a) {\n        if (a <= 180n) {\n            return a;\n        } else {\n            return 360n - a;\n        }\n    }\n    \n    let minDev = 361n; // larger than any possible deviation\n    let bestK = 0n;\n    \n    for (let k = 0n; k <= 3n; k++) {\n        // Image rotation = -x + k * 90\n        const rot = -x + k * 90n;\n        const normalized = normalizeAngle(rot);\n        const dev = deviation(normalized);\n        \n        if (dev < minDev) {\n            minDev = dev;\n            bestK = k;\n        }\n    }\n    \n    console.log(bestK.toString());\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nrl.on('line', (line) => {\n    const x = parseInt(line.trim());\n    \n    // The image is rotated by -x degrees (counter-clockwise if x is positive)\n    // We need to apply k clockwise 90-degree turns (k = 0, 1, 2, 3)\n    // After k turns, the total rotation of the image is: -x + k * 90 degrees\n    // We want to minimize the deviation from vertical, which means minimizing\n    // the absolute angle modulo 360, considering both clockwise and counter-clockwise.\n    \n    // The deviation from vertical for a total rotation angle theta is:\n    // min(theta mod 360, 360 - (theta mod 360))\n    \n    // But we need to handle negative angles properly.\n    \n    function deviation(totalRotation) {\n        // Normalize totalRotation to [0, 360)\n        let r = totalRotation % 360;\n        if (r < 0) r += 360;\n        // The deviation from vertical is min(r, 360 - r)\n        return Math.min(r, 360 - r);\n    }\n    \n    let minDev = Infinity;\n    let bestK = 0;\n    \n    for (let k = 0; k < 4; k++) {\n        // Image rotation: -x + k * 90\n        const totalRotation = -x + k * 90;\n        const dev = deviation(totalRotation);\n        if (dev < minDev) {\n            minDev = dev;\n            bestK = k;\n        }\n    }\n    \n    console.log(bestK);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nrl.on('line', (line) => {\n    const x = parseInt(line.trim(), 10);\n    \n    // The image is rotated by -x degrees (counter-clockwise if x is positive)\n    // We need to find the minimum number of 90-degree clockwise turns (0, 1, 2, or 3)\n    // such that the total rotation deviation from vertical is minimized.\n    \n    // Let's think about it:\n    // Camera rotation: x degrees (positive = clockwise)\n    // Image rotation: -x degrees (counter-clockwise if x is positive)\n    // After k turns of 90 degrees clockwise, the image is rotated by: -x + k*90 degrees\n    // We want to minimize the absolute deviation from vertical (0 or 180 degrees)\n    // The deviation is the minimum of |angle| and 360 - |angle|, but we need to consider\n    // that vertical can be 0 or 180. Actually, \"deviation from vertical\" means how far\n    // the \"up\" direction is from true up. So we want the angle to be as close to 0 (mod 360)\n    // as possible, but also considering that 180 degrees would mean upside down, which is\n    // also a deviation of 180 degrees. Wait, let me re-read.\n    \n    // \"up direction deviation from vertical is minimum\"\n    // So we want the angle (mod 360) to be as close to 0 as possible, but we should also\n    // consider that being at 180 is a deviation of 180, while being at 90 is a deviation\n    // of 90. The deviation is the minimum angular distance to 0 or 180? No, vertical means\n    // the up direction should point up. So deviation is the angular distance from 0 degrees\n    // (true up), but since 180 degrees is straight down, that's also a deviation of 180.\n    // Actually, the deviation from vertical is the minimum of |angle mod 360| and \n    // 360 - |angle mod 360|, but we should take the minimum distance to 0 or 180.\n    \n    // Let me reconsider. The deviation from vertical means how much the image is tilted\n    // from being upright. An image rotated by 90 degrees has a deviation of 90 degrees.\n    // An image rotated by 180 degrees has a deviation of 180 degrees (it's upside down).\n    // An image rotated by 270 degrees has a deviation of 90 degrees.\n    // An image rotated by 360 degrees has a deviation of 0.\n    \n    // So the deviation for an angle a is: min(a mod 360, 360 - (a mod 360)) but that's\n    // not quite right either. Let's think: if the image is rotated by 90 degrees clockwise,\n    // the up direction points to the right, so the deviation is 90 degrees. If rotated by\n    // 180 degrees, up points down, deviation is 180. If rotated by 270 degrees, up points\n    // left, deviation is 90. If rotated by 360, up points up, deviation is 0.\n    \n    // So the deviation is the minimum angular distance to 0 degrees, considering that\n    // angles are modulo 360. The deviation for angle a is:\n    // Let a_mod = ((a % 360) + 360) % 360\n    // deviation = min(a_mod, 360 - a_mod)\n    \n    // Wait, but 180 degrees: min(180, 180) = 180. That's correct.\n    // 90 degrees: min(90, 270) = 90. Correct.\n    // 270 degrees: min(270, 90) = 90. Correct.\n    // 350 degrees: min(350, 10) = 10. Correct.\n    \n    // So we need to find k in {0, 1, 2, 3} that minimizes:\n    // deviation = min((( -x + k*90) % 360 + 360) % 360, 360 - ((( -x + k*90) % 360 + 360) % 360))\n    \n    // But we also need to minimize the number of turns k, so if multiple k give the same\n    // minimum deviation, we choose the smallest k.\n    \n    let bestDeviation = Infinity;\n    let bestK = 0;\n    \n    for (let k = 0; k < 4; k++) {\n        const totalRotation = -x + k * 90;\n        const a_mod = ((totalRotation % 360) + 360) % 360;\n        const deviation = Math.min(a_mod, 360 - a_mod);\n        \n        if (deviation < bestDeviation) {\n            bestDeviation = deviation;\n            bestK = k;\n        }\n    }\n    \n    console.log(bestK);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nrl.on('line', (line) => {\n    const x = parseInt(line.trim(), 10);\n    \n    // The image is rotated by -x degrees (counter-clockwise if x is positive)\n    // We need to apply k times 90 degrees clockwise rotation\n    // After k rotations, the total rotation of the image is: -x + k * 90\n    // We want to minimize the deviation from vertical, which is the minimum angle\n    // between the total rotation and the nearest multiple of 360 (i.e., 0, 360, 720, ...)\n    // But since we only care about deviation from vertical, we consider the angle modulo 360\n    // and find the minimum distance to 0 (or 360).\n    \n    // For k = 0, 1, 2, 3:\n    // total_rotation = (-x + k * 90) mod 360\n    // deviation = min(total_rotation, 360 - total_rotation)\n    \n    let minDeviation = Infinity;\n    let bestK = 0;\n    \n    for (let k = 0; k < 4; k++) {\n        // Calculate total rotation modulo 360\n        // We need to handle large numbers carefully\n        // -x + k * 90\n        let total = (-x + k * 90) % 360;\n        if (total < 0) {\n            total += 360;\n        }\n        // total is now in [0, 360)\n        let deviation = Math.min(total, 360 - total);\n        \n        if (deviation < minDeviation) {\n            minDeviation = deviation;\n            bestK = k;\n        }\n    }\n    \n    console.log(bestK);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nrl.on('line', (line) => {\n    const x = parseInt(line.trim());\n    \n    // The image is rotated by -x degrees (counter-clockwise if x is positive clockwise camera rotation)\n    // We need to find k (0, 1, 2, 3) such that the deviation from vertical is minimized.\n    // After k clockwise 90-degree turns, the total image rotation is (-x + k * 90) degrees.\n    // We want to minimize the deviation from vertical, which means minimizing the angle modulo 360,\n    // but considering that deviation is the minimum of |angle| and 360 - |angle|, and also considering\n    // that vertical can be up or down (so 0 and 180 are both \"vertical\" in terms of being aligned with vertical axis).\n    // Actually, the problem says \"minimally deviated from vertical\". Vertical means the up direction is either up or down.\n    // So we want the angle to be as close to 0 or 180 as possible.\n    \n    // Let's compute the effective rotation for each k in [0, 1, 2, 3].\n    // The image rotation after k turns is: (-x + k * 90) mod 360.\n    // But we need to handle negative values properly.\n    \n    let bestK = 0;\n    let bestDeviation = Infinity;\n    \n    for (let k = 0; k < 4; k++) {\n        // Total rotation of the image: -x + k * 90\n        let totalRotation = -x + k * 90;\n        \n        // Normalize to [0, 360)\n        totalRotation = ((totalRotation % 360) + 360) % 360;\n        \n        // Deviation from vertical: the angle should be close to 0 or 180.\n        // The deviation is min(totalRotation, 360 - totalRotation) if we consider 0 as reference,\n        // but since 180 is also vertical, we need to consider the distance to the nearest multiple of 180.\n        // Actually, \"deviation from vertical\" means how far the up direction is from being vertical (up or down).\n        // So if the angle is 0, deviation is 0. If angle is 180, deviation is 0. If angle is 90, deviation is 90.\n        // The deviation is min(totalRotation % 180, 180 - (totalRotation % 180))? No.\n        // Let me think again. If the image is rotated by 30 degrees, the up direction is 30 degrees from vertical. Deviation = 30.\n        // If rotated by 150 degrees, the up direction is 150 degrees from vertical, but 150 = 180 - 30, so it's 30 degrees from the opposite vertical. \n        // Wait, the problem says \"deviation from vertical\". Looking at the example:\n        // For x = -60 (camera rotated 60 CCW), image is rotated 60 CW.\n        // k=0: total = 60, deviation = 60\n        // k=1: total = 150, deviation = 150? But the note says \"deviation from 'true up' for one turn is 150 degrees\"\n        // k=2: total = 240, deviation = 120 (because 240 CW = 120 CCW)\n        // k=3: total = 330, deviation = 30 (because 330 CW = 30 CCW)\n        \n        // So the deviation is the minimum angle between the current up direction and the true up direction.\n        // This is min(totalRotation, 360 - totalRotation) when totalRotation is in [0, 360).\n        \n        let deviation = Math.min(totalRotation, 360 - totalRotation);\n        \n        if (deviation < bestDeviation) {\n            bestDeviation = deviation;\n            bestK = k;\n        }\n    }\n    \n    console.log(bestK);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 8,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nrl.on('line', (line) => {\n    const x = parseInt(line.trim());\n    \n    // The image is rotated by -x degrees (counter-clockwise if x is positive)\n    // We need to find the minimum number of 90-degree clockwise turns (0, 1, 2, or 3)\n    // such that the total deviation from vertical is minimized.\n    \n    // Let's think about it:\n    // Camera rotation: x degrees (positive = clockwise)\n    // Image rotation: -x degrees (counter-clockwise)\n    // After k 90-degree clockwise turns, the image is rotated by (-x + k*90) degrees\n    // We want to minimize the deviation from vertical, which means we want the angle\n    // to be as close to 0 (mod 360) as possible, but considering the smallest absolute deviation.\n    \n    // Actually, let's re-read the problem carefully.\n    // \"the picture should be rotated only on angle divisible by 90 degrees\"\n    // \"this solution can rotate only by 90 degrees clockwise\"\n    // \"determine the minimum number of 90 degrees clockwise turns necessary to get a picture in which up direction deviation from vertical is minimum\"\n    \n    // So we have an image that is effectively rotated by -x degrees relative to true up.\n    // We can apply k turns of 90 degrees clockwise, where k is 0, 1, 2, or 3.\n    // After k turns, the total rotation of the image is (-x + k * 90) degrees.\n    // The deviation from vertical is the minimum angle between this rotation and 0 (mod 360).\n    // That is, min(|(-x + k*90) mod 360|, 360 - |(-x + k*90) mod 360|)\n    \n    // But we need to be careful with negative numbers and modulo.\n    \n    // Let's compute for each k in [0, 1, 2, 3]:\n    // total_rotation = (-x + k * 90)\n    // We want to find the effective angle in [0, 360)\n    // effective = ((total_rotation % 360) + 360) % 360\n    // deviation = min(effective, 360 - effective)\n    \n    // Then we pick the k that gives the minimum deviation.\n    // If there's a tie, we pick the smallest k.\n    \n    let bestK = 0;\n    let bestDeviation = Infinity;\n    \n    for (let k = 0; k <= 3; k++) {\n        const totalRotation = -x + k * 90;\n        const effective = ((totalRotation % 360) + 360) % 360;\n        const deviation = Math.min(effective, 360 - effective);\n        \n        if (deviation < bestDeviation) {\n            bestDeviation = deviation;\n            bestK = k;\n        }\n    }\n    \n    console.log(bestK);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 9,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nrl.on('line', (line) => {\n    const x = parseInt(line.trim(), 10);\n    \n    // The image is rotated by -x degrees (counter-clockwise if x is positive)\n    // We can apply k times 90 degrees clockwise rotation, where k is 0, 1, 2, or 3\n    // After k rotations, the total rotation of the image is: -x + k * 90\n    // We want to minimize the deviation from vertical, which is the absolute value\n    // of the angle modulo 360, but considering the shortest path to 0.\n    \n    // The deviation from vertical for a rotation angle theta is:\n    // min(|theta mod 360|, 360 - |theta mod 360|)\n    // But we need to be careful with negative angles.\n    \n    // Let's compute for k = 0, 1, 2, 3:\n    // total_rotation = -x + k * 90\n    // We want to find the deviation from 0 (vertical).\n    // The deviation is the minimum angle between total_rotation and the nearest multiple of 360.\n    // Actually, deviation from vertical means how far the \"up\" direction is from true up.\n    // If the image is rotated by angle A, then the up direction is deviated by A from true up.\n    // But we consider the smallest angle, so deviation = min(|A mod 360|, 360 - |A mod 360|)\n    // Wait, let me re-read the problem.\n    \n    // From the example:\n    // x = 60 (camera rotated 60 degrees clockwise)\n    // Image is rotated 60 degrees counter-clockwise (so -60 degrees)\n    // k=0: total = -60. Deviation = 60\n    // k=1: total = -60 + 90 = 30. Deviation = 30\n    // k=2: total = -60 + 180 = 120. Deviation = 120\n    // k=3: total = -60 + 270 = 210. Deviation = min(210, 360-210) = 150\n    // Minimum deviation is 30 at k=1. Output: 1. Correct.\n    \n    // x = -60 (camera rotated 60 degrees counter-clockwise)\n    // Image is rotated 60 degrees clockwise (so +60 degrees)\n    // k=0: total = 60. Deviation = 60\n    // k=1: total = 60 + 90 = 150. Deviation = 150\n    // k=2: total = 60 + 180 = 240. Deviation = min(240, 360-240) = 120\n    // k=3: total = 60 + 270 = 330. Deviation = min(330, 360-330) = 30\n    // Minimum deviation is 30 at k=3. Output: 3. Correct.\n    \n    // So the formula is:\n    // For each k in {0, 1, 2, 3}:\n    //   total = -x + k * 90\n    //   deviation = min(|total mod 360|, 360 - |total mod 360|)\n    //   But we need to handle negative mod properly.\n    \n    // Let's compute deviation correctly:\n    // Let r = ((total % 360) + 360) % 360  // This gives a value in [0, 360)\n    // deviation = min(r, 360 - r)\n    \n    let bestK = 0;\n    let bestDeviation = Infinity;\n    \n    for (let k = 0; k < 4; k++) {\n        const total = -x + k * 90;\n        // Compute total mod 360 in range [0, 360)\n        let r = ((total % 360) + 360) % 360;\n        const deviation = Math.min(r, 360 - r);\n        \n        if (deviation < bestDeviation) {\n            bestDeviation = deviation;\n            bestK = k;\n        }\n    }\n    \n    console.log(bestK);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 10,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nrl.on('line', (line) => {\n    const x = BigInt(line.trim());\n    \n    // The image is rotated by -x degrees (counter-clockwise if x is positive clockwise camera rotation)\n    // We need to find k in {0, 1, 2, 3} such that the deviation from vertical is minimized.\n    // After k clockwise 90-degree turns, the total rotation of the image is:\n    // initial_image_rotation + k * 90\n    // initial_image_rotation = -x (because camera rotated x clockwise, image appears rotated -x)\n    // So total rotation = -x + k * 90\n    \n    // We want to minimize the deviation from vertical, which means we want the total rotation\n    // to be as close to a multiple of 360 as possible (i.e., 0, 180, etc.)\n    // Actually, deviation from vertical means the angle modulo 360, and we want it to be as close to 0 or 180 as possible?\n    // No, \"deviation from vertical\" means how far the \"up\" direction is from true vertical.\n    // If the image is rotated by angle A, the deviation from vertical is the minimum angle between A and the nearest multiple of 180? \n    // Wait, let me re-read.\n    \n    // \"the image would be minimally deviated from vertical\"\n    // The identification algorithm can work only with faces that are just slightly deviated from vertical.\n    // So we want the \"up\" direction of the image to be as close to true vertical as possible.\n    // True vertical is 0 degrees (or 360, 720, etc.) or 180 degrees (upside down)?\n    // No, \"deviation from vertical\" likely means the angle between the image's up and true up.\n    // If the image is rotated by A degrees, the deviation is min(A mod 360, 360 - (A mod 360)) if we consider only 0-180 range?\n    // Actually, deviation from vertical should be the absolute angle difference from 0 (or 360), considering the circular nature.\n    // But wait, if the image is upside down (180 degrees), is that \"deviated from vertical\"? \n    // The problem says \"faces that are just slightly deviated from vertical\", implying we want the face to be upright, not upside down.\n    // So we want the total rotation to be as close to 0 mod 360 as possible.\n    \n    // Let's check the examples:\n    // x = 60 (camera rotated 60 clockwise)\n    // Image is rotated -60 degrees (60 counter-clockwise)\n    // k=0: total = -60, deviation = 60\n    // k=1: total = -60 + 90 = 30, deviation = 30\n    // k=2: total = -60 + 180 = 120, deviation = 120 (or 240, min is 120)\n    // k=3: total = -60 + 270 = 210, deviation = 150 (or 210, min is 150)\n    // Minimum deviation is 30 at k=1. Output is 1. Correct.\n    \n    // x = -60 (camera rotated 60 counter-clockwise)\n    // Image is rotated 60 degrees (clockwise)\n    // k=0: total = 60, deviation = 60\n    // k=1: total = 60 + 90 = 150, deviation = 150\n    // k=2: total = 60 + 180 = 240, deviation = 120 (240 mod 360 = 240, 360-240=120)\n    // k=3: total = 60 + 270 = 330, deviation = 30 (330 mod 360 = 330, 360-330=30)\n    // Minimum deviation is 30 at k=3. Output is 3. Correct.\n    \n    // So the deviation for a total rotation T is:\n    // Let r = T mod 360, normalized to [0, 360)\n    // deviation = min(r, 360 - r)\n    \n    // We need to compute this for k = 0, 1, 2, 3 and find the k with minimum deviation.\n    // If there's a tie, we need the minimum k.\n    \n    let bestK = 0;\n    let bestDeviation = null;\n    \n    for (let k = 0n; k <= 3n; k++) {\n        // total rotation = -x + k * 90\n        const total = -x + k * 90n;\n        \n        // Compute total mod 360, handling negative numbers\n        let r = total % 360n;\n        if (r < 0n) {\n            r += 360n;\n        }\n        \n        // deviation = min(r, 360 - r)\n        let deviation;\n        if (r <= 180n) {\n            deviation = r;\n        } else {\n            deviation = 360n - r;\n        }\n        \n        if (bestDeviation === null || deviation < bestDeviation || (deviation === bestDeviation && k < BigInt(bestK))) {\n            bestDeviation = deviation;\n            bestK = Number(k);\n        }\n    }\n    \n    console.log(bestK);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 11,
+                "message": {
+                    "content": "```javascript\nconst fs = require('fs');\nconst input = fs.readFileSync('/dev/stdin', 'utf8').trim();\nconst x = BigInt(input);\n\n// The image is rotated by -x degrees (counter-clockwise if x is positive clockwise camera rotation)\n// We can apply k times 90 degrees clockwise rotation to the image.\n// Total rotation of the image after k turns: -x + 90*k degrees.\n// We want to minimize the deviation from vertical, which means minimizing the absolute angle modulo 360, \n// but considering the shortest path to 0 or 360.\n// The deviation is min(|angle mod 360|, 360 - |angle mod 360|) but we need to handle the sign properly.\n// Actually, the deviation from vertical is the minimum angle between the current \"up\" direction and true vertical.\n// This is equivalent to: let r = ((-x + 90*k) % 360 + 360) % 360; then deviation = min(r, 360 - r).\n// We need to find k in {0, 1, 2, 3} that minimizes this deviation.\n\nfunction deviation(angle) {\n    // Normalize angle to [0, 360)\n    let r = ((angle % 360n) + 360n) % 360n;\n    if (r > 180n) {\n        r = 360n - r;\n    }\n    return r;\n}\n\nconst imageRotation = -x; // The image is rotated by -x degrees\nlet bestK = 0;\nlet bestDev = deviation(imageRotation);\n\nfor (let k = 1n; k <= 3n; k++) {\n    const totalRotation = imageRotation + 90n * k;\n    const dev = deviation(totalRotation);\n    if (dev < bestDev) {\n        bestDev = dev;\n        bestK = k;\n    }\n}\n\nconsole.log(bestK.toString());\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 12,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nrl.on('line', (line) => {\n    const x = BigInt(line.trim());\n    \n    // The image is rotated by -x degrees (counter-clockwise if x is positive clockwise camera rotation)\n    // We need to apply k times 90 degrees clockwise rotation.\n    // Total rotation of image after k turns: -x + 90*k degrees (clockwise positive)\n    // We want the deviation from vertical to be minimal.\n    // Deviation is the minimum angle between the current orientation and vertical (0 or 180 degrees).\n    // Actually, deviation from vertical means how far the \"up\" direction is from true up.\n    // The true up direction in the image is at angle -x (mod 360) from the camera's original up.\n    // After k clockwise 90-degree rotations, the image's up direction is at angle (-x + 90*k) mod 360.\n    // The deviation from vertical is the minimum of |angle| and 360 - |angle|, but we need to consider\n    // that vertical can be up or down? No, \"deviation from vertical\" means how far from the vertical line.\n    // Actually, the problem says \"minimally deviated from vertical\". The face should be slightly deviated from vertical.\n    // So we want the angle of the \"true up\" direction relative to the image's up to be as close to 0 or 180 as possible?\n    // Wait, let me re-read.\n    \n    // \"the identification algorithm can work only with faces that are just slightly deviated from vertical.\"\n    // So the face should be roughly upright. The \"true up\" direction in the real world should align with the image's up direction.\n    // The camera is rotated by x degrees clockwise. So the image content is rotated by -x degrees (counter-clockwise) relative to the true up.\n    // So the true up direction in the image coordinate system is at angle -x (mod 360) measured clockwise from the image's up.\n    // Wait, if camera rotates clockwise by x, the image is rotated counter-clockwise by x. So the true up appears at angle -x in the image.\n    // After k clockwise 90-degree rotations of the image, the image's up direction changes. The true up direction in the new image coordinate system is at angle (-x - 90*k) mod 360? \n    // Let's think differently.\n    // Let the true up direction be at angle 0.\n    // The camera is rotated by x degrees clockwise. So the camera's up direction is at angle x from true up.\n    // The image captured by the camera has its up direction aligned with the camera's up. So in the image, the true up direction is at angle -x (counter-clockwise from image up).\n    // Now we rotate the image clockwise by 90*k degrees. The image's up direction now points to angle 90*k from the original image up.\n    // The true up direction in the new image coordinate system: originally it was at -x from image up. After rotating the image clockwise by 90*k, the true up is now at -x - 90*k from the new image up? \n    // No. If we rotate the image clockwise, the content rotates clockwise. So the true up direction, which was at -x, now appears at -x + 90*k? \n    // Let's use the example. x = 60 (camera rotated 60 clockwise). Image is rotated 60 counter-clockwise. True up is at -60 (or 300) in the image.\n    // k=0: deviation = min(60, 300) = 60.\n    // k=1: rotate image 90 clockwise. True up is now at -60 + 90 = 30. Deviation = min(30, 330) = 30.\n    // k=2: True up at -60 + 180 = 120. Deviation = min(120, 240) = 120.\n    // k=3: True up at -60 + 270 = 210. Deviation = min(210, 150) = 150.\n    // Wait, the sample says for x=60, output is 1. And deviation for k=1 is 30. That matches.\n    \n    // For x = -60 (camera rotated 60 counter-clockwise). Image is rotated 60 clockwise. True up is at 60 in the image.\n    // k=0: deviation = min(60, 300) = 60.\n    // k=1: True up at 60 + 90 = 150. Deviation = min(150, 210) = 150.\n    // k=2: True up at 60 + 180 = 240. Deviation = min(240, 120) = 120.\n    // k=3: True up at 60 + 270 = 330. Deviation = min(330, 30) = 30.\n    // Sample says output is 3. That matches.\n    \n    // So the formula is: for k in {0, 1, 2, 3}, compute angle = (-x + 90*k) mod 360.\n    // But we need to handle negative x and large values.\n    // Actually, the deviation is the minimum of |angle| and 360 - |angle|, where angle is normalized to [0, 360).\n    // But wait, the deviation from vertical: if the true up is at 180 degrees, that's also vertical (just upside down). But the problem says \"slightly deviated from vertical\", implying we want it close to 0 (upright), not 180 (upside down). \n    // Hmm, but the note says \"deviation from 'true up'\". So it's the angle from true up, not from the vertical line. So 180 is a deviation of 180.\n    // So deviation = min(angle, 360 - angle) where angle is in [0, 360).\n    \n    // We need to find k in {0, 1, 2, 3} that minimizes this deviation.\n    // If there's a tie, we need the minimum k? The problem says \"minimum number of 90 degrees clockwise turns\". So if multiple k give the same minimal deviation, we pick the smallest k.\n    \n    // Let's compute for each k.\n    \n    // Normalize -x mod 360. But x can be very large (up to 10^18).\n    // We can compute (-x) mod 360. In JS, BigInt modulo can be tricky with negatives.\n    // Let's compute base = ((-x % 360n) + 360n) % 360n; This gives a value in [0, 360).\n    // Then for each k, angle = (base + 90n * k) % 360n.\n    // deviation = min(angle, 360n - angle).\n    \n    const MOD = 360n;\n    let base = ((-x % MOD) + MOD) % MOD;\n    \n    let minDev = Infinity;\n    let minK = 0;\n    \n    for (let k = 0n; k <= 3n; k++) {\n        let angle = (base + 90n * k) % MOD;\n        let dev = angle < (MOD - angle) ? angle : (MOD - angle);\n        if (dev < minDev || (dev === minDev && k < minK)) {\n            minDev = dev;\n            minK = k;\n        }\n    }\n    \n    console.log(minK.toString());\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 13,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nrl.on('line', (line) => {\n    const x = BigInt(line.trim());\n    \n    // The image is rotated by -x degrees (if camera rotates clockwise by x, image appears rotated counter-clockwise by x)\n    // We need to find k (0, 1, 2, 3) such that after k 90-degree clockwise turns,\n    // the total rotation deviation from vertical is minimized.\n    \n    // After k clockwise 90-degree turns, the image is rotated by k*90 degrees clockwise.\n    // The initial image rotation is -x (counter-clockwise if x is positive).\n    // So total rotation = -x + k*90 degrees.\n    // We want to minimize the absolute deviation from vertical, i.e., minimize |(-x + k*90) mod 360| \n    // but considering the circular nature, the deviation is min(d, 360-d) where d = ((-x + k*90) % 360 + 360) % 360.\n    \n    // Actually, let's think about it differently.\n    // The \"true up\" direction in the image is at angle -x (because camera rotated by x clockwise means image content appears rotated by -x).\n    // After k clockwise 90-degree rotations, the image is rotated by k*90 clockwise.\n    // So the \"true up\" direction in the final image is at angle (-x + k*90) degrees.\n    // We want this to be as close to 0 (or 360) as possible.\n    // The deviation is the minimum angle between (-x + k*90) and 0 (mod 360).\n    \n    // Let's compute for k = 0, 1, 2, 3:\n    // deviation_k = min( ((-x + k*90) % 360 + 360) % 360, 360 - ((-x + k*90) % 360 + 360) % 360 )\n    \n    // But we need to handle large numbers. Since x can be up to 10^18, we should work modulo 360.\n    \n    // Let r = (-x) % 360, normalized to [0, 360)\n    // Then for each k, the angle is (r + k*90) % 360\n    // And deviation is min(angle, 360 - angle)\n    \n    // Find k in {0, 1, 2, 3} that minimizes deviation.\n    // If there's a tie, choose the smallest k.\n    \n    const mod = (a, b) => ((a % b) + b) % b;\n    \n    // r = (-x) mod 360\n    const r = mod(-x, 360n);\n    \n    let bestK = 0n;\n    let bestDev = 360n;\n    \n    for (let k = 0n; k <= 3n; k++) {\n        const angle = mod(r + k * 90n, 360n);\n        const dev = angle <= 180n ? angle : 360n - angle;\n        if (dev < bestDev) {\n            bestDev = dev;\n            bestK = k;\n        }\n    }\n    \n    console.log(bestK.toString());\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 14,
+                "message": {
+                    "content": "```javascript\nconst fs = require('fs');\nconst input = fs.readFileSync('/dev/stdin', 'utf8').trim();\nconst x = BigInt(input);\n\n// The image is rotated by -x degrees (counter-clockwise if x is positive clockwise camera rotation)\n// We need to find k in {0, 1, 2, 3} such that the deviation from vertical is minimized.\n// After k 90-degree clockwise turns, the total rotation of the image is (-x + k * 90) degrees.\n// The deviation from vertical is the minimum of |angle| and 360 - |angle|, where angle is normalized to [0, 360).\n\nfunction deviation(angle) {\n    // Normalize angle to [0, 360)\n    let a = angle % 360n;\n    if (a < 0n) a += 360n;\n    // Deviation is min(a, 360 - a)\n    if (a > 180n) {\n        return 360n - a;\n    } else {\n        return a;\n    }\n}\n\nlet bestK = 0n;\nlet bestDev = deviation(-x);\n\nfor (let k = 1n; k <= 3n; k++) {\n    const totalRotation = -x + k * 90n;\n    const dev = deviation(totalRotation);\n    if (dev < bestDev) {\n        bestDev = dev;\n        bestK = k;\n    }\n}\n\nconsole.log(bestK.toString());\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 15,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nrl.on('line', (line) => {\n    const x = parseInt(line.trim(), 10);\n    \n    // The image is rotated by -x degrees (counter-clockwise if x is positive)\n    // We need to find k (0, 1, 2, 3) such that the deviation from vertical is minimized.\n    // After k clockwise 90-degree turns, the total rotation of the image content is:\n    // initial_rotation + k * 90\n    // initial_rotation = -x (because camera rotated x clockwise, image content appears rotated -x)\n    // So total rotation = -x + k * 90\n    \n    // We want to minimize the deviation from vertical, which means we want the total rotation\n    // to be as close to a multiple of 360 as possible (i.e., as close to 0 mod 360).\n    // The deviation is the minimum of |angle mod 360| and 360 - |angle mod 360|.\n    \n    let minDeviation = Infinity;\n    let bestK = 0;\n    \n    for (let k = 0; k < 4; k++) {\n        const totalRotation = (-x + k * 90) % 360;\n        // Normalize to [0, 360)\n        let angle = totalRotation % 360;\n        if (angle < 0) angle += 360;\n        \n        // Deviation from vertical (0 or 180 degrees)\n        // Actually, we want the image to be \"upright\", so deviation from 0 degrees (mod 360)\n        // The deviation is min(angle, 360 - angle)\n        const deviation = Math.min(angle, 360 - angle);\n        \n        if (deviation < minDeviation) {\n            minDeviation = deviation;\n            bestK = k;\n        }\n    }\n    \n    console.log(bestK);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 16,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nrl.on('line', (line) => {\n    const x = parseInt(line.trim(), 10);\n    \n    // The image is rotated by -x degrees (counter-clockwise if x is positive)\n    // We need to find k (0, 1, 2, 3) such that the deviation from vertical is minimized\n    // After k clockwise 90-degree turns, the total rotation of the image is (-x + k * 90) degrees\n    // We want to minimize the absolute deviation from 0 (mod 360), considering the smallest angle\n    \n    let minDeviation = Infinity;\n    let minTurns = 0;\n    \n    for (let k = 0; k < 4; k++) {\n        // Total rotation of the image after k clockwise 90-degree turns\n        // Original image rotation: -x (because camera rotated x clockwise, image appears rotated -x)\n        // After k clockwise 90-degree turns: -x + k * 90\n        let totalRotation = (-x + k * 90) % 360;\n        \n        // Normalize to [0, 360)\n        if (totalRotation < 0) {\n            totalRotation += 360;\n        }\n        \n        // Deviation from vertical: the smallest angle to 0 or 360\n        let deviation = Math.min(totalRotation, 360 - totalRotation);\n        \n        if (deviation < minDeviation) {\n            minDeviation = deviation;\n            minTurns = k;\n        }\n    }\n    \n    console.log(minTurns);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 17,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nrl.on('line', (line) => {\n    const x = parseInt(line.trim());\n    \n    // The image is rotated by -x degrees (counter-clockwise if camera is clockwise)\n    // We can apply k times 90 degrees clockwise rotation, where k is 0, 1, 2, or 3\n    // Total rotation of image: -x + k * 90\n    // We want to minimize the deviation from vertical, i.e., minimize |(-x + k*90) mod 360| adjusted to be in [-180, 180]\n    \n    let bestK = 0;\n    let bestDeviation = Infinity;\n    \n    for (let k = 0; k < 4; k++) {\n        // Total rotation in degrees\n        let totalRotation = -x + k * 90;\n        \n        // Normalize to [-180, 180]\n        // First, take modulo 360\n        let mod = totalRotation % 360;\n        if (mod < 0) {\n            mod += 360;\n        }\n        // Now mod is in [0, 360)\n        // Convert to [-180, 180]\n        let deviation;\n        if (mod > 180) {\n            deviation = mod - 360;\n        } else {\n            deviation = mod;\n        }\n        \n        let absDeviation = Math.abs(deviation);\n        \n        if (absDeviation < bestDeviation) {\n            bestDeviation = absDeviation;\n            bestK = k;\n        }\n    }\n    \n    console.log(bestK);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 18,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    terminal: false\n});\n\nrl.on('line', (line) => {\n    const x = parseInt(line.trim(), 10);\n    \n    // The image is rotated by -x degrees (counter-clockwise if x is positive clockwise camera rotation)\n    // We need to find the minimum number of 90-degree clockwise turns (0, 1, 2, or 3)\n    // such that the deviation from vertical is minimized.\n    \n    // The image rotation due to camera rotation is -x degrees.\n    // After k 90-degree clockwise turns, the total image rotation is (-x + k * 90) degrees.\n    // We want to minimize the deviation from vertical, which is the minimum of:\n    // |total_rotation mod 360| and 360 - |total_rotation mod 360|\n    \n    // Normalize -x to [0, 360)\n    let imageRotation = (-x) % 360;\n    if (imageRotation < 0) {\n        imageRotation += 360;\n    }\n    \n    let minDeviation = Infinity;\n    let minTurns = 0;\n    \n    for (let k = 0; k < 4; k++) {\n        // Total rotation after k 90-degree clockwise turns\n        let totalRotation = (imageRotation + k * 90) % 360;\n        \n        // Deviation from vertical: minimum angle to 0 or 360\n        let deviation = Math.min(totalRotation, 360 - totalRotation);\n        \n        if (deviation < minDeviation) {\n            minDeviation = deviation;\n            minTurns = k;\n        }\n    }\n    \n    console.log(minTurns);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 19,
+                "message": {
+                    "content": "```javascript\nconst readline = require('readline');\n\nconst rl = readline.createInterface({\n    input: process.stdin,\n    output: process.stdout\n});\n\nrl.on('line', (line) => {\n    const x = parseInt(line.trim(), 10);\n    \n    // The image is rotated by -x degrees (counter-clockwise if camera is clockwise)\n    // We can apply k times 90 degrees clockwise rotation to the image.\n    // Total rotation of the image after k turns: -x + k * 90 degrees (clockwise positive)\n    // We want to minimize the deviation from vertical, which is the minimum of:\n    //   |(-x + k*90) mod 360| and 360 - |(-x + k*90) mod 360|\n    // But since we only care about deviation from vertical (0 or 180), we want the angle\n    // to be as close to 0 or 180 as possible? No, wait.\n    \n    // Let me re-read the problem.\n    // \"rotate a captured image so that image would be minimally deviated from vertical\"\n    // The deviation from vertical means the angle between the \"true up\" direction and the image's up direction.\n    // If the image is rotated by angle A from true up, the deviation is min(A mod 360, 360 - (A mod 360)) if we consider absolute deviation from 0.\n    // But actually, \"deviation from vertical\" likely means the smallest angle to the nearest vertical (0 or 180).\n    // Wait, looking at the example:\n    // x = 60 (camera rotated 60 clockwise). Image is rotated 60 counter-clockwise.\n    // So image up direction is at -60 degrees (or 300 degrees clockwise).\n    // Deviation from vertical: the angle from 0 (or 180) to 300. \n    // 300 is 60 degrees from 360/0. So deviation is 60.\n    // If we apply 1 turn (90 clockwise): image rotation becomes -60 + 90 = 30 degrees clockwise.\n    // Deviation from vertical: 30 degrees from 0. So deviation is 30.\n    // If we apply 2 turns: -60 + 180 = 120 degrees. Deviation: min(120, 240) = 120? Or min(120, 180-120)=60?\n    // Wait, the note says for x=-60:\n    // \"One 90 degrees clockwise turn of the image result in 150 degrees clockwise total rotation and deviation from 'true up' for one turn is 150 degrees.\"\n    // So deviation is just the angle from 0, not from the nearest vertical?\n    // Let me re-read: \"deviation from 'true up'\". So it's the angle between the image's up and the true up.\n    // That would be the absolute angle modulo 360, but taking the smaller one? \n    // In the note: \"150 degrees clockwise total rotation and deviation from 'true up' for one turn is 150 degrees.\"\n    // \"240 degrees clockwise total rotation and deviation from 'true up' for two turns is 120 degrees because 240 degrees clockwise equal to 120 degrees counter-clockwise.\"\n    // So deviation = min(angle mod 360, 360 - (angle mod 360)).\n    \n    // For x = 60:\n    // Image initial rotation: -60 degrees (i.e., 300 degrees clockwise).\n    // k=0: total = 300. deviation = min(300, 60) = 60.\n    // k=1: total = 300 + 90 = 390 = 30. deviation = min(30, 330) = 30.\n    // k=2: total = 300 + 180 = 480 = 120. deviation = min(120, 240) = 120.\n    // k=3: total = 300 + 270 = 570 = 210. deviation = min(210, 150) = 150.\n    // Minimum deviation is 30 at k=1. Output 1. Correct.\n    \n    // For x = -60:\n    // Image initial rotation: -(-60) = 60 degrees clockwise.\n    // k=0: total = 60. deviation = min(60, 300) = 60.\n    // k=1: total = 60 + 90 = 150. deviation = min(150, 210) = 150.\n    // k=2: total = 60 + 180 = 240. deviation = min(240, 120) = 120.\n    // k=3: total = 60 + 270 = 330. deviation = min(330, 30) = 30.\n    // Minimum deviation is 30 at k=3. Output 3. Correct.\n    \n    // So the image's initial clockwise rotation is -x.\n    // After k turns, total clockwise rotation = (-x + k * 90) mod 360.\n    // Deviation = min(total, 360 - total) where total is in [0, 360).\n    \n    // We need to find k in {0, 1, 2, 3} that minimizes the deviation.\n    // Since k is only 0..3, we can just check all 4.\n    \n    const initialRotation = ((-x) % 360 + 360) % 360;\n    \n    let minDeviation = Infinity;\n    let bestK = 0;\n    \n    for (let k = 0; k < 4; k++) {\n        const total = (initialRotation + k * 90) % 360;\n        const deviation = Math.min(total, 360 - total);\n        if (deviation < minDeviation) {\n            minDeviation = deviation;\n            bestK = k;\n        }\n    }\n    \n    console.log(bestK);\n});\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 15599,
+            "prompt_tokens": 732,
+            "total_tokens": 16331
+        },
+        "prompt": "Write a program in Javascript to solve this programming problem:\nDescription: Vasya started working in a machine vision company of IT City. Vasya's team creates software and hardware for identification of people by their face.One of the project's know-how is a camera rotating around its optical axis on shooting. People see an eye-catching gadget \u2014 a rotating camera \u2014 come up to it to see it better, look into it. And the camera takes their photo at that time. What could be better for high quality identification?But not everything is so simple. The pictures from camera appear rotated too (on clockwise camera rotation frame the content becomes rotated counter-clockwise). But the identification algorithm can work only with faces that are just slightly deviated from vertical.Vasya was entrusted to correct the situation \u2014 to rotate a captured image so that image would be minimally deviated from vertical. Requirements were severe. Firstly, the picture should be rotated only on angle divisible by 90 degrees to not lose a bit of information about the image. Secondly, the frames from the camera are so huge and FPS is so big that adequate rotation speed is provided by hardware FPGA solution only. And this solution can rotate only by 90 degrees clockwise. Of course, one can apply 90 degrees turn several times but for the sake of performance the number of turns should be minimized.Help Vasya implement the program that by the given rotation angle of the camera can determine the minimum number of 90 degrees clockwise turns necessary to get a picture in which up direction deviation from vertical is minimum.The next figure contains frames taken from an unrotated camera, then from rotated 90 degrees clockwise, then from rotated 90 degrees counter-clockwise. Arrows show direction to \"true up\".  The next figure shows 90 degrees clockwise turn by FPGA hardware.  \nInput Specification: The only line of the input contains one integer x (\u2009-\u20091018\u2009\u2264\u2009x\u2009\u2264\u20091018) \u2014 camera angle in degrees. Positive value denotes clockwise camera rotation, negative \u2014 counter-clockwise.\nOutput Specification: Output one integer \u2014 the minimum required number of 90 degrees clockwise turns.\n\nSample Input:\n60\nSample Output:\n1\n\nSample Input:\n-60\nSample Output:\n3\n\nNotes: NoteWhen the camera is rotated 60 degrees counter-clockwise (the second example), an image from it is rotated 60 degrees clockwise. One 90 degrees clockwise turn of the image result in 150 degrees clockwise total rotation and deviation from \"true up\" for one turn is 150 degrees. Two 90 degrees clockwise turns of the image result in 240 degrees clockwise total rotation and deviation from \"true up\" for two turns is 120 degrees because 240 degrees clockwise equal to 120 degrees counter-clockwise. Three 90 degrees clockwise turns of the image result in 330 degrees clockwise total rotation and deviation from \"true up\" for three turns is 30 degrees because 330 degrees clockwise equal to 30 degrees counter-clockwise.From 60, 150, 120 and 30 degrees deviations the smallest is 30, and it it achieved in three 90 degrees clockwise turns.\nTake input from standard input and output to standard output\nProvide the Javascript code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "509db9cb6156b692557ba874a09f150e",
+        "difficulty": 1800,
+        "prob_desc_sample_inputs": [
+            "60",
+            "-60"
+        ],
+        "prob_desc_time_limit": "0.5 seconds",
+        "tags": [
+            "geometry",
+            "math"
+        ],
+        "prob_desc_output_spec": "Output one integer \u2014 the minimum required number of 90 degrees clockwise turns.",
+        "prob_desc_input_spec": "The only line of the input contains one integer x (\u2009-\u20091018\u2009\u2264\u2009x\u2009\u2264\u20091018) \u2014 camera angle in degrees. Positive value denotes clockwise camera rotation, negative \u2014 counter-clockwise.",
+        "lang_cluster": "Javascript",
+        "source_code": "",
+        "prob_desc_notes": "NoteWhen the camera is rotated 60 degrees counter-clockwise (the second example), an image from it is rotated 60 degrees clockwise. One 90 degrees clockwise turn of the image result in 150 degrees clockwise total rotation and deviation from \"true up\" for one turn is 150 degrees. Two 90 degrees clockwise turns of the image result in 240 degrees clockwise total rotation and deviation from \"true up\" for two turns is 120 degrees because 240 degrees clockwise equal to 120 degrees counter-clockwise. Three 90 degrees clockwise turns of the image result in 330 degrees clockwise total rotation and deviation from \"true up\" for three turns is 30 degrees because 330 degrees clockwise equal to 30 degrees counter-clockwise.From 60, 150, 120 and 30 degrees deviations the smallest is 30, and it it achieved in three 90 degrees clockwise turns.",
+        "prob_desc_memory_limit": "64 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Vasya started working in a machine vision company of IT City. Vasya's team creates software and hardware for identification of people by their face.One of the project's know-how is a camera rotating around its optical axis on shooting. People see an eye-catching gadget \u2014 a rotating camera \u2014 come up to it to see it better, look into it. And the camera takes their photo at that time. What could be better for high quality identification?But not everything is so simple. The pictures from camera appear rotated too (on clockwise camera rotation frame the content becomes rotated counter-clockwise). But the identification algorithm can work only with faces that are just slightly deviated from vertical.Vasya was entrusted to correct the situation \u2014 to rotate a captured image so that image would be minimally deviated from vertical. Requirements were severe. Firstly, the picture should be rotated only on angle divisible by 90 degrees to not lose a bit of information about the image. Secondly, the frames from the camera are so huge and FPS is so big that adequate rotation speed is provided by hardware FPGA solution only. And this solution can rotate only by 90 degrees clockwise. Of course, one can apply 90 degrees turn several times but for the sake of performance the number of turns should be minimized.Help Vasya implement the program that by the given rotation angle of the camera can determine the minimum number of 90 degrees clockwise turns necessary to get a picture in which up direction deviation from vertical is minimum.The next figure contains frames taken from an unrotated camera, then from rotated 90 degrees clockwise, then from rotated 90 degrees counter-clockwise. Arrows show direction to \"true up\".  The next figure shows 90 degrees clockwise turn by FPGA hardware.  ",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1455807600",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "1",
+            "3"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"60\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-60\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"44\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"45\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"46\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"134\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"135\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"136\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"224\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"225\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"226\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"227\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"313\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"314\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"315\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"316\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"358\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"359\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"360\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"361\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"999999999999999340\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"999999999999999325\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"999999999999999326\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"999999999999999415\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"999999999999999416\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"999999999999999504\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"999999999999999505\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"999999999999999506\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"999999999999999594\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"999999999999999595\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"999999999999999596\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"999999999999999639\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"999999999999999640\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"6678504591813508\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"201035370138545377\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"441505850043460771\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"252890591709237675\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"272028913373922389\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"141460527912396122\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"479865961765156498\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-44\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-45\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-46\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"-134\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"-135\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-136\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-224\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-225\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-226\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-227\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-313\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-314\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-315\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-316\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-358\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-359\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-360\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-361\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-999999999999999340\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-999999999999999325\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-999999999999999326\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-999999999999999415\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"-999999999999999416\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"-999999999999999504\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-999999999999999505\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-999999999999999506\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-999999999999999594\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-999999999999999595\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-999999999999999596\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-999999999999999639\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-999999999999999640\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-6678504591813508\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-201035370138545377\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-441505850043460771\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"-252890591709237675\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"-272028913373922389\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"-141460527912396122\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"-479865961765156498\\r\\n\", \"output\": [\"2\"]}]"
+    }
+}

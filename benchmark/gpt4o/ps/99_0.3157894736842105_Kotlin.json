@@ -1,0 +1,348 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEIOk319MwetfYz1QJG6WF8er1OIn",
+        "created": 1787076022,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toInt()\n    val t = st.nextToken().toInt()\n\n    val maxY = 4\n    // dp[pos][lastY][humps][valleys][trend]\n    // trend: 0 = unknown (only at pos=1), 1 = up, 2 = down\n    val dp = Array(n + 1) {\n        Array(maxY + 1) {\n            Array(t + 1) {\n                Array(t + 1) {\n                    LongArray(3)\n                }\n            }\n        }\n    }\n\n    // Initialize for position 1: any y1 in 1..4, no humps/valleys, trend unknown\n    for (y in 1..maxY) {\n        dp[1][y][0][0][0] = 1L\n    }\n\n    for (pos in 2..n) {\n        for (lastY in 1..maxY) {\n            for (h in 0..t) {\n                for (v in 0..t) {\n                    for (trend in 0..2) {\n                        val curCount = dp[pos - 1][lastY][h][v][trend]\n                        if (curCount == 0L) continue\n                        for (newY in 1..maxY) {\n                            if (newY == lastY) continue // no horizontal segment\n                            var newTrend = trend\n                            var newH = h\n                            var newV = v\n\n                            if (trend == 0) {\n                                // first step defines trend\n                                newTrend = if (newY > lastY) 1 else 2\n                            } else {\n                                if (newY > lastY) {\n                                    // going up\n                                    if (trend == 2 && pos - 1 >= 2) {\n                                        // valley at pos-1\n                                        newV++\n                                        if (newV > t) continue\n                                    }\n                                    newTrend = 1\n                                } else {\n                                    // going down\n                                    if (trend == 1 && pos - 1 >= 2) {\n                                        // hump at pos-1\n                                        newH++\n                                        if (newH > t) continue\n                                    }\n                                    newTrend = 2\n                                }\n                            }\n\n                            dp[pos][newY][newH][newV][newTrend] += curCount\n                        }\n                    }\n                }\n            }\n        }\n    }\n\n    var result = 0L\n    for (lastY in 1..maxY) {\n        for (trend in 1..2) { // final trend must be defined\n            result += dp[n][lastY][t][t - 1][trend]\n        }\n    }\n\n    println(result)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toInt()\n    val t = st.nextToken().toInt()\n\n    // dp[pos][lastY][peaks][valleys][trend]\n    // trend: 0 = up, 1 = down\n    val dp = Array(n + 1) { Array(5) { Array(t + 1) { Array(t) { LongArray(2) } } } }\n\n    // Initialize for position 1\n    for (y in 1..4) {\n        // pos = 1, lastY = y, peaks = 0, valleys = 0, trend undefined yet\n        // We will set trend on the first move (pos 2)\n        // To simplify, we treat pos=1 as having both trends possible but will\n        // actually set them when moving to pos=2.\n        // So we store in a special way: we will handle pos=2 separately.\n        // Instead, we can start transitions from pos=1 manually.\n        // We'll just store a marker: trend = 0 and 1 both as starting states.\n        dp[1][y][0][0][0] = 1L\n        dp[1][y][0][0][1] = 1L\n    }\n\n    for (pos in 1 until n) {\n        for (lastY in 1..4) {\n            for (peaks in 0..t) {\n                for (valleys in 0 until t) {\n                    for (trend in 0..1) {\n                        val cur = dp[pos][lastY][peaks][valleys][trend]\n                        if (cur == 0L) continue\n                        for (nextY in 1..4) {\n                            if (nextY == lastY) continue // no horizontal segment\n                            val newTrend = if (nextY > lastY) 0 else 1\n                            var newPeaks = peaks\n                            var newValleys = valleys\n                            if (pos >= 2) {\n                                // We have at least three points: pos-1, pos, pos+1\n                                // Check if pos is peak or valley\n                                // Need previous trend at pos-1 and current trend at pos\n                                // But we only store trend of last segment.\n                                // To detect extremum at pos, we need trend at segment (pos-1,pos)\n                                // and newTrend at segment (pos,pos+1).\n                                // trend is (pos-1,pos), newTrend is (pos,pos+1).\n                                if (trend == 0 && newTrend == 1) {\n                                    newPeaks++\n                                } else if (trend == 1 && newTrend == 0) {\n                                    newValleys++\n                                }\n                            }\n                            if (newPeaks > t || newValleys >= t) continue\n                            dp[pos + 1][nextY][newPeaks][newValleys][newTrend] += cur\n                        }\n                    }\n                }\n            }\n        }\n    }\n\n    var result = 0L\n    for (lastY in 1..4) {\n        for (trend in 0..1) {\n            result += dp[n][lastY][t][t - 1][trend]\n        }\n    }\n    println(result)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toInt()\n    val t = st.nextToken().toInt()\n\n    // dp[pos][lastY][peaks][valleys][trend]\n    // trend: 0 = down, 1 = up\n    val dp = Array(n + 1) { Array(5) { Array(t + 1) { Array(t) { LongArray(2) } } } }\n\n    // Initialize for position 1\n    for (y in 1..4) {\n        dp[1][y][0][0][0] = 1L\n        dp[1][y][0][0][1] = 1L\n    }\n\n    for (pos in 2..n) {\n        for (lastY in 1..4) {\n            for (peaks in 0..t) {\n                for (valleys in 0 until t) {\n                    for (trend in 0..1) {\n                        val curVal = dp[pos - 1][lastY][peaks][valleys][trend]\n                        if (curVal == 0L) continue\n                        for (newY in 1..4) {\n                            if (newY == lastY) continue\n                            val newTrend = if (newY > lastY) 1 else 0\n                            var newPeaks = peaks\n                            var newValleys = valleys\n                            if (pos >= 3) {\n                                if (trend == 1 && newTrend == 0) {\n                                    newPeaks++\n                                    if (newPeaks > t) continue\n                                } else if (trend == 0 && newTrend == 1) {\n                                    newValleys++\n                                    if (newValleys >= t) continue\n                                }\n                            }\n                            dp[pos][newY][newPeaks][newValleys][newTrend] += curVal\n                        }\n                    }\n                }\n            }\n        }\n    }\n\n    var result = 0L\n    for (y in 1..4) {\n        for (trend in 0..1) {\n            result += dp[n][y][t][t - 1][trend]\n        }\n    }\n    println(result)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toInt()\n    val t = st.nextToken().toInt()\n\n    // dp[pos][prevY][prevTrend][peaks][valleys]\n    // prevTrend: 0 = start, 1 = up, 2 = down\n    val dp = Array(n + 1) {\n        Array(5) {\n            Array(3) {\n                Array(t + 1) {\n                    LongArray(t) { 0L }\n                }\n            }\n        }\n    }\n\n    // Initialize for position 1: choose y1 in 1..4\n    for (y in 1..4) {\n        dp[1][y][0][0][0] = 1L\n    }\n\n    for (pos in 2..n) {\n        for (prevY in 1..4) {\n            for (prevTrend in 0..2) {\n                for (peaks in 0..t) {\n                    for (valleys in 0 until t) {\n                        val curVal = dp[pos - 1][prevY][prevTrend][peaks][valleys]\n                        if (curVal == 0L) continue\n                        for (y in 1..4) {\n                            if (y == prevY) continue\n                            val newTrend = if (y > prevY) 1 else 2\n                            var newPeaks = peaks\n                            var newValleys = valleys\n                            if (prevTrend != 0 && prevTrend != newTrend) {\n                                if (prevTrend == 1 && newTrend == 2) {\n                                    newPeaks++\n                                } else if (prevTrend == 2 && newTrend == 1) {\n                                    newValleys++\n                                }\n                            }\n                            if (newPeaks > t || newValleys >= t) continue\n                            dp[pos][y][newTrend][newPeaks][newValleys] += curVal\n                        }\n                    }\n                }\n            }\n        }\n    }\n\n    var result = 0L\n    for (y in 1..4) {\n        for (trend in 1..2) {\n            result += dp[n][y][trend][t][t - 1]\n        }\n    }\n\n    println(result)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "import java.util.StringTokenizer\n\nfun main() {\n    val br = System.`in`.bufferedReader()\n    val st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toInt()\n    val t = st.nextToken().toInt()\n\n    val maxY = 4\n    var count = 0\n\n    fun dfs(pos: Int, prev: Int, peaks: Int, valleys: Int, prevDiff: Int) {\n        if (pos > n) {\n            if (peaks == t && valleys == t - 1) count++\n            return\n        }\n\n        for (y in 1..maxY) {\n            if (y == prev) continue\n            val diff = y - prev\n            var newPeaks = peaks\n            var newValleys = valleys\n\n            if (pos >= 3) {\n                if (prevDiff > 0 && diff < 0) newPeaks++\n                else if (prevDiff < 0 && diff > 0) newValleys++\n            }\n\n            // Pruning: cannot exceed required peaks/valleys\n            if (newPeaks > t || newValleys > t - 1) continue\n\n            dfs(pos + 1, y, newPeaks, newValleys, diff)\n        }\n    }\n\n    for (y1 in 1..maxY) {\n        for (y2 in 1..maxY) {\n            if (y2 == y1) continue\n            val diff = y2 - y1\n            dfs(3, y2, 0, 0, diff)\n        }\n    }\n\n    println(count)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "import java.util.StringTokenizer\n\nfun main() {\n    val br = System.`in`.bufferedReader()\n    val st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toInt()\n    val t = st.nextToken().toInt()\n\n    // dp[pos][prevY][humps][valleys][trend]\n    // trend: 0 = undefined (only at pos=1), 1 = up, 2 = down\n    val dp = Array(n + 1) {\n        Array(5) { // y from 1..4\n            Array(t + 1) {\n                Array(t) { // valleys from 0..t-1\n                    LongArray(3) // trend 0..2\n                }\n            }\n        }\n    }\n\n    // Initialize for position 1: any y in 1..4, no humps/valleys, trend undefined\n    for (y in 1..4) {\n        dp[1][y][0][0][0] = 1L\n    }\n\n    for (pos in 2..n) {\n        for (prevY in 1..4) {\n            for (h in 0..t) {\n                for (v in 0 until t) {\n                    for (trend in 0..2) {\n                        val curVal = dp[pos - 1][prevY][h][v][trend]\n                        if (curVal == 0L) continue\n                        for (y in 1..4) {\n                            if (y == prevY) continue // no horizontal segments\n                            var nh = h\n                            var nv = v\n                            var nt = trend\n\n                            if (pos == 2) {\n                                // first segment defines initial trend\n                                nt = if (y > prevY) 1 else 2\n                            } else {\n                                if (trend == 1 && y < prevY) {\n                                    // up then down -> hump at pos-1\n                                    nh++\n                                    nt = 2\n                                } else if (trend == 2 && y > prevY) {\n                                    // down then up -> valley at pos-1\n                                    nv++\n                                    nt = 1\n                                } else {\n                                    nt = trend\n                                }\n                            }\n\n                            if (nh > t || nv >= t) continue\n                            dp[pos][y][nh][nv][nt] += curVal\n                        }\n                    }\n                }\n            }\n        }\n    }\n\n    var ans = 0L\n    for (y in 1..4) {\n        for (trend in 1..2) { // final trend must be defined\n            ans += dp[n][y][t][t - 1][trend]\n        }\n    }\n\n    println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toInt()\n    val t = st.nextToken().toInt()\n\n    // dp[pos][lastY][peaks][valleys][lastTrend]\n    // lastTrend: 0 = down, 1 = up\n    val dp = Array(n + 1) {\n        Array(5) {\n            Array(t + 1) {\n                Array(t) {\n                    LongArray(2)\n                }\n            }\n        }\n    }\n\n    // Initialize for position 2: choose y1 and y2 with y1 != y2\n    for (y1 in 1..4) {\n        for (y2 in 1..4) {\n            if (y1 == y2) continue\n            val trend = if (y2 > y1) 1 else 0\n            dp[2][y2][0][0][trend]++\n        }\n    }\n\n    // Transition for positions 3..n\n    for (pos in 3..n) {\n        for (lastY in 1..4) {\n            for (peaks in 0..t) {\n                for (valleys in 0 until t) {\n                    for (trend in 0..1) {\n                        val curVal = dp[pos - 1][lastY][peaks][valleys][trend]\n                        if (curVal == 0L) continue\n                        for (nextY in 1..4) {\n                            if (nextY == lastY) continue\n                            val nextTrend = if (nextY > lastY) 1 else 0\n                            var newPeaks = peaks\n                            var newValleys = valleys\n                            if (nextTrend != trend) {\n                                if (trend == 1) {\n                                    // was up, now down -> peak at pos-1\n                                    newPeaks++\n                                } else {\n                                    // was down, now up -> valley at pos-1\n                                    newValleys++\n                                }\n                            }\n                            if (newPeaks > t || newValleys >= t) continue\n                            dp[pos][nextY][newPeaks][newValleys][nextTrend] += curVal\n                        }\n                    }\n                }\n            }\n        }\n    }\n\n    var result = 0L\n    for (lastY in 1..4) {\n        for (trend in 0..1) {\n            result += dp[n][lastY][t][t - 1][trend]\n        }\n    }\n\n    println(result)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toInt()\n    val t = st.nextToken().toInt()\n\n    // dp[pos][lastY][peaks][valleys][lastTrend]\n    // lastTrend: 0 = down, 1 = up, 2 = start (no trend yet)\n    val dp = Array(n + 1) {\n        Array(5) {\n            Array(t + 1) {\n                Array(t) {\n                    LongArray(3)\n                }\n            }\n        }\n    }\n\n    // initialize for position 1\n    for (y in 1..4) {\n        dp[1][y][0][0][2] = 1L\n    }\n\n    for (pos in 2..n) {\n        for (lastY in 1..4) {\n            for (peaks in 0..t) {\n                for (valleys in 0 until t) {\n                    for (trend in 0..2) {\n                        val cur = dp[pos - 1][lastY][peaks][valleys][trend]\n                        if (cur == 0L) continue\n                        for (newY in 1..4) {\n                            if (newY == lastY) continue // no horizontal segments\n                            val newTrend = if (newY > lastY) 1 else 0\n                            var newPeaks = peaks\n                            var newValleys = valleys\n\n                            if (trend != 2) {\n                                if (trend == 1 && newTrend == 0) {\n                                    // up -> down: possible peak at pos-1\n                                    if (pos - 1 in 2..n - 1) {\n                                        newPeaks++\n                                    }\n                                } else if (trend == 0 && newTrend == 1) {\n                                    // down -> up: possible valley at pos-1\n                                    if (pos - 1 in 2..n - 1) {\n                                        newValleys++\n                                    }\n                                }\n                            }\n\n                            if (newPeaks <= t && newValleys < t) {\n                                dp[pos][newY][newPeaks][newValleys][newTrend] += cur\n                            }\n                        }\n                    }\n                }\n            }\n        }\n    }\n\n    var ans = 0L\n    for (y in 1..4) {\n        for (trend in 0..2) {\n            ans += dp[n][y][t][t - 1][trend]\n        }\n    }\n\n    println(ans)",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 4537,
+            "prompt_tokens": 483,
+            "total_tokens": 5020,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 1,
+                "engine_ttft_ms": 47,
+                "engine_ttlt_ms": 5679,
+                "pre_inference_ms": 194,
+                "service_tbt_ms": 1,
+                "service_ttft_ms": 369,
+                "service_ttlt_ms": 5984,
+                "total_duration_ms": 5800,
+                "user_visible_ttft_ms": 176
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Kotlin to solve this programming problem:\nDescription: Bob likes to draw camels: with a single hump, two humps, three humps, etc. He draws a camel by connecting points on a coordinate plane. Now he's drawing camels with t humps, representing them as polylines in the plane. Each polyline consists of n vertices with coordinates (x1,\u2009y1), (x2,\u2009y2), ..., (xn,\u2009yn). The first vertex has a coordinate x1\u2009=\u20091, the second \u2014 x2\u2009=\u20092, etc. Coordinates yi might be any, but should satisfy the following conditions:  there should be t humps precisely, i.e. such indexes j (2\u2009\u2264\u2009j\u2009\u2264\u2009n\u2009-\u20091), so that yj\u2009-\u20091\u2009&lt;\u2009yj\u2009&gt;\u2009yj\u2009+\u20091,  there should be precisely t\u2009-\u20091 such indexes j (2\u2009\u2264\u2009j\u2009\u2264\u2009n\u2009-\u20091), so that yj\u2009-\u20091\u2009&gt;\u2009yj\u2009&lt;\u2009yj\u2009+\u20091,  no segment of a polyline should be parallel to the Ox-axis,  all yi are integers between 1 and 4. For a series of his drawings of camels with t humps Bob wants to buy a notebook, but he doesn't know how many pages he will need. Output the amount of different polylines that can be drawn to represent camels with t humps for a given number n.\nInput Specification: The first line contains a pair of integers n and t (3\u2009\u2264\u2009n\u2009\u2264\u200920, 1\u2009\u2264\u2009t\u2009\u2264\u200910).\nOutput Specification: Output the required amount of camels with t humps.\n\nSample Input:\n6 1\nSample Output:\n6\n\nSample Input:\n4 2\nSample Output:\n0\n\nNotes: NoteIn the first sample test sequences of y-coordinates for six camels are: 123421, 123431, 123432, 124321, 134321 \u0438 234321 (each digit corresponds to one value of yi).\nTake input from standard input and output to standard output\nProvide the Kotlin code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "6d67559744583229455c5eafe68f7952",
+        "difficulty": 1900,
+        "prob_desc_sample_inputs": [
+            "6 1",
+            "4 2"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "dp"
+        ],
+        "prob_desc_output_spec": "Output the required amount of camels with t humps.",
+        "prob_desc_input_spec": "The first line contains a pair of integers n and t (3\u2009\u2264\u2009n\u2009\u2264\u200920, 1\u2009\u2264\u2009t\u2009\u2264\u200910).",
+        "lang_cluster": "Kotlin",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first sample test sequences of y-coordinates for six camels are: 123421, 123431, 123432, 124321, 134321 \u0438 234321 (each digit corresponds to one value of yi).",
+        "prob_desc_memory_limit": "64 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Bob likes to draw camels: with a single hump, two humps, three humps, etc. He draws a camel by connecting points on a coordinate plane. Now he's drawing camels with t humps, representing them as polylines in the plane. Each polyline consists of n vertices with coordinates (x1,\u2009y1), (x2,\u2009y2), ..., (xn,\u2009yn). The first vertex has a coordinate x1\u2009=\u20091, the second \u2014 x2\u2009=\u20092, etc. Coordinates yi might be any, but should satisfy the following conditions:  there should be t humps precisely, i.e. such indexes j (2\u2009\u2264\u2009j\u2009\u2264\u2009n\u2009-\u20091), so that yj\u2009-\u20091\u2009&lt;\u2009yj\u2009&gt;\u2009yj\u2009+\u20091,  there should be precisely t\u2009-\u20091 such indexes j (2\u2009\u2264\u2009j\u2009\u2264\u2009n\u2009-\u20091), so that yj\u2009-\u20091\u2009&gt;\u2009yj\u2009&lt;\u2009yj\u2009+\u20091,  no segment of a polyline should be parallel to the Ox-axis,  all yi are integers between 1 and 4. For a series of his drawings of camels with t humps Bob wants to buy a notebook, but he doesn't know how many pages he will need. Output the amount of different polylines that can be drawn to represent camels with t humps for a given number n.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1274283000",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "6",
+            "0"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"6 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"4 2\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 1\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"3 2\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 3\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 10\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"4 1\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"4 3\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"4 9\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"5 2\\r\\n\", \"output\": [\"70\"]}, {\"input\": \"5 3\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 5\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 9\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 10\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"6 2\\r\\n\", \"output\": [\"232\"]}, {\"input\": \"6 3\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6 4\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6 10\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"19 1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"19 2\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"19 3\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"19 4\\r\\n\", \"output\": [\"32632\"]}, {\"input\": \"19 5\\r\\n\", \"output\": [\"4594423\"]}, {\"input\": \"19 6\\r\\n\", \"output\": [\"69183464\"]}, {\"input\": \"19 7\\r\\n\", \"output\": [\"197939352\"]}, {\"input\": \"19 8\\r\\n\", \"output\": [\"109824208\"]}, {\"input\": \"19 9\\r\\n\", \"output\": [\"5846414\"]}, {\"input\": \"19 10\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"20 1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"20 2\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"20 3\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"20 4\\r\\n\", \"output\": [\"12628\"]}, {\"input\": \"20 5\\r\\n\", \"output\": [\"3715462\"]}, {\"input\": \"20 6\\r\\n\", \"output\": [\"96046590\"]}, {\"input\": \"20 7\\r\\n\", \"output\": [\"468541040\"]}, {\"input\": \"20 8\\r\\n\", \"output\": [\"503245466\"]}, {\"input\": \"20 9\\r\\n\", \"output\": [\"90700276\"]}, {\"input\": \"20 10\\r\\n\", \"output\": [\"0\"]}]"
+    }
+}

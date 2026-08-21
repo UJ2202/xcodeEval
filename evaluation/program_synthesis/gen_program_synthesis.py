@@ -65,7 +65,8 @@ MODEL = os.environ.get("XCODEEVAL_MODEL", "gpt4o")
 # vLLM models need thinking disabled; gpt4o goes through LiteLLM which doesn't accept this param
 VLLM_MODELS = {"qwen-nvfp4", "laguna-nvfp4", "nvidia/nemotron-3-ultra-550b-a55b"}
 EXTRA_KWARGS = {"chat_template_kwargs": {"enable_thinking": False}} if MODEL in VLLM_MODELS else {}
-MAX_TOKENS = 65536 if MODEL == "nvidia/nemotron-3-ultra-550b-a55b" else (4096 if MODEL in VLLM_MODELS else 8192)
+CLAUDE_MODELS = {"claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5", "claude-sonnet-4-5"}
+MAX_TOKENS = 16384 if MODEL == "nvidia/nemotron-3-ultra-550b-a55b" else (32768 if MODEL in CLAUDE_MODELS else (4096 if MODEL in VLLM_MODELS else 8192))
 MAX_N = 8 if MODEL == "gpt4o" else 20  # Azure gpt4o hard limit is n<=8
 
 # ── Anthropic / Azure AI Foundry support ─────────────────────────────────────

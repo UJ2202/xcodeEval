@@ -1,0 +1,137 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-8dd5e8e8439639bf",
+        "created": 1787215186,
+        "model": "nvidia/nemotron-3-ultra-550b-a55b",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.26.0-tp8-6b7faac2",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```cpp\n#include <bits/stdc++.h>\nusing namespace std;\nusing int64 = long long;\nusing i128 = __int128_t;\n\nint64 mod_pow(int64 a, int64 e, int64 mod) {\n    int64 res = 1 % mod;\n    a %= mod;\n    while (e > 0) {\n        if (e & 1) res = (i128)res * a % mod;\n        a = (i128)a * a % mod;\n        e >>= 1;\n    }\n    return res;\n}\n\nint64 mod_inv(int64 a, int64 mod) {\n    return mod_pow(a, mod - 2, mod);\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    \n    int64 a, b, p, x;\n    if (!(cin >> a >> b >> p >> x)) return 0;\n    \n    int64 T = p - 1;\n    int64 C = a * T;\n    int64 modulus = p * T;\n    \n    int64 cur = 1 % p;\n    int64 ans = 0;\n    \n    for (int64 t = 0; t < T; ++t) {\n        int64 r = (i128)b * mod_inv(cur, p) % p;\n        int64 m1 = p % T;\n        int64 m3 = 0;\n        if (m1 != 0) m3 = mod_inv(m1, T);\n        \n        int64 diff = (r % T - t + T) % T;\n        int64 k = (i128)diff * m3 % T;\n        int64 n0 = r + k * p;\n        \n        if (n0 == 0) n0 = modulus;\n        if (n0 <= x) {\n            ans += (x - n0) / modulus + 1;\n        }\n        \n        cur = (i128)cur * a % p;\n    }\n    \n    cout << ans << '\\n';\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "```cpp\n#include <bits/stdc++.h>\nusing namespace std;\nusing int64 = long long;\n\nint64 mod_pow(int64 a, int64 e, int64 mod) {\n    int64 res = 1 % mod;\n    a %= mod;\n    while (e > 0) {\n        if (e & 1) res = (__int128)res * a % mod;\n        a = (__int128)a * a % mod;\n        e >>= 1;\n    }\n    return res;\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    \n    int64 a, b, p, x;\n    if(!(cin >> a >> b >> p >> x)) return 0;\n    \n    int64 ans = 0;\n    // n = k * (p-1) + r\n    // Equation: n * a^n \u2261 b (mod p)\n    // => (k*(p-1) + r) * a^r \u2261 b (mod p)\n    // a^(p-1) \u2261 1 (mod p) by Fermat's little theorem for prime p.\n    // Since a^r mod p cycles with period p-1.\n    // Let A = a^r mod p.\n    // => k*(p-1)*A + r*A \u2261 b (mod p)\n    // => k*(p-1)*A \u2261 b - r*A (mod p)\n    // Note: (p-1) \u2261 -1 (mod p)\n    // => k*(-1)*A \u2261 b - r*A (mod p)\n    // => k*A \u2261 r*A - b (mod p)\n    // Multiply both sides by inverse of A modulo p.\n    // A is non-zero mod p since 1 <= a < p and p is prime, so gcd(a,p)=1. A != 0.\n    // => k \u2261 (r*A - b) * inv(A) \u2261 r - b*inv(A) (mod p)\n    // So k = k0 + m * p for some integer m, where k0 is the unique solution in [0, p-1].\n    \n    for (int64 r = 0; r < p - 1; ++r) {\n        int64 A = mod_pow(a, r, p);\n        int64 invA = mod_pow(A, p - 2, p);\n        // k \u2261 r - b * invA (mod p)\n        // Make it non-negative\n        int64 term = (r - (b * invA) % p + p) % p;\n        // k = term + m * p\n        // n = k*(p-1) + r = (term + m*p)*(p-1) + r\n        // n <= x\n        // (term + m*p)*(p-1) + r <= x\n        // m*p*(p-1) <= x - term*(p-1) - r\n        // m <= (x - term*(p-1) - r) / (p*(p-1))\n        // m >= 0\n        int64 base_n = term * (p - 1) + r;\n        if (base_n == 0) {\n            // n must be positive. base_n=0 corresponds to m=0, n=0 which is invalid.\n            // Next n corresponds to m=1.\n            // base_n + m*p*(p-1) > 0 => m >= 1.\n            // So we effectively shift m by 1.\n            // x - base_n = x.\n            // m*p*(p-1) <= x => m <= x / (p*(p-1))\n            // But m starts from 1. Count = floor(x / (p*(p-1)))\n            int64 L = p * (p - 1);\n            ans += x / L;\n        } else {\n            if (base_n > x) continue;\n            int64 L = p * (p - 1);\n            int64 max_m = (x - base_n) / L;\n            ans += max_m + 1; // m can be 0, 1, ..., max_m\n        }\n    }\n    \n    cout << ans << \"\\n\";\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```cpp\n#include <bits/stdc++.h>\nusing namespace std;\nusing int64 = long long;\n\nint64 mod_pow(int64 a, int64 e, int64 mod) {\n    int64 res = 1 % mod;\n    while (e > 0) {\n        if (e & 1) res = (__int128)res * a % mod;\n        a = (__int128)a * a % mod;\n        e >>= 1;\n    }\n    return res;\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    \n    int64 a, b, p, x;\n    if (!(cin >> a >> b >> p >> x)) return 0;\n    \n    int64 inv_a = mod_pow(a, p - 2, p);\n    int64 period = p * (p - 1); // lcm(p, p-1)\n    int64 cur = 1; // a^0 mod p\n    int64 ans = 0;\n    \n    for (int64 n_mod = 0; n_mod < p - 1; ++n_mod) {\n        // n \u2261 n_mod (mod p-1)\n        // n \u2261 b * cur^{-1} (mod p)\n        int64 inv_cur = mod_pow(cur, p - 2, p);\n        int64 n_mod_p = (__int128)b * inv_cur % p;\n        \n        // Solve CRT:\n        // n = n_mod + k*(p-1) \u2261 n_mod_p (mod p)\n        // => k*(p-1) \u2261 n_mod_p - n_mod (mod p)\n        // Since p-1 \u2261 -1 (mod p), k \u2261 n_mod - n_mod_p (mod p)\n        int64 k = (n_mod - n_mod_p) % p;\n        if (k < 0) k += p;\n        \n        // Smallest n >= 1 satisfying both congruences\n        int64 n0 = n_mod + k * (p - 1);\n        if (n0 == 0) n0 += period; // n must be positive\n        \n        if (n0 <= x) {\n            ans += 1 + (x - n0) / period;\n        }\n        \n        cur = (__int128)cur * a % p;\n    }\n    \n    cout << ans << '\\n';\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```cpp\n#include <bits/stdc++.h>\nusing namespace std;\nusing int64 = long long;\n\nint64 mod_pow(int64 a, int64 e, int64 mod) {\n    int64 r = 1 % mod;\n    a %= mod;\n    while (e) {\n        if (e & 1) r = (__int128)r * a % mod;\n        a = (__int128)a * a % mod;\n        e >>= 1;\n    }\n    return r;\n}\n\n// solve n * a^n \u2261 b (mod p) for 1 <= n <= x\n// p is prime, 1 <= a,b < p, x up to 1e12, p up to 1e6+3\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    \n    int64 a, b, p, x;\n    if (!(cin >> a >> b >> p >> x)) return 0;\n    \n    // n * a^n \u2261 b (mod p)\n    // Let n = k * (p-1) + r? No.\n    // Group n by n mod (p-1) for exponent and n mod p for multiplication?\n    // Actually: n * a^n mod p depends on n mod p for the factor n, and n mod (p-1) for a^n (by Fermat).\n    // So n is determined modulo lcm(p, p-1) = p*(p-1) (since p and p-1 coprime).\n    \n    // We want count of n in [1, x] satisfying that.\n    // For each possible n modulo L = p*(p-1), we can check if congruence holds.\n    // But L up to ~1e12, too large to iterate all. Instead, iterate r = n mod (p-1) from 0 to p-2.\n    // Then a^n \u2261 a^r (mod p).\n    // Equation: n * a^r \u2261 b (mod p).\n    // Let A = a^r mod p. Since a is not 0 mod p, A \u2260 0, invertible.\n    // So n \u2261 b * A^{-1} (mod p).\n    // We have congruences:\n    // n \u2261 r (mod p-1)\n    // n \u2261 c (mod p), where c \u2261 b * (a^r)^{-1} mod p.\n    // By CRT, since p and p-1 are coprime, there is a unique solution modulo L = p*(p-1).\n    // Let n0 be that solution in [0, L-1]. Valid n are n0 + k*L for k >= 0.\n    // For each r, compute the number of n in [1, x] congruent to n0 mod L.\n    // Sum over r=0..p-2.\n    \n    int64 M1 = p - 1;\n    int64 M2 = p;\n    int64 L = M1 * M2; // p*(p-1) <= ~1e12\n    \n    // Precompute modular inverses? We'll need inverse of a^r mod p.\n    // Better: compute a^r iteratively.\n    \n    int64 ans = 0;\n    \n    // For each r in [0, p-2]\n    // n \u2261 r (mod p-1)\n    // a^n = a^r (mod p)\n    // n \u2261 b * (a^r)^{-1} (mod p)\n    // Solve by CRT.\n    \n    // CRT: n = r + (p-1) * t \u2261 c (mod p)\n    // (p-1)*t \u2261 c - r (mod p)\n    // Since p-1 \u2261 -1 (mod p), -t \u2261 c - r (mod p) => t \u2261 r - c (mod p)\n    // So t = (r - c) mod p.\n    // Then n0 = r + (p-1)*t. This is in [0, L-1].\n    \n    // We need a^r and its inverse.\n    // Since a^r is used for many r, we can compute iteratively.\n    // a^0 = 1.\n    // For each r, a^r = (a^(r-1) * a) % p.\n    // Inverse: (a^r)^{-1} = (a^{-1})^r or use mod_pow.\n    // Since p <= 1e6+3, computing inverse via Fermat for each r is O(p log p) which is okay (p up to ~1e6, log p ~20 => 2e7 ops).\n    // But faster: compute inv_a = mod_pow(a, p-2, p) and then iteratively.\n    \n    int64 inv_a = mod_pow(a, p - 2, p);\n    int64 a_pow_r = 1; // a^0\n    int64 inv_a_pow_r = 1; // (a^0)^{-1} = 1\n    \n    for (int64 r = 0; r <= p - 2; ++r) {\n        // a^r = a_pow_r\n        // Inv(a^r) = inv_a_pow_r\n        int64 A = a_pow_r;\n        int64 invA = inv_a_pow_r;\n        \n        // c = b * invA mod p\n        int64 c = (__int128)b * invA % p;\n        \n        // n \u2261 r (mod p-1)\n        // n \u2261 c (mod p)\n        // t = (r - c) mod p\n        int64 t = r - c;\n        if (t < 0) t += p;\n        // now t in [0, p-1]\n        int64 n0 = r + M1 * t; // n0 < (p-1) + (p-1)*(p-1) = (p-1)*p = L\n        // n0 is in [0, L-1]\n        \n        // Count k >= 0 such that 1 <= n0 + k*L <= x\n        // If n0 == 0, first valid is L (k=1). If n0 > 0, first is n0 (k=0).\n        if (n0 == 0) {\n            // n = L, 2L, ...\n            if (L <= x) {\n                ans += x / L;\n            }\n        } else {\n            // n = n0, n0+L, ...\n            if (n0 <= x) {\n                ans += 1 + (x - n0) / L;\n            }\n        }\n        \n        // Update powers for next r\n        a_pow_r = (__int128)a_pow_r * a % p;\n        inv_a_pow_r = (__int128)inv_a_pow_r * inv_a % p;\n    }\n    \n    cout << ans << \"\\n\";\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```cpp\n#include <bits/stdc++.h>\nusing namespace std;\nusing int64 = long long;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    \n    int64 a, b, p, x;\n    if (!(cin >> a >> b >> p >> x)) return 0;\n    \n    vector<int64> pow_a(p);\n    pow_a[0] = 1 % p; // p >= 2, so 1%p = 1\n    for (int64 i = 1; i < p; ++i) {\n        pow_a[i] = (pow_a[i - 1] * a) % p;\n    }\n    \n    vector<int64> inv_pow(p);\n    inv_pow[0] = 1;\n    // fermat's little theorem: inverse is pow(p-2)\n    // compute inverse of a first\n    auto mod_pow = [p](int64 base, int64 exp) {\n        int64 res = 1 % p;\n        while (exp > 0) {\n            if (exp & 1) res = (res * base) % p;\n            base = (base * base) % p;\n            exp >>= 1;\n        }\n        return res;\n    };\n    \n    int64 inv_a = mod_pow(a, p - 2);\n    for (int64 i = 1; i < p; ++i) {\n        inv_pow[i] = (inv_pow[i - 1] * inv_a) % p;\n    }\n    \n    vector<int64> inv(p);\n    for (int64 i = 1; i < p; ++i) {\n        inv[i] = mod_pow(i, p - 2);\n    }\n    \n    int64 ans = 0;\n    for (int64 k = 0; k < p - 1; ++k) {\n        int64 val = (b * inv_pow[k]) % p;\n        int64 n0 = (val * inv[k]) % p;\n        int64 L = (p - 1) * n0 + k;\n        int64 M = p * (p - 1);\n        if (L >= 1 && L <= x) {\n            ans += 1 + (x - L) / M;\n        } else if (L == 0) {\n            int64 first = M;\n            if (first <= x) ans += 1 + (x - first) / M;\n        }\n        // L will never be negative since n0 >= 0, k >= 0\n    }\n    cout << ans << \"\\n\";\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 4167,
+            "prompt_tokens": 313,
+            "total_tokens": 4480
+        },
+        "prompt": "Write a program in C++ to solve this programming problem:\nDescription: Given an integer $$$x$$$. Your task is to find out how many positive integers $$$n$$$ ($$$1 \\leq n \\leq x$$$) satisfy $$$$$$n \\cdot a^n \\equiv b \\quad (\\textrm{mod}\\;p),$$$$$$ where $$$a, b, p$$$ are all known constants.\nInput Specification: The only line contains four integers $$$a,b,p,x$$$ ($$$2 \\leq p \\leq 10^6+3$$$, $$$1 \\leq a,b &lt; p$$$, $$$1 \\leq x \\leq 10^{12}$$$). It is guaranteed that $$$p$$$ is a prime.\nOutput Specification: Print a single integer: the number of possible answers $$$n$$$.\n\nSample Input:\n2 3 5 8\nSample Output:\n2\n\nSample Input:\n4 6 7 13\nSample Output:\n1\n\nSample Input:\n233 233 10007 1\nSample Output:\n1\n\nNotes: NoteIn the first sample, we can see that $$$n=2$$$ and $$$n=8$$$ are possible answers.\nTake input from standard input and output to standard output\nProvide the C++ code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "4b9f470e5889da29affae6376f6c9f6a",
+        "difficulty": 2100,
+        "prob_desc_sample_inputs": [
+            "2 3 5 8",
+            "4 6 7 13",
+            "233 233 10007 1"
+        ],
+        "prob_desc_time_limit": "3 seconds",
+        "tags": [
+            "math",
+            "chinese remainder theorem",
+            "number theory"
+        ],
+        "prob_desc_output_spec": "Print a single integer: the number of possible answers $$$n$$$.",
+        "prob_desc_input_spec": "The only line contains four integers $$$a,b,p,x$$$ ($$$2 \\leq p \\leq 10^6+3$$$, $$$1 \\leq a,b &lt; p$$$, $$$1 \\leq x \\leq 10^{12}$$$). It is guaranteed that $$$p$$$ is a prime.",
+        "lang_cluster": "C++",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first sample, we can see that $$$n=2$$$ and $$$n=8$$$ are possible answers.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Given an integer $$$x$$$. Your task is to find out how many positive integers $$$n$$$ ($$$1 \\leq n \\leq x$$$) satisfy $$$$$$n \\cdot a^n \\equiv b \\quad (\\textrm{mod}\\;p),$$$$$$ where $$$a, b, p$$$ are all known constants.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1517403900",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "2",
+            "1",
+            "1"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"2 3 5 8\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"4 6 7 13\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"233 233 10007 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"338792 190248 339821 152634074578\\r\\n\", \"output\": [\"449263\"]}, {\"input\": \"629260 663548 739463 321804928248\\r\\n\", \"output\": [\"434818\"]}, {\"input\": \"656229 20757 818339 523535590429\\r\\n\", \"output\": [\"639482\"]}, {\"input\": \"1000002 1000002 1000003 1000000000000\\r\\n\", \"output\": [\"999998\"]}, {\"input\": \"345 2746 1000003 5000000\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"802942 824238 836833 605503824329\\r\\n\", \"output\": [\"723664\"]}, {\"input\": \"1 1 2 880336470888\\r\\n\", \"output\": [\"440168235444\"]}, {\"input\": \"2 2 3 291982585081\\r\\n\", \"output\": [\"97327528361\"]}, {\"input\": \"699601 39672 1000003 391631540387\\r\\n\", \"output\": [\"391905\"]}, {\"input\": \"9 1 11 792412106895\\r\\n\", \"output\": [\"72037464262\"]}, {\"input\": \"85 535 541 680776274925\\r\\n\", \"output\": [\"1258366493\"]}, {\"input\": \"3153 4504 7919 903755230811\\r\\n\", \"output\": [\"114124839\"]}, {\"input\": \"10021 18448 20719 509684975746\\r\\n\", \"output\": [\"24599907\"]}, {\"input\": \"66634 64950 66889 215112576953\\r\\n\", \"output\": [\"3215965\"]}, {\"input\": \"585128 179390 836839 556227387547\\r\\n\", \"output\": [\"664796\"]}, {\"input\": \"299973 381004 1000003 140225320941\\r\\n\", \"output\": [\"140481\"]}, {\"input\": \"941641 359143 1000003 851964325687\\r\\n\", \"output\": [\"851984\"]}, {\"input\": \"500719 741769 1000003 596263138944\\r\\n\", \"output\": [\"596056\"]}, {\"input\": \"142385 83099 1000003 308002143690\\r\\n\", \"output\": [\"307937\"]}, {\"input\": \"891986 300056 999983 445202944465\\r\\n\", \"output\": [\"445451\"]}, {\"input\": \"620328 378284 999983 189501757723\\r\\n\", \"output\": [\"189574\"]}, {\"input\": \"524578 993938 999979 535629124351\\r\\n\", \"output\": [\"535377\"]}, {\"input\": \"419620 683571 999979 243073161801\\r\\n\", \"output\": [\"243611\"]}, {\"input\": \"339138 549930 999883 962863668031\\r\\n\", \"output\": [\"962803\"]}, {\"input\": \"981603 635385 999233 143056117417\\r\\n\", \"output\": [\"143126\"]}, {\"input\": \"416133 340425 998561 195227456237\\r\\n\", \"output\": [\"195090\"]}, {\"input\": \"603835 578057 996323 932597132292\\r\\n\", \"output\": [\"936103\"]}, {\"input\": \"997998 999323 1000003 999968459613\\r\\n\", \"output\": [\"999964\"]}, {\"input\": \"997642 996418 999983 999997055535\\r\\n\", \"output\": [\"1000007\"]}, {\"input\": \"812415 818711 820231 999990437063\\r\\n\", \"output\": [\"1219017\"]}, {\"input\": \"994574 993183 1000003 999974679059\\r\\n\", \"output\": [\"999965\"]}, {\"input\": \"999183 998981 999979 999970875649\\r\\n\", \"output\": [\"999996\"]}, {\"input\": \"1 1 2 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"699601 39672 1000003 1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"4 1 5 15\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"912896 91931 999983 236754\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"154814 35966 269041 1234567\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"1 2 5 470854713201\\r\\n\", \"output\": [\"94170942640\"]}, {\"input\": \"3 27 29 968042258975\\r\\n\", \"output\": [\"33380767549\"]}, {\"input\": \"473 392 541 108827666667\\r\\n\", \"output\": [\"201160200\"]}, {\"input\": \"8 27 29 193012366642\\r\\n\", \"output\": [\"6655598851\"]}, {\"input\": \"1302 504 1987 842777827450\\r\\n\", \"output\": [\"424145863\"]}, {\"input\": \"693528 398514 1000003 1000000000000\\r\\n\", \"output\": [\"999995\"]}, {\"input\": \"533806 514846 1000003 999999999999\\r\\n\", \"output\": [\"999997\"]}, {\"input\": \"812509 699256 1000003 999999999999\\r\\n\", \"output\": [\"999997\"]}, {\"input\": \"28361 465012 1000003 1000000000000\\r\\n\", \"output\": [\"999996\"]}, {\"input\": \"28361 465012 1000003 12693229\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"28361 465012 1000003 13271836\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"28361 465012 1000003 13271835\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"28361 465012 1000003 13421000\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"28361 465012 1000003 19609900\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"28361 465012 1000003 12693228\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"1 1 2 1000000000000\\r\\n\", \"output\": [\"500000000000\"]}, {\"input\": \"1 1000002 1000003 1000000000000\\r\\n\", \"output\": [\"999997\"]}, {\"input\": \"1 44444 1000003 999999999998\\r\\n\", \"output\": [\"999997\"]}, {\"input\": \"2 1000002 1000003 1000000000000\\r\\n\", \"output\": [\"1000001\"]}, {\"input\": \"2 23333 1000003 1000000000000\\r\\n\", \"output\": [\"999999\"]}]"
+    }
+}

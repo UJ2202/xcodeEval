@@ -1,0 +1,391 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-89c6fb9810a57f62",
+        "created": 1787073568,
+        "model": "qwen-nvfp4",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.27.1-d7a14dad",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <map>\n#include <vector>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string s;\n    cin >> s;\n\n    // We need to count the number of contiguous substrings that return to the start.\n    // A substring from index i to j (inclusive) returns to start if the net displacement is zero.\n    // Let prefix[i] be the position after executing the first i commands (prefix[0] = (0,0)).\n    // Then substring from i to j-1 (0-indexed, commands i to j-1) has net displacement prefix[j] - prefix[i].\n    // So we need prefix[j] == prefix[i] for i < j.\n    // The number of such pairs (i, j) with i < j is the answer.\n\n    // Compute prefix positions\n    vector<pair<int, int>> prefix(n + 1);\n    prefix[0] = {0, 0};\n    for (int i = 0; i < n; i++) {\n        int x = prefix[i].first;\n        int y = prefix[i].second;\n        if (s[i] == 'U') y++;\n        else if (s[i] == 'D') y--;\n        else if (s[i] == 'R') x++;\n        else if (s[i] == 'L') x--;\n        prefix[i + 1] = {x, y};\n    }\n\n    // Count occurrences of each prefix position\n    map<pair<int, int>, int> count;\n    for (int i = 0; i <= n; i++) {\n        count[prefix[i]]++;\n    }\n\n    // For each position that appears k times, the number of pairs is C(k, 2) = k*(k-1)/2\n    long long ans = 0;\n    for (auto& p : count) {\n        long long k = p.second;\n        ans += k * (k - 1) / 2;\n    }\n\n    cout << ans << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <map>\n#include <vector>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string s;\n    cin >> s;\n\n    // We need to count the number of contiguous substrings [i, j] such that\n    // the net displacement is zero.\n    // Let prefix[i] be the position after executing commands 0 to i-1.\n    // prefix[0] = (0, 0)\n    // prefix[i+1] = prefix[i] + move(s[i])\n    // A substring from i to j-1 (0-indexed, inclusive start, exclusive end) has net displacement\n    // prefix[j] - prefix[i]. We want this to be (0,0), so prefix[j] == prefix[i].\n    // So we need to count pairs (i, j) with 0 <= i < j <= n such that prefix[i] == prefix[j].\n\n    // Compute prefix positions\n    vector<pair<int, int>> prefix(n + 1);\n    prefix[0] = {0, 0};\n    for (int i = 0; i < n; i++) {\n        int x = prefix[i].first;\n        int y = prefix[i].second;\n        switch (s[i]) {\n            case 'U': y++; break;\n            case 'D': y--; break;\n            case 'R': x++; break;\n            case 'L': x--; break;\n        }\n        prefix[i + 1] = {x, y};\n    }\n\n    // Count occurrences of each position\n    map<pair<int, int>, long long> count;\n    for (int i = 0; i <= n; i++) {\n        count[prefix[i]]++;\n    }\n\n    // For each position that appears k times, the number of pairs is k*(k-1)/2\n    long long result = 0;\n    for (auto& p : count) {\n        long long k = p.second;\n        result += k * (k - 1) / 2;\n    }\n\n    cout << result << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <unordered_map>\n#include <vector>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string s;\n    cin >> s;\n\n    // We need to count the number of contiguous substrings that return to the start.\n    // A substring from i to j (inclusive) returns to start if the net displacement is zero.\n    // Let's define prefix sums.\n    // Let (x_k, y_k) be the position after executing the first k commands (k from 0 to n).\n    // (x_0, y_0) = (0, 0)\n    // For a substring from i to j (0-indexed, commands i, i+1, ..., j),\n    // the net displacement is (x_{j+1} - x_i, y_{j+1} - y_i).\n    // We want this to be (0, 0), so x_{j+1} == x_i and y_{j+1} == y_i.\n    // So we need to count pairs (i, j) with 0 <= i < j+1 <= n such that (x_i, y_i) == (x_{j+1}, y_{j+1}).\n    // Let k = j+1, so 0 <= i < k <= n.\n    // We need to count pairs (i, k) with 0 <= i < k <= n such that (x_i, y_i) == (x_k, y_k).\n\n    // Compute prefix positions.\n    vector<int> px(n + 1, 0), py(n + 1, 0);\n    for (int i = 0; i < n; i++) {\n        px[i + 1] = px[i];\n        py[i + 1] = py[i];\n        if (s[i] == 'U') {\n            py[i + 1]++;\n        } else if (s[i] == 'D') {\n            py[i + 1]--;\n        } else if (s[i] == 'R') {\n            px[i + 1]++;\n        } else if (s[i] == 'L') {\n            px[i + 1]--;\n        }\n    }\n\n    // Now count the number of pairs (i, k) with 0 <= i < k <= n such that (px[i], py[i]) == (px[k], py[k]).\n    // We can do this by iterating through k from 0 to n, and for each k, count how many previous i (0 <= i < k) have the same (px[i], py[i]).\n    // We can use a map to store the count of each position seen so far.\n\n    unordered_map<string, long long> countMap;\n    long long result = 0;\n\n    for (int k = 0; k <= n; k++) {\n        string key = to_string(px[k]) + \",\" + to_string(py[k]);\n        // Add the number of previous occurrences of this position\n        if (countMap.find(key) != countMap.end()) {\n            result += countMap[key];\n        }\n        // Increment the count for this position\n        countMap[key]++;\n    }\n\n    cout << result << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <unordered_map>\n#include <vector>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string s;\n    cin >> s;\n\n    // We need to count the number of contiguous substrings that return to the start.\n    // A substring from index i to j (inclusive) returns to start if the net displacement is zero.\n    // Let prefix[i] be the displacement after executing commands from 0 to i-1.\n    // Then substring from i to j has net displacement = prefix[j+1] - prefix[i].\n    // We want prefix[j+1] == prefix[i].\n    // So we need to count pairs (i, j) with 0 <= i < j+1 <= n such that prefix[i] == prefix[j+1].\n    // Let k = j+1, so 0 <= i < k <= n, and prefix[i] == prefix[k].\n    // This is equivalent to counting the number of pairs (i, k) with 0 <= i < k <= n such that prefix[i] == prefix[k].\n\n    // Compute prefix displacements\n    vector<pair<int, int>> prefix(n + 1);\n    prefix[0] = {0, 0};\n    for (int i = 0; i < n; i++) {\n        prefix[i + 1] = prefix[i];\n        if (s[i] == 'U') {\n            prefix[i + 1].second++;\n        } else if (s[i] == 'D') {\n            prefix[i + 1].second--;\n        } else if (s[i] == 'R') {\n            prefix[i + 1].first++;\n        } else if (s[i] == 'L') {\n            prefix[i + 1].first--;\n        }\n    }\n\n    // Count occurrences of each prefix displacement\n    unordered_map<string, long long> count;\n    for (int i = 0; i <= n; i++) {\n        string key = to_string(prefix[i].first) + \",\" + to_string(prefix[i].second);\n        count[key]++;\n    }\n\n    // For each displacement, if it occurs c times, the number of pairs is c*(c-1)/2\n    long long result = 0;\n    for (auto& p : count) {\n        long long c = p.second;\n        result += c * (c - 1) / 2;\n    }\n\n    cout << result << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <unordered_map>\n#include <vector>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string s;\n    cin >> s;\n\n    // We need to count the number of contiguous substrings that return to start.\n    // A substring from i to j (inclusive) returns to start if the net displacement is zero.\n    // Let prefix[i] be the position after executing commands 0 to i-1.\n    // prefix[0] = (0,0)\n    // prefix[i+1] = prefix[i] + move(s[i])\n    // Substring from i to j (0-indexed, inclusive) has net displacement = prefix[j+1] - prefix[i].\n    // We need prefix[j+1] == prefix[i].\n    // So we need to count pairs (i, j) such that 0 <= i < j+1 <= n and prefix[i] == prefix[j+1].\n    // Let k = j+1, so 0 <= i < k <= n and prefix[i] == prefix[k].\n    // We can iterate k from 1 to n, and for each k, count how many i in [0, k-1] have prefix[i] == prefix[k].\n\n    // Compute prefix positions\n    vector<pair<int, int>> prefix(n + 1);\n    prefix[0] = {0, 0};\n    for (int i = 0; i < n; i++) {\n        int x = prefix[i].first;\n        int y = prefix[i].second;\n        if (s[i] == 'U') {\n            y += 1;\n        } else if (s[i] == 'D') {\n            y -= 1;\n        } else if (s[i] == 'R') {\n            x += 1;\n        } else if (s[i] == 'L') {\n            x -= 1;\n        }\n        prefix[i + 1] = {x, y};\n    }\n\n    // Count occurrences of each prefix position\n    // For each position, if it appears c times, the number of pairs is c*(c-1)/2\n    unordered_map<long long, int> count;\n    for (int i = 0; i <= n; i++) {\n        long long key = (long long)prefix[i].first * 1000000LL + prefix[i].second;\n        // To avoid collision, use a better key\n        // Since n <= 200, coordinates are in [-200, 200], so we can use a pair or a string\n        // Let's use a different approach: encode as a string or use a map with pair\n        // Actually, let's just use a map with pair<int,int>\n    }\n\n    // Redo with map<pair<int,int>, int>\n    map<pair<int, int>, int> freq;\n    for (int i = 0; i <= n; i++) {\n        freq[prefix[i]]++;\n    }\n\n    long long result = 0;\n    for (auto& p : freq) {\n        long long c = p.second;\n        result += c * (c - 1) / 2;\n    }\n\n    cout << result << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <unordered_map>\n#include <vector>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string s;\n    cin >> s;\n\n    // We need to count the number of contiguous substrings that return to start.\n    // A substring from i to j (inclusive) returns to start if the net displacement is zero.\n    // Let prefix[i] be the displacement after executing the first i commands (0-indexed, so prefix[0] = (0,0)).\n    // Then substring from i to j (0-indexed, inclusive) has net displacement prefix[j+1] - prefix[i].\n    // This is zero iff prefix[j+1] == prefix[i].\n    // So we need to count pairs (i, j) with 0 <= i < j+1 <= n such that prefix[i] == prefix[j+1].\n    // Let k = j+1, so we need pairs (i, k) with 0 <= i < k <= n such that prefix[i] == prefix[k].\n    // This is equivalent to: for each distinct displacement value, if it appears c times in the prefix array (of length n+1),\n    // then the number of pairs is C(c, 2) = c*(c-1)/2.\n\n    // Compute prefix displacements\n    vector<pair<int, int>> prefix(n + 1);\n    prefix[0] = {0, 0};\n    for (int i = 0; i < n; i++) {\n        int x = prefix[i].first;\n        int y = prefix[i].second;\n        switch (s[i]) {\n            case 'U': y++; break;\n            case 'D': y--; break;\n            case 'L': x--; break;\n            case 'R': x++; break;\n        }\n        prefix[i + 1] = {x, y};\n    }\n\n    // Count occurrences of each displacement\n    unordered_map<long long, int> count;\n    for (int i = 0; i <= n; i++) {\n        long long key = (long long)prefix[i].first * 1000000LL + prefix[i].second;\n        // Since n <= 200, coordinates are in [-200, 200], so this key is safe.\n        count[key]++;\n    }\n\n    long long result = 0;\n    for (auto& p : count) {\n        long long c = p.second;\n        result += c * (c - 1) / 2;\n    }\n\n    cout << result << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <map>\n#include <utility>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string s;\n    cin >> s;\n\n    // Map from (x, y) to count of times this position has been seen\n    map<pair<int, int>, int> posCount;\n    int x = 0, y = 0;\n    posCount[{0, 0}] = 1;\n\n    long long count = 0;\n\n    for (int i = 0; i < n; i++) {\n        char c = s[i];\n        if (c == 'U') y++;\n        else if (c == 'D') y--;\n        else if (c == 'R') x++;\n        else if (c == 'L') x--;\n\n        pair<int, int> pos = {x, y};\n        if (posCount.find(pos) != posCount.end()) {\n            count += posCount[pos];\n        }\n        posCount[pos]++;\n    }\n\n    cout << count << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <map>\n#include <utility>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string s;\n    cin >> s;\n\n    // Map from (x, y) to count of how many times we've seen this position\n    map<pair<int, int>, int> posCount;\n    \n    int x = 0, y = 0;\n    // Start at position (0, 0) with count 1\n    posCount[{0, 0}] = 1;\n    \n    long long result = 0;\n    \n    for (int i = 0; i < n; i++) {\n        char c = s[i];\n        if (c == 'U') {\n            y++;\n        } else if (c == 'D') {\n            y--;\n        } else if (c == 'R') {\n            x++;\n        } else if (c == 'L') {\n            x--;\n        }\n        \n        // If we've seen this position before, add the count\n        if (posCount.find({x, y}) != posCount.end()) {\n            result += posCount[{x, y}];\n        }\n        posCount[{x, y}]++;\n    }\n    \n    cout << result << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 8,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <unordered_map>\n#include <vector>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string s;\n    cin >> s;\n\n    // We need to count the number of contiguous substrings that return to origin.\n    // Let prefix[i] be the position after executing the first i commands.\n    // prefix[0] = (0, 0)\n    // A substring from l to r (0-indexed, inclusive) returns to origin if prefix[r+1] == prefix[l].\n    // So we need to count pairs (i, j) with i < j such that prefix[i] == prefix[j].\n    // The number of such pairs for a given position is C(count, 2) where count is the number of times that position appears in the prefix array.\n\n    // Compute prefix positions\n    vector<pair<int, int>> prefix(n + 1);\n    prefix[0] = {0, 0};\n    for (int i = 0; i < n; i++) {\n        int x = prefix[i].first;\n        int y = prefix[i].second;\n        if (s[i] == 'U') {\n            y += 1;\n        } else if (s[i] == 'D') {\n            y -= 1;\n        } else if (s[i] == 'R') {\n            x += 1;\n        } else if (s[i] == 'L') {\n            x -= 1;\n        }\n        prefix[i + 1] = {x, y};\n    }\n\n    // Count occurrences of each prefix position\n    unordered_map<long long, int> count;\n    for (int i = 0; i <= n; i++) {\n        long long key = (long long)prefix[i].first * 1000000LL + prefix[i].second;\n        // Since n <= 200, coordinates are in [-200, 200], so this key is safe.\n        // Alternatively, we can use a pair hash or just use a map with pair.\n        // Let's use a simpler approach: encode as a single integer.\n        // x and y are in [-200, 200], so we can offset by 200 to make non-negative.\n        // key = (x + 200) * 401 + (y + 200)\n        // But let's just use the direct encoding since the range is small.\n        count[key]++;\n    }\n\n    long long result = 0;\n    for (auto& p : count) {\n        long long c = p.second;\n        result += c * (c - 1) / 2;\n    }\n\n    cout << result << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 9,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <unordered_map>\n#include <vector>\n\nint main() {\n    int n;\n    std::cin >> n;\n    std::string s;\n    std::cin >> s;\n\n    // We need to count the number of contiguous substrings that return to the start.\n    // A substring from index i to j (inclusive) returns to start if the net displacement is zero.\n    // Let prefix[i] be the position after executing commands 0 to i-1.\n    // Then substring from i to j-1 (0-indexed, length j-i) has net displacement prefix[j] - prefix[i].\n    // We want prefix[j] == prefix[i].\n    // So we need to count pairs (i, j) with 0 <= i < j <= n such that prefix[i] == prefix[j].\n\n    // prefix[0] = (0,0)\n    // prefix[k] for k=1..n\n\n    // We'll store the count of each prefix position seen so far.\n    // Start with prefix[0] = (0,0)\n\n    std::unordered_map<std::pair<int,int>, long long> count;\n    // Use a custom hash for pair<int,int>\n    struct PairHash {\n        size_t operator()(const std::pair<int,int>& p) const {\n            // Simple hash\n            return std::hash<int>()(p.first) * 1000000007LL + std::hash<int>()(p.second);\n        }\n    };\n    std::unordered_map<std::pair<int,int>, long long, PairHash> freq;\n\n    int x = 0, y = 0;\n    freq[{x, y}] = 1; // prefix[0]\n\n    long long ans = 0;\n\n    for (int i = 0; i < n; i++) {\n        char c = s[i];\n        if (c == 'U') y++;\n        else if (c == 'D') y--;\n        else if (c == 'R') x++;\n        else if (c == 'L') x--;\n\n        // Now (x, y) is prefix[i+1]\n        // Any previous prefix with the same (x,y) forms a valid substring\n        if (freq.find({x, y}) != freq.end()) {\n            ans += freq[{x, y}];\n        }\n        freq[{x, y}]++;\n    }\n\n    std::cout << ans << std::endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 10,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <unordered_map>\n#include <vector>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string s;\n    cin >> s;\n\n    // We need to count the number of contiguous substrings that return to start.\n    // A substring from i to j (inclusive) returns to start if the net displacement is zero.\n    // Let prefix[i] be the position after executing commands 0 to i-1.\n    // prefix[0] = (0, 0)\n    // prefix[i+1] = prefix[i] + move(s[i])\n    // Substring from i to j (0-indexed, inclusive) corresponds to prefix[j+1] - prefix[i] = (0,0)\n    // So we need prefix[j+1] == prefix[i]\n    // We can count the number of pairs (i, j) with i < j+1 such that prefix[i] == prefix[j+1]\n    // Let k = j+1, so we need i < k and prefix[i] == prefix[k]\n    // So for each position k from 1 to n, we count how many i in [0, k-1] have prefix[i] == prefix[k]\n\n    // Compute prefix positions\n    vector<pair<int, int>> prefix(n + 1);\n    prefix[0] = {0, 0};\n    for (int i = 0; i < n; i++) {\n        int x = prefix[i].first;\n        int y = prefix[i].second;\n        switch (s[i]) {\n            case 'U': y++; break;\n            case 'D': y--; break;\n            case 'R': x++; break;\n            case 'L': x--; break;\n        }\n        prefix[i + 1] = {x, y};\n    }\n\n    // Count occurrences of each prefix position\n    // For each k from 1 to n, we want to count the number of i in [0, k-1] such that prefix[i] == prefix[k]\n    // We can iterate k from 1 to n, and maintain a map of counts of prefix positions seen so far (for indices 0 to k-1)\n\n    unordered_map<long long, int> countMap;\n    // Encode (x, y) into a single key\n    auto encode = [](int x, int y) -> long long {\n        // x and y can be in range [-200, 200]\n        // Use offset to make non-negative\n        return (long long)(x + 200) * 1000 + (y + 200);\n    };\n\n    long long result = 0;\n    // Initialize with prefix[0]\n    countMap[encode(prefix[0].first, prefix[0].second)] = 1;\n\n    for (int k = 1; k <= n; k++) {\n        long long key = encode(prefix[k].first, prefix[k].second);\n        if (countMap.find(key) != countMap.end()) {\n            result += countMap[key];\n        }\n        countMap[key]++;\n    }\n\n    cout << result << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 11,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <unordered_map>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string s;\n    cin >> s;\n\n    // We need to count the number of contiguous substrings [i, j] such that\n    // the net displacement is (0, 0).\n    // Let prefix[i] be the position after executing commands 0 to i-1.\n    // prefix[0] = (0, 0)\n    // prefix[i+1] = prefix[i] + move(s[i])\n    // A substring from i to j-1 (0-indexed, inclusive i, exclusive j) has net displacement\n    // prefix[j] - prefix[i]. We want this to be (0, 0), so prefix[j] == prefix[i].\n    // So we need to count pairs (i, j) with 0 <= i < j <= n such that prefix[i] == prefix[j].\n\n    // Use a map to store the count of each prefix position.\n    // Start with prefix[0] = (0, 0), count = 1.\n    // For each j from 1 to n, compute prefix[j], and add the count of prefix[j] seen so far to the answer.\n    // Then increment the count of prefix[j].\n\n    unordered_map<string, long long> count;\n    long long x = 0, y = 0;\n    string key = \"0,0\";\n    count[key] = 1;\n\n    long long ans = 0;\n\n    for (int i = 0; i < n; i++) {\n        char c = s[i];\n        if (c == 'U') y++;\n        else if (c == 'D') y--;\n        else if (c == 'R') x++;\n        else if (c == 'L') x--;\n\n        key = to_string(x) + \",\" + to_string(y);\n        if (count.find(key) != count.end()) {\n            ans += count[key];\n        }\n        count[key]++;\n    }\n\n    cout << ans << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 12,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <unordered_map>\n#include <vector>\n\nint main() {\n    int n;\n    std::cin >> n;\n    std::string s;\n    std::cin >> s;\n\n    // We need to count the number of contiguous substrings that return to the start.\n    // A substring from index i to j (inclusive) returns to start if the net displacement is zero.\n    // Let prefix[i] be the position after executing commands 0 to i-1.\n    // prefix[0] = (0, 0)\n    // prefix[i+1] = prefix[i] + move(s[i])\n    // The substring from i to j (0-indexed, inclusive) has net displacement = prefix[j+1] - prefix[i].\n    // We want prefix[j+1] == prefix[i].\n    // So we need to count pairs (i, j) with 0 <= i < j+1 <= n such that prefix[i] == prefix[j+1].\n    // Let k = j+1, so 0 <= i < k <= n. We want prefix[i] == prefix[k].\n    // So we count the number of pairs (i, k) with 0 <= i < k <= n and prefix[i] == prefix[k].\n\n    // Compute prefix positions\n    std::vector<std::pair<int, int>> prefix(n + 1);\n    prefix[0] = {0, 0};\n    for (int i = 0; i < n; i++) {\n        int x = prefix[i].first;\n        int y = prefix[i].second;\n        if (s[i] == 'U') y++;\n        else if (s[i] == 'D') y--;\n        else if (s[i] == 'R') x++;\n        else if (s[i] == 'L') x--;\n        prefix[i + 1] = {x, y};\n    }\n\n    // Count occurrences of each prefix position\n    // For each position, if it appears c times, the number of pairs is c*(c-1)/2\n    std::unordered_map<std::pair<int, int>, long long> count;\n    // Need a hash for pair<int,int>\n    struct PairHash {\n        size_t operator()(const std::pair<int, int>& p) const {\n            // Simple hash\n            return std::hash<int>()(p.first) ^ (std::hash<int>()(p.second) << 1);\n        }\n    };\n    std::unordered_map<std::pair<int, int>, long long, PairHash> freq;\n\n    for (int i = 0; i <= n; i++) {\n        freq[prefix[i]]++;\n    }\n\n    long long result = 0;\n    for (auto& p : freq) {\n        long long c = p.second;\n        result += c * (c - 1) / 2;\n    }\n\n    std::cout << result << std::endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 13,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <unordered_map>\n#include <vector>\n\nint main() {\n    int n;\n    std::cin >> n;\n    std::string s;\n    std::cin >> s;\n\n    // We need to count the number of contiguous substrings that return to the start.\n    // A substring from index i to j (inclusive) returns to start if the net displacement is zero.\n    // Let's define prefix sums:\n    // x[i] = sum of horizontal moves from 0 to i-1 (R=+1, L=-1)\n    // y[i] = sum of vertical moves from 0 to i-1 (U=+1, D=-1)\n    // Then substring from i to j-1 (0-indexed, length j-i) has displacement:\n    // (x[j] - x[i], y[j] - y[i])\n    // We want x[j] == x[i] and y[j] == y[i].\n    // So we need to count pairs (i, j) with i < j such that (x[i], y[i]) == (x[j], y[j]).\n\n    // x[0] = 0, y[0] = 0\n    // For each position k from 0 to n, we have a prefix position (x[k], y[k]).\n    // We want to count the number of pairs (i, j) with 0 <= i < j <= n such that (x[i], y[i]) == (x[j], y[j]).\n\n    // We can use a map to store the count of each (x, y) pair seen so far.\n    // Initialize with (0, 0) having count 1 (for k=0).\n    // Then for each k from 1 to n, we compute (x[k], y[k]), add the current count of this pair to the answer,\n    // and increment the count for this pair.\n\n    std::unordered_map<std::pair<int, int>, long long> count;\n    // Need a hash for pair<int,int>\n    struct PairHash {\n        size_t operator()(const std::pair<int, int>& p) const {\n            return ((long long)p.first << 32) ^ (unsigned int)p.second;\n        }\n    };\n    std::unordered_map<std::pair<int, int>, long long, PairHash> freq;\n\n    int x = 0, y = 0;\n    freq[{x, y}] = 1;\n    long long ans = 0;\n\n    for (int i = 0; i < n; i++) {\n        char c = s[i];\n        if (c == 'U') y++;\n        else if (c == 'D') y--;\n        else if (c == 'R') x++;\n        else if (c == 'L') x--;\n\n        auto key = std::make_pair(x, y);\n        if (freq.find(key) != freq.end()) {\n            ans += freq[key];\n        }\n        freq[key]++;\n    }\n\n    std::cout << ans << std::endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 14,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <unordered_map>\n#include <vector>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string s;\n    cin >> s;\n\n    // Map from (x, y) to count of occurrences\n    unordered_map<long long, long long> countMap;\n    \n    // Initial position (0, 0)\n    long long x = 0, y = 0;\n    countMap[0] = 1; // encode (0,0) as 0\n    \n    long long total = 0;\n    \n    for (int i = 0; i < n; i++) {\n        char c = s[i];\n        if (c == 'U') y++;\n        else if (c == 'D') y--;\n        else if (c == 'R') x++;\n        else if (c == 'L') x--;\n        \n        // Encode (x, y) into a single long long\n        // Since n <= 200, x and y are in range [-200, 200]\n        // We can use: key = x * 1000 + y, but need to handle negatives\n        // Better: use a pair or encode with offset\n        // Let's use: key = (x + 1000) * 10000 + (y + 1000)\n        // Or simpler: since range is small, we can use a map with pair\n        // But unordered_map with long long is fine if we encode properly\n        \n        // Use: key = x * 10000 + y, but x and y can be negative\n        // Offset by 1000 to make positive\n        long long key = (x + 1000) * 10000LL + (y + 1000);\n        \n        // The number of substrings ending at i that return to start\n        // is the number of previous times we were at this position\n        total += countMap[key];\n        countMap[key]++;\n    }\n    \n    cout << total << endl;\n    \n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 15,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <map>\n#include <utility>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string s;\n    cin >> s;\n\n    // Map from (x, y) to count of times we've seen this position\n    // We start at (0, 0) before any commands\n    map<pair<int, int>, int> posCount;\n    posCount[{0, 0}] = 1;\n\n    int x = 0, y = 0;\n    long long result = 0;\n\n    for (int i = 0; i < n; i++) {\n        char c = s[i];\n        if (c == 'U') y++;\n        else if (c == 'D') y--;\n        else if (c == 'R') x++;\n        else if (c == 'L') x--;\n\n        // If we've been at this position before, each previous occurrence\n        // corresponds to a substring that returns to start\n        if (posCount.find({x, y}) != posCount.end()) {\n            result += posCount[{x, y}];\n        }\n        posCount[{x, y}]++;\n    }\n\n    cout << result << endl;\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 16,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <unordered_map>\n#include <vector>\n\nint main() {\n    int n;\n    std::cin >> n;\n    std::string s;\n    std::cin >> s;\n\n    // We need to count the number of contiguous substrings that return to origin.\n    // A substring from index i to j (inclusive) returns to origin if the net displacement is zero.\n    // Let's define prefix sums:\n    // Let (x[i], y[i]) be the position after executing the first i commands (0-indexed, so x[0]=y[0]=0).\n    // Then the substring from i to j-1 (0-indexed, length j-i) has net displacement:\n    // (x[j] - x[i], y[j] - y[i])\n    // This is zero iff x[j] == x[i] and y[j] == y[i].\n    // So we need to count pairs (i, j) with 0 <= i < j <= n such that (x[i], y[i]) == (x[j], y[j]).\n    // Note: i and j are prefix indices. The substring is s[i..j-1].\n    // We have n+1 prefix positions: index 0 to n.\n    // For each unique position (x, y), if it appears k times among the n+1 prefixes,\n    // then the number of pairs is C(k, 2) = k*(k-1)/2.\n\n    // Compute prefix positions\n    std::vector<int> px(n + 1, 0), py(n + 1, 0);\n    for (int i = 0; i < n; i++) {\n        px[i + 1] = px[i];\n        py[i + 1] = py[i];\n        if (s[i] == 'U') py[i + 1]++;\n        else if (s[i] == 'D') py[i + 1]--;\n        else if (s[i] == 'R') px[i + 1]++;\n        else if (s[i] == 'L') px[i + 1]--;\n    }\n\n    // Count occurrences of each (x, y) pair\n    std::unordered_map<std::pair<int, int>, int> count;\n    // Need a hash for pair<int,int>\n    // We can use a custom hash or encode into a single integer.\n    // Since n <= 200, x and y are in range [-200, 200].\n    // We can encode as (x + 200) * 401 + (y + 200) or similar.\n    // Or just use a map with pair key (C++11 and later support hashing for pair if we provide a hash, but standard unordered_map doesn't by default).\n    // Let's use std::map instead for simplicity, or encode.\n\n    // Let's encode: offset by 200, so range is [0, 400].\n    // key = (x + 200) * 1000 + (y + 200)\n    // Actually, let's just use a map with pair.\n\n    std::map<std::pair<int, int>, int> freq;\n    for (int i = 0; i <= n; i++) {\n        freq[{px[i], py[i]}]++;\n    }\n\n    long long ans = 0;\n    for (auto& p : freq) {\n        long long k = p.second;\n        ans += k * (k - 1) / 2;\n    }\n\n    std::cout << ans << std::endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 17,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <unordered_map>\n#include <vector>\n\nint main() {\n    int n;\n    std::cin >> n;\n    std::string s;\n    std::cin >> s;\n\n    // We need to count the number of contiguous substrings that return to the starting position.\n    // This is equivalent to counting pairs of indices (i, j) with i < j such that the prefix sum at i equals the prefix sum at j.\n    // Let's define the position after executing the first k commands as (x_k, y_k).\n    // The substring from index i to j-1 (0-indexed, commands i, i+1, ..., j-1) returns to start if (x_j - x_i, y_j - y_i) = (0, 0), i.e., x_j = x_i and y_j = y_i.\n    // So we need to count the number of pairs (i, j) with 0 <= i < j <= n such that (x_i, y_i) == (x_j, y_j).\n\n    // We'll store the prefix positions.\n    // Start at (0, 0) before any commands.\n    std::unordered_map<std::pair<int, int>, long long> count;\n    // Need a hash for pair<int,int>\n    struct PairHash {\n        size_t operator()(const std::pair<int, int>& p) const {\n            // A simple hash function\n            return std::hash<int>()(p.first) ^ (std::hash<int>()(p.second) << 1);\n        }\n    };\n\n    std::unordered_map<std::pair<int, int>, long long, PairHash> freq;\n    freq[{0, 0}] = 1; // Starting position\n\n    int x = 0, y = 0;\n    long long result = 0;\n\n    for (int i = 0; i < n; i++) {\n        char c = s[i];\n        if (c == 'U') y++;\n        else if (c == 'D') y--;\n        else if (c == 'R') x++;\n        else if (c == 'L') x--;\n\n        // Current position is (x, y)\n        // The number of substrings ending at position i (i.e., from some j to i) that return to start is equal to the number of previous positions equal to (x, y).\n        // Because if we have seen position (x, y) at indices j_1, j_2, ..., j_k (where j_m < i+1), then each substring from j_m to i returns to start.\n        // Wait, let's re-index.\n        // Let prefix[0] = (0,0).\n        // prefix[k] = position after k commands.\n        // Substring from l to r (1-indexed commands) corresponds to prefix[r] - prefix[l-1].\n        // We want prefix[r] == prefix[l-1].\n        // So for each r from 1 to n, we count how many l-1 (from 0 to r-1) have prefix[l-1] == prefix[r].\n        // That is, for each r, add freq[prefix[r]] to result, then increment freq[prefix[r]].\n\n        std::pair<int, int> pos = {x, y};\n        result += freq[pos];\n        freq[pos]++;\n    }\n\n    std::cout << result << std::endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 18,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <map>\n#include <vector>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string s;\n    cin >> s;\n\n    // We need to count the number of contiguous substrings that return to the starting position.\n    // This is equivalent to counting pairs (i, j) with i < j such that prefix[j] == prefix[i],\n    // where prefix[k] is the position after executing the first k commands.\n    // The substring from index i to j-1 (0-indexed) returns to start if prefix[j] == prefix[i].\n\n    // Let's define prefix[0] = (0, 0)\n    // prefix[k] = (x_k, y_k) for k from 0 to n\n\n    // We'll use a map to count occurrences of each position.\n    // For each position, if it occurs c times, then the number of pairs is c*(c-1)/2.\n\n    map<pair<int, int>, long long> posCount;\n    int x = 0, y = 0;\n    posCount[{x, y}] = 1; // prefix[0]\n\n    for (int i = 0; i < n; i++) {\n        char c = s[i];\n        if (c == 'U') y++;\n        else if (c == 'D') y--;\n        else if (c == 'R') x++;\n        else if (c == 'L') x--;\n        posCount[{x, y}]++;\n    }\n\n    long long result = 0;\n    for (auto& p : posCount) {\n        long long c = p.second;\n        result += c * (c - 1) / 2;\n    }\n\n    cout << result << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 19,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <string>\n#include <map>\n#include <utility>\n\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    string s;\n    cin >> s;\n\n    // We need to count the number of contiguous substrings that return to the starting position.\n    // A substring from index i to j (inclusive) returns to start if the net displacement is zero.\n    // Let's define prefix sums:\n    // Let (x[i], y[i]) be the position after executing commands from 0 to i-1.\n    // So x[0] = 0, y[0] = 0.\n    // After command i (0-indexed), the position changes.\n    // Let's define:\n    // pos[0] = (0, 0)\n    // pos[i+1] = pos[i] + displacement of s[i]\n    // A substring from l to r (0-indexed, inclusive) corresponds to commands s[l] to s[r].\n    // The net displacement is pos[r+1] - pos[l].\n    // We want pos[r+1] - pos[l] = (0, 0), i.e., pos[r+1] = pos[l].\n    // So we need to count pairs (l, r) such that 0 <= l <= r < n and pos[l] == pos[r+1].\n    // This is equivalent to counting pairs (i, j) with 0 <= i < j <= n such that pos[i] == pos[j].\n    // Because l = i, r+1 = j, so r = j-1, and we need i <= j-1 => i < j.\n\n    // Compute prefix positions\n    vector<int> x(n + 1, 0), y(n + 1, 0);\n    for (int i = 0; i < n; i++) {\n        x[i + 1] = x[i];\n        y[i + 1] = y[i];\n        if (s[i] == 'U') y[i + 1]++;\n        else if (s[i] == 'D') y[i + 1]--;\n        else if (s[i] == 'R') x[i + 1]++;\n        else if (s[i] == 'L') x[i + 1]--;\n    }\n\n    // Count frequency of each position (x[i], y[i]) for i from 0 to n\n    map<pair<int, int>, int> freq;\n    for (int i = 0; i <= n; i++) {\n        freq[{x[i], y[i]}]++;\n    }\n\n    // For each position that appears k times, the number of pairs (i, j) with i < j is k * (k - 1) / 2\n    long long count = 0;\n    for (auto& p : freq) {\n        long long k = p.second;\n        count += k * (k - 1) / 2;\n    }\n\n    cout << count << endl;\n\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 11627,
+            "prompt_tokens": 351,
+            "total_tokens": 11978
+        },
+        "prompt": "Write a program in C++ to solve this programming problem:\nDescription: Calvin the robot lies in an infinite rectangular grid. Calvin's source code contains a list of n commands, each either 'U', 'R', 'D', or 'L'\u00a0\u2014 instructions to move a single square up, right, down, or left, respectively. How many ways can Calvin execute a non-empty contiguous substrings of commands and return to the same square he starts in? Two substrings are considered different if they have different starting or ending indices.\nInput Specification: The first line of the input contains a single positive integer, n (1\u2009\u2264\u2009n\u2009\u2264\u2009200)\u00a0\u2014 the number of commands. The next line contains n characters, each either 'U', 'R', 'D', or 'L'\u00a0\u2014 Calvin's source code.\nOutput Specification: Print a single integer\u00a0\u2014 the number of contiguous substrings that Calvin can execute and return to his starting square.\n\nSample Input:\n6\nURLLDR\nSample Output:\n2\n\nSample Input:\n4\nDLUU\nSample Output:\n0\n\nSample Input:\n7\nRLRLRLR\nSample Output:\n12\n\nNotes: NoteIn the first case, the entire source code works, as well as the \"RL\" substring in the second and third characters.Note that, in the third case, the substring \"LR\" appears three times, and is therefore counted three times to the total result.\nTake input from standard input and output to standard output\nProvide the C++ code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "7bd5521531950e2de9a7b0904353184d",
+        "difficulty": 1000,
+        "prob_desc_sample_inputs": [
+            "6\nURLLDR",
+            "4\nDLUU",
+            "7\nRLRLRLR"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "brute force",
+            "implementation"
+        ],
+        "prob_desc_output_spec": "Print a single integer\u00a0\u2014 the number of contiguous substrings that Calvin can execute and return to his starting square.",
+        "prob_desc_input_spec": "The first line of the input contains a single positive integer, n (1\u2009\u2264\u2009n\u2009\u2264\u2009200)\u00a0\u2014 the number of commands. The next line contains n characters, each either 'U', 'R', 'D', or 'L'\u00a0\u2014 Calvin's source code.",
+        "lang_cluster": "C++",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first case, the entire source code works, as well as the \"RL\" substring in the second and third characters.Note that, in the third case, the substring \"LR\" appears three times, and is therefore counted three times to the total result.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Calvin the robot lies in an infinite rectangular grid. Calvin's source code contains a list of n commands, each either 'U', 'R', 'D', or 'L'\u00a0\u2014 instructions to move a single square up, right, down, or left, respectively. How many ways can Calvin execute a non-empty contiguous substrings of commands and return to the same square he starts in? Two substrings are considered different if they have different starting or ending indices.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1455384900",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "2",
+            "0",
+            "12"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"6\\r\\nURLLDR\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"4\\r\\nDLUU\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7\\r\\nRLRLRLR\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"1\\r\\nR\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"100\\r\\nURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDLURDL\\r\\n\", \"output\": [\"1225\"]}, {\"input\": \"200\\r\\nLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR\\r\\n\", \"output\": [\"100\"]}, {\"input\": \"20\\r\\nLDURLDURRLRUDLRRUDLU\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"140\\r\\nDLDLULULDRDDDLLUDRRDLLUULLDDLDLUURLDLDRDUDDLRRDURUUUUURLDUDDLLRRLLDRRRDDDDDUDUULLURRDLDULUDLLUUDRRLUDULUDUDULULUURURRDUURRDLULLURUDDDDRDRDRD\\r\\n\", \"output\": [\"125\"]}, {\"input\": \"194\\r\\nULLLDLLDRUUDURRULLRLUUURDRLLURDUDDUDLULRLDRUDURLDLRDLLLLUDDRRRULULULUDDULRURURLLDLDLDRUDUUDULRULDDRRLRDRULLDRULLLLRRDDLLLLULDRLUULRUUULDUUDLDLDUUUDDLDDRULDRRLUURRULLDULRRDLLRDURDLUUDUDLLUDDULDDD\\r\\n\", \"output\": [\"282\"]}, {\"input\": \"200\\r\\nDDDURLLUUULUDDURRDLLDDLLRLUULUULDDDLRRDLRRDUDURDUDRRLLDRDUDDLDDRDLURRRLLRDRRLLLRDDDRDRRLLRRLULRUULRLDLUDRRRDDUUURLLUDRLDUDRLLRLRRLUDLRULDUDDRRLLRLURDLRUDDDURLRDUDUUURLLULULRDRLDLDRURDDDLLRUDDRDUDDDLRU\\r\\n\", \"output\": [\"408\"]}, {\"input\": \"197\\r\\nDUUDUDUDUDUUDUUDUUUDDDDUUUDUUUDUUUUUDUUUDDUDDDUUDUDDDUUDDUUUUUUUDUDDDDDUUUUUDDDDDDUUUUDDUDDUDDDUDUUUDUUDUDUDUUUDUDDDDUUDDUDDDDUDDDUDUUUDUUDUUUDDDDUUUDUUDDUUUUUDDDDUUDUUDDDDUDDUUDUUUDDDDUDUUUDDDUUDU\\r\\n\", \"output\": [\"1995\"]}, {\"input\": \"200\\r\\nLLLLRLLRLLRRRRLLRRLRRLRRRLLLRRLRRRRLLRRLLRRRLRLRLRRLLRLLRRLLLRRRRLRLLRLLLRLLLRRLLLRLRLRRRRRRRLRRRLRLRLLLLRLRRRRRLRRLRLLLLRLLLRRLRRLLRLRLLLRRLLRRLRRRRRLRLRRLRLLRLLLLRLRRRLRRLRLLRLRRLRRRRRLRRLLLRRRRRLLR\\r\\n\", \"output\": [\"1368\"]}, {\"input\": \"184\\r\\nUUUDDUDDDDDUDDDDUDDUUUUUDDDUUDDUDUUDUUUDDUDDDDDDDDDDUDUDDUUDDDUUDDUDUDDDUUDUDUUUUDDUDUUUDDUDUUUUDUUDDUUDUUUDUDUDDUDUDDDUUDDDDUUUUUDDDUDUDUDUDUDUUUDUDDUUDDUDUUDUDUUUDUUDDDDUDDDDUDUUDUUD\\r\\n\", \"output\": [\"1243\"]}, {\"input\": \"187\\r\\nRLLRLRRLLRRLRRRRLLRLLRLLLLRRRLLLRLLLLRRLRLRRRRRRLLRRLRLLRRRLLRRLLLRRLRRLRLLLLRRRRLRRLLRRLRRRRLLLLRRLRLRLRRRRRLLRLRLRLRLRLRLLLRLLLLLRRRLLRLRRRLLLRRLLLLLRLLRLLLRRRLLLRRLRRRLLLRRLRLLRRLRLRLR\\r\\n\", \"output\": [\"1501\"]}, {\"input\": \"190\\r\\nUULLLUUULLLULLUULUUUUULUUULLULLULUULLUULLUUULULUULLUULLUUULULLLLLLULLLLLULUULLULLULLLUULUULLLUUUULLLLUUULLUUULLLULULUULULLUULULULUUULLUUUULLUUULULUULLLLULLLLLUULLUULULLULUUUUUULULLLULLUULUUU\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"46\\r\\nULUURRRRLDRDRDDDURRRLLLDDULLRRRRRLUDDLRDRULLLL\\r\\n\", \"output\": [\"23\"]}, {\"input\": \"70\\r\\nUUDRLDRDRUDLLURURULRDULRRDULDUDDRUULLDDDDDRLLRDURRDULRDLRUUUDDLRUURRLD\\r\\n\", \"output\": [\"86\"]}, {\"input\": \"198\\r\\nURLLUDRDUUDRDLLRURULLRRLRRUULRLULUUDRRURLRUURRDRUUDRLRURLLULRDDDDDRDDRRRLRUDULLDDLLLUDRLDRUDRDLDUULLUUUULULLRLDDRDURDRURLULDRURLLDDULURULDLUUUUULDLURRLLDLULLDULRUURRLDLLUUURDLDDUDUULRLUDULLULDRDRLRL\\r\\n\", \"output\": [\"160\"]}, {\"input\": \"22\\r\\nDUDDDURURUDURRUDRDULUL\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"200\\r\\nUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUDUD\\r\\n\", \"output\": [\"10000\"]}, {\"input\": \"4\\r\\nRRDR\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6\\r\\nUULLLL\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2\\r\\nDU\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"6\\r\\nUURRRR\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"101\\r\\nRDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD\\r\\n\", \"output\": [\"0\"]}]"
+    }
+}

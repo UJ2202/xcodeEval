@@ -1,0 +1,351 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEHlw7V8HoiNgjkyzkrvtrTvGK3hG",
+        "created": 1787073616,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(in, &n)\n\tvar s string\n\tfmt.Fscan(in, &s)\n\tm := len(s)\n\n\t// Build KMP automaton for pattern s\n\tpi := make([]int, m)\n\tfor i := 1; i < m; i++ {\n\t\tj := pi[i-1]\n\t\tfor j > 0 && s[i] != s[j] {\n\t\t\tj = pi[j-1]\n\t\t}\n\t\tif s[i] == s[j] {\n\t\t\tj++\n\t\t}\n\t\tpi[i] = j\n\t}\n\n\t// next[state][bit] : new state after adding bit (0 or 1)\n\tnext := make([][2]int, m+1)\n\tfor state := 0; state <= m; state++ {\n\t\tfor b := 0; b < 2; b++ {\n\t\t\tif state == m {\n\t\t\t\t// once matched, stay in m\n\t\t\t\tnext[state][b] = m\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tc := byte('0' + b)\n\t\t\tj := state\n\t\t\tfor j > 0 && s[j] != c {\n\t\t\t\tj = pi[j-1]\n\t\t\t}\n\t\t\tif j < m && s[j] == c {\n\t\t\t\tj++\n\t\t\t}\n\t\t\tif j == m {\n\t\t\t\tnext[state][b] = m\n\t\t\t} else {\n\t\t\t\tnext[state][b] = j\n\t\t\t}\n\t\t}\n\t}\n\n\t// DP[pos][state][matched] -> count\n\t// matched: 0 or 1\n\tdp := make([][][2]uint64, n+1)\n\tfor i := 0; i <= n; i++ {\n\t\tdp[i] = make([][2]uint64, m+1)\n\t}\n\tdp[0][0][0] = 1\n\n\tfor pos := 0; pos < n; pos++ {\n\t\tfor state := 0; state <= m; state++ {\n\t\t\tfor matched := 0; matched <= 1; matched++ {\n\t\t\t\tcur := dp[pos][state][matched]\n\t\t\t\tif cur == 0 {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tfor b := 0; b < 2; b++ {\n\t\t\t\t\tns := next[state][b]\n\t\t\t\t\tnm := matched\n\t\t\t\t\tif ns == m {\n\t\t\t\t\t\tnm = 1\n\t\t\t\t\t}\n\t\t\t\t\tdp[pos+1][ns][nm] += cur\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tvar ans uint64\n\tfor state := 0; state <= m; state++ {\n\t\tans += dp[n][state][1]\n\t}\n\tfmt.Println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n int\n\tvar s string\n\tfmt.Fscan(in, &n)\n\tfmt.Fscan(in, &s)\n\tm := len(s)\n\n\t// Build KMP automaton for pattern s\n\tpi := make([]int, m)\n\tfor i := 1; i < m; i++ {\n\t\tj := pi[i-1]\n\t\tfor j > 0 && s[i] != s[j] {\n\t\t\tj = pi[j-1]\n\t\t}\n\t\tif s[i] == s[j] {\n\t\t\tj++\n\t\t}\n\t\tpi[i] = j\n\t}\n\tnext := make([][2]int, m+1)\n\tfor state := 0; state <= m; state++ {\n\t\tfor c := 0; c < 2; c++ {\n\t\t\tif state == m {\n\t\t\t\t// once matched, stay matched\n\t\t\t\tnext[state][c] = m\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tch := byte('0' + c)\n\t\t\tj := state\n\t\t\tfor j > 0 && ch != s[j] {\n\t\t\t\tj = pi[j-1]\n\t\t\t}\n\t\t\tif ch == s[j] {\n\t\t\t\tj++\n\t\t\t}\n\t\t\tif j == m {\n\t\t\t\tnext[state][c] = m\n\t\t\t} else {\n\t\t\t\tnext[state][c] = j\n\t\t\t}\n\t\t}\n\t}\n\n\t// DP[pos][state][matched] -> count\n\t// pos: 0..n, state: 0..m, matched: 0/1\n\tdp := make([][][]int64, n+1)\n\tfor i := 0; i <= n; i++ {\n\t\tdp[i] = make([][]int64, m+1)\n\t\tfor j := 0; j <= m; j++ {\n\t\t\tdp[i][j] = make([]int64, 2)\n\t\t}\n\t}\n\tdp[0][0][0] = 1\n\n\tfor pos := 0; pos < n; pos++ {\n\t\tfor st := 0; st <= m; st++ {\n\t\t\tfor mt := 0; mt <= 1; mt++ {\n\t\t\t\tcur := dp[pos][st][mt]\n\t\t\t\tif cur == 0 {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tfor c := 0; c < 2; c++ {\n\t\t\t\t\tnst := next[st][c]\n\t\t\t\t\tnmt := mt\n\t\t\t\t\tif nst == m {\n\t\t\t\t\t\tnmt = 1\n\t\t\t\t\t}\n\t\t\t\t\tdp[pos+1][nst][nmt] += cur\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tvar ans int64\n\tfor st := 0; st <= m; st++ {\n\t\tans += dp[n][st][1]\n\t}\n\tfmt.Println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(in, &n)\n\tvar s string\n\tfmt.Fscan(in, &s)\n\tm := len(s)\n\n\t// Build KMP automaton for pattern s\n\tpi := make([]int, m)\n\tfor i := 1; i < m; i++ {\n\t\tj := pi[i-1]\n\t\tfor j > 0 && s[i] != s[j] {\n\t\t\tj = pi[j-1]\n\t\t}\n\t\tif s[i] == s[j] {\n\t\t\tj++\n\t\t}\n\t\tpi[i] = j\n\t}\n\n\t// next state for each state and bit\n\tnext := make([][2]int, m+1)\n\tfor state := 0; state <= m; state++ {\n\t\tfor b := 0; b < 2; b++ {\n\t\t\tif state == m {\n\t\t\t\t// once matched, stay in m\n\t\t\t\tnext[state][b] = m\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tc := byte('0' + b)\n\t\t\tj := state\n\t\t\tfor j > 0 && s[j] != c {\n\t\t\t\tj = pi[j-1]\n\t\t\t}\n\t\t\tif j < m && s[j] == c {\n\t\t\t\tj++\n\t\t\t}\n\t\t\tnext[state][b] = j\n\t\t}\n\t}\n\n\t// DP[pos][state][matched] = count\n\t// matched: 0 or 1\n\tdp := make([][][2]uint64, n+1)\n\tfor i := 0; i <= n; i++ {\n\t\tdp[i] = make([][2]uint64, m+1)\n\t}\n\tdp[0][0][0] = 1\n\n\tfor pos := 0; pos < n; pos++ {\n\t\tfor state := 0; state <= m; state++ {\n\t\t\tfor matched := 0; matched <= 1; matched++ {\n\t\t\t\tval := dp[pos][state][matched]\n\t\t\t\tif val == 0 {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tfor b := 0; b < 2; b++ {\n\t\t\t\t\tns := next[state][b]\n\t\t\t\t\tnm := matched\n\t\t\t\t\tif ns == m {\n\t\t\t\t\t\tnm = 1\n\t\t\t\t\t}\n\t\t\t\t\tdp[pos+1][ns][nm] += val\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tvar ans uint64\n\tfor state := 0; state <= m; state++ {\n\t\tans += dp[n][state][1]\n\t}\n\tfmt.Println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n int\n\tvar s string\n\tfmt.Fscan(in, &n)\n\tfmt.Fscan(in, &s)\n\tm := len(s)\n\n\t// Build KMP automaton for pattern s\n\tpi := make([]int, m)\n\tfor i := 1; i < m; i++ {\n\t\tj := pi[i-1]\n\t\tfor j > 0 && s[i] != s[j] {\n\t\t\tj = pi[j-1]\n\t\t}\n\t\tif s[i] == s[j] {\n\t\t\tj++\n\t\t}\n\t\tpi[i] = j\n\t}\n\t// next state for each kmp state and bit\n\tnext := make([][2]int, m+1)\n\tfor state := 0; state <= m; state++ {\n\t\tfor b := 0; b < 2; b++ {\n\t\t\tif state == m {\n\t\t\t\t// once matched, stay matched\n\t\t\t\tnext[state][b] = m\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tc := byte('0' + b)\n\t\t\tj := state\n\t\t\tfor j > 0 && s[j] != c {\n\t\t\t\tj = pi[j-1]\n\t\t\t}\n\t\t\tif j < m && s[j] == c {\n\t\t\t\tj++\n\t\t\t}\n\t\t\tnext[state][b] = j\n\t\t}\n\t}\n\n\t// DP[pos][kmpState][matched][firstBit] = count\n\t// pos: 0..n, kmpState:0..m, matched:0/1, firstBit:0/1/2(2 means not set yet)\n\tdp := make([][][][]int64, n+1)\n\tfor i := 0; i <= n; i++ {\n\t\tdp[i] = make([][][]int64, m+1)\n\t\tfor j := 0; j <= m; j++ {\n\t\t\tdp[i][j] = make([][]int64, 2)\n\t\t\tfor k := 0; k < 2; k++ {\n\t\t\t\tdp[i][j][k] = make([]int64, 3)\n\t\t\t}\n\t\t}\n\t}\n\tdp[0][0][0][2] = 1\n\n\tfor pos := 0; pos < n; pos++ {\n\t\tfor st := 0; st <= m; st++ {\n\t\t\tfor matched := 0; matched < 2; matched++ {\n\t\t\t\tfor fb := 0; fb < 3; fb++ {\n\t\t\t\t\tcur := dp[pos][st][matched][fb]\n\t\t\t\t\tif cur == 0 {\n\t\t\t\t\t\tcontinue\n\t\t\t\t\t}\n\t\t\t\t\tfor b := 0; b < 2; b++ {\n\t\t\t\t\t\tnfb := fb\n\t\t\t\t\t\tif pos == 0 {\n\t\t\t\t\t\t\tnfb = b\n\t\t\t\t\t\t}\n\t\t\t\t\t\tnst := next[st][b]\n\t\t\t\t\t\tnmatched := matched\n\t\t\t\t\t\tif nst == m {\n\t\t\t\t\t\t\tnmatched = 1\n\t\t\t\t\t\t}\n\t\t\t\t\t\tdp[pos+1][nst][nmatched][nfb] += cur\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\t// Now we must ensure that s appears in some cyclic shift.\n\t// That is equivalent to s appearing in t+t (length 2n).\n\t// We already tracked matches in linear t; but we also need matches that wrap.\n\t// To handle wrap, we simulate continuing KMP over the prefix again.\n\n\t// For each completed string t, reconstruct its KMP state sequence over t,\n\t// then continue over its prefix to see if any match occurs that crosses boundary.\n\t// Instead of reconstructing, we can simulate all possibilities again but track\n\t// whether match occurs in positions [n+1..2n] using starting states from end.\n\n\t// Enumerate all strings via DP states at pos=n\n\tvar total int64\n\t// For each final DP state, we know count of strings with that final KMP state and matched flag.\n\t// For those with matched==1, they already have s in linear t, so they are valid.\n\tfor st := 0; st <= m; st++ {\n\t\tfor fb := 0; fb < 2; fb++ {\n\t\t\ttotal += dp[n][st][1][fb]\n\t\t}\n\t}\n\n\t// For matched==0, we must check wrap-around.\n\t// For each final KMP state 'st' and firstBit 'fb', we need to know\n\t// if continuing KMP over the first n bits can produce a match.\n\t// But we don't know the actual bits, only aggregated counts.\n\t// So we need a second DP over prefix with parameter initial state.\n\n\t// prefixDP[pos][state][firstBit] = number of strings of length pos with given KMP state and firstBit\n\tprefixDP := make([][][]int64, n+1)\n\tfor i := 0; i <= n; i++ {\n\t\tprefixDP[i] = make([][]int64, m+1)\n\t\tfor j := 0; j <= m; j++ {\n\t\t\tprefixDP[i][j] = make([]int64, 3)\n\t\t}\n\t}\n\tprefixDP[0][0][2] = 1\n\tfor pos := 0; pos < n; pos++ {\n\t\tfor st := 0; st <= m; st++ {\n\t\t\tfor fb := 0; fb < 3; fb++ {\n\t\t\t\tcur := prefixDP[pos][st][fb]\n\t\t\t\tif cur == 0 {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tfor b := 0; b < 2; b++ {\n\t\t\t\t\tnfb := fb\n\t\t\t\t\tif pos == 0 {\n\t\t\t\t\t\tnfb = b\n\t\t\t\t\t}\n\t\t\t\t\tnst := next[st][b]\n\t\t\t\t\tprefixDP[pos+1][nst][nfb] += cur\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\t// Now we need, for each final state st_end and firstBit fb, among all strings counted in dp[n][st_end][0][fb],\n\t// how many have a match when we continue KMP from st_end over their own prefix.\n\t// This is equivalent to counting pairs (t) such that:\n\t// - t leads to state st_end after n steps without match\n\t// - continuing KMP from st_end over t's prefix yields a match.\n\t// This is a convolution over automaton paths; direct counting is complex.\n\t// Given constraints n<=40, we can brute force all 2^n strings.\n\n\ttotal = 0\n\tlimit := int64(1) << uint(n)\n\tfor mask := int64(0); mask < limit; mask++ {\n\t\tt := make([]byte, n)\n\t\tfor i := 0; i < n; i++ {\n\t\t\tif (mask>>uint(i))&1 == 1 {\n\t\t\t\tt[i] = '1'\n\t\t\t} else {\n\t\t\t\tt[i] = '0'\n\t\t\t}\n\t\t}\n\t\t// check if s appears in some cyclic shift: i.e., in t+t\n\t\tstate := 0\n\t\tfound := false\n\t\tfor i := 0; i < 2*n && !found; i++ {\n\t\t\tc := t[i%len(t)]\n\t\t\tj := state\n\t\t\tfor j > 0 && (j == m || s[j] != c) {\n\t\t\t\tj = pi[j-1]\n\t\t\t}\n\t\t\tif j < m && s[j] == c {\n\t\t\t\tj++\n\t\t\t}\n\t\t\tstate = j\n\t\t\tif state == m {\n\t\t\t\tfound = true\n\t\t\t}\n\t\t}\n\t\tif found {\n\t\t\ttotal++\n\t\t}\n\t}\n\n\tfmt.Println(total)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(in, &n)\n\tvar s string\n\tfmt.Fscan(in, &s)\n\tm := len(s)\n\n\t// build KMP automaton for pattern s\n\tpi := make([]int, m)\n\tfor i := 1; i < m; i++ {\n\t\tj := pi[i-1]\n\t\tfor j > 0 && s[i] != s[j] {\n\t\t\tj = pi[j-1]\n\t\t}\n\t\tif s[i] == s[j] {\n\t\t\tj++\n\t\t}\n\t\tpi[i] = j\n\t}\n\n\t// next state for each state and bit\n\tnxt := make([][2]int, m+1)\n\tfor state := 0; state <= m; state++ {\n\t\tfor b := 0; b < 2; b++ {\n\t\t\tif state == m {\n\t\t\t\t// once matched, stay matched\n\t\t\t\tnxt[state][b] = m\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tc := byte('0' + b)\n\t\t\tj := state\n\t\t\tfor j > 0 && s[j] != c {\n\t\t\t\tj = pi[j-1]\n\t\t\t}\n\t\t\tif j < m && s[j] == c {\n\t\t\t\tj++\n\t\t\t}\n\t\t\tif j == m {\n\t\t\t\tnxt[state][b] = m\n\t\t\t} else {\n\t\t\t\tnxt[state][b] = j\n\t\t\t}\n\t\t}\n\t}\n\n\t// DP[pos][state][matched][firstBit]\n\t// matched: 0/1, firstBit: 0/1 (only meaningful when pos>0)\n\tdp := make([][][][2]int64, n+1)\n\tfor i := 0; i <= n; i++ {\n\t\tdp[i] = make([][][2]int64, m+1)\n\t\tfor j := 0; j <= m; j++ {\n\t\t\tdp[i][j] = make([][2]int64, 2)\n\t\t}\n\t}\n\n\t// initialize position 0: choose first bit\n\tfor b := 0; b < 2; b++ {\n\t\tstate := nxt[0][b]\n\t\tmatched := 0\n\t\tif state == m {\n\t\t\tmatched = 1\n\t\t}\n\t\tdp[1][state][matched][b]++\n\t}\n\n\tfor pos := 1; pos < n; pos++ {\n\t\tfor state := 0; state <= m; state++ {\n\t\t\tfor matched := 0; matched <= 1; matched++ {\n\t\t\t\tfor first := 0; first <= 1; first++ {\n\t\t\t\t\tcur := dp[pos][state][matched][first]\n\t\t\t\t\tif cur == 0 {\n\t\t\t\t\t\tcontinue\n\t\t\t\t\t}\n\t\t\t\t\tfor b := 0; b < 2; b++ {\n\t\t\t\t\t\tns := nxt[state][b]\n\t\t\t\t\t\tnm := matched\n\t\t\t\t\t\tif ns == m {\n\t\t\t\t\t\t\tnm = 1\n\t\t\t\t\t\t}\n\t\t\t\t\t\tdp[pos+1][ns][nm][first] += cur\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tvar ans int64\n\t// close the cycle: check substring crossing boundary\n\tfor state := 0; state <= m; state++ {\n\t\tfor matched := 0; matched <= 1; matched++ {\n\t\t\tfor first := 0; first <= 1; first++ {\n\t\t\t\tcur := dp[n][state][matched][first]\n\t\t\t\tif cur == 0 {\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\tif matched == 1 {\n\t\t\t\t\tans += cur\n\t\t\t\t\tcontinue\n\t\t\t\t}\n\t\t\t\t// simulate feeding first bit once more\n\t\t\t\tns := nxt[state][first]\n\t\t\t\tif ns == m {\n\t\t\t\t\tans += cur\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tfmt.Println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(in, &n)\n\tvar s string\n\tfmt.Fscan(in, &s)\n\tm := len(s)\n\n\t// Build KMP automaton for pattern s\n\tpi := make([]int, m)\n\tfor i := 1; i < m; i++ {\n\t\tj := pi[i-1]\n\t\tfor j > 0 && s[i] != s[j] {\n\t\t\tj = pi[j-1]\n\t\t}\n\t\tif s[i] == s[j] {\n\t\t\tj++\n\t\t}\n\t\tpi[i] = j\n\t}\n\tnext := make([][2]int, m+1)\n\tfor state := 0; state <= m; state++ {\n\t\tfor b := 0; b < 2; b++ {\n\t\t\tif state == m {\n\t\t\t\tnext[state][b] = m\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tc := byte('0' + b)\n\t\t\tj := state\n\t\t\tfor j > 0 && s[j] != c {\n\t\t\t\tj = pi[j-1]\n\t\t\t}\n\t\t\tif s[j] == c {\n\t\t\t\tj++\n\t\t\t}\n\t\t\tif j == m {\n\t\t\t\tnext[state][b] = m\n\t\t\t} else {\n\t\t\t\tnext[state][b] = j\n\t\t\t}\n\t\t}\n\t}\n\n\t// DP: dp[pos][state][mask] where mask is bitset of states visited so far\n\t// mask size m+1 -> up to 41 bits, fits in uint64\n\tdp := make([][][]uint64, n+1)\n\tfor i := 0; i <= n; i++ {\n\t\tdp[i] = make([][]uint64, m+1)\n\t\tfor st := 0; st <= m; st++ {\n\t\t\tdp[i][st] = make([]uint64, 1<<(0)) // placeholder, we'll use map-like via slice resizing\n\t\t}\n\t}\n\t// Instead of 3D slice with huge mask dimension, use map per (pos,state)\n\ttype entry struct {\n\t\tstate int\n\t\tmask  uint64\n\t}\n\tdpMap := make([]map[uint64]uint64, (n+1)*(m+1))\n\tidx := func(pos, st int) int { return pos*(m+1) + st }\n\tfor i := range dpMap {\n\t\tdpMap[i] = make(map[uint64]uint64)\n\t}\n\n\tstartMask := uint64(1 << 0)\n\tdpMap[idx(0, 0)][startMask] = 1\n\n\tfor pos := 0; pos < n; pos++ {\n\t\tfor st := 0; st <= m; st++ {\n\t\t\tcur := dpMap[idx(pos, st)]\n\t\t\tif len(cur) == 0 {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tfor mask, cnt := range cur {\n\t\t\t\tfor b := 0; b < 2; b++ {\n\t\t\t\t\tnst := next[st][b]\n\t\t\t\t\tnmask := mask | (1 << uint(nst))\n\t\t\t\t\tdpMap[idx(pos+1, nst)][nmask] += cnt\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tvar ans uint64\n\tfor st := 0; st <= m; st++ {\n\t\tcur := dpMap[idx(n, st)]\n\t\tfor mask, cnt := range cur {\n\t\t\tif (mask & (1 << uint(m))) != 0 {\n\t\t\t\tans += cnt\n\t\t\t}\n\t\t}\n\t}\n\n\tfmt.Println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(in, &n)\n\tvar s string\n\tfmt.Fscan(in, &s)\n\tm := len(s)\n\n\t// Build KMP automaton for pattern s\n\tpi := make([]int, m)\n\tfor i := 1; i < m; i++ {\n\t\tj := pi[i-1]\n\t\tfor j > 0 && s[i] != s[j] {\n\t\t\tj = pi[j-1]\n\t\t}\n\t\tif s[i] == s[j] {\n\t\t\tj++\n\t\t}\n\t\tpi[i] = j\n\t}\n\tnext := make([][2]int, m+1)\n\tfor state := 0; state <= m; state++ {\n\t\tfor c := 0; c < 2; c++ {\n\t\t\tif state == m {\n\t\t\t\tnext[state][c] = m\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tch := byte('0' + c)\n\t\t\tj := state\n\t\t\tfor j > 0 && s[j] != ch {\n\t\t\t\tj = pi[j-1]\n\t\t\t}\n\t\t\tif j < m && s[j] == ch {\n\t\t\t\tj++\n\t\t\t}\n\t\t\tif j == m {\n\t\t\t\tnext[state][c] = m\n\t\t\t} else {\n\t\t\t\tnext[state][c] = j\n\t\t\t}\n\t\t}\n\t}\n\n\t// DP over positions, automaton state, first bit, last bit, found flag\n\t// dp[pos][state][fb][lb][found]\n\tdp := make([][][][][]int64, n+1)\n\tfor i := 0; i <= n; i++ {\n\t\tdp[i] = make([][][][]int64, m+1)\n\t\tfor st := 0; st <= m; st++ {\n\t\t\tdp[i][st] = make([][][]int64, 2)\n\t\t\tfor fb := 0; fb < 2; fb++ {\n\t\t\t\tdp[i][st][fb] = make([][]int64, 2)\n\t\t\t\tfor lb := 0; lb < 2; lb++ {\n\t\t\t\t\tdp[i][st][fb][lb] = make([]int64, 2)\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\t// Initialize position 1\n\tfor b := 0; b < 2; b++ {\n\t\tst := next[0][b]\n\t\tfound := 0\n\t\tif st == m {\n\t\t\tfound = 1\n\t\t}\n\t\tdp[1][st][b][b][found]++\n\t}\n\n\t// Transition for positions 2..n\n\tfor pos := 1; pos < n; pos++ {\n\t\tfor st := 0; st <= m; st++ {\n\t\t\tfor fb := 0; fb < 2; fb++ {\n\t\t\t\tfor lb := 0; lb < 2; lb++ {\n\t\t\t\t\tfor f := 0; f < 2; f++ {\n\t\t\t\t\t\tcur := dp[pos][st][fb][lb][f]\n\t\t\t\t\t\tif cur == 0 {\n\t\t\t\t\t\t\tcontinue\n\t\t\t\t\t\t}\n\t\t\t\t\t\tfor b := 0; b < 2; b++ {\n\t\t\t\t\t\t\tnst := next[st][b]\n\t\t\t\t\t\t\tnf := f\n\t\t\t\t\t\t\tif nst == m {\n\t\t\t\t\t\t\t\tnf = 1\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\tdp[pos+1][nst][fb][b][nf] += cur\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tvar ans int64 = 0\n\n\t// Count strings where s appears in linear part\n\tfor st := 0; st <= m; st++ {\n\t\tfor fb := 0; fb < 2; fb++ {\n\t\t\tfor lb := 0; lb < 2; lb++ {\n\t\t\t\tans += dp[n][st][fb][lb][1]\n\t\t\t}\n\t\t}\n\t}\n\n\t// Handle wrap-around occurrences when s is not found linearly\n\t// Only possible if m > 1\n\tif m > 1 {\n\t\tfor st := 0; st <= m; st++ {\n\t\t\tfor fb := 0; fb < 2; fb++ {\n\t\t\t\tfor lb := 0; lb < 2; lb++ {\n\t\t\t\t\tcnt := dp[n][st][fb][lb][0]\n\t\t\t\t\tif cnt == 0 {\n\t\t\t\t\t\tcontinue\n\t\t\t\t\t}\n\t\t\t\t\t// simulate reading first bits from state st\n\t\t\t\t\tcur := st\n\t\t\t\t\tfound := false\n\t\t\t\t\tfor k := 0; k < m-1; k++ {\n\t\t\t\t\t\tb := fb\n\t\t\t\t\t\tcur = next[cur][b]\n\t\t\t\t\t\tif cur == m {\n\t\t\t\t\t\t\tfound = true\n\t\t\t\t\t\t\tbreak\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t\tif found {\n\t\t\t\t\t\tans += cnt\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tfmt.Println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "package main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(in, &n)\n\tvar s string\n\tfmt.Fscan(in, &s)\n\tm := len(s)\n\n\t// Build KMP automaton for pattern s\n\tpi := make([]int, m)\n\tfor i := 1; i < m; i++ {\n\t\tj := pi[i-1]\n\t\tfor j > 0 && s[i] != s[j] {\n\t\t\tj = pi[j-1]\n\t\t}\n\t\tif s[i] == s[j] {\n\t\t\tj++\n\t\t}\n\t\tpi[i] = j\n\t}\n\t// next state for each state and bit\n\tnext := make([][2]int, m+1)\n\tfor state := 0; state <= m; state++ {\n\t\tfor b := 0; b < 2; b++ {\n\t\t\tif state == m {\n\t\t\t\t// once matched, stay in m\n\t\t\t\tnext[state][b] = m\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tc := byte('0' + b)\n\t\t\tj := state\n\t\t\tfor j > 0 && s[j] != c {\n\t\t\t\tj = pi[j-1]\n\t\t\t}\n\t\t\tif j < m && s[j] == c {\n\t\t\t\tj++\n\t\t\t}\n\t\t\tnext[state][b] = j\n\t\t}\n\t}\n\n\t// DP[pos][state][mask] where mask is bitset of visited states (0..m)\n\t// mask fits in uint64 since m<=40\n\ttype key struct {\n\t\tpos   int\n\t\tstate int\n\t\tmask  uint64\n\t}\n\tdp := make(map[key]uint64)\n\tvar dfs func(pos, state int, mask uint64) uint64\n\tdfs = func(pos, state int, mask uint64) uint64 {\n\t\tif pos == n {\n\t\t\t// check if any rotation has substring s\n\t\t\t// i.e., some state m is visited\n\t\t\tif (mask & (1 << uint(m))) != 0 {\n\t\t\t\treturn 1\n\t\t\t}\n\t\t\treturn 0\n\t\t}\n\t\tk := key{pos, state, mask}\n\t\tif v, ok := dp[k]; ok {\n\t\t\treturn v\n\t\t}\n\t\tvar res uint64\n\t\tfor b := 0; b < 2; b++ {\n\t\t\tns := next[state][b]\n\t\t\tnmask := mask | (1 << uint(ns))\n\t\t\tres += dfs(pos+1, ns, nmask)\n\t\t}\n\t\tdp[k] = res\n\t\treturn res\n\t}\n\n\t// initial state 0, mask with state 0 visited\n\tans := dfs(0, 0, 1<<0)\n\tfmt.Println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 6661,
+            "prompt_tokens": 425,
+            "total_tokens": 7086,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 2,
+                "engine_ttft_ms": 48,
+                "engine_ttlt_ms": 12089,
+                "pre_inference_ms": 196,
+                "service_tbt_ms": 2,
+                "service_ttft_ms": 296,
+                "service_ttlt_ms": 12317,
+                "total_duration_ms": 12132,
+                "user_visible_ttft_ms": 100
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Go to solve this programming problem:\nDescription: You are given a binary string $$$s$$$.Find the number of distinct cyclical binary strings of length $$$n$$$ which contain $$$s$$$ as a substring.The cyclical string $$$t$$$ contains $$$s$$$ as a substring if there is some cyclical shift of string $$$t$$$, such that $$$s$$$ is a substring of this cyclical shift of $$$t$$$.For example, the cyclical string \"000111\" contains substrings \"001\", \"01110\" and \"10\", but doesn't contain \"0110\" and \"10110\".Two cyclical strings are called different if they differ from each other as strings. For example, two different strings, which differ from each other by a cyclical shift, are still considered different cyclical strings.\nInput Specification: The first line contains a single integer $$$n$$$ ($$$1 \\le n \\le 40$$$)\u00a0\u2014 the length of the target string $$$t$$$. The next line contains the string $$$s$$$ ($$$1 \\le |s| \\le n$$$)\u00a0\u2014 the string which must be a substring of cyclical string $$$t$$$. String $$$s$$$ contains only characters '0' and '1'.\nOutput Specification: Print the only integer\u00a0\u2014 the number of distinct cyclical binary strings $$$t$$$, which contain $$$s$$$ as a substring.\n\nSample Input:\n2\n0\nSample Output:\n3\n\nSample Input:\n4\n1010\nSample Output:\n2\n\nSample Input:\n20\n10101010101010\nSample Output:\n962\n\nNotes: NoteIn the first example, there are three cyclical strings, which contain \"0\"\u00a0\u2014 \"00\", \"01\" and \"10\".In the second example, there are only two such strings\u00a0\u2014 \"1010\", \"0101\".\nTake input from standard input and output to standard output\nProvide the Go code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "0034806908c9794086736a2d07fc654c",
+        "difficulty": 2900,
+        "prob_desc_sample_inputs": [
+            "2\n0",
+            "4\n1010",
+            "20\n10101010101010"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "dp",
+            "strings"
+        ],
+        "prob_desc_output_spec": "Print the only integer\u00a0\u2014 the number of distinct cyclical binary strings $$$t$$$, which contain $$$s$$$ as a substring.",
+        "prob_desc_input_spec": "The first line contains a single integer $$$n$$$ ($$$1 \\le n \\le 40$$$)\u00a0\u2014 the length of the target string $$$t$$$. The next line contains the string $$$s$$$ ($$$1 \\le |s| \\le n$$$)\u00a0\u2014 the string which must be a substring of cyclical string $$$t$$$. String $$$s$$$ contains only characters '0' and '1'.",
+        "lang_cluster": "Go",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first example, there are three cyclical strings, which contain \"0\"\u00a0\u2014 \"00\", \"01\" and \"10\".In the second example, there are only two such strings\u00a0\u2014 \"1010\", \"0101\".",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "You are given a binary string $$$s$$$.Find the number of distinct cyclical binary strings of length $$$n$$$ which contain $$$s$$$ as a substring.The cyclical string $$$t$$$ contains $$$s$$$ as a substring if there is some cyclical shift of string $$$t$$$, such that $$$s$$$ is a substring of this cyclical shift of $$$t$$$.For example, the cyclical string \"000111\" contains substrings \"001\", \"01110\" and \"10\", but doesn't contain \"0110\" and \"10110\".Two cyclical strings are called different if they differ from each other as strings. For example, two different strings, which differ from each other by a cyclical shift, are still considered different cyclical strings.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1536248100",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "3",
+            "2",
+            "962"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"2\\r\\n0\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"4\\r\\n1010\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"20\\r\\n10101010101010\\r\\n\", \"output\": [\"962\"]}, {\"input\": \"2\\r\\n11\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"5\\r\\n00101\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"10\\r\\n100101\\r\\n\", \"output\": [\"155\"]}, {\"input\": \"4\\r\\n0011\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7\\r\\n1100\\r\\n\", \"output\": [\"56\"]}, {\"input\": \"8\\r\\n01010001\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"6\\r\\n10\\r\\n\", \"output\": [\"62\"]}, {\"input\": \"17\\r\\n011100101100110\\r\\n\", \"output\": [\"68\"]}, {\"input\": \"22\\r\\n1110011010100111\\r\\n\", \"output\": [\"1408\"]}, {\"input\": \"17\\r\\n1110110111010101\\r\\n\", \"output\": [\"34\"]}, {\"input\": \"11\\r\\n10100000100\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"20\\r\\n10100001011\\r\\n\", \"output\": [\"10230\"]}, {\"input\": \"16\\r\\n101011\\r\\n\", \"output\": [\"15248\"]}, {\"input\": \"33\\r\\n0001100010001100110000\\r\\n\", \"output\": [\"67584\"]}, {\"input\": \"30\\r\\n111001000100\\r\\n\", \"output\": [\"7857600\"]}, {\"input\": \"40\\r\\n1001\\r\\n\", \"output\": [\"1029761794578\"]}, {\"input\": \"31\\r\\n101\\r\\n\", \"output\": [\"2110188507\"]}, {\"input\": \"18\\r\\n001000011010000\\r\\n\", \"output\": [\"144\"]}, {\"input\": \"36\\r\\n110110010000\\r\\n\", \"output\": [\"603021324\"]}, {\"input\": \"40\\r\\n00000111111100110111000010000010101001\\r\\n\", \"output\": [\"160\"]}, {\"input\": \"39\\r\\n000000000000000000000000000000000000001\\r\\n\", \"output\": [\"39\"]}, {\"input\": \"37\\r\\n0101010101010101010101010101010101010\\r\\n\", \"output\": [\"37\"]}, {\"input\": \"31\\r\\n11011101110000011100\\r\\n\", \"output\": [\"63488\"]}, {\"input\": \"34\\r\\n110000100\\r\\n\", \"output\": [\"1121963008\"]}, {\"input\": \"35\\r\\n111111100100100\\r\\n\", \"output\": [\"36696800\"]}, {\"input\": \"20\\r\\n100010000\\r\\n\", \"output\": [\"40840\"]}, {\"input\": \"21\\r\\n01011101001010001\\r\\n\", \"output\": [\"336\"]}, {\"input\": \"11\\r\\n00010\\r\\n\", \"output\": [\"638\"]}, {\"input\": \"16\\r\\n10011000100001\\r\\n\", \"output\": [\"64\"]}, {\"input\": \"39\\r\\n11101001101111001011110111010010111001\\r\\n\", \"output\": [\"78\"]}, {\"input\": \"32\\r\\n10101100\\r\\n\", \"output\": [\"519167992\"]}, {\"input\": \"13\\r\\n111\\r\\n\", \"output\": [\"5435\"]}, {\"input\": \"4\\r\\n01\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"8\\r\\n100\\r\\n\", \"output\": [\"208\"]}, {\"input\": \"9\\r\\n1110\\r\\n\", \"output\": [\"270\"]}, {\"input\": \"1\\r\\n1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"20\\r\\n01100111000\\r\\n\", \"output\": [\"10230\"]}, {\"input\": \"5\\r\\n1\\r\\n\", \"output\": [\"31\"]}, {\"input\": \"38\\r\\n11111010100111100011\\r\\n\", \"output\": [\"9961415\"]}, {\"input\": \"24\\r\\n1101110111000111011\\r\\n\", \"output\": [\"768\"]}, {\"input\": \"6\\r\\n101111\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"39\\r\\n1010001010100100001\\r\\n\", \"output\": [\"40894230\"]}, {\"input\": \"34\\r\\n1111001001101011101101101\\r\\n\", \"output\": [\"17408\"]}, {\"input\": \"35\\r\\n11100110100\\r\\n\", \"output\": [\"585195800\"]}, {\"input\": \"7\\r\\n1111\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"35\\r\\n010100010101011110110101000\\r\\n\", \"output\": [\"8960\"]}, {\"input\": \"18\\r\\n110101110001\\r\\n\", \"output\": [\"1152\"]}, {\"input\": \"10\\r\\n0110101\\r\\n\", \"output\": [\"75\"]}, {\"input\": \"38\\r\\n0111110111100000000000100\\r\\n\", \"output\": [\"311296\"]}, {\"input\": \"32\\r\\n101011001\\r\\n\", \"output\": [\"263480312\"]}, {\"input\": \"39\\r\\n111011011000100\\r\\n\", \"output\": [\"654211584\"]}, {\"input\": \"31\\r\\n00101010000\\r\\n\", \"output\": [\"32331574\"]}, {\"input\": \"35\\r\\n100011111010001011100001\\r\\n\", \"output\": [\"71680\"]}, {\"input\": \"39\\r\\n1010000110\\r\\n\", \"output\": [\"20653344998\"]}, {\"input\": \"34\\r\\n1011010111111001100011110111\\r\\n\", \"output\": [\"2176\"]}, {\"input\": \"37\\r\\n100110110011100100100010110000011\\r\\n\", \"output\": [\"592\"]}, {\"input\": \"40\\r\\n1010100001001010110011000110001\\r\\n\", \"output\": [\"20480\"]}, {\"input\": \"30\\r\\n11110010111010001010111\\r\\n\", \"output\": [\"3840\"]}, {\"input\": \"36\\r\\n100101110110110111100110010011001\\r\\n\", \"output\": [\"288\"]}, {\"input\": \"40\\r\\n01011011110\\r\\n\", \"output\": [\"21354424310\"]}, {\"input\": \"36\\r\\n00001010001000010101111010\\r\\n\", \"output\": [\"36864\"]}, {\"input\": \"40\\r\\n111101001000110000111001110111111110111\\r\\n\", \"output\": [\"80\"]}, {\"input\": \"37\\r\\n1000101000000000011101011111010011\\r\\n\", \"output\": [\"296\"]}, {\"input\": \"31\\r\\n0111111101001100\\r\\n\", \"output\": [\"1015777\"]}, {\"input\": \"35\\r\\n00010000111011\\r\\n\", \"output\": [\"73382400\"]}, {\"input\": \"38\\r\\n11111111111111111111111111111111100000\\r\\n\", \"output\": [\"38\"]}, {\"input\": \"39\\r\\n000000000000000111111111111111111111111\\r\\n\", \"output\": [\"39\"]}, {\"input\": \"36\\r\\n000000000011111111111111111111111111\\r\\n\", \"output\": [\"36\"]}, {\"input\": \"37\\r\\n1111110000000000000000000000000000000\\r\\n\", \"output\": [\"37\"]}, {\"input\": \"37\\r\\n0000000000000000011111111111111111111\\r\\n\", \"output\": [\"37\"]}, {\"input\": \"39\\r\\n101010101010101010101010101010101010101\\r\\n\", \"output\": [\"39\"]}, {\"input\": \"38\\r\\n10101010101010101010101010101010101010\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"37\\r\\n1010101010101010101010101010101010101\\r\\n\", \"output\": [\"37\"]}, {\"input\": \"40\\r\\n0101010101010101010101010101010101010101\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"38\\r\\n00000000000000000000000000000000000000\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"37\\r\\n0011111111111011011111110111011111111\\r\\n\", \"output\": [\"37\"]}, {\"input\": \"35\\r\\n00001000110100100101101111110101111\\r\\n\", \"output\": [\"35\"]}, {\"input\": \"40\\r\\n0000000000100000100000000000000000000000\\r\\n\", \"output\": [\"40\"]}, {\"input\": \"37\\r\\n0000110000100100011101000100000001010\\r\\n\", \"output\": [\"37\"]}, {\"input\": \"40\\r\\n1111111111111011111111101111111111111111\\r\\n\", \"output\": [\"40\"]}, {\"input\": \"38\\r\\n10100000011100111001100101000100001000\\r\\n\", \"output\": [\"38\"]}, {\"input\": \"40\\r\\n1111110111111111111111011111111111111110\\r\\n\", \"output\": [\"40\"]}, {\"input\": \"40\\r\\n0000010010000000000001000110000001010100\\r\\n\", \"output\": [\"40\"]}, {\"input\": \"39\\r\\n100110001010001000000001010000000110100\\r\\n\", \"output\": [\"39\"]}, {\"input\": \"38\\r\\n01011110100111011\\r\\n\", \"output\": [\"79690256\"]}, {\"input\": \"37\\r\\n100110111000011010011010110011101\\r\\n\", \"output\": [\"592\"]}, {\"input\": \"30\\r\\n000000000110001011111011000\\r\\n\", \"output\": [\"240\"]}, {\"input\": \"33\\r\\n101110110010101\\r\\n\", \"output\": [\"8647584\"]}, {\"input\": \"34\\r\\n1101010100001111111\\r\\n\", \"output\": [\"1114095\"]}, {\"input\": \"32\\r\\n01100010110111100111110010\\r\\n\", \"output\": [\"2048\"]}, {\"input\": \"40\\r\\n000010101101010011111101011110010011\\r\\n\", \"output\": [\"640\"]}, {\"input\": \"32\\r\\n0111010100\\r\\n\", \"output\": [\"133105408\"]}, {\"input\": \"31\\r\\n0101100101100000111001\\r\\n\", \"output\": [\"15872\"]}, {\"input\": \"39\\r\\n00111\\r\\n\", \"output\": [\"419341377312\"]}, {\"input\": \"33\\r\\n00111101\\r\\n\", \"output\": [\"1068677566\"]}, {\"input\": \"37\\r\\n1010001011111100110101110\\r\\n\", \"output\": [\"151552\"]}, {\"input\": \"37\\r\\n111000011\\r\\n\", \"output\": [\"9626769261\"]}, {\"input\": \"37\\r\\n011111001111100010001011000001100111\\r\\n\", \"output\": [\"74\"]}, {\"input\": \"40\\r\\n0000\\r\\n\", \"output\": [\"848129718780\"]}, {\"input\": \"40\\r\\n1000\\r\\n\", \"output\": [\"1060965767804\"]}, {\"input\": \"40\\r\\n0100\\r\\n\", \"output\": [\"1029761794578\"]}, {\"input\": \"40\\r\\n1100\\r\\n\", \"output\": [\"1060965767804\"]}, {\"input\": \"40\\r\\n0010\\r\\n\", \"output\": [\"1029761794578\"]}, {\"input\": \"40\\r\\n1010\\r\\n\", \"output\": [\"1000453489698\"]}, {\"input\": \"40\\r\\n0110\\r\\n\", \"output\": [\"1029761794578\"]}, {\"input\": \"40\\r\\n1110\\r\\n\", \"output\": [\"1060965767804\"]}, {\"input\": \"40\\r\\n0001\\r\\n\", \"output\": [\"1060965767804\"]}, {\"input\": \"40\\r\\n0101\\r\\n\", \"output\": [\"1000453489698\"]}, {\"input\": \"40\\r\\n1101\\r\\n\", \"output\": [\"1029761794578\"]}, {\"input\": \"40\\r\\n0011\\r\\n\", \"output\": [\"1060965767804\"]}, {\"input\": \"40\\r\\n1011\\r\\n\", \"output\": [\"1029761794578\"]}, {\"input\": \"40\\r\\n0111\\r\\n\", \"output\": [\"1060965767804\"]}, {\"input\": \"40\\r\\n1111\\r\\n\", \"output\": [\"848129718780\"]}, {\"input\": \"40\\r\\n000\\r\\n\", \"output\": [\"1060965767805\"]}, {\"input\": \"40\\r\\n100\\r\\n\", \"output\": [\"1099282801648\"]}, {\"input\": \"40\\r\\n010\\r\\n\", \"output\": [\"1093624901051\"]}, {\"input\": \"40\\r\\n110\\r\\n\", \"output\": [\"1099282801648\"]}, {\"input\": \"40\\r\\n001\\r\\n\", \"output\": [\"1099282801648\"]}, {\"input\": \"40\\r\\n101\\r\\n\", \"output\": [\"1093624901051\"]}, {\"input\": \"40\\r\\n011\\r\\n\", \"output\": [\"1099282801648\"]}, {\"input\": \"40\\r\\n111\\r\\n\", \"output\": [\"1060965767805\"]}, {\"input\": \"40\\r\\n00\\r\\n\", \"output\": [\"1099282801649\"]}, {\"input\": \"40\\r\\n01\\r\\n\", \"output\": [\"1099511627774\"]}, {\"input\": \"40\\r\\n10\\r\\n\", \"output\": [\"1099511627774\"]}, {\"input\": \"40\\r\\n11\\r\\n\", \"output\": [\"1099282801649\"]}, {\"input\": \"40\\r\\n0\\r\\n\", \"output\": [\"1099511627775\"]}, {\"input\": \"40\\r\\n1\\r\\n\", \"output\": [\"1099511627775\"]}, {\"input\": \"1\\r\\n0\\r\\n\", \"output\": [\"1\"]}]"
+    }
+}

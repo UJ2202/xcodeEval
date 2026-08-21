@@ -1,0 +1,350 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEIHUVwO0YgmKOSGDHVOVR0nILbWV",
+        "created": 1787075572,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "import sys\nfrom math import factorial\n\ndef is_lucky(x):\n    while x > 0:\n        d = x % 10\n        if d != 4 and d != 7:\n            return False\n        x //= 10\n    return True\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    n = int(data[0])\n    k = int(data[1])\n\n    # For n > 20, only last 20 positions matter (since 20! fits in 64-bit)\n    # Check if k-th permutation exists based on last m positions\n    m = min(20, n)\n    total_perm = 1\n    for i in range(1, m + 1):\n        total_perm *= i\n        if total_perm > k:\n            break\n\n    if k > total_perm:\n        print(-1)\n        return\n\n    # Precompute lucky indices up to n\n    lucky_indices = []\n    # Generate lucky numbers by DFS up to n\n    stack = [4, 7]\n    while stack:\n        v = stack.pop()\n        if v > n:\n            continue\n        lucky_indices.append(v)\n        stack.append(v * 10 + 4)\n        stack.append(v * 10 + 7)\n    lucky_indices.sort()\n\n    ans = 0\n\n    # For n > 20, first (n-m) positions are fixed as 1..(n-m)\n    # Only indices that are lucky and > n-m can contribute via permutation\n    fixed_prefix = n - m\n\n    # Count lucky positions in fixed prefix where a[i] = i\n    for idx in lucky_indices:\n        if idx <= fixed_prefix and is_lucky(idx):\n            ans += 1\n\n    # Now generate k-th permutation for last m elements: numbers (n-m+1..n)\n    # Convert k to 0-based\n    k -= 1\n    elems = list(range(fixed_prefix + 1, n + 1))\n    # Precompute factorials up to m\n    fact = [1] * (m + 1)\n    for i in range(1, m + 1):\n        fact[i] = fact[i - 1] * i\n\n    perm_tail = []\n    for i in range(m, 0, -1):\n        f = fact[i - 1]\n        idx = k // f\n        k %= f\n        perm_tail.append(elems.pop(idx))\n\n    # Combine full permutation conceptually and count lucky positions\n    # Only need to check lucky indices > fixed_prefix\n    for idx in lucky_indices:\n        if idx > fixed_prefix:\n            pos = idx - fixed_prefix - 1  # 0-based in perm_tail\n            val = perm_tail[pos]\n            if is_lucky(val):\n                ans += 1\n\n    print(ans)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "import sys\nimport math\n\ndef is_lucky(x):\n    while x > 0:\n        d = x % 10\n        if d != 4 and d != 7:\n            return False\n        x //= 10\n    return True\n\ndef gen_lucky(limit):\n    res = []\n    def dfs(cur):\n        if cur > limit:\n            return\n        if cur != 0:\n            res.append(cur)\n        dfs(cur * 10 + 4)\n        dfs(cur * 10 + 7)\n    dfs(0)\n    res.sort()\n    return res\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    n = int(data[0])\n    k = int(data[1])\n\n    # If n is large, only last up to 15 positions matter (15! ~ 1.3e12)\n    MAX_TAIL = 15\n    if n > MAX_TAIL:\n        prefix_len = n - MAX_TAIL\n        tail_len = MAX_TAIL\n    else:\n        prefix_len = 0\n        tail_len = n\n\n    # Check if k-th permutation exists for tail_len\n    fact = [1] * (tail_len + 1)\n    for i in range(1, tail_len + 1):\n        fact[i] = fact[i - 1] * i\n        if fact[i] > 10**18:\n            fact[i] = 10**18  # cap to avoid overflow\n\n    if k > fact[tail_len]:\n        print(-1)\n        return\n\n    # Generate lucky numbers up to n\n    lucky_nums = gen_lucky(n)\n\n    # Count lucky positions in prefix (fixed permutation 1..prefix_len)\n    ans = 0\n    for pos in lucky_nums:\n        if pos > prefix_len:\n            break\n        if is_lucky(pos):  # pos is lucky by construction, but keep for clarity\n            ans += 1  # a[pos] = pos\n\n    # Build k-th permutation of tail [prefix_len+1 .. n]\n    k -= 1  # zero-based\n    tail_vals = list(range(prefix_len + 1, n + 1))\n    used = [False] * tail_len\n    perm_tail = [0] * tail_len\n\n    for i in range(tail_len):\n        block = fact[tail_len - 1 - i]\n        idx = k // block\n        k %= block\n\n        # pick idx-th unused element\n        cnt = -1\n        for j in range(tail_len):\n            if not used[j]:\n                cnt += 1\n                if cnt == idx:\n                    used[j] = True\n                    perm_tail[i] = tail_vals[j]\n                    break\n\n    # Count lucky positions in tail\n    # positions are prefix_len+1 ... n\n    lucky_set = set(lucky_nums)\n    for i in range(tail_len):\n        pos = prefix_len + 1 + i\n        val = perm_tail[i]\n        if pos in lucky_set and val in lucky_set:\n            ans += 1\n\n    print(ans)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "import sys\nfrom math import factorial\n\ndef is_lucky(x):\n    while x > 0:\n        d = x % 10\n        if d != 4 and d != 7:\n            return False\n        x //= 10\n    return True\n\ndef generate_lucky(limit):\n    res = []\n    def dfs(cur):\n        if cur > limit:\n            return\n        if cur != 0:\n            res.append(cur)\n        dfs(cur * 10 + 4)\n        dfs(cur * 10 + 7)\n    dfs(0)\n    res.sort()\n    return res\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    n = int(data[0])\n    k = int(data[1])\n\n    # For large n, only last up to 15 positions matter (since 15! fits in 1e12)\n    MAX_TAIL = 15\n    if n > MAX_TAIL:\n        prefix_len = n - MAX_TAIL\n        # count lucky positions in prefix: positions 1..prefix_len, value = i\n        lucky_positions = generate_lucky(prefix_len)\n        ans = len(lucky_positions)\n        # now we need (k-th) permutation of last MAX_TAIL numbers\n        tail_len = MAX_TAIL\n        # check if k-th permutation exists\n        if k > factorial(tail_len):\n            print(-1)\n            return\n        # build k-th permutation (1-based k) of numbers [n-tail_len+1 .. n]\n        nums = list(range(n - tail_len + 1, n + 1))\n        k -= 1  # 0-based\n        perm = []\n        for i in range(tail_len, 0, -1):\n            f = factorial(i - 1)\n            idx = k // f\n            k %= f\n            perm.append(nums.pop(idx))\n        # positions in full permutation: prefix_len+1 .. n\n        # check lucky positions and lucky values\n        lucky_pos = generate_lucky(n)\n        lucky_pos = [p for p in lucky_pos if p > prefix_len]\n        for p in lucky_pos:\n            val = perm[p - prefix_len - 1]\n            if is_lucky(val):\n                ans += 1\n        print(ans)\n    else:\n        # whole permutation length <= 15\n        if k > factorial(n):\n            print(-1)\n            return\n        nums = list(range(1, n + 1))\n        k -= 1\n        perm = []\n        for i in range(n, 0, -1):\n            f = factorial(i - 1)\n            idx = k // f\n            k %= f\n            perm.append(nums.pop(idx))\n        lucky_pos = generate_lucky(n)\n        ans = 0\n        for p in lucky_pos:\n            if is_lucky(perm[p - 1]):\n                ans += 1\n        print(ans)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "import sys\nfrom math import factorial\n\ndef is_lucky(x):\n    while x > 0:\n        d = x % 10\n        if d != 4 and d != 7:\n            return False\n        x //= 10\n    return True\n\ndef generate_lucky(limit):\n    res = []\n    def dfs(cur):\n        if cur > limit:\n            return\n        if cur != 0:\n            res.append(cur)\n        dfs(cur * 10 + 4)\n        dfs(cur * 10 + 7)\n    dfs(0)\n    return sorted(res)\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    n = int(data[0])\n    k = int(data[1])\n\n    # limit for factorial to avoid overflow and huge computations\n    MAX_FACT_N = 20\n\n    # if n is large, only last up to 20 positions matter for permutation generation\n    if n > MAX_FACT_N:\n        prefix_len = n - MAX_FACT_N\n        # number of permutations of last MAX_FACT_N elements\n        total_perm = 1\n        for i in range(2, MAX_FACT_N + 1):\n            total_perm *= i\n        if k > total_perm:\n            print(-1)\n            return\n        start = prefix_len + 1\n        m = MAX_FACT_N\n    else:\n        # full permutation\n        total_perm = 1\n        for i in range(2, n + 1):\n            total_perm *= i\n        if k > total_perm:\n            print(-1)\n            return\n        start = 1\n        m = n\n        prefix_len = 0\n\n    # generate lucky indices up to n\n    lucky_indices = generate_lucky(n)\n\n    # count lucky positions in prefix (fixed as 1..prefix_len)\n    ans = 0\n    for idx in lucky_indices:\n        if idx <= prefix_len and is_lucky(idx):\n            ans += 1\n\n    # generate k-th permutation of numbers [start..n]\n    # k is 1-based\n    k -= 1\n    nums = list(range(start, n + 1))\n    perm = [0] * m\n    fact = [1] * (m + 1)\n    for i in range(1, m + 1):\n        fact[i] = fact[i - 1] * i\n\n    for i in range(m):\n        f = fact[m - 1 - i]\n        idx = k // f\n        k %= f\n        perm[i] = nums[idx]\n        nums.pop(idx)\n\n    # check lucky positions in suffix\n    for idx in lucky_indices:\n        if idx > prefix_len:\n            pos = idx - prefix_len - 1  # 0-based in perm\n            if 0 <= pos < m:\n                if is_lucky(perm[pos]):\n                    ans += 1\n\n    print(ans)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "import sys\nfrom math import factorial\n\ndef is_lucky(x):\n    while x > 0:\n        d = x % 10\n        if d != 4 and d != 7:\n            return False\n        x //= 10\n    return True\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    n = int(data[0])\n    k = int(data[1])\n\n    # Precompute lucky numbers up to n\n    lucky_indices = []\n    def gen_lucky(cur):\n        if cur > n:\n            return\n        if cur != 0:\n            lucky_indices.append(cur)\n        gen_lucky(cur * 10 + 4)\n        gen_lucky(cur * 10 + 7)\n    gen_lucky(0)\n    lucky_indices.sort()\n\n    # If n is large, only last up to 15 positions matter (since 15! fits in 64-bit)\n    MAX_TAIL = 15\n    if n > MAX_TAIL:\n        tail_len = MAX_TAIL\n        prefix_len = n - tail_len\n    else:\n        tail_len = n\n        prefix_len = 0\n\n    # Check if k-th permutation exists\n    # Number of permutations of tail_len elements\n    fact = [1] * (tail_len + 1)\n    for i in range(1, tail_len + 1):\n        fact[i] = fact[i - 1] * i\n        if fact[i] > 10**18:\n            fact[i] = 10**18  # cap to avoid overflow\n\n    if k > fact[tail_len]:\n        print(-1)\n        return\n\n    # Build the k-th permutation of the last tail_len elements\n    # Elements are prefix_len+1 ... n\n    elements = list(range(prefix_len + 1, n + 1))\n    k -= 1  # 0-based\n    perm_tail = []\n    for i in range(tail_len, 0, -1):\n        f = fact[i - 1]\n        idx = k // f\n        k %= f\n        perm_tail.append(elements[idx])\n        elements.pop(idx)\n\n    # Build full permutation conceptually: first prefix is 1..prefix_len, then perm_tail\n    # Count positions i where i and a[i] are lucky\n    ans = 0\n    # Use set for quick lucky check for values up to n\n    lucky_set = set(lucky_indices)\n\n    # Positions in prefix: a[i] = i\n    for i in lucky_indices:\n        if i <= prefix_len:\n            if i in lucky_set:\n                ans += 1\n\n    # Positions in tail\n    # tail positions are from prefix_len+1 to n\n    for offset, val in enumerate(perm_tail):\n        pos = prefix_len + 1 + offset\n        if pos in lucky_set and val in lucky_set:\n            ans += 1\n\n    print(ans)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "import sys\nfrom math import factorial\n\ndef is_lucky(x):\n    while x > 0:\n        d = x % 10\n        if d != 4 and d != 7:\n            return False\n        x //= 10\n    return True\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    n = int(data[0])\n    k = int(data[1])\n\n    # Precompute lucky indices up to n\n    lucky_indices = [i for i in range(1, n + 1) if is_lucky(i)]\n\n    # If n is large, only last up to 20 positions matter (since 20! fits in 64-bit)\n    MAX_TAIL = 20\n    if n > MAX_TAIL:\n        prefix_len = n - MAX_TAIL\n    else:\n        prefix_len = 0\n\n    tail_len = n - prefix_len\n\n    # Check if k-th permutation exists\n    # tail_len <= 20, factorial fits in Python big int, but we only need compare with k\n    total_perm_tail = 1\n    for i in range(2, tail_len + 1):\n        total_perm_tail *= i\n        if total_perm_tail >= k:\n            break\n    if total_perm_tail < k:\n        print(-1)\n        return\n\n    # Build the permutation\n    # First part: 1..prefix_len fixed\n    perm = list(range(1, prefix_len + 1))\n\n    # Remaining numbers for tail\n    remaining = list(range(prefix_len + 1, n + 1))\n\n    # Convert k to 0-based index\n    k -= 1\n\n    # Generate k-th permutation of tail using factoradic\n    for i in range(tail_len, 0, -1):\n        fact = factorial(i - 1)\n        idx = k // fact\n        k %= fact\n        perm.append(remaining.pop(idx))\n\n    # Count positions where index and value are both lucky\n    ans = 0\n    for i in lucky_indices:\n        if i <= n and is_lucky(perm[i - 1]):\n            ans += 1\n\n    print(ans)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "import sys\nfrom math import factorial\n\ndef is_lucky(x):\n    while x > 0:\n        d = x % 10\n        if d != 4 and d != 7:\n            return False\n        x //= 10\n    return True\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    n = int(data[0])\n    k = int(data[1])\n\n    # Precompute lucky indices up to n\n    lucky_indices = [i for i in range(1, n + 1) if is_lucky(i)]\n\n    # If n is small enough, we can consider full permutation\n    # Otherwise, we only need the suffix of length up to 15\n    LIMIT = 15\n    if n <= LIMIT:\n        m = n\n        start = 1\n    else:\n        m = LIMIT\n        start = n - m + 1\n\n    # Number of permutations of m elements\n    # If k > m!, permutation doesn't exist\n    fact = [1] * (m + 1)\n    for i in range(1, m + 1):\n        fact[i] = fact[i - 1] * i\n        if fact[i] > 10**18:\n            fact[i] = 10**18  # cap to avoid overflow\n\n    if k > fact[m]:\n        print(-1)\n        return\n\n    # Build the k-th permutation of the last m numbers [start..n]\n    k -= 1  # 0-based\n    nums = list(range(start, n + 1))\n    perm_suffix = []\n    for i in range(m, 0, -1):\n        f = fact[i - 1]\n        idx = k // f\n        k %= f\n        perm_suffix.append(nums[idx])\n        nums.pop(idx)\n\n    # Build full permutation conceptually:\n    # positions 1..start-1 are fixed: a[i] = i\n    # positions start..n are from perm_suffix\n    ans = 0\n    # For positions before start\n    for i in lucky_indices:\n        if i < start:\n            if is_lucky(i):  # i is lucky by construction\n                ans += 1  # a[i] = i\n        else:\n            break\n\n    # For positions in suffix\n    # lucky_indices is sorted\n    li = 0\n    L = len(lucky_indices)\n    for pos in range(start, n + 1):\n        while li < L and lucky_indices[li] < pos:\n            li += 1\n        if li < L and lucky_indices[li] == pos:\n            val = perm_suffix[pos - start]\n            if is_lucky(val):\n                ans += 1\n\n    print(ans)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "import sys\nfrom math import factorial\n\ndef is_lucky(x):\n    while x > 0:\n        d = x % 10\n        if d != 4 and d != 7:\n            return False\n        x //= 10\n    return True\n\ndef generate_lucky(limit):\n    res = []\n    def dfs(cur):\n        if cur > limit:\n            return\n        if cur != 0:\n            res.append(cur)\n        dfs(cur * 10 + 4)\n        dfs(cur * 10 + 7)\n    dfs(0)\n    res.sort()\n    return res\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    n = int(data[0])\n    k = int(data[1])\n\n    # For n > 20, only last 20 positions matter (since 20! fits in 64-bit)\n    MAX_BLOCK = 20\n    if n > MAX_BLOCK:\n        prefix = n - MAX_BLOCK\n        # generate lucky indices in prefix\n        lucky_indices = generate_lucky(prefix)\n        # count lucky i where a[i] = i in prefix (since prefix is fixed 1..prefix)\n        ans = 0\n        for idx in lucky_indices:\n            if is_lucky(idx):\n                ans += 1\n        # Now handle last block of size MAX_BLOCK\n        m = MAX_BLOCK\n        # total permutations of last block\n        total_perm = 1\n        for i in range(2, m + 1):\n            total_perm *= i\n            if total_perm > k:  # no need to go further\n                break\n        if k > total_perm:\n            print(-1)\n            return\n        # build k-th permutation of last block elements [prefix+1 .. n]\n        k -= 1  # 0-based\n        elems = list(range(prefix + 1, n + 1))\n        perm = []\n        fact = [1] * (m + 1)\n        for i in range(1, m + 1):\n            fact[i] = fact[i - 1] * i\n        for i in range(m, 0, -1):\n            f = fact[i - 1]\n            idx = k // f\n            k %= f\n            perm.append(elems[idx])\n            elems.pop(idx)\n        # count lucky positions in last block\n        lucky_indices_block = generate_lucky(n)\n        for idx in lucky_indices_block:\n            if idx <= prefix:\n                continue\n            pos = idx - prefix - 1  # 0-based in perm\n            if 0 <= pos < m and is_lucky(perm[pos]):\n                ans += 1\n        print(ans)\n    else:\n        # n <= 20, consider full permutation\n        total_perm = 1\n        for i in range(2, n + 1):\n            total_perm *= i\n            if total_perm > k:\n                break\n        if k > total_perm:\n            print(-1)\n            return\n        k -= 1\n        elems = list(range(1, n + 1))\n        perm = []\n        fact = [1] * (n + 1)\n        for i in range(1, n + 1):\n            fact[i] = fact[i - 1] * i\n        for i in range(n, 0, -1):\n            f = fact[i - 1]\n            idx = k // f\n            k %= f\n            perm.append(elems[idx])\n            elems.pop(idx)\n        ans = 0\n        lucky_indices = generate_lucky(n)\n        for idx in lucky_indices:\n            if is_lucky(perm[idx - 1]):\n                ans += 1\n        print(ans)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 5144,
+            "prompt_tokens": 467,
+            "total_tokens": 5611,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 2,
+                "engine_ttft_ms": 310,
+                "engine_ttlt_ms": 12805,
+                "pre_inference_ms": 226,
+                "service_tbt_ms": 2,
+                "service_ttft_ms": 682,
+                "service_ttlt_ms": 13149,
+                "total_duration_ms": 12931,
+                "user_visible_ttft_ms": 456
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Python to solve this programming problem:\nDescription: Petya loves lucky numbers. Everybody knows that lucky numbers are positive integers whose decimal representation contains only the lucky digits 4 and 7. For example, numbers 47, 744, 4 are lucky and 5, 17, 467 are not.One day Petya dreamt of a lexicographically k-th permutation of integers from 1 to n. Determine how many lucky numbers in the permutation are located on the positions whose indexes are also lucky numbers.\nInput Specification: The first line contains two integers n and k (1\u2009\u2264\u2009n,\u2009k\u2009\u2264\u2009109) \u2014 the number of elements in the permutation and the lexicographical number of the permutation.\nOutput Specification: If the k-th permutation of numbers from 1 to n does not exist, print the single number \"-1\" (without the quotes). Otherwise, print the answer to the problem: the number of such indexes i, that i and ai are both lucky numbers.\n\nSample Input:\n7 4\nSample Output:\n1\n\nSample Input:\n4 7\nSample Output:\n1\n\nNotes: NoteA permutation is an ordered set of n elements, where each integer from 1 to n occurs exactly once. The element of permutation in position with index i is denoted as ai (1\u2009\u2264\u2009i\u2009\u2264\u2009n). Permutation a is lexicographically smaller that permutation b if there is such a i (1\u2009\u2264\u2009i\u2009\u2264\u2009n), that ai\u2009&lt;\u2009bi, and for any j (1\u2009\u2264\u2009j\u2009&lt;\u2009i) aj\u2009=\u2009bj. Let's make a list of all possible permutations of n elements and sort it in the order of lexicographical increasing. Then the lexicographically k-th permutation is the k-th element of this list of permutations.In the first sample the permutation looks like that:1 2 3 4 6 7 5The only suitable position is 4.In the second sample the permutation looks like that:2 1 3 4The only suitable position is 4.\nTake input from standard input and output to standard output\nProvide the Python code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "cb2aa02772f95fefd1856960b6ceac4c",
+        "difficulty": 1900,
+        "prob_desc_sample_inputs": [
+            "7 4",
+            "4 7"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "brute force",
+            "combinatorics",
+            "number theory"
+        ],
+        "prob_desc_output_spec": "If the k-th permutation of numbers from 1 to n does not exist, print the single number \"-1\" (without the quotes). Otherwise, print the answer to the problem: the number of such indexes i, that i and ai are both lucky numbers.",
+        "prob_desc_input_spec": "The first line contains two integers n and k (1\u2009\u2264\u2009n,\u2009k\u2009\u2264\u2009109) \u2014 the number of elements in the permutation and the lexicographical number of the permutation.",
+        "lang_cluster": "Python",
+        "source_code": "",
+        "prob_desc_notes": "NoteA permutation is an ordered set of n elements, where each integer from 1 to n occurs exactly once. The element of permutation in position with index i is denoted as ai (1\u2009\u2264\u2009i\u2009\u2264\u2009n). Permutation a is lexicographically smaller that permutation b if there is such a i (1\u2009\u2264\u2009i\u2009\u2264\u2009n), that ai\u2009&lt;\u2009bi, and for any j (1\u2009\u2264\u2009j\u2009&lt;\u2009i) aj\u2009=\u2009bj. Let's make a list of all possible permutations of n elements and sort it in the order of lexicographical increasing. Then the lexicographically k-th permutation is the k-th element of this list of permutations.In the first sample the permutation looks like that:1 2 3 4 6 7 5The only suitable position is 4.In the second sample the permutation looks like that:2 1 3 4The only suitable position is 4.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Petya loves lucky numbers. Everybody knows that lucky numbers are positive integers whose decimal representation contains only the lucky digits 4 and 7. For example, numbers 47, 744, 4 are lucky and 5, 17, 467 are not.One day Petya dreamt of a lexicographically k-th permutation of integers from 1 to n. Determine how many lucky numbers in the permutation are located on the positions whose indexes are also lucky numbers.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1319727600",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "1",
+            "1"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"7 4\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"4 7\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"7 5040\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10 1023\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 7477\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"10 10000\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"3 7\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"27 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"40 8544\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"47 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"47 8547744\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"50 1000000000\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"64 87\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"98 854555\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"100 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"9985 5888454\\r\\n\", \"output\": [\"30\"]}, {\"input\": \"1 1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"1 2\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"2 1000000000\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"10 1000000000\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"20 1000000000\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"777777 1\\r\\n\", \"output\": [\"126\"]}, {\"input\": \"777777 2\\r\\n\", \"output\": [\"125\"]}, {\"input\": \"777474 10000\\r\\n\", \"output\": [\"120\"]}, {\"input\": \"1000000000 1\\r\\n\", \"output\": [\"1022\"]}, {\"input\": \"777777777 5\\r\\n\", \"output\": [\"1021\"]}, {\"input\": \"777777777 1\\r\\n\", \"output\": [\"1022\"]}, {\"input\": \"777477774 1\\r\\n\", \"output\": [\"989\"]}, {\"input\": \"444747744 1000000000\\r\\n\", \"output\": [\"554\"]}, {\"input\": \"475 88555458\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"12 855448\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"20 1000000000\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"47 99998544\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"49 1000000000\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"854459 95554455\\r\\n\", \"output\": [\"126\"]}, {\"input\": \"77777779 1000000000\\r\\n\", \"output\": [\"508\"]}, {\"input\": \"77 47\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"6999 85488877\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"7479 58884598\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"1000000000 1000000000\\r\\n\", \"output\": [\"1022\"]}, {\"input\": \"7 1000\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 124\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 2048\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 3001\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 127\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 980\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 5000\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 4095\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"7 3856\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 5032\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 4999\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 3\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"2 4\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"7 985\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"4 25\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"6 121\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"11 39916801\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"29 1000000000\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"10 4589\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10 100000\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10 98564\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"10 100000009\\r\\n\", \"output\": [\"-1\"]}]"
+    }
+}

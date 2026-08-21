@@ -1,0 +1,350 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEIORRrFl4Ne5CZWW3GJwjpzpK3hg",
+        "created": 1787076003,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport java.util.ArrayDeque\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    var st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toInt()\n    val m = st.nextToken().toInt()\n\n    st = StringTokenizer(br.readLine())\n    val f = IntArray(n)\n    for (i in 0 until n) {\n        f[i] = st.nextToken().toInt()\n    }\n\n    val g = Array(n) { IntArray(0) }\n    val gr = Array(n) { IntArray(0) }\n\n    val tmpG = Array(n) { mutableListOf<Int>() }\n    val tmpGR = Array(n) { mutableListOf<Int>() }\n\n    repeat(m) {\n        st = StringTokenizer(br.readLine())\n        val a = st.nextToken().toInt() - 1\n        val b = st.nextToken().toInt() - 1\n        tmpG[a].add(b)\n        tmpGR[b].add(a)\n    }\n\n    for (i in 0 until n) {\n        g[i] = tmpG[i].toIntArray()\n        gr[i] = tmpGR[i].toIntArray()\n    }\n\n    // Kosaraju to find SCCs\n    val visited = BooleanArray(n)\n    val order = IntArray(n)\n    var orderPos = 0\n\n    fun dfs1(v: Int) {\n        visited[v] = true\n        for (to in g[v]) {\n            if (!visited[to]) dfs1(to)\n        }\n        order[orderPos++] = v\n    }\n\n    for (i in 0 until n) {\n        if (!visited[i]) dfs1(i)\n    }\n\n    val comp = IntArray(n) { -1 }\n    var compCnt = 0\n\n    fun dfs2(v: Int, c: Int) {\n        comp[v] = c\n        for (to in gr[v]) {\n            if (comp[to] == -1) dfs2(to, c)\n        }\n    }\n\n    for (i in n - 1 downTo 0) {\n        val v = order[i]\n        if (comp[v] == -1) {\n            dfs2(v, compCnt++)\n        }\n    }\n\n    // Build condensation DAG\n    val compG = Array(compCnt) { mutableSetOf<Int>() }\n    val hasAssign = BooleanArray(compCnt)\n    val hasUse = BooleanArray(compCnt)\n\n    for (v in 0 until n) {\n        val c = comp[v]\n        if (f[v] == 1) hasAssign[c] = true\n        if (f[v] == 2) hasUse[c] = true\n        for (to in g[v]) {\n            val ct = comp[to]\n            if (c != ct) compG[c].add(ct)\n        }\n    }\n\n    // Topological order of condensation DAG\n    val indeg = IntArray(compCnt)\n    for (c in 0 until compCnt) {\n        for (to in compG[c]) indeg[to]++\n    }\n\n    val q = ArrayDeque<Int>()\n    for (c in 0 until compCnt) {\n        if (indeg[c] == 0) q.add(c)\n    }\n\n    val topo = IntArray(compCnt)\n    var tp = 0\n    while (q.isNotEmpty()) {\n        val v = q.removeFirst()\n        topo[tp++] = v\n        for (to in compG[v]) {\n            indeg[to]--\n            if (indeg[to] == 0) q.add(to)\n        }\n    }\n\n    // DP: can reach a use without passing another assign\n    val good = BooleanArray(compCnt)\n    for (i in compCnt - 1 downTo 0) {\n        val c = topo[i]\n        var gHere = hasUse[c]\n        for (to in compG[c]) {\n            if (!hasAssign[to] && good[to]) gHere = true\n        }\n        good[c] = gHere\n    }\n\n    val res = StringBuilder()\n    for (v in 0 until n) {\n        val c = comp[v]\n        if (hasAssign[c] && good[c]) res.append(\"1\\n\") else res.append(\"0\\n\")\n    }\n    print(res.toString())\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport java.util.ArrayDeque\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    var st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toInt()\n    val m = st.nextToken().toInt()\n\n    st = StringTokenizer(br.readLine())\n    val f = IntArray(n)\n    for (i in 0 until n) {\n        f[i] = st.nextToken().toInt()\n    }\n\n    val g = Array(n) { IntArray(0) }\n    val gr = Array(n) { IntArray(0) }\n    val outDeg = IntArray(n)\n    val inDeg = IntArray(n)\n\n    val tmpG = Array(n) { mutableListOf<Int>() }\n    val tmpGr = Array(n) { mutableListOf<Int>() }\n\n    repeat(m) {\n        st = StringTokenizer(br.readLine())\n        val a = st.nextToken().toInt() - 1\n        val b = st.nextToken().toInt() - 1\n        tmpG[a].add(b)\n        tmpGr[b].add(a)\n        outDeg[a]++\n        inDeg[b]++\n    }\n\n    for (i in 0 until n) {\n        g[i] = tmpG[i].toIntArray()\n        gr[i] = tmpGr[i].toIntArray()\n    }\n\n    // Topological order using Kahn\n    val q = ArrayDeque<Int>()\n    val topo = IntArray(n)\n    var tSize = 0\n    val inDegCopy = inDeg.clone()\n    for (i in 0 until n) {\n        if (inDegCopy[i] == 0) q.add(i)\n    }\n    while (q.isNotEmpty()) {\n        val v = q.removeFirst()\n        topo[tSize++] = v\n        for (to in g[v]) {\n            inDegCopy[to]--\n            if (inDegCopy[to] == 0) q.add(to)\n        }\n    }\n\n    // If not all nodes processed, graph has cycles; problem constraints allow arbitrary graph.\n    // We'll process only reachable via DAG-like order; for cycles, we can still use this order.\n\n    val canReachUse = BooleanArray(n)\n    val canReachAssign = BooleanArray(n)\n\n    // Process in reverse topological order for canReachUse\n    for (i in tSize - 1 downTo 0) {\n        val v = topo[i]\n        var cu = (f[v] == 2)\n        for (to in g[v]) {\n            if (canReachUse[to]) {\n                cu = true\n                break\n            }\n        }\n        canReachUse[v] = cu\n    }\n\n    // Process in forward topological order for canReachAssign\n    for (i in 0 until tSize) {\n        val v = topo[i]\n        var ca = (f[v] == 1)\n        for (from in gr[v]) {\n            if (canReachAssign[from]) {\n                ca = true\n                break\n            }\n        }\n        canReachAssign[v] = ca\n    }\n\n    // DP for \"bad\" paths (with assignment after v)\n    val bad = BooleanArray(n)\n    // reverse topological for bad\n    for (i in tSize - 1 downTo 0) {\n        val v = topo[i]\n        var b = (f[v] == 1)\n        for (to in g[v]) {\n            if (bad[to]) {\n                b = true\n                break\n            }\n        }\n        bad[v] = b\n    }\n\n    val res = IntArray(n)\n    for (v in 0 until n) {\n        res[v] = if (canReachAssign[v] && canReachUse[v] && !bad[v]) 1 else 0\n    }\n\n    val sb = StringBuilder()\n    for (i in 0 until n) {\n        sb.append(res[i]).append('\\n')\n    }\n    print(sb.toString())\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport java.util.ArrayDeque\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    var st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toInt()\n    val m = st.nextToken().toInt()\n\n    st = StringTokenizer(br.readLine())\n    val f = IntArray(n)\n    for (i in 0 until n) f[i] = st.nextToken().toInt()\n\n    val g = Array(n) { IntArray(0) }\n    val gr = Array(n) { IntArray(0) }\n\n    val tmpG = Array(n) { mutableListOf<Int>() }\n    val tmpGR = Array(n) { mutableListOf<Int>() }\n\n    repeat(m) {\n        st = StringTokenizer(br.readLine())\n        val a = st.nextToken().toInt() - 1\n        val b = st.nextToken().toInt() - 1\n        tmpG[a].add(b)\n        tmpGR[b].add(a)\n    }\n\n    for (i in 0 until n) {\n        g[i] = tmpG[i].toIntArray()\n        gr[i] = tmpGR[i].toIntArray()\n    }\n\n    // Kosaraju to find SCCs\n    val visited = BooleanArray(n)\n    val order = IntArray(n)\n    var ordPtr = 0\n\n    fun dfs1(v: Int) {\n        visited[v] = true\n        for (to in g[v]) if (!visited[to]) dfs1(to)\n        order[ordPtr++] = v\n    }\n\n    for (i in 0 until n) if (!visited[i]) dfs1(i)\n\n    val comp = IntArray(n)\n    java.util.Arrays.fill(comp, -1)\n    var compCnt = 0\n\n    fun dfs2(v: Int, c: Int) {\n        comp[v] = c\n        for (to in gr[v]) if (comp[to] == -1) dfs2(to, c)\n    }\n\n    for (i in n - 1 downTo 0) {\n        val v = order[i]\n        if (comp[v] == -1) {\n            dfs2(v, compCnt)\n            compCnt++\n        }\n    }\n\n    // Build condensation graph\n    val compG = Array(compCnt) { mutableListOf<Int>() }\n    val hasEdge = HashSet<Long>()\n    for (v in 0 until n) {\n        val cv = comp[v]\n        for (to in g[v]) {\n            val cu = comp[to]\n            if (cv != cu) {\n                val key = (cv.toLong() shl 32) or cu.toLong()\n                if (hasEdge.add(key)) compG[cv].add(cu)\n            }\n        }\n    }\n\n    val assign = BooleanArray(compCnt)\n    val use = BooleanArray(compCnt)\n    for (v in 0 until n) {\n        val c = comp[v]\n        if (f[v] == 1) assign[c] = true\n        if (f[v] == 2) use[c] = true\n    }\n\n    // DP on DAG: from assign components forward, but stop when another assign reached\n    val interestingComp = BooleanArray(compCnt)\n    val queue = ArrayDeque<Int>()\n\n    for (c in 0 until compCnt) {\n        if (assign[c]) {\n            interestingComp[c] = true\n            queue.add(c)\n        }\n    }\n\n    while (queue.isNotEmpty()) {\n        val c = queue.removeFirst()\n        for (to in compG[c]) {\n            if (!interestingComp[to] && !assign[to]) {\n                interestingComp[to] = true\n                queue.add(to)\n            }\n        }\n    }\n\n    val res = IntArray(n)\n    for (v in 0 until n) {\n        val c = comp[v]\n        res[v] = if (interestingComp[c] && use[c]) 1 else 0\n    }\n\n    val sb = StringBuilder()\n    for (i in 0 until n) {\n        sb.append(res[i]).append('\\n')\n    }\n    print(sb.toString())\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport java.util.ArrayDeque\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    var st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toInt()\n    val m = st.nextToken().toInt()\n\n    st = StringTokenizer(br.readLine())\n    val f = IntArray(n)\n    for (i in 0 until n) f[i] = st.nextToken().toInt()\n\n    val g = Array(n) { IntArray(0) }\n    val gr = Array(n) { IntArray(0) }\n    val outTmp = ArrayList<IntArray>()\n    val revTmp = ArrayList<IntArray>()\n    val outList = Array(n) { mutableListOf<Int>() }\n    val revList = Array(n) { mutableListOf<Int>() }\n\n    repeat(m) {\n        st = StringTokenizer(br.readLine())\n        val a = st.nextToken().toInt() - 1\n        val b = st.nextToken().toInt() - 1\n        outList[a].add(b)\n        revList[b].add(a)\n    }\n    for (i in 0 until n) {\n        g[i] = outList[i].toIntArray()\n        gr[i] = revList[i].toIntArray()\n    }\n\n    // Kosaraju for SCC\n    val visited = BooleanArray(n)\n    val order = IntArray(n)\n    var ordPtr = 0\n\n    fun dfs1(v: Int) {\n        visited[v] = true\n        for (to in g[v]) if (!visited[to]) dfs1(to)\n        order[ordPtr++] = v\n    }\n\n    for (i in 0 until n) if (!visited[i]) dfs1(i)\n\n    val comp = IntArray(n) { -1 }\n    var compCnt = 0\n\n    fun dfs2(v: Int, c: Int) {\n        comp[v] = c\n        for (to in gr[v]) if (comp[to] == -1) dfs2(to, c)\n    }\n\n    for (i in n - 1 downTo 0) {\n        val v = order[i]\n        if (comp[v] == -1) {\n            dfs2(v, compCnt)\n            compCnt++\n        }\n    }\n\n    // Build condensation graph\n    val compOut = Array(compCnt) { mutableSetOf<Int>() }\n    val compIn = Array(compCnt) { mutableSetOf<Int>() }\n    val compAssign = BooleanArray(compCnt)\n    val compUse = BooleanArray(compCnt)\n\n    for (v in 0 until n) {\n        val c = comp[v]\n        if (f[v] == 1) compAssign[c] = true\n        if (f[v] == 2) compUse[c] = true\n        for (to in g[v]) {\n            val ct = comp[to]\n            if (c != ct) {\n                if (compOut[c].add(ct)) {\n                    compIn[ct].add(c)\n                }\n            }\n        }\n    }\n\n    // Topological order of condensation graph\n    val indeg = IntArray(compCnt)\n    for (c in 0 until compCnt) indeg[c] = compIn[c].size\n    val q = ArrayDeque<Int>()\n    for (c in 0 until compCnt) if (indeg[c] == 0) q.add(c)\n    val topo = IntArray(compCnt)\n    var tp = 0\n    while (!q.isEmpty()) {\n        val v = q.removeFirst()\n        topo[tp++] = v\n        for (to in compOut[v]) {\n            indeg[to]--\n            if (indeg[to] == 0) q.add(to)\n        }\n    }\n\n    // DP forward: can reach a use without passing another assign\n    val goodForward = BooleanArray(compCnt)\n    // For each component, whether it has an assign reachable from it without another assign\n    val canReachAssign = BooleanArray(compCnt)\n\n    // First, mark components that themselves contain assign and use\n    // We'll propagate from assign components forward until hitting another assign\n    val q2 = ArrayDeque<Int>()\n    val visitedComp = BooleanArray(compCnt)\n\n    for (c in 0 until compCnt) {\n        if (compAssign[c]) {\n            q2.add(c)\n            visitedComp[c] = true\n            canReachAssign[c] = true\n        }\n    }\n\n    while (!q2.isEmpty()) {\n        val v = q2.removeFirst()\n        for (to in compOut[v]) {\n            if (compAssign[to]) continue\n            if (!visitedComp[to]) {\n                visitedComp[to] = true\n                canReachAssign[to] = true\n                q2.add(to)\n            }\n        }\n    }\n\n    // Now from components that canReachAssign and have use, propagate backward to mark goodForward\n    val q3 = ArrayDeque<Int>()\n    val visitedBack = BooleanArray(compCnt)\n    for (c in 0 until compCnt) {\n        if (canReachAssign[c] && compUse[c]) {\n            goodForward[c] = true\n            q3.add(c)\n            visitedBack[c] = true\n        }\n    }\n    while (!q3.isEmpty()) {\n        val v = q3.removeFirst()\n        for (from in compIn[v]) {\n            if (!visitedBack[from]) {\n                visitedBack[from] = true\n                goodForward[from] = true\n                q3.add(from)\n            }\n        }\n    }\n\n    // DP backward: can reach an assign from a use without another assign\n    val canReachUse = BooleanArray(compCnt)\n    val q4 = ArrayDeque<Int>()\n    val visitedComp2 = BooleanArray(compCnt)\n\n    for (c in 0 until compCnt) {\n        if (compUse[c]) {\n            q4.add(c)\n            visitedComp2[c] = true\n            canReachUse[c] = true\n        }\n    }\n\n    while (!q4.isEmpty()) {\n        val v = q4.removeFirst()\n        for (from in compIn[v]) {\n            if (compAssign[from]) continue\n            if (!visitedComp2[from]) {\n                visitedComp2[from] = true\n                canReachUse[from] = true\n                q4.add(from)\n            }\n        }\n    }\n\n    val goodBackward = BooleanArray(compCnt)\n    val q5 = ArrayDeque<Int>()\n    val visitedBack2 = BooleanArray(compCnt)\n    for (c in 0 until compCnt) {\n        if (canReachUse[c] && compAssign[c]) {\n            goodBackward[c] = true\n            q5.add(c)\n            visitedBack2[c] = true\n        }\n    }\n    while (!q5.isEmpty()) {\n        val v = q5.removeFirst()\n        for (to in compOut[v]) {\n            if (!visitedBack2[to]) {\n                visitedBack2[to] = true\n                goodBackward[to] = true\n                q5.add(to)\n            }\n        }\n    }\n\n    val res = IntArray(n)\n    for (v in 0 until n) {\n        val c = comp[v]\n        res[v] = if (goodForward[c] && goodBackward[c]) 1 else 0\n    }\n\n    val sb = StringBuilder()\n    for (i in 0 until n) {\n        sb.append(res[i]).append('\\n')\n    }\n    print(sb.toString())\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport java.util.ArrayDeque\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    var st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toInt()\n    val m = st.nextToken().toInt()\n\n    st = StringTokenizer(br.readLine())\n    val f = IntArray(n)\n    for (i in 0 until n) {\n        f[i] = st.nextToken().toInt()\n    }\n\n    val g = Array(n) { IntArray(0) }\n    val gr = Array(n) { IntArray(0) }\n\n    val tmpG = Array(n) { mutableListOf<Int>() }\n    val tmpGR = Array(n) { mutableListOf<Int>() }\n\n    repeat(m) {\n        st = StringTokenizer(br.readLine())\n        val a = st.nextToken().toInt() - 1\n        val b = st.nextToken().toInt() - 1\n        tmpG[a].add(b)\n        tmpGR[b].add(a)\n    }\n\n    for (i in 0 until n) {\n        g[i] = tmpG[i].toIntArray()\n        gr[i] = tmpGR[i].toIntArray()\n    }\n\n    // reachableFromAssign: nodes reachable from any assign (1)\n    val reachableFromAssign = BooleanArray(n)\n    val q1 = ArrayDeque<Int>()\n    for (i in 0 until n) {\n        if (f[i] == 1) {\n            reachableFromAssign[i] = true\n            q1.add(i)\n        }\n    }\n    while (q1.isNotEmpty()) {\n        val v = q1.removeFirst()\n        for (to in g[v]) {\n            if (!reachableFromAssign[to]) {\n                reachableFromAssign[to] = true\n                q1.add(to)\n            }\n        }\n    }\n\n    // canReachUse: nodes that can reach some use (2)\n    val canReachUse = BooleanArray(n)\n    val q2 = ArrayDeque<Int>()\n    for (i in 0 until n) {\n        if (f[i] == 2) {\n            canReachUse[i] = true\n            q2.add(i)\n        }\n    }\n    while (q2.isNotEmpty()) {\n        val v = q2.removeFirst()\n        for (to in gr[v]) {\n            if (!canReachUse[to]) {\n                canReachUse[to] = true\n                q2.add(to)\n            }\n        }\n    }\n\n    // bad: nodes that can reach an assign (1) in future (excluding starting assign)\n    val bad = BooleanArray(n)\n    val q3 = ArrayDeque<Int>()\n    for (i in 0 until n) {\n        if (f[i] == 1) {\n            bad[i] = true\n            q3.add(i)\n        }\n    }\n    while (q3.isNotEmpty()) {\n        val v = q3.removeFirst()\n        for (to in gr[v]) {\n            if (!bad[to]) {\n                bad[to] = true\n                q3.add(to)\n            }\n        }\n    }\n\n    val res = StringBuilder()\n    for (i in 0 until n) {\n        val interesting = reachableFromAssign[i] && canReachUse[i] && !bad[i]\n        res.append(if (interesting) \"1\" else \"0\").append('\\n')\n    }\n    print(res.toString())\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport java.util.ArrayDeque\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    var st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toInt()\n    val m = st.nextToken().toInt()\n\n    st = StringTokenizer(br.readLine())\n    val f = IntArray(n)\n    for (i in 0 until n) {\n        f[i] = st.nextToken().toInt()\n    }\n\n    val g = Array(n) { IntArray(0) }\n    val rg = Array(n) { IntArray(0) }\n    val outDeg = IntArray(n)\n    val inDeg = IntArray(n)\n\n    val tmpG = Array(n) { mutableListOf<Int>() }\n    val tmpRG = Array(n) { mutableListOf<Int>() }\n\n    repeat(m) {\n        st = StringTokenizer(br.readLine())\n        val a = st.nextToken().toInt() - 1\n        val b = st.nextToken().toInt() - 1\n        tmpG[a].add(b)\n        tmpRG[b].add(a)\n    }\n\n    for (i in 0 until n) {\n        g[i] = tmpG[i].toIntArray()\n        rg[i] = tmpRG[i].toIntArray()\n        outDeg[i] = g[i].size\n        inDeg[i] = rg[i].size\n    }\n\n    // Topological order via Kahn\n    val q = ArrayDeque<Int>()\n    val topo = IntArray(n)\n    var tSize = 0\n    val inDegCopy = inDeg.clone()\n    for (i in 0 until n) {\n        if (inDegCopy[i] == 0) q.add(i)\n    }\n    while (q.isNotEmpty()) {\n        val v = q.removeFirst()\n        topo[tSize++] = v\n        for (to in g[v]) {\n            inDegCopy[to]--\n            if (inDegCopy[to] == 0) q.add(to)\n        }\n    }\n\n    // dpAssign: can reach a state with assignment from v without passing another assignment\n    val dpAssign = BooleanArray(n)\n    // process in reverse topo\n    for (i in tSize - 1 downTo 0) {\n        val v = topo[i]\n        var res = (f[v] == 1)\n        if (!res) {\n            for (to in g[v]) {\n                if (f[to] != 1 && dpAssign[to]) {\n                    res = true\n                    break\n                }\n            }\n        }\n        dpAssign[v] = res\n    }\n\n    // dpUse: can reach a state with use from v without passing assignment\n    val dpUse = BooleanArray(n)\n    // process in reverse topo\n    for (i in tSize - 1 downTo 0) {\n        val v = topo[i]\n        var res = (f[v] == 2)\n        if (!res) {\n            for (to in g[v]) {\n                if (f[to] != 1 && dpUse[to]) {\n                    res = true\n                    break\n                }\n            }\n        }\n        dpUse[v] = res\n    }\n\n    // dpFromAssign: can be reached from some assignment without passing another assignment\n    val dpFromAssign = BooleanArray(n)\n    // process in topo order\n    for (i in 0 until tSize) {\n        val v = topo[i]\n        var res = (f[v] == 1)\n        if (!res) {\n            for (from in rg[v]) {\n                if (f[from] != 1 && dpFromAssign[from]) {\n                    res = true\n                    break\n                }\n            }\n        }\n        dpFromAssign[v] = res\n    }\n\n    val ans = StringBuilder()\n    for (i in 0 until n) {\n        val interesting = dpFromAssign[i] && dpAssign[i] && dpUse[i]\n        ans.append(if (interesting) \"1\\n\" else \"0\\n\")\n    }\n    print(ans.toString())\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport java.util.ArrayDeque\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    var st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toInt()\n    val m = st.nextToken().toInt()\n\n    st = StringTokenizer(br.readLine())\n    val f = IntArray(n)\n    for (i in 0 until n) f[i] = st.nextToken().toInt()\n\n    val g = Array(n) { IntArray(0) }\n    val gr = Array(n) { IntArray(0) }\n    val tempG = Array(n) { mutableListOf<Int>() }\n    val tempGR = Array(n) { mutableListOf<Int>() }\n\n    repeat(m) {\n        st = StringTokenizer(br.readLine())\n        val a = st.nextToken().toInt() - 1\n        val b = st.nextToken().toInt() - 1\n        tempG[a].add(b)\n        tempGR[b].add(a)\n    }\n    for (i in 0 until n) {\n        g[i] = tempG[i].toIntArray()\n        gr[i] = tempGR[i].toIntArray()\n    }\n\n    // Kosaraju to find SCCs\n    val order = IntArray(n)\n    var orderPos = 0\n    val used = BooleanArray(n)\n    val stack = ArrayDeque<Int>()\n\n    fun dfs1(v: Int) {\n        stack.clear()\n        stack.add(v)\n        while (stack.isNotEmpty()) {\n            val x = stack.removeLast()\n            if (!used[x]) {\n                used[x] = true\n                stack.add(x.inv()) // marker\n                for (to in g[x]) if (!used[to]) stack.add(to)\n            } else if (x < 0) {\n                val real = x.inv()\n                order[orderPos++] = real\n            }\n        }\n    }\n\n    for (i in 0 until n) if (!used[i]) dfs1(i)\n\n    val comp = IntArray(n)\n    var compCnt = 0\n    used.fill(false)\n\n    fun dfs2(v: Int, c: Int) {\n        stack.clear()\n        stack.add(v)\n        used[v] = true\n        comp[v] = c\n        while (stack.isNotEmpty()) {\n            val x = stack.removeLast()\n            for (to in gr[x]) {\n                if (!used[to]) {\n                    used[to] = true\n                    comp[to] = c\n                    stack.add(to)\n                }\n            }\n        }\n    }\n\n    for (i in n - 1 downTo 0) {\n        val v = order[i]\n        if (!used[v]) {\n            dfs2(v, compCnt++)\n        }\n    }\n\n    // Build condensation DAG\n    val dag = Array(compCnt) { IntArray(0) }\n    val tempDag = Array(compCnt) { mutableSetOf<Int>() }\n    for (v in 0 until n) {\n        val cv = comp[v]\n        for (to in g[v]) {\n            val cu = comp[to]\n            if (cv != cu) tempDag[cv].add(cu)\n        }\n    }\n    for (i in 0 until compCnt) {\n        dag[i] = tempDag[i].toIntArray()\n    }\n\n    // For each component, check if it contains an assign and a use\n    val hasAssign = BooleanArray(compCnt)\n    val hasUse = BooleanArray(compCnt)\n    for (i in 0 until n) {\n        if (f[i] == 1) hasAssign[comp[i]] = true\n        if (f[i] == 2) hasUse[comp[i]] = true\n    }\n\n    // DP on DAG: canReachUse and canReachAssign\n    val canReachUse = BooleanArray(compCnt)\n    val canReachAssign = BooleanArray(compCnt)\n\n    // Topological order of DAG via DFS on components\n    val topo = IntArray(compCnt)\n    var tpos = 0\n    used.fill(false)\n    fun dfsDag(v: Int) {\n        used[v] = true\n        for (to in dag[v]) if (!used[to]) dfsDag(to)\n        topo[tpos++] = v\n    }\n    for (i in 0 until compCnt) if (!used[i]) dfsDag(i)\n\n    // process in reverse topo for canReachUse and canReachAssign\n    for (i in 0 until compCnt) {\n        val c = topo[i]\n        var cu = hasUse[c]\n        var ca = hasAssign[c]\n        for (to in dag[c]) {\n            cu = cu or canReachUse[to]\n            ca = ca or canReachAssign[to]\n        }\n        canReachUse[c] = cu\n        canReachAssign[c] = ca\n    }\n\n    // Now determine interesting states\n    val res = IntArray(n)\n    for (v in 0 until n) {\n        val c = comp[v]\n        val interesting = canReachAssign[c] && canReachUse[c]\n        res[v] = if (interesting) 1 else 0\n    }\n\n    val sb = StringBuilder()\n    for (i in 0 until n) {\n        sb.append(res[i]).append('\\n')\n    }\n    print(sb.toString())\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\nimport java.util.ArrayDeque\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    var st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toInt()\n    val m = st.nextToken().toInt()\n\n    st = StringTokenizer(br.readLine())\n    val f = IntArray(n)\n    for (i in 0 until n) {\n        f[i] = st.nextToken().toInt()\n    }\n\n    val g = Array(n) { IntArray(0) }\n    val gr = Array(n) { IntArray(0) }\n    val outTmp = Array(n) { mutableListOf<Int>() }\n    val inTmp = Array(n) { mutableListOf<Int>() }\n\n    repeat(m) {\n        st = StringTokenizer(br.readLine())\n        val a = st.nextToken().toInt() - 1\n        val b = st.nextToken().toInt() - 1\n        outTmp[a].add(b)\n        inTmp[b].add(a)\n    }\n\n    for (i in 0 until n) {\n        g[i] = outTmp[i].toIntArray()\n        gr[i] = inTmp[i].toIntArray()\n    }\n\n    // Topological sort on reversed graph (gr)\n    val indeg = IntArray(n)\n    for (i in 0 until n) {\n        for (v in gr[i]) indeg[v]++\n    }\n    val q = ArrayDeque<Int>()\n    for (i in 0 until n) if (indeg[i] == 0) q.add(i)\n    val topo = IntArray(n)\n    var tIdx = 0\n    while (q.isNotEmpty()) {\n        val v = q.removeFirst()\n        topo[tIdx++] = v\n        for (to in gr[v]) {\n            indeg[to]--\n            if (indeg[to] == 0) q.add(to)\n        }\n    }\n\n    val dp = IntArray(n)\n    // process in topo order on reversed graph\n    for (i in 0 until tIdx) {\n        val v = topo[i]\n        var best = if (f[v] == 1) 1 else 0\n        for (to in gr[v]) {\n            val cand = dp[to] + if (f[v] == 1) 1 else 0\n            if (cand > best) best = cand\n        }\n        dp[v] = best\n    }\n\n    val ans = IntArray(n)\n    for (i in 0 until n) {\n        ans[i] = if (dp[i] > 0 && f[i] != 1) 1 else 0\n    }\n\n    val sb = StringBuilder()\n    for (i in 0 until n) {\n        sb.append(ans[i]).append('\\n')\n    }\n    print(sb.toString())\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 7735,
+            "prompt_tokens": 734,
+            "total_tokens": 8469,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 1,
+                "engine_ttft_ms": 56,
+                "engine_ttlt_ms": 8198,
+                "pre_inference_ms": 201,
+                "service_tbt_ms": 1,
+                "service_ttft_ms": 364,
+                "service_ttlt_ms": 8499,
+                "total_duration_ms": 8308,
+                "user_visible_ttft_ms": 163
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Kotlin to solve this programming problem:\nDescription: Life is not easy for the perfectly common variable named Vasya. Wherever it goes, it is either assigned a value, or simply ignored, or is being used!Vasya's life goes in states of a program. In each state, Vasya can either be used (for example, to calculate the value of another variable), or be assigned a value, or ignored. Between some states are directed (oriented) transitions.A path is a sequence of states v1,\u2009v2,\u2009...,\u2009vx, where for any 1\u2009\u2264\u2009i\u2009&lt;\u2009x exists a transition from vi to vi\u2009+\u20091.Vasya's value in state v is interesting to the world, if exists path p1,\u2009p2,\u2009...,\u2009pk such, that pi\u2009=\u2009v for some i (1\u2009\u2264\u2009i\u2009\u2264\u2009k), in state p1 Vasya gets assigned a value, in state pk Vasya is used and there is no state pi (except for p1) where Vasya gets assigned a value.Help Vasya, find the states in which Vasya's value is interesting to the world.\nInput Specification: The first line contains two space-separated integers n and m (1\u2009\u2264\u2009n,\u2009m\u2009\u2264\u2009105) \u2014 the numbers of states and transitions, correspondingly. The second line contains space-separated n integers f1,\u2009f2,\u2009...,\u2009fn (0\u2009\u2264\u2009fi\u2009\u2264\u20092), fi described actions performed upon Vasya in state i: 0 represents ignoring, 1 \u2014 assigning a value, 2 \u2014 using. Next m lines contain space-separated pairs of integers ai,\u2009bi (1\u2009\u2264\u2009ai,\u2009bi\u2009\u2264\u2009n, ai\u2009\u2260\u2009bi), each pair represents the transition from the state number ai to the state number bi. Between two states can be any number of transitions.\nOutput Specification: Print n integers r1,\u2009r2,\u2009...,\u2009rn, separated by spaces or new lines. Number ri should equal 1, if Vasya's value in state i is interesting to the world and otherwise, it should equal 0. The states are numbered from 1 to n in the order, in which they are described in the input.\n\nSample Input:\n4 3\n1 0 0 2\n1 2\n2 3\n3 4\nSample Output:\n1\n1\n1\n1\n\nSample Input:\n3 1\n1 0 2\n1 3\nSample Output:\n1\n0\n1\n\nSample Input:\n3 1\n2 0 1\n1 3\nSample Output:\n0\n0\n0\n\nNotes: NoteIn the first sample the program states can be used to make the only path in which the value of Vasya interests the world, 1  2  3  4; it includes all the states, so in all of them Vasya's value is interesting to the world.The second sample the only path in which Vasya's value is interesting to the world is , \u2014 1  3; state 2 is not included there.In the third sample we cannot make from the states any path in which the value of Vasya would be interesting to the world, so the value of Vasya is never interesting to the world.\nTake input from standard input and output to standard output\nProvide the Kotlin code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "87d869a0fd4a510c5e7e310886b86a57",
+        "difficulty": 1700,
+        "prob_desc_sample_inputs": [
+            "4 3\n1 0 0 2\n1 2\n2 3\n3 4",
+            "3 1\n1 0 2\n1 3",
+            "3 1\n2 0 1\n1 3"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "graphs"
+        ],
+        "prob_desc_output_spec": "Print n integers r1,\u2009r2,\u2009...,\u2009rn, separated by spaces or new lines. Number ri should equal 1, if Vasya's value in state i is interesting to the world and otherwise, it should equal 0. The states are numbered from 1 to n in the order, in which they are described in the input.",
+        "prob_desc_input_spec": "The first line contains two space-separated integers n and m (1\u2009\u2264\u2009n,\u2009m\u2009\u2264\u2009105) \u2014 the numbers of states and transitions, correspondingly. The second line contains space-separated n integers f1,\u2009f2,\u2009...,\u2009fn (0\u2009\u2264\u2009fi\u2009\u2264\u20092), fi described actions performed upon Vasya in state i: 0 represents ignoring, 1 \u2014 assigning a value, 2 \u2014 using. Next m lines contain space-separated pairs of integers ai,\u2009bi (1\u2009\u2264\u2009ai,\u2009bi\u2009\u2264\u2009n, ai\u2009\u2260\u2009bi), each pair represents the transition from the state number ai to the state number bi. Between two states can be any number of transitions.",
+        "lang_cluster": "Kotlin",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first sample the program states can be used to make the only path in which the value of Vasya interests the world, 1  2  3  4; it includes all the states, so in all of them Vasya's value is interesting to the world.The second sample the only path in which Vasya's value is interesting to the world is , \u2014 1  3; state 2 is not included there.In the third sample we cannot make from the states any path in which the value of Vasya would be interesting to the world, so the value of Vasya is never interesting to the world.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Life is not easy for the perfectly common variable named Vasya. Wherever it goes, it is either assigned a value, or simply ignored, or is being used!Vasya's life goes in states of a program. In each state, Vasya can either be used (for example, to calculate the value of another variable), or be assigned a value, or ignored. Between some states are directed (oriented) transitions.A path is a sequence of states v1,\u2009v2,\u2009...,\u2009vx, where for any 1\u2009\u2264\u2009i\u2009&lt;\u2009x exists a transition from vi to vi\u2009+\u20091.Vasya's value in state v is interesting to the world, if exists path p1,\u2009p2,\u2009...,\u2009pk such, that pi\u2009=\u2009v for some i (1\u2009\u2264\u2009i\u2009\u2264\u2009k), in state p1 Vasya gets assigned a value, in state pk Vasya is used and there is no state pi (except for p1) where Vasya gets assigned a value.Help Vasya, find the states in which Vasya's value is interesting to the world.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1333897500",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "1\n1\n1\n1",
+            "1\n0\n1",
+            "0\n0\n0"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"4 3\\r\\n1 0 0 2\\r\\n1 2\\r\\n2 3\\r\\n3 4\\r\\n\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\"]}, {\"input\": \"3 1\\r\\n1 0 2\\r\\n1 3\\r\\n\", \"output\": [\"1\\r\\n0\\r\\n1\"]}, {\"input\": \"3 1\\r\\n2 0 1\\r\\n1 3\\r\\n\", \"output\": [\"0\\r\\n0\\r\\n0\"]}, {\"input\": \"4 4\\r\\n1 0 2 0\\r\\n1 2\\r\\n2 3\\r\\n3 4\\r\\n4 1\\r\\n\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n0\"]}, {\"input\": \"10000 10000\\r\\n0 1 2 2 2 0 1 0 1 0 0 0 1 2 2 0 0 0 2 1 2 0 1 0 2 1 1 1 1 0 1 1 0 2 1 2 0 1 0 1 2 2 0 0 0 1 0 0 0 2 2 2 1 2 2 1 0 2 2 1 1 2 0 2 1 1 2 2 1 0 0 2 1 0 1 0 2 0 2 0 2 0 0 0 0 0 0 0 2 0 0 0 1 2 2 2 1 2 2 1 2 1 1 1 0 1 2 0 2 2 0 0 1 0 0 0 1 0 2 2 1 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"10000 10000\\r\\n1 1 1 2 1 2 2 1 2 1 2 1 1 1 1 1 2 1 2 1 1 2 2 2 2 2 1 1 2 2 1 1 2 1 1 2 1 1 2 1 2 1 1 1 1 2 1 2 2 2 2 1 1 1 2 1 1 2 1 2 2 1 1 1 2 1 1 1 1 1 1 2 1 2 2 2 1 2 1 2 2 2 2 2 2 2 2 2 2 2 1 1 1 2 2 1 2 2 2 2 2 2 2 2 1 2 1 1 2 2 1 2 1 2 1 1 1 2 1 1 2 ...\", \"output\": [\"0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n...\"]}, {\"input\": \"10000 100000\\r\\n0 1 2 1 1 2 2 0 0 2 1 0 1 1 2 2 0 1 1 2 1 2 2 1 2 2 0 0 2 1 1 2 1 1 2 1 2 0 1 2 0 1 0 1 2 1 0 0 1 2 2 0 1 0 1 2 2 1 0 0 1 1 2 2 1 2 2 2 2 2 2 2 2 2 0 1 2 2 1 0 1 1 0 0 2 2 1 0 1 2 2 0 1 0 2 2 2 1 1 1 0 1 1 0 1 0 0 2 1 1 2 0 1 1 2 2 0 0 1 0 0...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"2 100000\\r\\n1 0\\r\\n2 1\\r\\n1 2\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n1 2\\r\\n...\", \"output\": [\"0\\r\\n0\"]}, {\"input\": \"100000 100000\\r\\n0 2 1 1 1 2 0 0 1 0 1 1 2 1 0 1 2 0 1 2 2 2 2 1 1 1 0 2 1 1 2 0 0 2 1 0 0 0 0 2 1 0 2 2 1 0 0 1 2 0 0 2 0 1 2 1 0 1 0 2 0 0 1 1 0 0 2 2 0 1 1 0 2 2 2 1 1 2 2 1 1 1 1 0 0 0 1 0 2 0 2 2 2 2 0 2 0 2 0 1 0 1 0 1 1 1 2 0 0 1 2 0 0 2 1 0 2 0 0 1 ...\", \"output\": [\"0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n2 2 2 1 1 2 1 1 1 1 2 2 1 2 1 1 2 1 2 2 1 2 2 2 1 1 1 2 2 1 1 2 1 1 1 1 1 1 2 2 1 1 1 2 2 1 2 1 2 1 2 1 1 1 1 2 2 1 2 1 1 2 2 1 2 2 1 2 2 1 1 1 1 1 2 2 1 1 2 2 1 1 1 1 1 1 1 1 2 1 2 2 1 1 1 1 1 2 1 2 1 1 2 1 1 1 1 2 2 2 1 1 1 1 1 2 1 1 2 1 ...\", \"output\": [\"0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\", \"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n1 1 0 0 1 0 1 0 1 0 1 0 1 1 0 1 1 1 1 0 0 0 0 1 0 0 0 1 0 1 1 1 1 0 1 1 0 1 1 1 0 0 1 0 0 1 0 1 1 1 0 0 0 0 1 1 0 1 0 0 1 0 1 0 1 1 0 1 1 1 0 0 1 0 1 1 1 1 0 0 1 1 0 1 1 1 1 0 0 1 1 1 0 1 1 0 1 0 1 0 0 0 1 0 1 1 1 0 0 1 0 0 1 1 0 0 0 1 0 0 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n0 0 2 2 0 2 2 0 0 0 2 0 0 2 2 0 0 2 2 2 0 2 0 2 0 2 2 0 2 2 2 0 2 2 2 0 2 0 2 2 2 0 0 0 2 0 0 2 2 0 2 2 2 0 0 0 2 2 2 2 0 0 2 0 0 2 2 0 2 0 0 2 0 0 2 0 2 0 2 0 0 2 0 0 2 2 0 2 0 2 0 2 2 2 2 2 0 0 2 0 2 0 2 2 0 2 2 2 0 2 2 0 0 0 0 0 2 2 0 0 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"2 1\\r\\n2 1\\r\\n2 1\\r\\n\", \"output\": [\"1\\r\\n1\"]}, {\"input\": \"100000 99999\\r\\n2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"100000 10\\r\\n2 2 2 2 2 2 1 1 1 2 2 2 1 1 1 2 1 1 2 2 1 2 1 1 2 1 2 2 2 2 1 2 2 2 1 2 2 2 2 1 2 2 2 1 1 1 2 2 1 2 2 1 1 1 1 1 1 2 1 2 2 2 1 2 2 1 1 1 1 1 1 2 1 2 2 1 2 1 2 1 1 2 1 2 1 1 1 2 2 2 2 2 2 1 2 2 2 2 2 1 1 1 1 2 2 1 2 2 2 1 2 1 1 1 1 2 2 2 2 2 1 1 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"3 2\\r\\n1 2 0\\r\\n1 2\\r\\n3 2\\r\\n\", \"output\": [\"1\\r\\n1\\r\\n0\"]}, {\"input\": \"50000 99997\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"100000 99999\\r\\n0 0 2 0 2 2 2 2 2 1 1 0 1 0 2 0 2 0 2 1 0 1 2 0 0 2 0 2 0 1 0 2 1 1 1 2 2 0 1 2 2 0 1 0 2 1 0 0 1 1 2 2 2 1 2 2 2 0 0 1 0 0 0 0 1 0 1 0 0 2 2 2 0 2 0 2 0 1 2 2 2 0 0 0 1 0 0 1 1 0 0 0 1 1 0 2 0 1 1 2 0 0 1 1 2 1 1 1 2 2 0 0 1 0 0 0 2 1 1 1 0...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"99991 100000\\r\\n1 1 2 0 1 2 0 0 0 2 2 2 0 0 1 0 1 0 0 0 0 2 1 1 2 0 2 2 2 2 1 2 2 2 0 2 0 2 0 1 2 2 2 0 2 1 2 1 2 0 1 0 0 2 0 2 1 2 1 1 1 1 0 0 2 2 0 2 1 1 1 0 2 2 0 0 2 1 1 1 2 2 1 1 2 0 1 0 1 2 2 1 1 0 1 2 1 0 0 1 0 1 1 0 1 0 1 1 0 0 1 2 2 2 0 2 1 2 0 1 0...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"99001 100000\\r\\n0 1 1 1 1 1 2 0 1 0 2 1 2 2 2 1 2 1 2 1 2 2 0 2 1 1 0 1 2 2 0 2 2 1 2 0 0 0 1 2 2 1 2 1 2 1 2 0 0 2 0 0 1 0 1 1 1 2 2 1 2 2 2 1 2 1 0 0 2 1 2 1 1 2 0 0 2 0 2 2 2 2 1 2 1 2 2 0 2 0 2 0 0 0 1 1 2 0 2 2 0 0 0 1 2 2 2 1 1 0 2 1 2 2 2 0 2 1 2 1 2...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"99001 100000\\r\\n1 2 2 0 1 1 2 0 1 1 0 1 0 0 0 0 1 2 1 2 2 1 1 2 1 0 1 0 0 0 2 1 1 1 0 2 2 2 1 2 2 1 0 1 0 1 2 0 1 1 1 0 1 0 1 0 0 0 1 2 0 1 2 0 0 2 1 2 1 0 0 0 2 2 0 2 1 1 2 2 2 0 0 2 1 2 1 0 0 1 0 1 0 0 1 0 1 0 1 2 2 0 1 1 0 2 2 0 2 2 2 0 2 2 2 0 1 1 2 0 2...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"100000 99999\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n...\"]}, {\"input\": \"99001 100000\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0...\", \"output\": [\"0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"99001 100000\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0...\", \"output\": [\"1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n...\"]}, {\"input\": \"90001 100000\\r\\n1 0 0 0 1 2 0 0 0 0 0 0 0 2 0 0 0 0 0 1 0 2 2 1 0 0 1 1 0 0 0 0 0 1 0 0 0 1 0 2 0 1 0 0 0 0 2 0 0 0 0 0 2 0 0 2 0 0 0 0 0 2 0 0 0 0 0 0 1 2 1 0 0 0 0 1 1 0 0 2 0 0 0 2 2 0 0 0 2 0 0 0 0 0 0 0 1 2 0 2 0 0 0 2 2 1 0 0 0 0 0 0 1 2 0 0 0 0 0 0 0...\", \"output\": [\"0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"99001 100000\\r\\n0 2 0 1 2 1 1 2 2 0 1 1 2 1 2 0 0 0 0 0 2 1 1 2 2 1 2 2 0 0 1 2 2 2 0 0 0 2 1 0 1 0 0 2 0 1 2 2 0 1 2 2 0 2 0 2 2 2 2 2 0 2 2 2 0 1 0 1 1 0 0 0 0 2 0 2 2 0 1 1 0 0 2 0 0 2 0 1 1 2 0 0 0 1 1 2 0 1 2 2 1 0 1 0 0 1 0 2 2 2 2 1 1 0 1 2 2 1 0 2 1...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"90001 100000\\r\\n0 0 1 1 0 1 2 1 2 1 0 0 0 2 2 0 2 1 1 1 1 1 1 0 0 1 0 0 0 0 2 1 2 2 0 1 1 1 1 0 2 2 0 2 1 0 1 0 1 2 0 2 1 2 2 1 2 0 1 2 1 1 1 2 1 1 0 1 2 1 1 1 2 1 2 1 0 2 0 0 0 1 2 0 0 2 0 1 2 0 0 1 2 0 2 0 2 2 2 1 0 1 0 1 0 2 0 2 2 1 0 2 1 1 1 1 0 2 1 1 1...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n...\"]}, {\"input\": \"30000 74999\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"8 8\\r\\n1 0 0 2 1 0 0 2\\r\\n1 2\\r\\n2 3\\r\\n3 2\\r\\n2 4\\r\\n6 8\\r\\n7 6\\r\\n6 7\\r\\n5 6\\r\\n\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\"]}, {\"input\": \"6 6\\r\\n1 0 0 0 0 2\\r\\n1 2\\r\\n2 3\\r\\n3 4\\r\\n4 5\\r\\n5 2\\r\\n3 6\\r\\n\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\"]}, {\"input\": \"100000 99999\\r\\n1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}]"
+    }
+}

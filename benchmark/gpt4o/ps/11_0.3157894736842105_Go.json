@@ -1,0 +1,353 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEHjrU104W5bLWnSdIM9lHazCHlJx",
+        "created": 1787073487,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\ntype Edge struct {\n\tu, v int\n}\n\nvar (\n\tn, m int\n\tedges []Edge\n\n\tbest int\n\n\t// per vertex, assigned dot or -1\n\tvertexDot [8]int\n\n\t// domino used[a][b] (1-based, a<=b)\n\tused [7][7]bool\n)\n\n// try to place domino (a,b) on edge e with orientation:\n// u gets a, v gets b\nfunc canPlace(e Edge, a, b int) bool {\n\tu, v := e.u, e.v\n\n\t// check vertex constraints\n\tif vertexDot[u] != -1 && vertexDot[u] != a {\n\t\treturn false\n\t}\n\tif vertexDot[v] != -1 && vertexDot[v] != b {\n\t\treturn false\n\t}\n\t// domino availability\n\tif a > b {\n\t\ta, b = b, a\n\t}\n\tif used[a][b] {\n\t\treturn false\n\t}\n\treturn true\n}\n\nfunc place(e Edge, a, b int) (oldU, oldV int) {\n\tu, v := e.u, e.v\n\toldU, oldV = vertexDot[u], vertexDot[v]\n\tif vertexDot[u] == -1 {\n\t\tvertexDot[u] = a\n\t}\n\tif vertexDot[v] == -1 {\n\t\tvertexDot[v] = b\n\t}\n\tif a > b {\n\t\ta, b = b, a\n\t}\n\tused[a][b] = true\n\treturn\n}\n\nfunc unplace(e Edge, a, b int, oldU, oldV int) {\n\tu, v := e.u, e.v\n\tvertexDot[u] = oldU\n\tvertexDot[v] = oldV\n\tif a > b {\n\t\ta, b = b, a\n\t}\n\tused[a][b] = false\n}\n\nfunc dfs(idx, placed int) {\n\tif idx == m {\n\t\tif placed > best {\n\t\t\tbest = placed\n\t\t}\n\t\treturn\n\t}\n\n\t// upper bound pruning\n\tif placed+(m-idx) <= best {\n\t\treturn\n\t}\n\n\te := edges[idx]\n\n\t// option 1: skip this edge\n\tdfs(idx+1, placed)\n\n\t// option 2: try all domino types and orientations\n\tfor a := 1; a <= 6; a++ {\n\t\tfor b := a; b <= 6; b++ {\n\t\t\tif used[a][b] {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\t// orientation 1: u<-a, v<-b\n\t\t\tif canPlace(e, a, b) {\n\t\t\t\toldU, oldV := place(e, a, b)\n\t\t\t\tdfs(idx+1, placed+1)\n\t\t\t\tunplace(e, a, b, oldU, oldV)\n\t\t\t}\n\t\t\t// orientation 2: u<-b, v<-a (if different)\n\t\t\tif a != b && canPlace(e, b, a) {\n\t\t\t\toldU, oldV := place(e, b, a)\n\t\t\t\tdfs(idx+1, placed+1)\n\t\t\t\tunplace(e, b, a, oldU, oldV)\n\t\t\t}\n\t\t}\n\t}\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tfmt.Fscan(in, &n, &m)\n\tedges = make([]Edge, m)\n\tfor i := 0; i < m; i++ {\n\t\tfmt.Fscan(in, &edges[i].u, &edges[i].v)\n\t}\n\tfor i := 1; i <= n; i++ {\n\t\tvertexDot[i] = -1\n\t}\n\tbest = 0\n\tdfs(0, 0)\n\tout := bufio.NewWriter(os.Stdout)\n\tfmt.Fprintln(out, best)\n\tout.Flush()\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\ntype Edge struct {\n\tu, v int\n}\n\nvar (\n\tn, m int\n\tedges []Edge\n\tbest int\n\n\t// per vertex: assigned dot or -1\n\tvDot [8]int\n\n\t// per dot 1..6: count of vertices using this dot\n\tdotCnt [7]int\n\n\t// per dot 1..6: adjacency mask of vertices using this dot\n\tdotMask [7]int\n\n\t// adjacency matrix of graph\n\tadj [8][8]int\n\n\t// for each dot, list of vertices using it\n\tdotVerts [7][]int\n)\n\nfunc max(a, b int) int {\n\tif a > b {\n\t\treturn a\n\t}\n\treturn b\n}\n\nfunc countEdges(mask int) int {\n\t// count edges in induced subgraph of vertices in mask\n\t// vertices are 1..n\n\tcnt := 0\n\tfor i := 1; i <= n; i++ {\n\t\tif mask&(1<<(i-1)) == 0 {\n\t\t\tcontinue\n\t\t}\n\t\tfor j := i + 1; j <= n; j++ {\n\t\t\tif mask&(1<<(j-1)) == 0 {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tif adj[i][j] == 1 {\n\t\t\t\tcnt++\n\t\t\t}\n\t\t}\n\t}\n\treturn cnt\n}\n\nfunc dfsVertex(pos int) {\n\tif pos > n {\n\t\t// all vertices assigned\n\t\ttotal := 0\n\t\tfor d := 1; d <= 6; d++ {\n\t\t\tif dotCnt[d] == 0 {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\ttotal += countEdges(dotMask[d])\n\t\t}\n\t\tif total > best {\n\t\t\tbest = total\n\t\t}\n\t\treturn\n\t}\n\n\t// remaining vertices including pos\n\trem := n - pos + 1\n\t// optimistic upper bound: current best + remaining vertices\n\t// each vertex can contribute at most 1 edge (rough bound)\n\tif best >= m { // cannot exceed number of edges\n\t\treturn\n\t}\n\tif best >= m { // redundant but safe\n\t\treturn\n\t}\n\t// simple pruning: if even assigning 1 edge per remaining vertex can't beat best\n\tif best >= m || best >= best+rem {\n\t\t// trivial, but keep structure\n\t}\n\n\tfor d := 1; d <= 6; d++ {\n\t\tif dotCnt[d] == 6 {\n\t\t\tcontinue\n\t\t}\n\t\tvDot[pos] = d\n\t\tdotCnt[d]++\n\t\tdotMask[d] |= 1 << (pos - 1)\n\t\tdotVerts[d] = append(dotVerts[d], pos)\n\n\t\tdfsVertex(pos + 1)\n\n\t\t// backtrack\n\t\tdotCnt[d]--\n\t\tdotMask[d] &^= 1 << (pos - 1)\n\t\tdotVerts[d] = dotVerts[d][:len(dotVerts[d])-1]\n\t}\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tfmt.Fscan(in, &n, &m)\n\tedges = make([]Edge, m)\n\tfor i := 0; i < m; i++ {\n\t\tvar a, b int\n\t\tfmt.Fscan(in, &a, &b)\n\t\tif a > b {\n\t\t\ta, b = b, a\n\t\t}\n\t\tedges[i] = Edge{a, b}\n\t\tadj[a][b] = 1\n\t\tadj[b][a] = 1\n\t}\n\n\tfor i := 1; i <= n; i++ {\n\t\tvDot[i] = -1\n\t}\n\tbest = 0\n\tdfsVertex(1)\n\n\tif best > 21 {\n\t\tbest = 21\n\t}\n\tfmt.Println(best)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\ntype Edge struct {\n\tu, v int\n}\n\nvar (\n\tn, m int\n\tedges []Edge\n\n\t// vertex labels 1..n -> 1..6, 0 means unassigned\n\tlabel [8]int\n\n\t// domino used[a][b] where 1<=a<=b<=6\n\tused [7][7]bool\n\n\tbest int\n)\n\nfunc dfsEdge(idx, placed int) {\n\tif idx == m {\n\t\tif placed > best {\n\t\t\tbest = placed\n\t\t}\n\t\treturn\n\t}\n\n\t// pruning: remaining edges\n\tif placed + (m-idx) <= best {\n\t\treturn\n\t}\n\n\te := edges[idx]\n\tu, v := e.u, e.v\n\n\tlu, lv := label[u], label[v]\n\n\t// Option 1: skip this edge\n\tdfsEdge(idx+1, placed)\n\n\t// Option 2: try to place domino\n\t// We need to consider all possible dot counts for endpoints (1..6)\n\t// respecting existing labels and domino availability.\n\n\t// Determine candidate labels for u and v\n\tvar candU, candV []int\n\n\tif lu == 0 {\n\t\tcandU = []int{1,2,3,4,5,6}\n\t} else {\n\t\tcandU = []int{lu}\n\t}\n\tif lv == 0 {\n\t\tcandV = []int{1,2,3,4,5,6}\n\t} else {\n\t\tcandV = []int{lv}\n\t}\n\n\t// Try all combinations\n\tfor _, a := range candU {\n\t\tfor _, b := range candV {\n\t\t\t// domino type is (min(a,b), max(a,b))\n\t\t\tx, y := a, b\n\t\t\tif x > y {\n\t\t\t\tx, y = y, x\n\t\t\t}\n\t\t\tif used[x][y] {\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\t// assign labels if needed\n\t\t\torigLu, origLv := lu, lv\n\t\t\tif lu == 0 {\n\t\t\t\tlabel[u] = a\n\t\t\t}\n\t\t\tif lv == 0 {\n\t\t\t\tlabel[v] = b\n\t\t\t}\n\n\t\t\tused[x][y] = true\n\t\t\tdfsEdge(idx+1, placed+1)\n\t\t\tused[x][y] = false\n\n\t\t\t// rollback labels\n\t\t\tif origLu == 0 {\n\t\t\t\tlabel[u] = 0\n\t\t\t}\n\t\t\tif origLv == 0 {\n\t\t\t\tlabel[v] = 0\n\t\t\t}\n\t\t}\n\t}\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tfmt.Fscan(in, &n, &m)\n\tedges = make([]Edge, m)\n\tfor i := 0; i < m; i++ {\n\t\tvar a, b int\n\t\tfmt.Fscan(in, &a, &b)\n\t\tedges[i] = Edge{a, b}\n\t}\n\n\tbest = 0\n\tdfsEdge(0, 0)\n\n\tout := bufio.NewWriter(os.Stdout)\n\tfmt.Fprintln(out, best)\n\tout.Flush()\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\ntype Edge struct {\n\tu, v int\n}\n\nvar (\n\tn, m   int\n\tedges  []Edge\n\tbest   int\n\tcolor  []int\n\tused   [7][7]bool\n)\n\nfunc dfsEdge(idx, placed int) {\n\tif idx == m {\n\t\tif placed > best {\n\t\t\tbest = placed\n\t\t}\n\t\treturn\n\t}\n\t// pruning\n\tif placed+(m-idx) <= best {\n\t\treturn\n\t}\n\n\te := edges[idx]\n\tu, v := e.u, e.v\n\n\t// Option 1: skip this edge\n\tdfsEdge(idx+1, placed)\n\n\t// Option 2: try all domino types (a<=b)\n\tfor a := 1; a <= 6; a++ {\n\t\tfor b := a; b <= 6; b++ {\n\t\t\tif used[a][b] {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tused[a][b] = true\n\n\t\t\t// orientation 1: u<-a, v<-b\n\t\t\tok := true\n\t\t\torigCu, origCv := color[u], color[v]\n\n\t\t\tif color[u] == 0 {\n\t\t\t\tcolor[u] = a\n\t\t\t} else if color[u] != a {\n\t\t\t\tok = false\n\t\t\t}\n\t\t\tif ok {\n\t\t\t\tif color[v] == 0 {\n\t\t\t\t\tcolor[v] = b\n\t\t\t\t} else if color[v] != b {\n\t\t\t\t\tok = false\n\t\t\t\t}\n\t\t\t}\n\t\t\tif ok {\n\t\t\t\tdfsEdge(idx+1, placed+1)\n\t\t\t}\n\t\t\tcolor[u], color[v] = origCu, origCv\n\n\t\t\t// orientation 2: u<-b, v<-a (if different)\n\t\t\tif a != b {\n\t\t\t\tok = true\n\t\t\t\torigCu, origCv = color[u], color[v]\n\n\t\t\t\tif color[u] == 0 {\n\t\t\t\t\tcolor[u] = b\n\t\t\t\t} else if color[u] != b {\n\t\t\t\t\tok = false\n\t\t\t\t}\n\t\t\t\tif ok {\n\t\t\t\t\tif color[v] == 0 {\n\t\t\t\t\t\tcolor[v] = a\n\t\t\t\t\t} else if color[v] != a {\n\t\t\t\t\t\tok = false\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tif ok {\n\t\t\t\t\tdfsEdge(idx+1, placed+1)\n\t\t\t\t}\n\t\t\t\tcolor[u], color[v] = origCu, origCv\n\t\t\t}\n\n\t\t\tused[a][b] = false\n\t\t}\n\t}\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tfmt.Fscan(in, &n, &m)\n\tedges = make([]Edge, m)\n\tfor i := 0; i < m; i++ {\n\t\tvar a, b int\n\t\tfmt.Fscan(in, &a, &b)\n\t\tif a > b {\n\t\t\ta, b = b, a\n\t\t}\n\t\tedges[i] = Edge{a, b}\n\t}\n\n\tcolor = make([]int, n+1)\n\tbest = 0\n\tdfsEdge(0, 0)\n\n\tout := bufio.NewWriter(os.Stdout)\n\tfmt.Fprintln(out, best)\n\tout.Flush()\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\ntype Edge struct {\n\tu, v int\n}\n\nvar (\n\tn, m int\n\tedges []Edge\n\n\t// For each vertex: assigned dot (0 if unassigned)\n\tvDot [8]int\n\n\t// For each dot value 1..6: assigned vertex (0 if unassigned)\n\tdotVertex [7]int\n\n\tbest int\n)\n\nfunc max(a, b int) int {\n\tif a > b {\n\t\treturn a\n\t}\n\treturn b\n}\n\nfunc dfsEdge(idx int, usedDomino int) {\n\tif idx == m {\n\t\tif usedDomino > best {\n\t\t\tbest = usedDomino\n\t\t}\n\t\treturn\n\t}\n\n\t// Option 1: skip this edge\n\tdfsEdge(idx+1, usedDomino)\n\n\tu := edges[idx].u\n\tv := edges[idx].v\n\n\t// Try all domino types (a,b) with 1<=a<=b<=6\n\tfor a := 1; a <= 6; a++ {\n\t\tfor b := a; b <= 6; b++ {\n\t\t\t// Two orientations: (u<-a, v<-b) and (u<-b, v<-a)\n\t\t\ttryOrientation(u, v, a, b, idx, usedDomino)\n\t\t\tif a != b {\n\t\t\t\ttryOrientation(u, v, b, a, idx, usedDomino)\n\t\t\t}\n\t\t}\n\t}\n}\n\nfunc tryOrientation(u, v, du, dv, idx, usedDomino int) {\n\t// Save previous state\n\tprevUDot := vDot[u]\n\tprevVDot := vDot[v]\n\tprevDuVertex := dotVertex[du]\n\tprevDvVertex := dotVertex[dv]\n\n\t// Check and assign for u\n\tif vDot[u] != 0 && vDot[u] != du {\n\t\treturn\n\t}\n\tif vDot[u] == 0 {\n\t\t// u unassigned\n\t\tif dotVertex[du] != 0 && dotVertex[du] != u {\n\t\t\treturn\n\t\t}\n\t}\n\n\t// Check and assign for v\n\tif vDot[v] != 0 && vDot[v] != dv {\n\t\treturn\n\t}\n\tif vDot[v] == 0 {\n\t\tif dotVertex[dv] != 0 && dotVertex[dv] != v {\n\t\t\treturn\n\t\t}\n\t}\n\n\t// Apply assignments\n\tif vDot[u] == 0 {\n\t\tvDot[u] = du\n\t\tdotVertex[du] = u\n\t}\n\tif vDot[v] == 0 {\n\t\tvDot[v] = dv\n\t\tdotVertex[dv] = v\n\t}\n\n\tdfsEdge(idx+1, usedDomino+1)\n\n\t// Rollback\n\tvDot[u] = prevUDot\n\tvDot[v] = prevVDot\n\tdotVertex[du] = prevDuVertex\n\tdotVertex[dv] = prevDvVertex\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tfmt.Fscan(in, &n, &m)\n\tedges = make([]Edge, m)\n\tfor i := 0; i < m; i++ {\n\t\tfmt.Fscan(in, &edges[i].u, &edges[i].v)\n\t}\n\n\tbest = 0\n\tdfsEdge(0, 0)\n\n\tout := bufio.NewWriter(os.Stdout)\n\tdefer out.Flush()\n\tfmt.Fprintln(out, best)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nconst (\n\tMAXN = 7\n)\n\ntype Edge struct {\n\tu, v int\n}\n\nvar (\n\tn, m int\n\tedges []Edge\n\n\t// For each vertex, chosen dot (0 means none yet)\n\tvertexDot [MAXN + 1]int\n\n\t// For each pair (a,b) with 1<=a<=b<=6, a domino exists and can be used at most once.\n\t// We'll index domino types by (a,b) -> idx.\n\tdomUsed [7][7]bool\n\n\tbest int\n)\n\n// Try to place domino on edge eIdx, given current assignments.\nfunc dfsEdge(eIdx int, placed int) {\n\tif eIdx == m {\n\t\tif placed > best {\n\t\t\tbest = placed\n\t\t}\n\t\treturn\n\t}\n\n\t// Option 1: skip this edge\n\tdfsEdge(eIdx+1, placed)\n\n\tu := edges[eIdx].u\n\tv := edges[eIdx].v\n\n\t// We need to assign dots to u and v if not yet assigned.\n\t// For each possible dot for u and v (1..6), respecting existing assignments,\n\t// and for each domino type (a,b) matching those dots (order matters),\n\t// try to place if unused.\n\n\torigDotU := vertexDot[u]\n\torigDotV := vertexDot[v]\n\n\tfor du := 1; du <= 6; du++ {\n\t\tif origDotU != 0 && origDotU != du {\n\t\t\tcontinue\n\t\t}\n\t\tfor dv := 1; dv <= 6; dv++ {\n\t\t\tif origDotV != 0 && origDotV != dv {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\t// Need a domino with halves (du,dv) in some order.\n\t\t\ta, b := du, dv\n\t\t\tif a > b {\n\t\t\t\ta, b = b, a\n\t\t\t}\n\t\t\tif domUsed[a][b] {\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\t// Place domino: assign dots if needed\n\t\t\tvertexDot[u] = du\n\t\t\tvertexDot[v] = dv\n\t\t\tdomUsed[a][b] = true\n\n\t\t\tdfsEdge(eIdx+1, placed+1)\n\n\t\t\t// backtrack\n\t\t\tdomUsed[a][b] = false\n\t\t\tvertexDot[u] = origDotU\n\t\t\tvertexDot[v] = origDotV\n\t\t}\n\t}\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tfmt.Fscan(in, &n, &m)\n\tedges = make([]Edge, m)\n\tfor i := 0; i < m; i++ {\n\t\tfmt.Fscan(in, &edges[i].u, &edges[i].v)\n\t}\n\n\tbest = 0\n\tdfsEdge(0, 0)\n\n\tout := bufio.NewWriter(os.Stdout)\n\tfmt.Fprintln(out, best)\n\tout.Flush()\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\ntype Edge struct {\n\tu, v int\n}\n\nvar (\n\tn, m int\n\tedges []Edge\n\n\tbest int\n\n\t// For each vertex: assigned dot (0 if none), and count of incident edges used\n\tvDot  [8]int\n\tvUsed [8]int\n\n\t// For each domino type (a,b) with 1<=a<=b<=6, index 0..20\n\tusedDomino [21]bool\n)\n\n// map (a,b) to index 0..20\nfunc domIndex(a, b int) int {\n\tif a > b {\n\t\ta, b = b, a\n\t}\n\t// counts: 1..6\n\t// row a has (7-a) entries\n\t// prefix sum of previous rows: sum_{k=1}^{a-1} (7-k) = (a-1)*(8-a)/2\n\treturn (a-1)*(8-a)/2 + (b - a)\n}\n\nfunc dfs(ei, placed int) {\n\tif placed > best {\n\t\tbest = placed\n\t}\n\tif ei == m {\n\t\treturn\n\t}\n\t// Upper bound pruning: remaining edges + placed cannot beat best\n\tif placed + (m-ei) <= best {\n\t\treturn\n\t}\n\n\tu := edges[ei].u\n\tv := edges[ei].v\n\n\t// Option 1: skip this edge\n\tdfs(ei+1, placed)\n\n\t// Try all domino types and orientations\n\tfor a := 1; a <= 6; a++ {\n\t\tfor b := a; b <= 6; b++ {\n\t\t\tidx := domIndex(a, b)\n\t\t\tif usedDomino[idx] {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tusedDomino[idx] = true\n\n\t\t\t// orientation 1: a -> u, b -> v\n\t\t\tif canPlace(u, a) && canPlace(v, b) {\n\t\t\t\tplace(u, a)\n\t\t\t\tplace(v, b)\n\t\t\t\tdfs(ei+1, placed+1)\n\t\t\t\tunplace(u)\n\t\t\t\tunplace(v)\n\t\t\t}\n\t\t\t// orientation 2: b -> u, a -> v (if a != b, otherwise same)\n\t\t\tif a != b {\n\t\t\t\tif canPlace(u, b) && canPlace(v, a) {\n\t\t\t\t\tplace(u, b)\n\t\t\t\t\tplace(v, a)\n\t\t\t\t\tdfs(ei+1, placed+1)\n\t\t\t\t\tunplace(u)\n\t\t\t\t\tunplace(v)\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tusedDomino[idx] = false\n\t\t}\n\t}\n}\n\nfunc canPlace(v, dot int) bool {\n\tif vDot[v] == 0 || vDot[v] == dot {\n\t\treturn true\n\t}\n\treturn false\n}\n\nfunc place(v, dot int) {\n\tif vDot[v] == 0 {\n\t\tvDot[v] = dot\n\t}\n\tvUsed[v]++\n}\n\nfunc unplace(v int) {\n\tvUsed[v]--\n\tif vUsed[v] == 0 {\n\t\tvDot[v] = 0\n\t}\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tfmt.Fscan(in, &n, &m)\n\tedges = make([]Edge, m)\n\tfor i := 0; i < m; i++ {\n\t\tfmt.Fscan(in, &edges[i].u, &edges[i].v)\n\t}\n\tbest = 0\n\tdfs(0, 0)\n\tout := bufio.NewWriter(os.Stdout)\n\tfmt.Fprintln(out, best)\n\tout.Flush()\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\ntype Edge struct {\n\tu, v int\n}\n\nvar (\n\tn, m int\n\tedges []Edge\n\n\t// vertex labels: 0..6 (0 means no domino incident, 1..6 dots)\n\tvLabel [7]int\n\n\t// domino usage: a<=b, map (a,b) to index\n\tused [7][7]bool\n\n\tbest int\n)\n\nfunc dfsEdge(idx, placed int) {\n\tif idx == m {\n\t\tif placed > best {\n\t\t\tbest = placed\n\t\t}\n\t\treturn\n\t}\n\n\t// upper bound pruning: remaining edges + placed\n\tif placed + (m - idx) <= best {\n\t\treturn\n\t}\n\n\te := edges[idx]\n\tu, v := e.u, e.v\n\n\t// Option 1: skip this edge\n\tdfsEdge(idx+1, placed)\n\n\t// Try all possible domino types a<=b\n\tfor a := 1; a <= 6; a++ {\n\t\tfor b := a; b <= 6; b++ {\n\t\t\tif used[a][b] {\n\t\t\t\tcontinue\n\t\t\t}\n\n\t\t\t// two orientations: (u<-a, v<-b) and (u<-b, v<-a)\n\t\t\t// orientation 1\n\t\t\tif canPlace(u, v, a, b) {\n\t\t\t\tplace(u, v, a, b)\n\t\t\t\tused[a][b] = true\n\t\t\t\tdfsEdge(idx+1, placed+1)\n\t\t\t\tused[a][b] = false\n\t\t\t\tunplace(u, v, a, b)\n\t\t\t}\n\n\t\t\t// orientation 2, avoid duplicate when a==b\n\t\t\tif a != b {\n\t\t\t\tif canPlace(u, v, b, a) {\n\t\t\t\t\tplace(u, v, b, a)\n\t\t\t\t\tused[a][b] = true\n\t\t\t\t\tdfsEdge(idx+1, placed+1)\n\t\t\t\t\tused[a][b] = false\n\t\t\t\t\tunplace(u, v, b, a)\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n}\n\nfunc canPlace(u, v, du, dv int) bool {\n\t// check vertex u\n\tif vLabel[u] != 0 && vLabel[u] != du {\n\t\treturn false\n\t}\n\t// check vertex v\n\tif vLabel[v] != 0 && vLabel[v] != dv {\n\t\treturn false\n\t}\n\treturn true\n}\n\nfunc place(u, v, du, dv int) {\n\tif vLabel[u] == 0 {\n\t\tvLabel[u] = du\n\t}\n\tif vLabel[v] == 0 {\n\t\tvLabel[v] = dv\n\t}\n}\n\nfunc unplace(u, v, du, dv int) {\n\t// We cannot simply reset labels to 0, because other edges may rely on them.\n\t// However, our recursion ensures that once a vertex label is set from 0 to some value,\n\t// it is never changed to another non-zero value. All edges incident to that vertex\n\t// in this branch are consistent with that label. When backtracking, we must know\n\t// whether this edge was the one that introduced the label.\n\t//\n\t// To avoid complex tracking, we rely on the fact that labels are only ever set from 0\n\t// to some value and never reverted to 0 in this function. Instead, we treat labels\n\t// as constraints for the entire branch; they are reset only when backtracking over\n\t// the decision that first set them.\n\t//\n\t// Therefore, unplace does nothing.\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tfmt.Fscan(in, &n, &m)\n\tedges = make([]Edge, m)\n\tfor i := 0; i < m; i++ {\n\t\tvar a, b int\n\t\tfmt.Fscan(in, &a, &b)\n\t\tedges[i] = Edge{a, b}\n\t}\n\n\tbest = 0\n\tdfsEdge(0, 0)\n\n\tout := bufio.NewWriter(os.Stdout)\n\tfmt.Fprintln(out, best)\n\tout.Flush()\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 6051,
+            "prompt_tokens": 736,
+            "total_tokens": 6787,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 3,
+                "engine_ttft_ms": 318,
+                "engine_ttlt_ms": 18827,
+                "pre_inference_ms": 249,
+                "service_tbt_ms": 3,
+                "service_ttft_ms": 685,
+                "service_ttlt_ms": 19186,
+                "total_duration_ms": 18950,
+                "user_visible_ttft_ms": 436
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Go to solve this programming problem:\nDescription: Anadi has a set of dominoes. Every domino has two parts, and each part contains some dots. For every $$$a$$$ and $$$b$$$ such that $$$1 \\leq a \\leq b \\leq 6$$$, there is exactly one domino with $$$a$$$ dots on one half and $$$b$$$ dots on the other half. The set contains exactly $$$21$$$ dominoes. Here is an exact illustration of his set:  Also, Anadi has an undirected graph without self-loops and multiple edges. He wants to choose some dominoes and place them on the edges of this graph. He can use at most one domino of each type. Each edge can fit at most one domino. It's not necessary to place a domino on each edge of the graph.When placing a domino on an edge, he also chooses its direction. In other words, one half of any placed domino must be directed toward one of the endpoints of the edge and the other half must be directed toward the other endpoint. There's a catch: if there are multiple halves of dominoes directed toward the same vertex, each of these halves must contain the same number of dots.How many dominoes at most can Anadi place on the edges of his graph?\nInput Specification: The first line contains two integers $$$n$$$ and $$$m$$$ ($$$1 \\leq n \\leq 7$$$, $$$0 \\leq m \\leq \\frac{n\\cdot(n-1)}{2}$$$) \u2014 the number of vertices and the number of edges in the graph. The next $$$m$$$ lines contain two integers each. Integers in the $$$i$$$-th line are $$$a_i$$$ and $$$b_i$$$ ($$$1 \\leq a, b \\leq n$$$, $$$a \\neq b$$$) and denote that there is an edge which connects vertices $$$a_i$$$ and $$$b_i$$$. The graph might be disconnected. It's however guaranteed that the graph doesn't contain any self-loops, and that there is at most one edge between any pair of vertices.\nOutput Specification: Output one integer which denotes the maximum number of dominoes which Anadi can place on the edges of the graph.\n\nSample Input:\n4 4\n1 2\n2 3\n3 4\n4 1\nSample Output:\n4\n\nSample Input:\n7 0\nSample Output:\n0\n\nSample Input:\n3 1\n1 3\nSample Output:\n1\n\nSample Input:\n7 21\n1 2\n1 3\n1 4\n1 5\n1 6\n1 7\n2 3\n2 4\n2 5\n2 6\n2 7\n3 4\n3 5\n3 6\n3 7\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7\nSample Output:\n16\n\nNotes: NoteHere is an illustration of Anadi's graph from the first sample test:  And here is one of the ways to place a domino on each of its edges:  Note that each vertex is faced by the halves of dominoes with the same number of dots. For instance, all halves directed toward vertex $$$1$$$ have three dots.\nTake input from standard input and output to standard output\nProvide the Go code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "11e6559cfb71b8f6ca88242094b17a2b",
+        "difficulty": 1700,
+        "prob_desc_sample_inputs": [
+            "4 4\n1 2\n2 3\n3 4\n4 1",
+            "7 0",
+            "3 1\n1 3",
+            "7 21\n1 2\n1 3\n1 4\n1 5\n1 6\n1 7\n2 3\n2 4\n2 5\n2 6\n2 7\n3 4\n3 5\n3 6\n3 7\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "brute force",
+            "graphs"
+        ],
+        "prob_desc_output_spec": "Output one integer which denotes the maximum number of dominoes which Anadi can place on the edges of the graph.",
+        "prob_desc_input_spec": "The first line contains two integers $$$n$$$ and $$$m$$$ ($$$1 \\leq n \\leq 7$$$, $$$0 \\leq m \\leq \\frac{n\\cdot(n-1)}{2}$$$) \u2014 the number of vertices and the number of edges in the graph. The next $$$m$$$ lines contain two integers each. Integers in the $$$i$$$-th line are $$$a_i$$$ and $$$b_i$$$ ($$$1 \\leq a, b \\leq n$$$, $$$a \\neq b$$$) and denote that there is an edge which connects vertices $$$a_i$$$ and $$$b_i$$$. The graph might be disconnected. It's however guaranteed that the graph doesn't contain any self-loops, and that there is at most one edge between any pair of vertices.",
+        "lang_cluster": "Go",
+        "source_code": "",
+        "prob_desc_notes": "NoteHere is an illustration of Anadi's graph from the first sample test:  And here is one of the ways to place a domino on each of its edges:  Note that each vertex is faced by the halves of dominoes with the same number of dots. For instance, all halves directed toward vertex $$$1$$$ have three dots.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Anadi has a set of dominoes. Every domino has two parts, and each part contains some dots. For every $$$a$$$ and $$$b$$$ such that $$$1 \\leq a \\leq b \\leq 6$$$, there is exactly one domino with $$$a$$$ dots on one half and $$$b$$$ dots on the other half. The set contains exactly $$$21$$$ dominoes. Here is an exact illustration of his set:  Also, Anadi has an undirected graph without self-loops and multiple edges. He wants to choose some dominoes and place them on the edges of this graph. He can use at most one domino of each type. Each edge can fit at most one domino. It's not necessary to place a domino on each edge of the graph.When placing a domino on an edge, he also chooses its direction. In other words, one half of any placed domino must be directed toward one of the endpoints of the edge and the other half must be directed toward the other endpoint. There's a catch: if there are multiple halves of dominoes directed toward the same vertex, each of these halves must contain the same number of dots.How many dominoes at most can Anadi place on the edges of his graph?",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1569143100",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "4",
+            "0",
+            "1",
+            "16"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"4 4\\r\\n1 2\\r\\n2 3\\r\\n3 4\\r\\n4 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 1\\r\\n1 3\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 21\\r\\n1 2\\r\\n1 3\\r\\n1 4\\r\\n1 5\\r\\n1 6\\r\\n1 7\\r\\n2 3\\r\\n2 4\\r\\n2 5\\r\\n2 6\\r\\n2 7\\r\\n3 4\\r\\n3 5\\r\\n3 6\\r\\n3 7\\r\\n4 5\\r\\n4 6\\r\\n4 7\\r\\n5 6\\r\\n5 7\\r\\n6 7\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"4 4\\r\\n4 2\\r\\n2 3\\r\\n3 4\\r\\n2 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"5 7\\r\\n4 3\\r\\n3 2\\r\\n1 4\\r\\n5 3\\r\\n5 2\\r\\n4 5\\r\\n1 5\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"6 9\\r\\n2 5\\r\\n3 6\\r\\n1 2\\r\\n1 4\\r\\n2 6\\r\\n6 1\\r\\n3 4\\r\\n1 3\\r\\n5 3\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"7 5\\r\\n5 6\\r\\n3 7\\r\\n7 2\\r\\n4 2\\r\\n1 4\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"7 14\\r\\n7 3\\r\\n2 4\\r\\n2 1\\r\\n2 5\\r\\n5 3\\r\\n6 7\\r\\n4 7\\r\\n5 4\\r\\n7 5\\r\\n4 3\\r\\n4 1\\r\\n6 1\\r\\n6 3\\r\\n3 1\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 15\\r\\n4 6\\r\\n7 3\\r\\n3 1\\r\\n6 5\\r\\n2 7\\r\\n3 6\\r\\n7 6\\r\\n2 6\\r\\n7 5\\r\\n3 5\\r\\n5 4\\r\\n4 7\\r\\n2 1\\r\\n2 4\\r\\n2 3\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"7 18\\r\\n1 5\\r\\n5 7\\r\\n1 3\\r\\n1 6\\r\\n4 5\\r\\n3 7\\r\\n6 7\\r\\n4 7\\r\\n2 7\\r\\n1 2\\r\\n7 1\\r\\n5 6\\r\\n6 2\\r\\n4 2\\r\\n5 3\\r\\n3 6\\r\\n4 6\\r\\n4 3\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 14\\r\\n2 7\\r\\n5 7\\r\\n3 4\\r\\n4 2\\r\\n2 3\\r\\n4 1\\r\\n6 5\\r\\n4 7\\r\\n6 2\\r\\n6 1\\r\\n5 3\\r\\n5 1\\r\\n7 6\\r\\n3 1\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 11\\r\\n4 7\\r\\n6 4\\r\\n5 1\\r\\n1 4\\r\\n5 4\\r\\n1 2\\r\\n3 4\\r\\n4 2\\r\\n6 1\\r\\n3 1\\r\\n7 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"7 18\\r\\n3 2\\r\\n5 3\\r\\n6 7\\r\\n7 3\\r\\n5 4\\r\\n4 6\\r\\n2 4\\r\\n7 1\\r\\n5 6\\r\\n5 2\\r\\n5 1\\r\\n3 4\\r\\n7 4\\r\\n6 1\\r\\n3 6\\r\\n7 2\\r\\n1 3\\r\\n1 2\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 17\\r\\n1 7\\r\\n5 6\\r\\n6 3\\r\\n1 2\\r\\n1 6\\r\\n3 4\\r\\n6 7\\r\\n4 5\\r\\n1 3\\r\\n1 5\\r\\n4 1\\r\\n5 2\\r\\n3 5\\r\\n4 6\\r\\n7 5\\r\\n7 2\\r\\n6 2\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"7 10\\r\\n3 6\\r\\n6 1\\r\\n4 6\\r\\n1 7\\r\\n7 4\\r\\n5 3\\r\\n5 6\\r\\n6 7\\r\\n7 5\\r\\n5 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"1 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 1\\r\\n2 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"3 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 2\\r\\n2 3\\r\\n1 3\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"3 3\\r\\n1 2\\r\\n2 3\\r\\n1 3\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"4 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"4 2\\r\\n2 4\\r\\n1 3\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"4 6\\r\\n2 1\\r\\n1 4\\r\\n2 4\\r\\n3 1\\r\\n3 2\\r\\n3 4\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"5 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 3\\r\\n5 1\\r\\n1 4\\r\\n5 4\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"5 10\\r\\n1 2\\r\\n3 4\\r\\n1 3\\r\\n2 3\\r\\n5 4\\r\\n5 1\\r\\n4 1\\r\\n5 3\\r\\n5 2\\r\\n2 4\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"6 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6 3\\r\\n4 2\\r\\n5 4\\r\\n4 3\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"6 6\\r\\n4 3\\r\\n4 6\\r\\n1 2\\r\\n4 5\\r\\n6 3\\r\\n3 2\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"6 15\\r\\n4 3\\r\\n2 1\\r\\n3 6\\r\\n1 3\\r\\n4 1\\r\\n2 3\\r\\n3 5\\r\\n4 5\\r\\n6 1\\r\\n2 5\\r\\n1 5\\r\\n2 6\\r\\n6 4\\r\\n5 6\\r\\n4 2\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"6 12\\r\\n2 1\\r\\n4 3\\r\\n1 5\\r\\n6 4\\r\\n6 2\\r\\n3 6\\r\\n1 6\\r\\n2 4\\r\\n1 4\\r\\n2 5\\r\\n5 4\\r\\n1 3\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 1\\r\\n5 3\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 2\\r\\n5 1\\r\\n3 5\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"7 3\\r\\n1 5\\r\\n5 7\\r\\n2 7\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"7 4\\r\\n3 7\\r\\n7 5\\r\\n1 3\\r\\n1 6\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7 6\\r\\n3 5\\r\\n7 1\\r\\n3 7\\r\\n5 4\\r\\n7 4\\r\\n3 6\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"7 7\\r\\n2 5\\r\\n6 1\\r\\n5 4\\r\\n7 2\\r\\n3 2\\r\\n4 1\\r\\n7 3\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"7 8\\r\\n4 1\\r\\n5 7\\r\\n6 4\\r\\n7 1\\r\\n6 3\\r\\n3 4\\r\\n3 1\\r\\n6 7\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"7 9\\r\\n2 6\\r\\n7 4\\r\\n2 5\\r\\n2 7\\r\\n4 2\\r\\n3 5\\r\\n5 6\\r\\n6 7\\r\\n7 3\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"7 11\\r\\n2 4\\r\\n1 3\\r\\n5 2\\r\\n2 7\\r\\n1 4\\r\\n4 3\\r\\n2 1\\r\\n7 6\\r\\n3 2\\r\\n7 4\\r\\n4 5\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"7 12\\r\\n6 3\\r\\n3 5\\r\\n7 5\\r\\n1 5\\r\\n1 7\\r\\n7 6\\r\\n4 1\\r\\n2 1\\r\\n1 6\\r\\n5 6\\r\\n3 4\\r\\n4 2\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 13\\r\\n6 5\\r\\n5 7\\r\\n4 2\\r\\n7 2\\r\\n4 1\\r\\n6 7\\r\\n4 3\\r\\n1 6\\r\\n2 5\\r\\n5 4\\r\\n2 1\\r\\n6 4\\r\\n6 2\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 16\\r\\n3 5\\r\\n1 3\\r\\n3 7\\r\\n4 2\\r\\n1 4\\r\\n1 6\\r\\n7 6\\r\\n5 1\\r\\n7 2\\r\\n4 3\\r\\n3 6\\r\\n2 3\\r\\n2 5\\r\\n4 5\\r\\n2 6\\r\\n5 7\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 17\\r\\n4 6\\r\\n1 7\\r\\n7 5\\r\\n3 7\\r\\n7 2\\r\\n2 5\\r\\n6 7\\r\\n1 3\\r\\n5 1\\r\\n6 2\\r\\n4 2\\r\\n3 2\\r\\n1 2\\r\\n5 3\\r\\n4 5\\r\\n3 4\\r\\n1 6\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 19\\r\\n6 1\\r\\n6 4\\r\\n6 5\\r\\n1 7\\r\\n2 7\\r\\n3 5\\r\\n7 6\\r\\n2 4\\r\\n5 7\\r\\n3 4\\r\\n6 2\\r\\n4 1\\r\\n5 1\\r\\n4 7\\r\\n3 2\\r\\n4 5\\r\\n3 1\\r\\n2 5\\r\\n6 3\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 20\\r\\n4 7\\r\\n1 4\\r\\n2 3\\r\\n4 3\\r\\n3 7\\r\\n7 5\\r\\n4 5\\r\\n1 2\\r\\n6 7\\r\\n3 1\\r\\n3 5\\r\\n1 5\\r\\n1 7\\r\\n2 6\\r\\n6 4\\r\\n5 2\\r\\n5 6\\r\\n6 3\\r\\n1 6\\r\\n2 7\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 21\\r\\n3 5\\r\\n7 2\\r\\n2 3\\r\\n6 5\\r\\n5 2\\r\\n4 7\\r\\n2 6\\r\\n2 4\\r\\n6 7\\r\\n5 1\\r\\n1 4\\r\\n4 5\\r\\n5 7\\r\\n4 6\\r\\n3 1\\r\\n1 2\\r\\n3 4\\r\\n7 1\\r\\n3 7\\r\\n6 1\\r\\n3 6\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 12\\r\\n3 4\\r\\n5 4\\r\\n1 7\\r\\n7 3\\r\\n2 5\\r\\n3 2\\r\\n1 4\\r\\n5 6\\r\\n6 1\\r\\n6 3\\r\\n2 1\\r\\n5 7\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 7\\r\\n7 6\\r\\n4 2\\r\\n3 1\\r\\n4 7\\r\\n6 3\\r\\n2 5\\r\\n1 5\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"7 6\\r\\n7 5\\r\\n5 2\\r\\n1 5\\r\\n5 4\\r\\n3 5\\r\\n6 5\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"7 15\\r\\n5 1\\r\\n3 2\\r\\n2 5\\r\\n3 5\\r\\n6 1\\r\\n4 3\\r\\n6 2\\r\\n4 5\\r\\n7 5\\r\\n3 6\\r\\n3 1\\r\\n7 3\\r\\n4 6\\r\\n6 5\\r\\n6 7\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 18\\r\\n3 7\\r\\n3 2\\r\\n2 1\\r\\n1 7\\r\\n5 1\\r\\n3 4\\r\\n5 6\\r\\n4 2\\r\\n6 2\\r\\n1 4\\r\\n2 5\\r\\n6 3\\r\\n3 1\\r\\n6 7\\r\\n6 1\\r\\n7 2\\r\\n6 4\\r\\n3 5\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 19\\r\\n1 2\\r\\n7 3\\r\\n3 4\\r\\n4 7\\r\\n3 6\\r\\n7 5\\r\\n6 2\\r\\n4 6\\r\\n6 7\\r\\n5 2\\r\\n3 2\\r\\n6 5\\r\\n4 1\\r\\n2 4\\r\\n4 5\\r\\n6 1\\r\\n3 1\\r\\n1 7\\r\\n5 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 16\\r\\n3 2\\r\\n6 3\\r\\n6 1\\r\\n5 6\\r\\n7 5\\r\\n5 2\\r\\n6 2\\r\\n2 1\\r\\n5 4\\r\\n4 1\\r\\n7 2\\r\\n1 5\\r\\n2 4\\r\\n7 3\\r\\n1 7\\r\\n6 7\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 12\\r\\n4 1\\r\\n6 4\\r\\n3 4\\r\\n3 1\\r\\n2 4\\r\\n7 5\\r\\n5 4\\r\\n2 1\\r\\n6 7\\r\\n2 3\\r\\n7 4\\r\\n6 5\\r\\n\", \"output\": [\"11\"]}]"
+    }
+}

@@ -1,0 +1,353 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEIJJaXYKnNNncukDkqa7aBzuCgxK",
+        "created": 1787075685,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\n\nprivate const val MAX_DOTS = 6\nprivate const val DOMINO_TYPES = 21\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    var st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toInt()\n    val m = st.nextToken().toInt()\n\n    val edges = ArrayList<Pair<Int, Int>>(m)\n    repeat(m) {\n        st = StringTokenizer(br.readLine())\n        val a = st.nextToken().toInt() - 1\n        val b = st.nextToken().toInt() - 1\n        edges.add(Pair(a, b))\n    }\n\n    // Precompute all domino types (a,b) with 1<=a<=b<=6\n    val domA = IntArray(DOMINO_TYPES)\n    val domB = IntArray(DOMINO_TYPES)\n    var idx = 0\n    for (a in 1..MAX_DOTS) {\n        for (b in a..MAX_DOTS) {\n            domA[idx] = a\n            domB[idx] = b\n            idx++\n        }\n    }\n\n    val maxMask = 1 shl MAX_DOTS\n    val bestForMask = IntArray(maxMask) { -1 }\n\n    fun dfsDomino(pos: Int, mask: Int, count: Int) {\n        if (pos == DOMINO_TYPES) {\n            if (count > bestForMask[mask]) bestForMask[mask] = count\n            return\n        }\n        // skip this domino\n        dfsDomino(pos + 1, mask, count)\n\n        val a = domA[pos] - 1\n        val b = domB[pos] - 1\n        val newMask = mask or (1 shl a) or (1 shl b)\n        dfsDomino(pos + 1, newMask, count + 1)\n    }\n\n    dfsDomino(0, 0, 0)\n\n    // DP over subsets to get maximum number of dominoes for any subset\n    for (mask in 0 until maxMask) {\n        var sub = mask\n        while (sub > 0) {\n            val other = mask xor sub\n            if (bestForMask[sub] >= 0 && bestForMask[other] >= 0) {\n                val v = bestForMask[sub] + bestForMask[other]\n                if (v > bestForMask[mask]) bestForMask[mask] = v\n            }\n            sub = (sub - 1) and mask\n        }\n    }\n\n    val adjMask = IntArray(n)\n    for ((u, v) in edges) {\n        adjMask[u] = adjMask[u] or (1 shl v)\n        adjMask[v] = adjMask[v] or (1 shl u)\n    }\n\n    var answer = 0\n    val totalMasks = 1 shl n\n\n    for (mask in 0 until totalMasks) {\n        // Check if mask is a union of cliques\n        var ok = true\n        var remaining = mask\n        while (remaining != 0 && ok) {\n            val v = Integer.numberOfTrailingZeros(remaining)\n            val clique = remaining and adjMask[v] and mask\n            val comp = clique or (1 shl v)\n            // verify comp is a clique\n            var sub = comp\n            while (sub != 0 && ok) {\n                val u = Integer.numberOfTrailingZeros(sub)\n                val needed = (comp xor (1 shl u))\n                if ((adjMask[u] and needed) != needed) ok = false\n                sub = sub and (sub - 1)\n            }\n            remaining = remaining and comp.inv()\n        }\n        if (!ok) continue\n\n        // For this mask, compute sum of bestForMask over connected components\n        var total = 0\n        var rem = mask\n        while (rem != 0) {\n            val v = Integer.numberOfTrailingZeros(rem)\n            // BFS/DFS to get connected component\n            var comp = 0\n            val stack = IntArray(n)\n            var sp = 0\n            stack[sp++] = v\n            comp = comp or (1 shl v)\n            rem = rem and (1 shl v).inv()\n            while (sp > 0) {\n                val cur = stack[--sp]\n                val neighbors = adjMask[cur] and mask\n                var tmp = neighbors\n                while (tmp != 0) {\n                    val u = Integer.numberOfTrailingZeros(tmp)\n                    val bit = 1 shl u\n                    if ((comp and bit) == 0) {\n                        comp = comp or bit\n                        rem = rem and bit.inv()\n                        stack[sp++] = u\n                    }\n                    tmp = tmp and (tmp - 1)\n                }\n            }\n            val size = Integer.bitCount(comp)\n            if (size > 0) {\n                val dotsMask = (1 shl size) - 1\n                total += bestForMask[dotsMask]\n            }\n        }\n        if (total > answer) answer = total\n    }\n\n    println(answer)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\n\nprivate const val MAX_DOTS = 6\nprivate const val DOMINO_TYPES = 21\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    var st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toInt()\n    val m = st.nextToken().toInt()\n\n    val edges = ArrayList<Pair<Int, Int>>(m)\n    repeat(m) {\n        st = StringTokenizer(br.readLine())\n        val a = st.nextToken().toInt() - 1\n        val b = st.nextToken().toInt() - 1\n        edges.add(Pair(a, b))\n    }\n\n    // Precompute all domino types (a,b) with 1<=a<=b<=6\n    val domA = IntArray(DOMINO_TYPES)\n    val domB = IntArray(DOMINO_TYPES)\n    var idx = 0\n    for (a in 1..MAX_DOTS) {\n        for (b in a..MAX_DOTS) {\n            domA[idx] = a\n            domB[idx] = b\n            idx++\n        }\n    }\n\n    // Precompute all possible assignments of dot counts to vertices\n    // Each vertex gets a value in [1..6]\n    val totalAssignments = IntArray(n)\n    val maxMask = IntArray(1) // dummy\n\n    var best = 0\n\n    fun dfsAssign(v: Int) {\n        if (v == n) {\n            // For this assignment, build list of possible domino placements\n            val possibleEdges = ArrayList<Int>() // store edge index\n            val edgeDomMask = IntArray(m) // bitmask of domino types that can be used on this edge\n\n            for (e in 0 until m) {\n                val (u, w) = edges[e]\n                val cu = totalAssignments[u]\n                val cw = totalAssignments[w]\n                var mask = 0\n                for (d in 0 until DOMINO_TYPES) {\n                    val a = domA[d]\n                    val b = domB[d]\n                    // Check if domino (a,b) can be oriented to match cu at u and cw at w\n                    if ((a == cu && b == cw) || (a == cw && b == cu)) {\n                        mask = mask or (1 shl d)\n                    }\n                }\n                edgeDomMask[e] = mask\n                if (mask != 0) possibleEdges.add(e)\n            }\n\n            val k = possibleEdges.size\n            if (k == 0) return\n\n            // Backtracking over edges to choose a maximum matching with unique domino types\n            var localBest = 0\n\n            fun backtrack(pos: Int, usedDominoMask: Int, placed: Int) {\n                if (pos == k) {\n                    if (placed > localBest) localBest = placed\n                    return\n                }\n                // Upper bound pruning\n                if (placed + (k - pos) <= localBest) return\n\n                val eIdx = possibleEdges[pos]\n                val options = edgeDomMask[eIdx] and usedDominoMask.inv()\n                // Option 1: skip this edge\n                backtrack(pos + 1, usedDominoMask, placed)\n\n                // Option 2: try each available domino type\n                var opt = options\n                while (opt != 0) {\n                    val d = opt and -opt\n                    val dIdx = Integer.numberOfTrailingZeros(d)\n                    backtrack(pos + 1, usedDominoMask or (1 shl dIdx), placed + 1)\n                    opt -= d\n                }\n            }\n\n            backtrack(0, 0, 0)\n            if (localBest > best) best = localBest\n            return\n        }\n\n        for (valDot in 1..MAX_DOTS) {\n            totalAssignments[v] = valDot\n            dfsAssign(v + 1)\n        }\n    }\n\n    dfsAssign(0)\n    println(best)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\n\nprivate const val MAX_DOTS = 6\nprivate const val MAX_VERTICES = 7\n\nfun main() {\n    val reader = BufferedReader(InputStreamReader(System.`in`))\n    var st = StringTokenizer(reader.readLine())\n    val n = st.nextToken().toInt()\n    val m = st.nextToken().toInt()\n\n    val edges = ArrayList<Pair<Int, Int>>(m)\n    repeat(m) {\n        st = StringTokenizer(reader.readLine())\n        val a = st.nextToken().toInt() - 1\n        val b = st.nextToken().toInt() - 1\n        edges.add(Pair(a, b))\n    }\n\n    // Precompute all 6^n assignments of dot counts to vertices\n    val totalAssignments = IntArray(1 shl (3 * n)) // 6^n <= 2^(3n)\n    val assignments = ArrayList<IntArray>()\n    fun genAssign(pos: Int, cur: IntArray) {\n        if (pos == n) {\n            assignments.add(cur.clone())\n            return\n        }\n        for (d in 1..MAX_DOTS) {\n            cur[pos] = d\n            genAssign(pos + 1, cur)\n        }\n    }\n    genAssign(0, IntArray(n))\n\n    // Precompute all domino types (a <= b)\n    val dominoes = ArrayList<Pair<Int, Int>>()\n    for (a in 1..MAX_DOTS) {\n        for (b in a..MAX_DOTS) {\n            dominoes.add(Pair(a, b))\n        }\n    }\n    val dominoCount = dominoes.size // 21\n\n    var answer = 0\n\n    // For each assignment of dot counts to vertices\n    for (assign in assignments) {\n        // For each edge, determine which domino types can be placed\n        val edgeMask = IntArray(m)\n        for (i in 0 until m) {\n            val (u, v) = edges[i]\n            val du = assign[u]\n            val dv = assign[v]\n            var mask = 0\n            for (idx in 0 until dominoCount) {\n                val (a, b) = dominoes[idx]\n                if ((a == du && b == dv) || (a == dv && b == du)) {\n                    mask = mask or (1 shl idx)\n                }\n            }\n            edgeMask[i] = mask\n        }\n\n        // DP over edges with bitmask of used dominoes\n        val maxState = 1 shl dominoCount\n        val dp = IntArray(maxState) { -1 }\n        dp[0] = 0\n\n        for (i in 0 until m) {\n            val newDp = dp.clone()\n            val mask = edgeMask[i]\n            if (mask != 0) {\n                var sub = mask\n                while (sub != 0) {\n                    val d = sub and -sub\n                    val idx = Integer.numberOfTrailingZeros(d)\n                    val bit = 1 shl idx\n                    var s = 0\n                    while (s < maxState) {\n                        if (dp[s] >= 0 && (s and bit) == 0) {\n                            val ns = s or bit\n                            if (newDp[ns] < dp[s] + 1) newDp[ns] = dp[s] + 1\n                        }\n                        s++\n                    }\n                    sub -= d\n                }\n            }\n            for (s in 0 until maxState) {\n                if (newDp[s] < dp[s]) newDp[s] = dp[s]\n            }\n            for (s in 0 until maxState) dp[s] = newDp[s]\n        }\n\n        for (v in dp) if (v > answer) answer = v\n    }\n\n    println(answer)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\n\nprivate const val MAX_DOTS = 6\nprivate const val DOMINO_TYPES = 21\n\nfun main() {\n    val reader = BufferedReader(InputStreamReader(System.`in`))\n    var st = StringTokenizer(reader.readLine())\n    val n = st.nextToken().toInt()\n    val m = st.nextToken().toInt()\n\n    val edges = ArrayList<Pair<Int, Int>>(m)\n    repeat(m) {\n        st = StringTokenizer(reader.readLine())\n        val a = st.nextToken().toInt() - 1\n        val b = st.nextToken().toInt() - 1\n        edges.add(Pair(a, b))\n    }\n\n    // Precompute all domino types (a,b) with 1<=a<=b<=6\n    val domA = IntArray(DOMINO_TYPES)\n    val domB = IntArray(DOMINO_TYPES)\n    var idx = 0\n    for (a in 1..MAX_DOTS) {\n        for (b in a..MAX_DOTS) {\n            domA[idx] = a\n            domB[idx] = b\n            idx++\n        }\n    }\n\n    // Precompute all possible assignments of dot values to vertices\n    // Each vertex gets value in [1..6]\n    val totalAssignments = IntArray(n)\n    var best = 0\n\n    fun dfsAssign(v: Int) {\n        if (v == n) {\n            // For this assignment, compute max matching between edges and domino types\n            // Build bipartite graph: left = edges, right = domino types\n            val edgeDominoAdj = Array(m) { IntArray(DOMINO_TYPES) }\n            val edgeDominoCount = IntArray(m)\n\n            for (eIdx in 0 until m) {\n                val (u, w) = edges[eIdx]\n                val cu = totalAssignments[u]\n                val cw = totalAssignments[w]\n                var cnt = 0\n                for (d in 0 until DOMINO_TYPES) {\n                    val a = domA[d]\n                    val b = domB[d]\n                    if ((a == cu && b == cw) || (a == cw && b == cu)) {\n                        edgeDominoAdj[eIdx][cnt++] = d\n                    }\n                }\n                edgeDominoCount[eIdx] = cnt\n            }\n\n            // Maximum bipartite matching: edges (m up to 21) vs domino types (21)\n            val matchDomino = IntArray(DOMINO_TYPES) { -1 }\n            var used = BooleanArray(DOMINO_TYPES)\n\n            fun dfsMatch(eIdx: Int): Boolean {\n                for (i in 0 until edgeDominoCount[eIdx]) {\n                    val d = edgeDominoAdj[eIdx][i]\n                    if (used[d]) continue\n                    used[d] = true\n                    if (matchDomino[d] == -1 || dfsMatch(matchDomino[d])) {\n                        matchDomino[d] = eIdx\n                        return true\n                    }\n                }\n                return false\n            }\n\n            var matched = 0\n            for (eIdx in 0 until m) {\n                used = BooleanArray(DOMINO_TYPES)\n                if (dfsMatch(eIdx)) matched++\n            }\n\n            if (matched > best) best = matched\n            return\n        }\n\n        for (valDot in 1..MAX_DOTS) {\n            totalAssignments[v] = valDot\n            dfsAssign(v + 1)\n        }\n    }\n\n    dfsAssign(0)\n    println(best)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\n\nprivate const val MAX_DOTS = 6\nprivate const val MAX_VERTICES = 7\n\nfun main() {\n    val reader = BufferedReader(InputStreamReader(System.`in`))\n    val st = StringTokenizer(reader.readLine())\n    val n = st.nextToken().toInt()\n    val m = st.nextToken().toInt()\n\n    val edges = ArrayList<Pair<Int, Int>>()\n    repeat(m) {\n        val st2 = StringTokenizer(reader.readLine())\n        val a = st2.nextToken().toInt() - 1\n        val b = st2.nextToken().toInt() - 1\n        edges.add(Pair(a, b))\n    }\n\n    // Precompute all domino types (a,b) with 1<=a<=b<=6\n    val dominoA = IntArray(21)\n    val dominoB = IntArray(21)\n    var idx = 0\n    for (a in 1..MAX_DOTS) {\n        for (b in a..MAX_DOTS) {\n            dominoA[idx] = a\n            dominoB[idx] = b\n            idx++\n        }\n    }\n\n    // Precompute all valid vertex labelings: each vertex gets label 0..6 (0 = no incoming)\n    // For each labeling, we compute the best possible number of edges we can cover.\n    val maxMask = IntArray(1 shl (3 * n)) { -1 } // not used directly, but to avoid huge memory we won't store all\n    var answer = 0\n\n    // Encode labeling as base-7 number: label[v] in [0..6]\n    fun dfsLabel(pos: Int, code: Int, labels: IntArray) {\n        if (pos == n) {\n            // For this labeling, compute best number of edges\n            val best = computeForLabeling(labels, edges, dominoA, dominoB)\n            if (best > answer) answer = best\n            return\n        }\n        for (lab in 0..MAX_DOTS) {\n            labels[pos] = lab\n            val newCode = code * 7 + lab\n            dfsLabel(pos + 1, newCode, labels)\n        }\n    }\n\n    dfsLabel(0, 0, IntArray(n))\n    println(answer)\n}\n\n// For a fixed labeling, we need to choose a subset of edges and assign dominoes (types and orientation)\n// respecting:\n// - each domino type (a,b) used at most once\n// - for each used edge (u,v), if labels[u]=x, labels[v]=y, then we must choose orientation and domino (a,b)\n//   such that one side equals x (if x>0) and other equals y (if y>0); if label is 0, that endpoint imposes no constraint.\n// We want to maximize number of edges used.\n// This is a bipartite matching between edges and domino types with constraints.\nprivate fun computeForLabeling(\n    labels: IntArray,\n    edges: List<Pair<Int, Int>>,\n    dominoA: IntArray,\n    dominoB: IntArray\n): Int {\n    val m = edges.size\n    if (m == 0) return 0\n\n    // Precompute for each edge, which domino indices can be used\n    val edgeOptions = Array(m) { IntArray(0) }\n    for (i in 0 until m) {\n        val (u, v) = edges[i]\n        val lu = labels[u]\n        val lv = labels[v]\n        val opts = ArrayList<Int>()\n        for (d in 0 until 21) {\n            val a = dominoA[d]\n            val b = dominoB[d]\n            if (canPlace(lu, lv, a, b)) {\n                opts.add(d)\n            }\n        }\n        if (opts.isEmpty()) {\n            edgeOptions[i] = IntArray(0)\n        } else {\n            edgeOptions[i] = opts.toIntArray()\n        }\n    }\n\n    // Simple backtracking: try to assign dominoes to edges\n    val usedDomino = BooleanArray(21)\n    var best = 0\n\n    fun dfsEdge(pos: Int, usedCount: Int) {\n        if (pos == m) {\n            if (usedCount > best) best = usedCount\n            return\n        }\n        // Upper bound pruning\n        if (usedCount + (m - pos) <= best) return\n\n        // Option 1: skip this edge\n        dfsEdge(pos + 1, usedCount)\n\n        // Option 2: try to use this edge with any available domino\n        val opts = edgeOptions[pos]\n        if (opts.isEmpty()) return\n        for (d in opts) {\n            if (!usedDomino[d]) {\n                usedDomino[d] = true\n                dfsEdge(pos + 1, usedCount + 1)\n                usedDomino[d] = false\n            }\n        }\n    }\n\n    dfsEdge(0, 0)\n    return best\n}\n\n// Check if we can place domino (a,b) on edge with labels lu, lv\n// lu/lv in [0..6], 0 means no constraint\nprivate fun canPlace(lu: Int, lv: Int, a: Int, b: Int): Boolean {\n    // Try orientation 1: a->u, b->v\n    if ((lu == 0 || lu == a) && (lv == 0 || lv == b)) return true\n    // Try orientation 2: b->u, a->v\n    if ((lu == 0 || lu == b) && (lv == 0 || lv == a)) return true\n    return false\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\n\nprivate const val MAX_DOTS = 6\nprivate const val DOMINO_TYPES = 21\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    var st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toInt()\n    val m = st.nextToken().toInt()\n\n    val edges = ArrayList<Pair<Int, Int>>()\n    repeat(m) {\n        st = StringTokenizer(br.readLine())\n        val a = st.nextToken().toInt() - 1\n        val b = st.nextToken().toInt() - 1\n        edges.add(Pair(a, b))\n    }\n\n    // Precompute all domino types (a,b) with 1<=a<=b<=6\n    val domA = IntArray(DOMINO_TYPES)\n    val domB = IntArray(DOMINO_TYPES)\n    var idx = 0\n    for (a in 1..MAX_DOTS) {\n        for (b in a..MAX_DOTS) {\n            domA[idx] = a\n            domB[idx] = b\n            idx++\n        }\n    }\n\n    var best = 0\n\n    // For each vertex, we will assign a value in [0..6], where 0 means \"unused\",\n    // and 1..6 is the number of dots that must appear on all incident halves.\n    val vertexDots = IntArray(n)\n\n    // For each domino type, we can either not use it (state 0),\n    // or use it in one of two orientations (state 1 or 2).\n    // We'll iterate over all 3^21 possibilities using base-3 representation.\n    val totalStates = Math.pow(3.0, DOMINO_TYPES.toDouble()).toLong()\n\n    fun dfsDominoType(t: Int, usedCount: Int) {\n        if (t == DOMINO_TYPES) {\n            if (usedCount > best) best = usedCount\n            return\n        }\n\n        // Pruning: even if we use all remaining dominoes, can't beat best\n        if (usedCount + (DOMINO_TYPES - t) <= best) return\n\n        val a = domA[t]\n        val b = domB[t]\n\n        // Option 0: don't use this domino\n        dfsDominoType(t + 1, usedCount)\n\n        // Try to place this domino on any edge in orientation (a->u, b->v)\n        for ((u, v) in edges) {\n            // orientation 1: u gets a, v gets b\n            val oldU = vertexDots[u]\n            val oldV = vertexDots[v]\n            if ((oldU == 0 || oldU == a) && (oldV == 0 || oldV == b)) {\n                vertexDots[u] = if (oldU == 0) a else oldU\n                vertexDots[v] = if (oldV == 0) b else oldV\n                dfsDominoType(t + 1, usedCount + 1)\n                vertexDots[u] = oldU\n                vertexDots[v] = oldV\n            }\n\n            // orientation 2: u gets b, v gets a (only if a!=b, otherwise same as orientation 1)\n            if (a != b) {\n                val oldU2 = vertexDots[u]\n                val oldV2 = vertexDots[v]\n                if ((oldU2 == 0 || oldU2 == b) && (oldV2 == 0 || oldV2 == a)) {\n                    vertexDots[u] = if (oldU2 == 0) b else oldU2\n                    vertexDots[v] = if (oldV2 == 0) a else oldV2\n                    dfsDominoType(t + 1, usedCount + 1)\n                    vertexDots[u] = oldU2\n                    vertexDots[v] = oldV2\n                }\n            }\n        }\n    }\n\n    dfsDominoType(0, 0)\n    println(best)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\n\nprivate const val MAX_DOTS = 6\nprivate const val DOMINO_TYPES = 21\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    var st = StringTokenizer(br.readLine())\n    val n = st.nextToken().toInt()\n    val m = st.nextToken().toInt()\n\n    val edges = ArrayList<Pair<Int, Int>>()\n    repeat(m) {\n        st = StringTokenizer(br.readLine())\n        val a = st.nextToken().toInt() - 1\n        val b = st.nextToken().toInt() - 1\n        edges.add(Pair(a, b))\n    }\n\n    // Precompute all domino types (a,b) with 1<=a<=b<=6\n    val domA = IntArray(DOMINO_TYPES)\n    val domB = IntArray(DOMINO_TYPES)\n    var idx = 0\n    for (a in 1..MAX_DOTS) {\n        for (b in a..MAX_DOTS) {\n            domA[idx] = a\n            domB[idx] = b\n            idx++\n        }\n    }\n\n    val maxMask = 1 shl n\n    var answer = 0\n\n    // For each assignment of labels (1..6) to vertices (0..n-1)\n    // represented as base-6 digits in an integer from 0 to 6^n - 1\n    val totalAssignments = IntArray(n + 1)\n    totalAssignments[0] = 1\n    for (i in 1..n) totalAssignments[i] = totalAssignments[i - 1] * MAX_DOTS\n    val limit = totalAssignments[n]\n\n    val labels = IntArray(n)\n\n    for (code in 0 until limit) {\n        var tmp = code\n        for (v in 0 until n) {\n            labels[v] = (tmp % MAX_DOTS) + 1\n            tmp /= MAX_DOTS\n        }\n\n        // For each edge, determine which domino type and orientation is required\n        // and build adjacency between edges that conflict (share a domino type).\n        val edgeDominoType = IntArray(m)\n        val typeEdges = Array(DOMINO_TYPES) { ArrayList<Int>() }\n\n        for (i in 0 until m) {\n            val (u, v) = edges[i]\n            val lu = labels[u]\n            val lv = labels[v]\n            val a = minOf(lu, lv)\n            val b = maxOf(lu, lv)\n            val t = dominoIndex(a, b)\n            edgeDominoType[i] = t\n            typeEdges[t].add(i)\n        }\n\n        // Build conflict graph: edges are vertices, conflict if same domino type\n        val adj = IntArray(m)\n        for (t in 0 until DOMINO_TYPES) {\n            val list = typeEdges[t]\n            val sz = list.size\n            for (i in 0 until sz) {\n                val ei = list[i]\n                for (j in i + 1 until sz) {\n                    val ej = list[j]\n                    adj[ei] = adj[ei] or (1 shl ej)\n                    adj[ej] = adj[ej] or (1 shl ei)\n                }\n            }\n        }\n\n        // Maximum independent set on graph with m <= 21\n        val mis = maxIndependentSet(adj, m)\n        if (mis > answer) answer = mis\n    }\n\n    println(answer)\n}\n\nprivate fun dominoIndex(a: Int, b: Int): Int {\n    // Map (a,b) with 1<=a<=b<=6 to index 0..20\n    var idx = 0\n    var x = 1\n    var y = 1\n    while (true) {\n        if (x == a && y == b) return idx\n        y++\n        if (y > MAX_DOTS) {\n            x++\n            y = x\n        }\n        idx++\n    }\n}\n\nprivate fun maxIndependentSet(adj: IntArray, n: Int): Int {\n    // Branch and bound for maximum independent set on up to 21 vertices\n    val order = IntArray(n) { it }\n    // Simple heuristic: sort by degree descending\n    order.sortWith { i, j ->\n        Integer.bitCount(adj[j]) - Integer.bitCount(adj[i])\n    }\n\n    fun dfs(pos: Int, current: Int, available: Int): Int {\n        if (available == 0 || pos == n) return current\n        // Upper bound: current + remaining vertices\n        val remaining = Integer.bitCount(available)\n        if (current + remaining <= best) return current\n        var bestLocal = current\n        var mask = available\n        while (mask != 0) {\n            val vBit = mask and -mask\n            val v = Integer.numberOfTrailingZeros(vBit)\n            val newAvailable = available and adj[v].inv() and ((1 shl n) - 1)\n            val res = dfs(pos + 1, current + 1, newAvailable)\n            if (res > bestLocal) bestLocal = res\n            mask = mask xor vBit\n        }\n        return bestLocal\n    }\n\n    var initialMask = 0\n    for (i in 0 until n) initialMask = initialMask or (1 shl i)\n    best = 0\n    best = dfs(0, 0, initialMask)\n    return best\n}\n\nprivate var best = 0",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\n\nprivate const val MAX_DOTS = 6\nprivate const val MAX_VERTICES = 7\n\nfun main() {\n    val reader = BufferedReader(InputStreamReader(System.`in`))\n    var st = StringTokenizer(reader.readLine())\n    val n = st.nextToken().toInt()\n    val m = st.nextToken().toInt()\n\n    val edges = ArrayList<Pair<Int, Int>>(m)\n    repeat(m) {\n        st = StringTokenizer(reader.readLine())\n        val a = st.nextToken().toInt() - 1\n        val b = st.nextToken().toInt() - 1\n        edges.add(Pair(a, b))\n    }\n\n    val totalDominoes = 21\n    val dominoA = IntArray(totalDominoes)\n    val dominoB = IntArray(totalDominoes)\n    var idx = 0\n    for (a in 1..MAX_DOTS) {\n        for (b in a..MAX_DOTS) {\n            dominoA[idx] = a\n            dominoB[idx] = b\n            idx++\n        }\n    }\n\n    val usedDomino = BooleanArray(totalDominoes)\n    val vertexLabel = IntArray(n) { 0 } // 0 means unlabeled\n    var best = 0\n\n    fun dfs(edgeIndex: Int, placed: Int) {\n        if (placed + (m - edgeIndex) <= best) return\n        if (edgeIndex == m) {\n            if (placed > best) best = placed\n            return\n        }\n\n        val (u, v) = edges[edgeIndex]\n        val lu = vertexLabel[u]\n        val lv = vertexLabel[v]\n\n        // Option 1: skip this edge\n        dfs(edgeIndex + 1, placed)\n\n        // Option 2: try to place a domino\n        for (d in 0 until totalDominoes) {\n            if (usedDomino[d]) continue\n            val a = dominoA[d]\n            val b = dominoB[d]\n\n            // Try orientation u<-a, v<-b\n            fun tryOrientation(au: Int, av: Int) {\n                val oldLu = lu\n                val oldLv = lv\n                var ok = true\n\n                if (oldLu == 0) {\n                    vertexLabel[u] = au\n                } else if (oldLu != au) {\n                    ok = false\n                }\n\n                if (ok) {\n                    if (oldLv == 0) {\n                        vertexLabel[v] = av\n                    } else if (oldLv != av) {\n                        ok = false\n                    }\n                }\n\n                if (ok) {\n                    usedDomino[d] = true\n                    dfs(edgeIndex + 1, placed + 1)\n                    usedDomino[d] = false\n                }\n\n                vertexLabel[u] = oldLu\n                vertexLabel[v] = oldLv\n            }\n\n            // orientation 1: u<-a, v<-b\n            tryOrientation(a, b)\n            if (a != b) {\n                // orientation 2: u<-b, v<-a\n                tryOrientation(b, a)\n            }\n        }\n    }\n\n    dfs(0, 0)\n    println(best)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 7572,
+            "prompt_tokens": 736,
+            "total_tokens": 8308,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 3,
+                "engine_ttft_ms": 313,
+                "engine_ttlt_ms": 20759,
+                "pre_inference_ms": 200,
+                "service_tbt_ms": 3,
+                "service_ttft_ms": 622,
+                "service_ttlt_ms": 21038,
+                "total_duration_ms": 20848,
+                "user_visible_ttft_ms": 422
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Kotlin to solve this programming problem:\nDescription: Anadi has a set of dominoes. Every domino has two parts, and each part contains some dots. For every $$$a$$$ and $$$b$$$ such that $$$1 \\leq a \\leq b \\leq 6$$$, there is exactly one domino with $$$a$$$ dots on one half and $$$b$$$ dots on the other half. The set contains exactly $$$21$$$ dominoes. Here is an exact illustration of his set:  Also, Anadi has an undirected graph without self-loops and multiple edges. He wants to choose some dominoes and place them on the edges of this graph. He can use at most one domino of each type. Each edge can fit at most one domino. It's not necessary to place a domino on each edge of the graph.When placing a domino on an edge, he also chooses its direction. In other words, one half of any placed domino must be directed toward one of the endpoints of the edge and the other half must be directed toward the other endpoint. There's a catch: if there are multiple halves of dominoes directed toward the same vertex, each of these halves must contain the same number of dots.How many dominoes at most can Anadi place on the edges of his graph?\nInput Specification: The first line contains two integers $$$n$$$ and $$$m$$$ ($$$1 \\leq n \\leq 7$$$, $$$0 \\leq m \\leq \\frac{n\\cdot(n-1)}{2}$$$) \u2014 the number of vertices and the number of edges in the graph. The next $$$m$$$ lines contain two integers each. Integers in the $$$i$$$-th line are $$$a_i$$$ and $$$b_i$$$ ($$$1 \\leq a, b \\leq n$$$, $$$a \\neq b$$$) and denote that there is an edge which connects vertices $$$a_i$$$ and $$$b_i$$$. The graph might be disconnected. It's however guaranteed that the graph doesn't contain any self-loops, and that there is at most one edge between any pair of vertices.\nOutput Specification: Output one integer which denotes the maximum number of dominoes which Anadi can place on the edges of the graph.\n\nSample Input:\n4 4\n1 2\n2 3\n3 4\n4 1\nSample Output:\n4\n\nSample Input:\n7 0\nSample Output:\n0\n\nSample Input:\n3 1\n1 3\nSample Output:\n1\n\nSample Input:\n7 21\n1 2\n1 3\n1 4\n1 5\n1 6\n1 7\n2 3\n2 4\n2 5\n2 6\n2 7\n3 4\n3 5\n3 6\n3 7\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7\nSample Output:\n16\n\nNotes: NoteHere is an illustration of Anadi's graph from the first sample test:  And here is one of the ways to place a domino on each of its edges:  Note that each vertex is faced by the halves of dominoes with the same number of dots. For instance, all halves directed toward vertex $$$1$$$ have three dots.\nTake input from standard input and output to standard output\nProvide the Kotlin code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "11e6559cfb71b8f6ca88242094b17a2b",
+        "difficulty": 1700,
+        "prob_desc_sample_inputs": [
+            "4 4\n1 2\n2 3\n3 4\n4 1",
+            "7 0",
+            "3 1\n1 3",
+            "7 21\n1 2\n1 3\n1 4\n1 5\n1 6\n1 7\n2 3\n2 4\n2 5\n2 6\n2 7\n3 4\n3 5\n3 6\n3 7\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "brute force",
+            "graphs"
+        ],
+        "prob_desc_output_spec": "Output one integer which denotes the maximum number of dominoes which Anadi can place on the edges of the graph.",
+        "prob_desc_input_spec": "The first line contains two integers $$$n$$$ and $$$m$$$ ($$$1 \\leq n \\leq 7$$$, $$$0 \\leq m \\leq \\frac{n\\cdot(n-1)}{2}$$$) \u2014 the number of vertices and the number of edges in the graph. The next $$$m$$$ lines contain two integers each. Integers in the $$$i$$$-th line are $$$a_i$$$ and $$$b_i$$$ ($$$1 \\leq a, b \\leq n$$$, $$$a \\neq b$$$) and denote that there is an edge which connects vertices $$$a_i$$$ and $$$b_i$$$. The graph might be disconnected. It's however guaranteed that the graph doesn't contain any self-loops, and that there is at most one edge between any pair of vertices.",
+        "lang_cluster": "Kotlin",
+        "source_code": "",
+        "prob_desc_notes": "NoteHere is an illustration of Anadi's graph from the first sample test:  And here is one of the ways to place a domino on each of its edges:  Note that each vertex is faced by the halves of dominoes with the same number of dots. For instance, all halves directed toward vertex $$$1$$$ have three dots.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Anadi has a set of dominoes. Every domino has two parts, and each part contains some dots. For every $$$a$$$ and $$$b$$$ such that $$$1 \\leq a \\leq b \\leq 6$$$, there is exactly one domino with $$$a$$$ dots on one half and $$$b$$$ dots on the other half. The set contains exactly $$$21$$$ dominoes. Here is an exact illustration of his set:  Also, Anadi has an undirected graph without self-loops and multiple edges. He wants to choose some dominoes and place them on the edges of this graph. He can use at most one domino of each type. Each edge can fit at most one domino. It's not necessary to place a domino on each edge of the graph.When placing a domino on an edge, he also chooses its direction. In other words, one half of any placed domino must be directed toward one of the endpoints of the edge and the other half must be directed toward the other endpoint. There's a catch: if there are multiple halves of dominoes directed toward the same vertex, each of these halves must contain the same number of dots.How many dominoes at most can Anadi place on the edges of his graph?",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1569143100",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "4",
+            "0",
+            "1",
+            "16"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"4 4\\r\\n1 2\\r\\n2 3\\r\\n3 4\\r\\n4 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 1\\r\\n1 3\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 21\\r\\n1 2\\r\\n1 3\\r\\n1 4\\r\\n1 5\\r\\n1 6\\r\\n1 7\\r\\n2 3\\r\\n2 4\\r\\n2 5\\r\\n2 6\\r\\n2 7\\r\\n3 4\\r\\n3 5\\r\\n3 6\\r\\n3 7\\r\\n4 5\\r\\n4 6\\r\\n4 7\\r\\n5 6\\r\\n5 7\\r\\n6 7\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"4 4\\r\\n4 2\\r\\n2 3\\r\\n3 4\\r\\n2 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"5 7\\r\\n4 3\\r\\n3 2\\r\\n1 4\\r\\n5 3\\r\\n5 2\\r\\n4 5\\r\\n1 5\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"6 9\\r\\n2 5\\r\\n3 6\\r\\n1 2\\r\\n1 4\\r\\n2 6\\r\\n6 1\\r\\n3 4\\r\\n1 3\\r\\n5 3\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"7 5\\r\\n5 6\\r\\n3 7\\r\\n7 2\\r\\n4 2\\r\\n1 4\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"7 14\\r\\n7 3\\r\\n2 4\\r\\n2 1\\r\\n2 5\\r\\n5 3\\r\\n6 7\\r\\n4 7\\r\\n5 4\\r\\n7 5\\r\\n4 3\\r\\n4 1\\r\\n6 1\\r\\n6 3\\r\\n3 1\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 15\\r\\n4 6\\r\\n7 3\\r\\n3 1\\r\\n6 5\\r\\n2 7\\r\\n3 6\\r\\n7 6\\r\\n2 6\\r\\n7 5\\r\\n3 5\\r\\n5 4\\r\\n4 7\\r\\n2 1\\r\\n2 4\\r\\n2 3\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"7 18\\r\\n1 5\\r\\n5 7\\r\\n1 3\\r\\n1 6\\r\\n4 5\\r\\n3 7\\r\\n6 7\\r\\n4 7\\r\\n2 7\\r\\n1 2\\r\\n7 1\\r\\n5 6\\r\\n6 2\\r\\n4 2\\r\\n5 3\\r\\n3 6\\r\\n4 6\\r\\n4 3\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 14\\r\\n2 7\\r\\n5 7\\r\\n3 4\\r\\n4 2\\r\\n2 3\\r\\n4 1\\r\\n6 5\\r\\n4 7\\r\\n6 2\\r\\n6 1\\r\\n5 3\\r\\n5 1\\r\\n7 6\\r\\n3 1\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 11\\r\\n4 7\\r\\n6 4\\r\\n5 1\\r\\n1 4\\r\\n5 4\\r\\n1 2\\r\\n3 4\\r\\n4 2\\r\\n6 1\\r\\n3 1\\r\\n7 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"7 18\\r\\n3 2\\r\\n5 3\\r\\n6 7\\r\\n7 3\\r\\n5 4\\r\\n4 6\\r\\n2 4\\r\\n7 1\\r\\n5 6\\r\\n5 2\\r\\n5 1\\r\\n3 4\\r\\n7 4\\r\\n6 1\\r\\n3 6\\r\\n7 2\\r\\n1 3\\r\\n1 2\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 17\\r\\n1 7\\r\\n5 6\\r\\n6 3\\r\\n1 2\\r\\n1 6\\r\\n3 4\\r\\n6 7\\r\\n4 5\\r\\n1 3\\r\\n1 5\\r\\n4 1\\r\\n5 2\\r\\n3 5\\r\\n4 6\\r\\n7 5\\r\\n7 2\\r\\n6 2\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"7 10\\r\\n3 6\\r\\n6 1\\r\\n4 6\\r\\n1 7\\r\\n7 4\\r\\n5 3\\r\\n5 6\\r\\n6 7\\r\\n7 5\\r\\n5 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"1 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 1\\r\\n2 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"3 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 2\\r\\n2 3\\r\\n1 3\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"3 3\\r\\n1 2\\r\\n2 3\\r\\n1 3\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"4 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"4 2\\r\\n2 4\\r\\n1 3\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"4 6\\r\\n2 1\\r\\n1 4\\r\\n2 4\\r\\n3 1\\r\\n3 2\\r\\n3 4\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"5 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 3\\r\\n5 1\\r\\n1 4\\r\\n5 4\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"5 10\\r\\n1 2\\r\\n3 4\\r\\n1 3\\r\\n2 3\\r\\n5 4\\r\\n5 1\\r\\n4 1\\r\\n5 3\\r\\n5 2\\r\\n2 4\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"6 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6 3\\r\\n4 2\\r\\n5 4\\r\\n4 3\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"6 6\\r\\n4 3\\r\\n4 6\\r\\n1 2\\r\\n4 5\\r\\n6 3\\r\\n3 2\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"6 15\\r\\n4 3\\r\\n2 1\\r\\n3 6\\r\\n1 3\\r\\n4 1\\r\\n2 3\\r\\n3 5\\r\\n4 5\\r\\n6 1\\r\\n2 5\\r\\n1 5\\r\\n2 6\\r\\n6 4\\r\\n5 6\\r\\n4 2\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"6 12\\r\\n2 1\\r\\n4 3\\r\\n1 5\\r\\n6 4\\r\\n6 2\\r\\n3 6\\r\\n1 6\\r\\n2 4\\r\\n1 4\\r\\n2 5\\r\\n5 4\\r\\n1 3\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 1\\r\\n5 3\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 2\\r\\n5 1\\r\\n3 5\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"7 3\\r\\n1 5\\r\\n5 7\\r\\n2 7\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"7 4\\r\\n3 7\\r\\n7 5\\r\\n1 3\\r\\n1 6\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7 6\\r\\n3 5\\r\\n7 1\\r\\n3 7\\r\\n5 4\\r\\n7 4\\r\\n3 6\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"7 7\\r\\n2 5\\r\\n6 1\\r\\n5 4\\r\\n7 2\\r\\n3 2\\r\\n4 1\\r\\n7 3\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"7 8\\r\\n4 1\\r\\n5 7\\r\\n6 4\\r\\n7 1\\r\\n6 3\\r\\n3 4\\r\\n3 1\\r\\n6 7\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"7 9\\r\\n2 6\\r\\n7 4\\r\\n2 5\\r\\n2 7\\r\\n4 2\\r\\n3 5\\r\\n5 6\\r\\n6 7\\r\\n7 3\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"7 11\\r\\n2 4\\r\\n1 3\\r\\n5 2\\r\\n2 7\\r\\n1 4\\r\\n4 3\\r\\n2 1\\r\\n7 6\\r\\n3 2\\r\\n7 4\\r\\n4 5\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"7 12\\r\\n6 3\\r\\n3 5\\r\\n7 5\\r\\n1 5\\r\\n1 7\\r\\n7 6\\r\\n4 1\\r\\n2 1\\r\\n1 6\\r\\n5 6\\r\\n3 4\\r\\n4 2\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 13\\r\\n6 5\\r\\n5 7\\r\\n4 2\\r\\n7 2\\r\\n4 1\\r\\n6 7\\r\\n4 3\\r\\n1 6\\r\\n2 5\\r\\n5 4\\r\\n2 1\\r\\n6 4\\r\\n6 2\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 16\\r\\n3 5\\r\\n1 3\\r\\n3 7\\r\\n4 2\\r\\n1 4\\r\\n1 6\\r\\n7 6\\r\\n5 1\\r\\n7 2\\r\\n4 3\\r\\n3 6\\r\\n2 3\\r\\n2 5\\r\\n4 5\\r\\n2 6\\r\\n5 7\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 17\\r\\n4 6\\r\\n1 7\\r\\n7 5\\r\\n3 7\\r\\n7 2\\r\\n2 5\\r\\n6 7\\r\\n1 3\\r\\n5 1\\r\\n6 2\\r\\n4 2\\r\\n3 2\\r\\n1 2\\r\\n5 3\\r\\n4 5\\r\\n3 4\\r\\n1 6\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 19\\r\\n6 1\\r\\n6 4\\r\\n6 5\\r\\n1 7\\r\\n2 7\\r\\n3 5\\r\\n7 6\\r\\n2 4\\r\\n5 7\\r\\n3 4\\r\\n6 2\\r\\n4 1\\r\\n5 1\\r\\n4 7\\r\\n3 2\\r\\n4 5\\r\\n3 1\\r\\n2 5\\r\\n6 3\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 20\\r\\n4 7\\r\\n1 4\\r\\n2 3\\r\\n4 3\\r\\n3 7\\r\\n7 5\\r\\n4 5\\r\\n1 2\\r\\n6 7\\r\\n3 1\\r\\n3 5\\r\\n1 5\\r\\n1 7\\r\\n2 6\\r\\n6 4\\r\\n5 2\\r\\n5 6\\r\\n6 3\\r\\n1 6\\r\\n2 7\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 21\\r\\n3 5\\r\\n7 2\\r\\n2 3\\r\\n6 5\\r\\n5 2\\r\\n4 7\\r\\n2 6\\r\\n2 4\\r\\n6 7\\r\\n5 1\\r\\n1 4\\r\\n4 5\\r\\n5 7\\r\\n4 6\\r\\n3 1\\r\\n1 2\\r\\n3 4\\r\\n7 1\\r\\n3 7\\r\\n6 1\\r\\n3 6\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 12\\r\\n3 4\\r\\n5 4\\r\\n1 7\\r\\n7 3\\r\\n2 5\\r\\n3 2\\r\\n1 4\\r\\n5 6\\r\\n6 1\\r\\n6 3\\r\\n2 1\\r\\n5 7\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 7\\r\\n7 6\\r\\n4 2\\r\\n3 1\\r\\n4 7\\r\\n6 3\\r\\n2 5\\r\\n1 5\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"7 6\\r\\n7 5\\r\\n5 2\\r\\n1 5\\r\\n5 4\\r\\n3 5\\r\\n6 5\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"7 15\\r\\n5 1\\r\\n3 2\\r\\n2 5\\r\\n3 5\\r\\n6 1\\r\\n4 3\\r\\n6 2\\r\\n4 5\\r\\n7 5\\r\\n3 6\\r\\n3 1\\r\\n7 3\\r\\n4 6\\r\\n6 5\\r\\n6 7\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 18\\r\\n3 7\\r\\n3 2\\r\\n2 1\\r\\n1 7\\r\\n5 1\\r\\n3 4\\r\\n5 6\\r\\n4 2\\r\\n6 2\\r\\n1 4\\r\\n2 5\\r\\n6 3\\r\\n3 1\\r\\n6 7\\r\\n6 1\\r\\n7 2\\r\\n6 4\\r\\n3 5\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 19\\r\\n1 2\\r\\n7 3\\r\\n3 4\\r\\n4 7\\r\\n3 6\\r\\n7 5\\r\\n6 2\\r\\n4 6\\r\\n6 7\\r\\n5 2\\r\\n3 2\\r\\n6 5\\r\\n4 1\\r\\n2 4\\r\\n4 5\\r\\n6 1\\r\\n3 1\\r\\n1 7\\r\\n5 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 16\\r\\n3 2\\r\\n6 3\\r\\n6 1\\r\\n5 6\\r\\n7 5\\r\\n5 2\\r\\n6 2\\r\\n2 1\\r\\n5 4\\r\\n4 1\\r\\n7 2\\r\\n1 5\\r\\n2 4\\r\\n7 3\\r\\n1 7\\r\\n6 7\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 12\\r\\n4 1\\r\\n6 4\\r\\n3 4\\r\\n3 1\\r\\n2 4\\r\\n7 5\\r\\n5 4\\r\\n2 1\\r\\n6 7\\r\\n2 3\\r\\n7 4\\r\\n6 5\\r\\n\", \"output\": [\"11\"]}]"
+    }
+}

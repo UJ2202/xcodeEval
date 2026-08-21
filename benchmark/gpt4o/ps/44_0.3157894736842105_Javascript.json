@@ -1,0 +1,350 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEI2MSdBATNoHz9HSFA4uNqqCUXGN",
+        "created": 1787074634,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(BigInt);\nif (input.length === 0) process.exit(0);\n\nlet idx = 0;\nconst n = Number(input[idx++]);\nconst m = input[idx++];\n\nconst a = [];\nfor (let i = 0; i < n; i++) {\n    a.push(input[idx++]);\n}\n\nif (m === 1n) {\n    console.log(0);\n    process.exit(0);\n}\n\nconst n1 = Math.floor(n / 2);\nconst n2 = n - n1;\n\nconst left = a.slice(0, n1);\nconst right = a.slice(n1);\n\n// generate all subset sums modulo m for a given array\nfunction genSums(arr) {\n    const len = arr.length;\n    const size = 1 << len;\n    const sums = new Array(size);\n    sums[0] = 0n;\n    for (let mask = 1; mask < size; mask++) {\n        const lsb = mask & -mask;\n        const bit = Math.clz32(lsb) ^ 31; // index of least significant bit\n        const prevMask = mask ^ lsb;\n        sums[mask] = (sums[prevMask] + arr[bit]) % m;\n    }\n    return sums;\n}\n\n// For small len (<=20) bit operations are fine\nfunction genSumsSmall(arr) {\n    const len = arr.length;\n    const size = 1 << len;\n    const sums = [];\n    for (let mask = 0; mask < size; mask++) {\n        let sum = 0n;\n        for (let i = 0; i < len; i++) {\n            if (mask & (1 << i)) sum = (sum + arr[i]) % m;\n        }\n        sums.push(sum);\n    }\n    return sums;\n}\n\nlet leftSums, rightSums;\nif (n1 <= 20) leftSums = genSumsSmall(left);\nelse leftSums = genSums(left);\n\nif (n2 <= 20) rightSums = genSumsSmall(right);\nelse rightSums = genSums(right);\n\nrightSums.sort((x, y) => (x < y ? -1 : x > y ? 1 : 0));\n\nfunction upperBound(arr, target) {\n    let l = 0, r = arr.length;\n    while (l < r) {\n        const mid = (l + r) >> 1;\n        if (arr[mid] <= target) l = mid + 1;\n        else r = mid;\n    }\n    return l;\n}\n\nlet ans = 0n;\nfor (const s of leftSums) {\n    const remain = m - 1n - s;\n    if (remain < 0n) continue;\n    const pos = upperBound(rightSums, remain);\n    if (pos > 0) {\n        const candidate = (s + rightSums[pos - 1]) % m;\n        if (candidate > ans) ans = candidate;\n    } else {\n        if (s > ans) ans = s;\n    }\n}\n\nconsole.log(ans.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(BigInt);\nif (input.length === 0) process.exit(0);\n\nlet idx = 0;\nconst n = Number(input[idx++]);\nconst m = input[idx++];\n\nconst a = [];\nfor (let i = 0; i < n; i++) {\n    a.push(input[idx++]);\n}\n\nfunction getSubSums(arr, m) {\n    const res = [];\n    const len = arr.length;\n    const total = 1 << len;\n    for (let mask = 0; mask < total; mask++) {\n        let sum = 0n;\n        for (let i = 0; i < len; i++) {\n            if (mask & (1 << i)) {\n                sum += arr[i];\n            }\n        }\n        res.push(sum % m);\n    }\n    return res;\n}\n\nconst mid = Math.floor(n / 2);\nconst left = a.slice(0, mid);\nconst right = a.slice(mid);\n\nconst leftSums = getSubSums(left, m);\nconst rightSums = getSubSums(right, m);\n\nrightSums.sort((x, y) => (x < y ? -1 : x > y ? 1 : 0));\n\nlet best = 0n;\n\nfunction upperBound(arr, target) {\n    let l = 0, r = arr.length;\n    while (l < r) {\n        const mid = (l + r) >> 1;\n        if (arr[mid] <= target) l = mid + 1;\n        else r = mid;\n    }\n    return l;\n}\n\nfor (let i = 0; i < leftSums.length; i++) {\n    const x = leftSums[i];\n    const rem = m - 1n - x;\n    if (rem < 0n) continue;\n    const pos = upperBound(rightSums, rem);\n    if (pos > 0) {\n        const candidate = x + rightSums[pos - 1];\n        if (candidate > best) best = candidate;\n    }\n}\n\nconsole.log(String(best));",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(BigInt);\nif (input.length === 0) process.exit(0);\n\nlet idx = 0;\nconst n = Number(input[idx++]);\nconst m = input[idx++];\n\nconst a = [];\nfor (let i = 0; i < n; i++) a.push(input[idx++]);\n\n// Meet-in-the-middle\nconst n1 = Math.floor(n / 2);\nconst n2 = n - n1;\n\nfunction getSums(arr) {\n    const len = arr.length;\n    const res = [];\n    const total = 1 << len;\n    for (let mask = 0; mask < total; mask++) {\n        let sum = 0n;\n        for (let i = 0; i < len; i++) {\n            if (mask & (1 << i)) {\n                sum += arr[i];\n            }\n        }\n        res.push(sum % m);\n    }\n    return res;\n}\n\nconst left = a.slice(0, n1);\nconst right = a.slice(n1);\n\nconst leftSums = getSums(left);\nconst rightSums = getSums(right);\n\n// Sort right sums\nrightSums.sort((x, y) => (x < y ? -1 : x > y ? 1 : 0));\n\nfunction upperBound(arr, target) {\n    let l = 0, r = arr.length;\n    while (l < r) {\n        const mid = (l + r) >> 1;\n        if (arr[mid] <= target) l = mid + 1;\n        else r = mid;\n    }\n    return l;\n}\n\nlet best = 0n;\n\n// Combine\nfor (let i = 0; i < leftSums.length; i++) {\n    const ls = leftSums[i];\n    const rem = m - 1n - ls;\n    if (rem < 0n) continue;\n    const pos = upperBound(rightSums, rem);\n    if (pos > 0) {\n        const rs = rightSums[pos - 1];\n        const val = (ls + rs) % m;\n        if (val > best) best = val;\n    }\n}\n\n// Also consider left and right alone (though combination loop already covers them)\nfor (let i = 0; i < leftSums.length; i++) {\n    if (leftSums[i] > best) best = leftSums[i];\n}\nfor (let i = 0; i < rightSums.length; i++) {\n    if (rightSums[i] > best) best = rightSums[i];\n}\n\nconsole.log(String(best));",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(BigInt);\nif (input.length === 0) process.exit(0);\n\nlet idx = 0;\nconst n = Number(input[idx++]);\nconst m = input[idx++];\n\nconst a = [];\nfor (let i = 0; i < n; i++) a.push(input[idx++]);\n\n// Meet in the middle\nconst n1 = Math.floor(n / 2);\nconst n2 = n - n1;\n\nfunction genSums(arr) {\n    const len = arr.length;\n    const res = [];\n    const total = 1 << len;\n    for (let mask = 0; mask < total; mask++) {\n        let sum = 0n;\n        for (let i = 0; i < len; i++) {\n            if (mask & (1 << i)) sum += arr[i];\n        }\n        res.push(sum % m);\n    }\n    return res;\n}\n\nconst left = a.slice(0, n1);\nconst right = a.slice(n1);\n\nconst leftSums = genSums(left);\nconst rightSums = genSums(right);\n\nleftSums.sort((x, y) => (x < y ? -1 : x > y ? 1 : 0));\n\nlet ans = 0n;\n\n// For each right sum, find best left sum such that (ls + rs) % m is maximized\nfor (const rs of rightSums) {\n    const target = m - 1n - rs; // we want ls <= target\n    // binary search in leftSums for largest <= target\n    let lo = 0, hi = leftSums.length - 1, best = -1;\n    while (lo <= hi) {\n        const mid = (lo + hi) >> 1;\n        if (leftSums[mid] <= target) {\n            best = mid;\n            lo = mid + 1;\n        } else {\n            hi = mid - 1;\n        }\n    }\n    if (best !== -1) {\n        const val = (leftSums[best] + rs) % m;\n        if (val > ans) ans = val;\n    }\n}\n\n// Also consider using only left or only right sums (already covered by rs with ls=0 and vice versa)\nconsole.log(ans.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(BigInt);\nif (input.length === 0) process.exit(0);\n\nlet idx = 0;\nconst n = Number(input[idx++]);\nconst m = input[idx++];\n\nconst a = [];\nfor (let i = 0; i < n; i++) {\n    a.push(input[idx++]);\n}\n\nfunction getSubsetSums(arr, m) {\n    const n = arr.length;\n    const res = [];\n    const total = 1 << n;\n    for (let mask = 0; mask < total; mask++) {\n        let sum = 0n;\n        for (let i = 0; i < n; i++) {\n            if (mask & (1 << i)) {\n                sum += arr[i];\n            }\n        }\n        res.push(sum % m);\n    }\n    res.sort((x, y) => (x < y ? -1 : x > y ? 1 : 0));\n    return res;\n}\n\nconst mid = Math.floor(n / 2);\nconst left = a.slice(0, mid);\nconst right = a.slice(mid);\n\nconst leftSums = getSubsetSums(left, m);\nconst rightSums = getSubsetSums(right, m);\n\nlet ans = 0n;\n\nfunction upperBound(arr, target) {\n    let l = 0, r = arr.length;\n    while (l < r) {\n        const mid = (l + r) >> 1;\n        if (arr[mid] <= target) l = mid + 1;\n        else r = mid;\n    }\n    return l;\n}\n\nfor (let i = 0; i < leftSums.length; i++) {\n    const x = leftSums[i];\n    const remaining = m - 1n - x;\n    if (remaining < 0n) continue;\n    const pos = upperBound(rightSums, remaining);\n    if (pos > 0) {\n        const y = rightSums[pos - 1];\n        const val = (x + y) % m;\n        if (val > ans) ans = val;\n    } else {\n        if (x > ans) ans = x;\n    }\n}\n\nconsole.log(ans.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(BigInt);\nif (input.length === 0) process.exit(0);\n\nlet idx = 0;\nconst n = Number(input[idx++]);\nconst m = input[idx++];\n\nconst a = [];\nfor (let i = 0; i < n; i++) a.push(input[idx++]);\n\nfunction getSubsetSums(arr, m) {\n    const n = arr.length;\n    const res = [];\n    const total = 1 << n;\n    for (let mask = 0; mask < total; mask++) {\n        let sum = 0n;\n        for (let i = 0; i < n; i++) {\n            if (mask & (1 << i)) {\n                sum += arr[i];\n                if (sum >= m) sum %= m;\n            }\n        }\n        res.push(sum);\n    }\n    return res;\n}\n\nconst mid = Math.floor(n / 2);\nconst left = a.slice(0, mid);\nconst right = a.slice(mid);\n\nconst leftSums = getSubsetSums(left, m);\nconst rightSums = getSubsetSums(right, m);\n\nleftSums.sort((x, y) => (x < y ? -1 : x > y ? 1 : 0));\n\nfunction upperBound(arr, target) {\n    let l = 0, r = arr.length;\n    while (l < r) {\n        const mid = (l + r) >> 1;\n        if (arr[mid] <= target) l = mid + 1;\n        else r = mid;\n    }\n    return l;\n}\n\nlet best = 0n;\nfor (const rs of rightSums) {\n    const remaining = m - 1n - rs;\n    if (remaining < 0n) continue;\n    const pos = upperBound(leftSums, remaining);\n    if (pos > 0) {\n        const candidate = rs + leftSums[pos - 1];\n        if (candidate > best) best = candidate;\n    } else {\n        if (rs > best) best = rs;\n    }\n}\n\nconsole.log(String(best));",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(BigInt);\nif (input.length === 0) process.exit(0);\n\nlet idx = 0;\nconst n = Number(input[idx++]);\nconst m = input[idx++];\n\nconst a = [];\nfor (let i = 0; i < n; i++) {\n    a.push(input[idx++]);\n}\n\nfunction getSubsetSums(arr, m) {\n    const n = arr.length;\n    const res = [];\n    const total = 1 << n;\n    for (let mask = 0; mask < total; mask++) {\n        let sum = 0n;\n        for (let i = 0; i < n; i++) {\n            if (mask & (1 << i)) {\n                sum += arr[i];\n            }\n        }\n        res.push(sum % m);\n    }\n    return res;\n}\n\nconst mid = Math.floor(n / 2);\nconst left = a.slice(0, mid);\nconst right = a.slice(mid);\n\nconst leftSums = getSubsetSums(left, m);\nconst rightSums = getSubsetSums(right, m);\n\nleftSums.sort((x, y) => (x < y ? -1 : x > y ? 1 : 0));\n\nfunction upperBound(arr, target) {\n    let l = 0, r = arr.length;\n    while (l < r) {\n        const mid = (l + r) >> 1;\n        if (arr[mid] <= target) l = mid + 1;\n        else r = mid;\n    }\n    return l;\n}\n\nlet best = 0n;\n\nfor (const rs of rightSums) {\n    const remaining = m - 1n - rs;\n    if (remaining < 0n) continue;\n    const pos = upperBound(leftSums, remaining);\n    if (pos > 0) {\n        const candidate = (rs + leftSums[pos - 1]) % m;\n        if (candidate > best) best = candidate;\n    } else {\n        if (rs > best) best = rs;\n    }\n}\n\nconsole.log(String(best));",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(BigInt);\nif (input.length === 0) process.exit(0);\n\nlet idx = 0;\nconst n = Number(input[idx++]);\nconst m = input[idx++];\n\nconst a = [];\nfor (let i = 0; i < n; i++) a.push(input[idx++]);\n\n// Meet in the middle\nconst n1 = Math.floor(n / 2);\nconst n2 = n - n1;\n\nconst left = a.slice(0, n1);\nconst right = a.slice(n1);\n\n// Generate all subset sums modulo m for a given array\nfunction genSums(arr) {\n    const len = arr.length;\n    const res = [];\n    const total = 1 << len;\n    for (let mask = 0; mask < total; mask++) {\n        let sum = 0n;\n        for (let i = 0; i < len; i++) {\n            if (mask & (1 << i)) {\n                sum += arr[i];\n            }\n        }\n        res.push(sum % m);\n    }\n    return res;\n}\n\nconst leftSums = genSums(left);\nconst rightSums = genSums(right);\n\n// Sort right sums for binary search\nrightSums.sort((x, y) => (x < y ? -1 : x > y ? 1 : 0));\n\nlet best = 0n;\n\n// For each left sum, find best right sum such that (l + r) % m is maximized\nfor (let l of leftSums) {\n    // We want r <= m-1-l (mod m), but since r in [0, m-1], just find max r <= limit\n    const limit = (m - 1n - l + m) % m; // ensure non-negative\n    // Binary search in rightSums for largest value <= limit\n    let lo = 0, hi = rightSums.length - 1, pos = -1;\n    while (lo <= hi) {\n        const mid = (lo + hi) >> 1;\n        if (rightSums[mid] <= limit) {\n            pos = mid;\n            lo = mid + 1;\n        } else {\n            hi = mid - 1;\n        }\n    }\n    if (pos !== -1) {\n        const val = (l + rightSums[pos]) % m;\n        if (val > best) best = val;\n    }\n}\n\nconsole.log(String(best));",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 4255,
+            "prompt_tokens": 300,
+            "total_tokens": 4555,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 3,
+                "engine_ttft_ms": 312,
+                "engine_ttlt_ms": 12177,
+                "pre_inference_ms": 181,
+                "service_tbt_ms": 3,
+                "service_ttft_ms": 603,
+                "service_ttlt_ms": 12438,
+                "total_duration_ms": 12268,
+                "user_visible_ttft_ms": 422
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Javascript to solve this programming problem:\nDescription: You are given an array a consisting of n integers, and additionally an integer m. You have to choose some sequence of indices b1,\u2009b2,\u2009...,\u2009bk (1\u2009\u2264\u2009b1\u2009&lt;\u2009b2\u2009&lt;\u2009...\u2009&lt;\u2009bk\u2009\u2264\u2009n) in such a way that the value of  is maximized. Chosen sequence can be empty.Print the maximum possible value of .\nInput Specification: The first line contains two integers n and m (1\u2009\u2264\u2009n\u2009\u2264\u200935, 1\u2009\u2264\u2009m\u2009\u2264\u2009109). The second line contains n integers a1, a2, ..., an (1\u2009\u2264\u2009ai\u2009\u2264\u2009109).\nOutput Specification: Print the maximum possible value of .\n\nSample Input:\n4 4\n5 2 4 1\nSample Output:\n3\n\nSample Input:\n3 20\n199 41 299\nSample Output:\n19\n\nNotes: NoteIn the first example you can choose a sequence b\u2009=\u2009{1,\u20092}, so the sum  is equal to 7 (and that's 3 after taking it modulo 4).In the second example you can choose a sequence b\u2009=\u2009{3}.\nTake input from standard input and output to standard output\nProvide the Javascript code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "d3a8a3e69a55936ee33aedd66e5b7f4a",
+        "difficulty": 1800,
+        "prob_desc_sample_inputs": [
+            "4 4\n5 2 4 1",
+            "3 20\n199 41 299"
+        ],
+        "prob_desc_time_limit": "1 second",
+        "tags": [
+            "bitmasks",
+            "meet-in-the-middle",
+            "divide and conquer"
+        ],
+        "prob_desc_output_spec": "Print the maximum possible value of .",
+        "prob_desc_input_spec": "The first line contains two integers n and m (1\u2009\u2264\u2009n\u2009\u2264\u200935, 1\u2009\u2264\u2009m\u2009\u2264\u2009109). The second line contains n integers a1, a2, ..., an (1\u2009\u2264\u2009ai\u2009\u2264\u2009109).",
+        "lang_cluster": "Javascript",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first example you can choose a sequence b\u2009=\u2009{1,\u20092}, so the sum  is equal to 7 (and that's 3 after taking it modulo 4).In the second example you can choose a sequence b\u2009=\u2009{3}.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "You are given an array a consisting of n integers, and additionally an integer m. You have to choose some sequence of indices b1,\u2009b2,\u2009...,\u2009bk (1\u2009\u2264\u2009b1\u2009&lt;\u2009b2\u2009&lt;\u2009...\u2009&lt;\u2009bk\u2009\u2264\u2009n) in such a way that the value of  is maximized. Chosen sequence can be empty.Print the maximum possible value of .",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1510239900",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "3",
+            "19"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"4 4\\r\\n5 2 4 1\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"3 20\\r\\n199 41 299\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"5 10\\r\\n47 100 49 2 56\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"5 1000\\r\\n38361 75847 14913 11499 8297\\r\\n\", \"output\": [\"917\"]}, {\"input\": \"10 10\\r\\n48 33 96 77 67 59 35 15 14 86\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"10 1000\\r\\n16140 63909 7177 99953 35627 40994 29288 7324 44476 36738\\r\\n\", \"output\": [\"999\"]}, {\"input\": \"30 10\\r\\n99 44 42 36 43 82 99 99 10 79 97 84 5 78 37 45 87 87 11 11 79 66 47 100 8 50 27 98 32 27\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"30 1000\\r\\n81021 18939 94456 90340 76840 78808 27921 71826 99382 1237 93435 35153 71691 25508 96732 23778 49073 60025 95231 88719 61650 50925 34416 73600 7295 14654 78340 72871 17324 77484\\r\\n\", \"output\": [\"999\"]}, {\"input\": \"35 10\\r\\n86 66 98 91 61 71 14 58 49 92 13 97 13 22 98 83 85 29 85 41 51 16 76 17 75 25 71 10 87 11 9 34 3 6 4\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"35 1000\\r\\n33689 27239 14396 26525 30455 13710 37039 80789 26268 1236 89916 87557 90571 13710 59152 99417 39577 40675 25931 14900 86611 46223 7105 64074 41238 59169 81308 70534 99894 10332 72983 85414 73848 68378 98404\\r\\n\", \"output\": [\"999\"]}, {\"input\": \"35 1000000000\\r\\n723631245 190720106 931659134 503095294 874181352 712517040 800614682 904895364 256863800 39366772 763190862 770183843 774794919 55669976 329106527 513566505 207828535 258356470 816288168 657823769 5223226 865258331 655737365 278677545 880429272 718852999 810522025 229560899 544602508 195068526 878937336 739178504 474601895 54057210 432282541\\r\\n\", \"output\": [\"999999999\"]}, {\"input\": \"35 982451653\\r\\n27540278 680344696 757828533 487257472 581415866 897315944 104006244 109795853 24393319 840585536 643747159 864374693 675946278 27492061 172462571 484550119 801174500 94160579 818984382 53253720 966692115 811281559 154162995 890236127 799613478 611617443 787587569 606421577 91876376 464150101 671199076 108388038 342311910 974681791 862530363\\r\\n\", \"output\": [\"982451652\"]}, {\"input\": \"15 982451653\\r\\n384052103 7482105 882228352 582828798 992251028 892163214 687253903 951043841 277531875 402248542 499362766 919046434 350763964 288775999 982610665\\r\\n\", \"output\": [\"982368704\"]}, {\"input\": \"35 1000000000\\r\\n513 9778 5859 8149 297 7965 7152 917 243 4353 7248 4913 9403 6199 2930 7461 3888 1898 3222 9424 3960 1902 2933 5268 2650 1687 5319 5065 8450 141 4219 2586 2176 1118 9635\\r\\n\", \"output\": [\"158921\"]}, {\"input\": \"35 982451653\\r\\n5253 7912 3641 7428 6138 9613 9059 6352 9070 89 9030 1686 3098 7852 3316 8158 7497 5804 130 6201 235 64 3451 6104 4148 3446 6059 6802 7466 8781 1636 8291 8874 8924 5997\\r\\n\", \"output\": [\"197605\"]}, {\"input\": \"15 982451653\\r\\n7975 7526 1213 2318 209 7815 4153 1853 6651 2880 4535 587 8022 3365 5491\\r\\n\", \"output\": [\"64593\"]}, {\"input\": \"35 1730970\\r\\n141538 131452 93552 3046 119468 8282 166088 33782 36462 25246 178798 81434 180900 15102 175898 157782 155254 166352 60772 75162 102326 104854 181138 58618 123800 54458 157516 20658 25084 155276 194920 16680 15148 188292 88802\\r\\n\", \"output\": [\"1730968\"]}, {\"input\": \"35 346194136\\r\\n89792 283104 58936 184528 194768 253076 304368 140216 220836 69196 274604 68988 300412 242588 25328 183488 81712 374964 377696 317872 146208 147400 346276 14356 90432 347556 35452 119348 311320 126112 113200 98936 189500 363424 320164\\r\\n\", \"output\": [\"6816156\"]}, {\"input\": \"35 129822795\\r\\n379185 168630 1047420 892020 180690 1438200 168330 1328610 933930 936360 1065225 351990 1079190 681510 1336020 814590 365820 1493580 495825 809745 309585 190320 1148640 146790 1008900 365655 947265 1314060 1048770 1463535 1233420 969330 1324530 944130 1457160\\r\\n\", \"output\": [\"29838960\"]}, {\"input\": \"35 106920170\\r\\n36941450 53002950 90488020 66086895 77577045 16147985 26130825 84977690 87374560 59007480 61416705 100977415 43291920 56833000 12676230 50531950 5325005 54745005 105536410 76922230 9031505 121004870 104634495 16271535 55819890 47603815 85830185 65938635 33074335 40289655 889560 19829775 31653510 120671285 37843365\\r\\n\", \"output\": [\"106907815\"]}, {\"input\": \"35 200000000\\r\\n75420000 93400000 70560000 93860000 183600000 143600000 61780000 145000000 99360000 14560000 109280000 22040000 141220000 14360000 55140000 78580000 96940000 62400000 173220000 40420000 139600000 30100000 141640000 64780000 186080000 159220000 137780000 133640000 83560000 51280000 139100000 133020000 99460000 35900000 78980000\\r\\n\", \"output\": [\"199980000\"]}, {\"input\": \"4 1\\r\\n435 124 324 2\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"1 12\\r\\n13\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"1 1000000000\\r\\n1000000000\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 19\\r\\n8 1 4 8 8 7 3\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"6 7\\r\\n1 1 1 1 1 6\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"3 5\\r\\n1 2 3\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"4 36\\r\\n22 9 24 27\\r\\n\", \"output\": [\"33\"]}, {\"input\": \"2 8\\r\\n7 1\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"2 12\\r\\n8 7\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"4 10\\r\\n11 31 12 3\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"2 8\\r\\n2 7\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"4 19\\r\\n16 20 19 21\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"3 4\\r\\n9 16 11\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"2 3\\r\\n3 7\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"2 20\\r\\n4 3\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"3 299\\r\\n100 100 200\\r\\n\", \"output\": [\"200\"]}]"
+    }
+}

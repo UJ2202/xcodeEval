@@ -1,0 +1,354 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEI2k7UXygBOA7wc3IVtB4arBlsyC",
+        "created": 1787074658,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nlet [a, b, c, l] = input;\n\nfunction solve(a, b, c, l) {\n    const arr = [a, b, c];\n    arr.sort((x, y) => x - y);\n    a = arr[0]; b = arr[1]; c = arr[2];\n\n    let L = l;\n\n    // total number of non-negative integer solutions x,y,z with x+y+z <= L\n    // = C(L+3,3) - C(L+2,3) = (L+1)(L+2)/2\n    let total = BigInt(L + 1) * BigInt(L + 2) / 2n;\n\n    function countInvalid(a, b, c, L) {\n        // a <= b <= c, we count triples x,y,z >=0, x+y+z<=L\n        // such that a+x + b+y <= c+z  (violating triangle inequality)\n        // Let s = x+y+z, t = x+y, then z = s - t\n        // inequality: a+b + t <= c + s - t  => 2t <= c + s - (a+b)\n        // t <= floor((c + s - (a+b))/2)\n        // Also 0 <= t <= s, and s <= L\n        let res = 0n;\n        const sumab = a + b;\n        for (let s = 0; s <= L; s++) {\n            let maxT = c + s - sumab;\n            if (maxT < 0) continue;\n            maxT = Math.floor(maxT / 2);\n            if (maxT > s) maxT = s;\n            if (maxT < 0) continue;\n            // number of (x,y) with x,y>=0, x+y=t, for t=0..maxT is:\n            // sum_{t=0..maxT} (t+1) = (maxT+1)(maxT+2)/2\n            let mt = BigInt(maxT);\n            res += (mt + 1n) * (mt + 2n) / 2n;\n        }\n        return res;\n    }\n\n    // subtract invalid configurations for each inequality\n    let ans = BigInt(total);\n\n    ans -= countInvalid(a, b, c, L);\n    ans -= countInvalid(b, c, a, L);\n    ans -= countInvalid(a, c, b, L);\n\n    return ans.toString();\n}\n\nconsole.log(solve(a, b, c, l));",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "const fs = require('fs');\n\nfunction main() {\n    const input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\n    let [a, b, c, l] = input;\n\n    // Sort a, b, c\n    let arr = [a, b, c].sort((x, y) => x - y);\n    a = arr[0]; b = arr[1]; c = arr[2];\n\n    let total = BigInt(l + 1) * BigInt(l + 2) * BigInt(l + 3) / 6n;\n\n    function countInvalidForLargest(largest, x, y) {\n        let res = 0n;\n        for (let d = 0; d <= l; d++) {\n            let s = x + y + d - largest + 1; // minimal sum of inc_x + inc_y\n            if (s <= 0) continue;\n            if (s > l - d) continue;\n            let n = l - d - s + 1;\n            res += BigInt(n) * BigInt(n + 1) / 2n;\n        }\n        return res;\n    }\n\n    let invalid = 0n;\n    invalid += countInvalidForLargest(c, a, b);\n    invalid += countInvalidForLargest(b, a, c);\n    invalid += countInvalidForLargest(a, b, c);\n\n    let ans = total - invalid;\n    console.log(ans.toString());\n}\n\nmain();",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "const fs = require('fs');\n\nfunction main() {\n    const input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\n    let [a, b, c, l] = input;\n\n    // Sort a, b, c\n    let arr = [a, b, c].sort((x, y) => x - y);\n    a = arr[0]; b = arr[1]; c = arr[2];\n\n    // Total non-negative integer solutions x,y,z with x+y+z<=l\n    // = C(l+3,3) = (l+3)(l+2)(l+1)/6\n    function comb3(n) {\n        if (n < 3) return 0;\n        return BigInt(n) * BigInt(n - 1) * BigInt(n - 2) / 6n;\n    }\n\n    let total = comb3(l + 3);\n\n    // Count invalid (degenerate or impossible) where largest side >= sum of other two\n    // Let x,y,z increments for a,b,c respectively\n    // Condition for invalid: c+z >= a+x + b+y  =>  z - x - y >= a + b - c = d\n    let d = a + b - c;\n\n    // We need to count number of (x,y,z>=0, x+y+z<=l) with z - x - y >= d\n    // If d <= 0, some invalid exist; if d > 0, we need z >= x+y + d\n    // We'll iterate over x,y and compute allowed z.\n\n    let invalid = 0n;\n\n    for (let x = 0; x <= l; x++) {\n        // For each x, y ranges from 0 to l - x\n        let maxY = l - x;\n        for (let y = 0; y <= maxY; y++) {\n            let sumXY = x + y;\n            // minimal z to satisfy inequality\n            let minZ = d + sumXY;\n            if (minZ < 0) minZ = 0;\n            // z must also satisfy x+y+z <= l => z <= l - sumXY\n            let maxZ = l - sumXY;\n            if (minZ <= maxZ) {\n                invalid += BigInt(maxZ - minZ + 1);\n            }\n        }\n    }\n\n    let ans = total - invalid;\n    console.log(ans.toString());\n}\n\nmain();",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "const fs = require('fs');\n\nfunction main() {\n    const input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\n    let [a, b, c, l] = input;\n\n    // Sort sides so that a <= b <= c\n    let arr = [a, b, c].sort((x, y) => x - y);\n    a = arr[0]; b = arr[1]; c = arr[2];\n\n    // Total number of nonnegative integer solutions x,y,z with x+y+z <= l\n    // = C(l+3,3) - C(l+2,3) = (l+1)(l+2)/2\n    const L = BigInt(l);\n    let total = (L + 1n) * (L + 2n) / 2n;\n\n    // Helper to compute sum of arithmetic progression safely\n    function sumRange(first, last, count) {\n        if (count <= 0n) return 0n;\n        return (first + last) * count / 2n;\n    }\n\n    // Count invalid configurations where triangle inequality fails:\n    // largest side >= sum of other two sides\n    // We consider each side as the largest in turn.\n\n    // Case 1: c is largest side\n    // We add x,y,z to a,b,c respectively, with x+y+z <= l\n    // Condition for invalid: c+z >= a+x + b+y  =>  z - x - y >= a + b - c\n    // Let d = a + b - c. If d <= 0, some invalids exist.\n    let d = a + b - c;\n    if (d <= 0) {\n        // We need z - x - y >= d. Since d <= 0, let k = -d >= 0.\n        // So z >= x + y - k.\n        // But easier: we directly iterate on extra for c (z) as t, and count\n        // combinations of x,y such that inequality holds and x+y+z <= l.\n        // However, we can use a known approach: iterate extra for c (t),\n        // and for each t, count pairs (x,y) with x+y <= l - t and\n        // c + t >= a + x + b + y  =>  x + y <= c + t - a - b.\n        // Let S = min(l - t, c + t - a - b).\n        // If S >= 0, number of (x,y) with x,y>=0, x+y<=S is (S+1)(S+2)/2.\n        let A = BigInt(a), B = BigInt(b), C = BigInt(c);\n        for (let t = 0; t <= l; t++) {\n            let T = BigInt(t);\n            let maxSum1 = BigInt(l - t); // from x+y+z <= l\n            let maxSum2 = C + T - A - B; // from inequality\n            let S = maxSum1 < maxSum2 ? maxSum1 : maxSum2;\n            if (S >= 0n) {\n                total -= (S + 1n) * (S + 2n) / 2n;\n            }\n        }\n    }\n\n    // Case 2: b is largest side\n    // Now we consider b as largest: b+y >= a+x + c+z\n    // => y - x - z >= a + c - b\n    d = a + c - b;\n    if (d <= 0) {\n        let A = BigInt(a), B = BigInt(b), C = BigInt(c);\n        for (let t = 0; t <= l; t++) { // t is extra for b (y)\n            let T = BigInt(t);\n            let maxSum1 = BigInt(l - t); // x+z <= l - t\n            let maxSum2 = B + T - A - C; // x+z <= B+T-A-C\n            let S = maxSum1 < maxSum2 ? maxSum1 : maxSum2;\n            if (S >= 0n) {\n                total -= (S + 1n) * (S + 2n) / 2n;\n            }\n        }\n    }\n\n    // Case 3: a is largest side\n    // a+x >= b+y + c+z\n    // => x - y - z >= b + c - a\n    d = b + c - a;\n    if (d <= 0) {\n        let A = BigInt(a), B = BigInt(b), C = BigInt(c);\n        for (let t = 0; t <= l; t++) { // t is extra for a (x)\n            let T = BigInt(t);\n            let maxSum1 = BigInt(l - t); // y+z <= l - t\n            let maxSum2 = A + T - B - C; // y+z <= A+T-B-C\n            let S = maxSum1 < maxSum2 ? maxSum1 : maxSum2;\n            if (S >= 0n) {\n                total -= (S + 1n) * (S + 2n) / 2n;\n            }\n        }\n    }\n\n    console.log(total.toString());\n}\n\nmain();",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nlet [a, b, c, l] = input;\n\nfunction calc(a, b, c, l) {\n    let ans = 0n;\n    for (let x = 0; x <= l; x++) {\n        let A = a + x;\n\n        // total increments for B and C\n        let rem = l - x;\n\n        // total ways to distribute rem between B and C\n        let total = BigInt(rem + 1);\n\n        // invalid when B + C <= A\n        // b + y + c + z <= A  =>  y + z <= A - b - c\n        let t = A - b - c;\n        let bad1 = 0n;\n        if (t >= 0) {\n            let k = Math.min(rem, t);\n            bad1 = BigInt(k + 1);\n        }\n\n        // invalid when A + B <= C\n        // A + b + y <= c + z  =>  y - z <= c - A - b\n        let d = c - A - b;\n        let bad2 = 0n;\n        if (d >= 0) {\n            let k = Math.min(rem, d);\n            bad2 = BigInt(k + 1);\n        }\n\n        ans += total - bad1 - bad2;\n    }\n    return ans;\n}\n\nlet res = calc(a, b, c, l);\nconsole.log(res.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "const fs = require('fs');\n\nfunction main() {\n    const input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\n    let [a, b, c, l] = input;\n\n    // Sort a, b, c so that a <= b <= c\n    let arr = [a, b, c];\n    arr.sort((x, y) => x - y);\n    a = arr[0]; b = arr[1]; c = arr[2];\n\n    // Total number of ways to distribute l among 3 sticks: sum_{t=0..l} C(t+2,2)\n    // = C(l+3,3) = (l+3)(l+2)(l+1)/6\n    function comb3(n) {\n        return BigInt(n) * BigInt(n - 1) * BigInt(n - 2) / 6n;\n    }\n    const totalWays = comb3(l + 3);\n\n    // Count invalid ways where triangle inequality fails: largest side >= sum of other two\n    // We consider each stick as the largest side in turn.\n    function countInvalidForLargest(base1, base2, base3) {\n        // base3 is the largest side in this configuration\n        let invalid = 0n;\n        const maxT = l;\n        for (let t = 0; t <= maxT; t++) {\n            // x, y, z >= 0, x+y+z = t, and base3+z >= base1+x + base2+y\n            // => z - x - y >= base1 + base2 - base3\n            // But z = t - x - y\n            // => t - 2(x + y) >= base1 + base2 - base3\n            // Let D = base1 + base2 - base3\n            const D = base1 + base2 - base3;\n            // If D <= t, there may be solutions\n            if (D <= t) {\n                // Let s = x + y\n                // Condition: t - 2s >= D => s <= (t - D)/2\n                const maxS = Math.floor((t - D) / 2);\n                if (maxS >= 0) {\n                    // Number of nonnegative integer pairs (x,y) with x+y = s is (s+1)\n                    // Total for s=0..maxS is (maxS+1)(maxS+2)/2\n                    const ms = BigInt(maxS);\n                    invalid += (ms + 1n) * (ms + 2n) / 2n;\n                }\n            }\n        }\n        return invalid;\n    }\n\n    // We need to consider each stick as largest: permutations of (a,b,c)\n    // But we already sorted, so we can rotate roles.\n    let invalidTotal = 0n;\n    invalidTotal += countInvalidForLargest(a, b, c);\n    invalidTotal += countInvalidForLargest(a, c, b);\n    invalidTotal += countInvalidForLargest(b, c, a);\n\n    const result = totalWays - invalidTotal;\n    console.log(result.toString());\n}\n\nmain();",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nlet [a, b, c, l] = input;\n\nfunction countNonTriangles(a, b, c, l) {\n    let res = 0;\n    const maxX = l;\n    for (let x = 0; x <= maxX; x++) {\n        const A = a + x;\n        const rem = l - x;\n\n        // We want to count non-negative integer (y,z) with y+z <= rem\n        // and violating triangle inequality:\n        // A >= B + C  or  B >= A + C  or  C >= A + B\n        // Only A >= B + C can hold for large A; others are symmetric\n        // but we handle all by symmetry in main.\n\n        // For fixed A, count pairs (b',c') = (b+y, c+z) with y,z>=0,y+z<=rem\n        // such that A >= b'+c' => A >= b + c + y + z\n        // Let s = y+z, then s <= rem and s <= A - b - c\n        const limit = A - b - c;\n        if (limit < 0) continue;\n        const maxS = Math.min(rem, limit);\n        if (maxS < 0) continue;\n\n        // For each s, number of (y,z) with y+z=s is s+1\n        // total = sum_{s=0..maxS} (s+1) = (maxS+1)(maxS+2)/2\n        const k = BigInt(maxS + 1);\n        const totalPairs = k * BigInt(maxS + 2) / 2n;\n        res += totalPairs;\n    }\n    return res;\n}\n\n// Total ways to distribute at most l increments among 3 sticks:\n// sum_{t=0..l} C(t+2,2) = C(l+3,3)\nfunction totalWays(l) {\n    const n = BigInt(l + 3);\n    return n * BigInt(l + 2) * BigInt(l + 1) / 6n;\n}\n\n// We count invalid (degenerate or impossible) triangles and subtract from total.\n// Use symmetry: rotate roles of (a,b,c).\nlet total = totalWays(l);\n\n// Count configurations where one side >= sum of other two (degenerate or impossible).\n// For each rotation, count cases where that rotated 'a' is the potentially largest side.\nlet bad = 0n;\n\n// First rotation: a as potentially largest\nbad += countNonTriangles(a, b, c, l);\n// Second rotation: b as potentially largest\nbad += countNonTriangles(b, a, c, l);\n// Third rotation: c as potentially largest\nbad += countNonTriangles(c, a, b, l);\n\n// However, configurations where two or three sides tie as largest and violate inequality\n// are overcounted; but such cases correspond to equality of sums that cannot happen\n// with positive integer lengths and non-negative increments except in degenerate\n// equality cases, which are still invalid and correctly counted once overall.\n// The standard CF solution uses this direct subtraction.\n\nlet ans = total - bad;\nconsole.log(ans.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nlet [a, b, c, l] = input;\n\nfunction countNonTriangles(a, b, c, l) {\n    let res = 0;\n    for (let i = 0; i <= l; i++) {\n        let x = a + i;\n        let rem = l - i;\n        let y = b, z = c;\n\n        // sort x, y, z so that x is the largest\n        let arr = [x, y, z];\n        arr.sort((p, q) => p - q);\n        let s = arr[0] + arr[1];\n        let big = arr[2];\n\n        // we need big >= s to be non-triangle (degenerate or impossible)\n        // we can increase y and z by nonnegative integers u, v with u+v <= rem\n        // and want big' >= s', where:\n        // if big is x: big' = x, s' = (y+u)+(z+v) = s + u + v\n        // if big is y or z: big' increases, s' also increases\n\n        // Case 1: x is the largest (big == x)\n        if (big === x) {\n            // inequality: x >= s + u + v\n            // so u + v <= x - s\n            let maxUV = x - s;\n            if (maxUV >= 0) {\n                let limit = Math.min(rem, maxUV);\n                // number of (u,v) with u+v <= limit is (limit+1)(limit+2)/2\n                res += (limit + 1) * (limit + 2) / 2;\n            }\n        } else {\n            // big is y or z; increasing y,z only increases s and big\n            // We need big+deltaBig >= s+deltaS.\n            // Let deltaBig be increment of the current largest among y,z.\n            // But since we can distribute increments arbitrarily, it's easier\n            // to consider all (u,v) and count those that violate triangle inequality.\n\n            // Brute over u is too big; instead, derive formula.\n\n            // Suppose arr[2] is big (either y or z), arr[0]+arr[1]=s.\n            // Let increments to arr[0],arr[1],arr[2] be d0,d1,d2 (nonnegative, sum<=rem).\n            // But we only increment b,c (original y,z), not x. However, after sorting,\n            // mapping is complex. For simplicity, we handle via direct formulas\n            // based on original roles.\n\n            // Instead of handling this complicated case, we note that\n            // when x is not the largest, increasing b,c cannot make\n            // the configuration non-triangular if it was triangular already.\n            // But we are counting non-triangles, so in this branch we approximate 0.\n            // However, to be correct, we need exact counting; but constraints\n            // ensure this branch contributes 0 for valid inputs in this problem\n            // setting (since we always can reorder a,b,c beforehand).\n\n            // So we do nothing here.\n        }\n    }\n    return res;\n}\n\n// Sort a,b,c so that a <= b <= c\nlet arr = [a, b, c];\narr.sort((p, q) => p - q);\na = arr[0]; b = arr[1]; c = arr[2];\n\n// total ways to distribute increments x,y,z >=0, x+y+z<=l\n// is C(l+3,3)\nfunction comb3(n) {\n    return BigInt(n) * BigInt(n - 1) * BigInt(n - 2) / 6n;\n}\nlet totalWays = comb3(l + 3);\n\n// count non-triangles (degenerate or impossible) and subtract\n// We rotate roles so that each stick can be the largest\nlet bad = 0n;\n\nfunction calcBad(a, b, c, l) {\n    // a is the stick we vary as x, others fixed\n    let res = 0n;\n    for (let i = 0; i <= l; i++) {\n        let x = a + i;\n        let rem = l - i;\n\n        // we want configurations where x >= b + c + u + v\n        // where u,v increments to b,c with u+v<=rem\n        let maxUV = x - (b + c);\n        if (maxUV < 0) continue;\n        let limit = Math.min(rem, maxUV);\n        if (limit < 0) continue;\n        let L = BigInt(limit);\n        // number of (u,v) with u+v <= limit is (limit+1)(limit+2)/2\n        let ways = (L + 1n) * (L + 2n) / 2n;\n        res += ways;\n    }\n    return res;\n}\n\n// Consider each stick as potentially the largest side\nbad += calcBad(a, b, c, l);\nbad += calcBad(b, a, c, l);\nbad += calcBad(c, a, b, l);\n\nlet ans = totalWays - bad;\nconsole.log(ans.toString());",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 5527,
+            "prompt_tokens": 373,
+            "total_tokens": 5900,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 3,
+                "engine_ttft_ms": 312,
+                "engine_ttlt_ms": 18239,
+                "pre_inference_ms": 181,
+                "service_tbt_ms": 3,
+                "service_ttft_ms": 658,
+                "service_ttlt_ms": 18511,
+                "total_duration_ms": 18340,
+                "user_visible_ttft_ms": 477
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Javascript to solve this programming problem:\nDescription: You are given three sticks with positive integer lengths of a,\u2009b, and c centimeters. You can increase length of some of them by some positive integer number of centimeters (different sticks can be increased by a different length), but in total by at most l centimeters. In particular, it is allowed not to increase the length of any stick.Determine the number of ways to increase the lengths of some sticks so that you can form from them a non-degenerate (that is, having a positive area) triangle. Two ways are considered different, if the length of some stick is increased by different number of centimeters in them.\nInput Specification: The single line contains 4 integers a,\u2009b,\u2009c,\u2009l (1\u2009\u2264\u2009a,\u2009b,\u2009c\u2009\u2264\u20093\u00b7105, 0\u2009\u2264\u2009l\u2009\u2264\u20093\u00b7105).\nOutput Specification: Print a single integer \u2014 the number of ways to increase the sizes of the sticks by the total of at most l centimeters, so that you can make a non-degenerate triangle from it.\n\nSample Input:\n1 1 1 2\nSample Output:\n4\n\nSample Input:\n1 2 3 1\nSample Output:\n2\n\nSample Input:\n10 2 1 7\nSample Output:\n0\n\nNotes: NoteIn the first sample test you can either not increase any stick or increase any two sticks by 1 centimeter.In the second sample test you can increase either the first or the second stick by one centimeter. Note that the triangle made from the initial sticks is degenerate and thus, doesn't meet the conditions.\nTake input from standard input and output to standard output\nProvide the Javascript code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "185ff90a8b0ae0e2b75605f772589410",
+        "difficulty": 2100,
+        "prob_desc_sample_inputs": [
+            "1 1 1 2",
+            "1 2 3 1",
+            "10 2 1 7"
+        ],
+        "prob_desc_time_limit": "1 second",
+        "tags": [
+            "math",
+            "combinatorics",
+            "brute force",
+            "dp",
+            "implementation"
+        ],
+        "prob_desc_output_spec": "Print a single integer \u2014 the number of ways to increase the sizes of the sticks by the total of at most l centimeters, so that you can make a non-degenerate triangle from it.",
+        "prob_desc_input_spec": "The single line contains 4 integers a,\u2009b,\u2009c,\u2009l (1\u2009\u2264\u2009a,\u2009b,\u2009c\u2009\u2264\u20093\u00b7105, 0\u2009\u2264\u2009l\u2009\u2264\u20093\u00b7105).",
+        "lang_cluster": "Javascript",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first sample test you can either not increase any stick or increase any two sticks by 1 centimeter.In the second sample test you can increase either the first or the second stick by one centimeter. Note that the triangle made from the initial sticks is degenerate and thus, doesn't meet the conditions.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "You are given three sticks with positive integer lengths of a,\u2009b, and c centimeters. You can increase length of some of them by some positive integer number of centimeters (different sticks can be increased by a different length), but in total by at most l centimeters. In particular, it is allowed not to increase the length of any stick.Determine the number of ways to increase the lengths of some sticks so that you can form from them a non-degenerate (that is, having a positive area) triangle. Two ways are considered different, if the length of some stick is increased by different number of centimeters in them.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1440261000",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "4",
+            "2",
+            "0"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"1 1 1 2\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"1 2 3 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"10 2 1 7\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"1 2 1 5\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"10 15 17 10\\r\\n\", \"output\": [\"281\"]}, {\"input\": \"5 5 5 10000\\r\\n\", \"output\": [\"41841675001\"]}, {\"input\": \"5 7 30 100\\r\\n\", \"output\": [\"71696\"]}, {\"input\": \"5 5 5 300000\\r\\n\", \"output\": [\"1125157500250001\"]}, {\"input\": \"4 2 5 28\\r\\n\", \"output\": [\"1893\"]}, {\"input\": \"2 7 8 4\\r\\n\", \"output\": [\"25\"]}, {\"input\": \"85 50 17 89\\r\\n\", \"output\": [\"68620\"]}, {\"input\": \"17 28 19 5558\\r\\n\", \"output\": [\"7396315389\"]}, {\"input\": \"5276 8562 1074 8453\\r\\n\", \"output\": [\"49093268246\"]}, {\"input\": \"9133 7818 3682 82004\\r\\n\", \"output\": [\"38306048676255\"]}, {\"input\": \"81780 54799 231699 808\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"53553 262850 271957 182759\\r\\n\", \"output\": [\"834977070873802\"]}, {\"input\": \"300000 300000 300000 300000\\r\\n\", \"output\": [\"4500090000549998\"]}, {\"input\": \"1 1 300000 300000\\r\\n\", \"output\": [\"599999\"]}, {\"input\": \"300000 300000 1 300000\\r\\n\", \"output\": [\"2250045000350001\"]}, {\"input\": \"300000 300000 1 24234\\r\\n\", \"output\": [\"1186319275394\"]}, {\"input\": \"1 1 1 300000\\r\\n\", \"output\": [\"1125022500250001\"]}, {\"input\": \"3 5 7 300000\\r\\n\", \"output\": [\"1125157499050009\"]}, {\"input\": \"63 5 52 78\\r\\n\", \"output\": [\"46502\"]}, {\"input\": \"2 42 49 93\\r\\n\", \"output\": [\"72542\"]}, {\"input\": \"61 100 3 8502\\r\\n\", \"output\": [\"27050809786\"]}, {\"input\": \"30 918 702 591\\r\\n\", \"output\": [\"14315560\"]}, {\"input\": \"98406 37723 3 257918\\r\\n\", \"output\": [\"1154347569149860\"]}, {\"input\": \"552 250082 77579 278985\\r\\n\", \"output\": [\"596240712378446\"]}, {\"input\": \"183808 8 8 294771\\r\\n\", \"output\": [\"622921327009564\"]}, {\"input\": \"2958 4133 233463 259655\\r\\n\", \"output\": [\"65797591388150\"]}, {\"input\": \"300000 200000 100000 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"300000 200000 100000 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"100000 300000 100000 100000\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"100000 300000 100000 100001\\r\\n\", \"output\": [\"100002\"]}, {\"input\": \"100000 300000 100000 100002\\r\\n\", \"output\": [\"200005\"]}, {\"input\": \"100000 300000 100000 100003\\r\\n\", \"output\": [\"400012\"]}, {\"input\": \"100000 300000 100000 100010\\r\\n\", \"output\": [\"3000195\"]}, {\"input\": \"100000 300000 100000 100100\\r\\n\", \"output\": [\"255131325\"]}, {\"input\": \"100000 300000 199999 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"100000 300000 200001 0\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"3 1 29 1\\r\\n\", \"output\": [\"0\"]}]"
+    }
+}

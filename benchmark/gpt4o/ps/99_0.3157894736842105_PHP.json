@@ -1,0 +1,348 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEICSYNYeiuYCl4tg2OvDeOSzvmiw",
+        "created": 1787075260,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "<?php\nlist($n, $t) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n\n$maxY = 4;\n$minY = 1;\n\n// dp[pos][prevY][currY][peaks][valleys][trend]\n// trend: 0 = up, 1 = down\n$dp = [];\n\n// Initialize for position 2\nfor ($y1 = $minY; $y1 <= $maxY; $y1++) {\n    for ($y2 = $minY; $y2 <= $maxY; $y2++) {\n        if ($y1 == $y2) continue; // no horizontal segment\n        $trend = ($y2 > $y1) ? 0 : 1;\n        $dp[2][$y1][$y2][0][0][$trend] = 1;\n    }\n}\n\nfor ($pos = 3; $pos <= $n; $pos++) {\n    if (!isset($dp[$pos - 1])) continue;\n    foreach ($dp[$pos - 1] as $prevY => $byPrevY) {\n        foreach ($byPrevY as $currY => $byCurrY) {\n            foreach ($byCurrY as $peaks => $byPeaks) {\n                foreach ($byPeaks as $valleys => $byValleys) {\n                    foreach ($byValleys as $trend => $count) {\n                        for ($nextY = $minY; $nextY <= $maxY; $nextY++) {\n                            if ($nextY == $currY) continue; // no horizontal\n                            $newPeaks = $peaks;\n                            $newValleys = $valleys;\n\n                            if ($trend == 0 && $nextY < $currY) {\n                                // up then down -> peak at currY\n                                $newPeaks++;\n                                $newTrend = 1;\n                            } elseif ($trend == 1 && $nextY > $currY) {\n                                // down then up -> valley at currY\n                                $newValleys++;\n                                $newTrend = 0;\n                            } else {\n                                $newTrend = $trend;\n                            }\n\n                            if ($newPeaks > $t || $newValleys > $t - 1) continue;\n\n                            if (!isset($dp[$pos][$currY][$nextY][$newPeaks][$newValleys][$newTrend])) {\n                                $dp[$pos][$currY][$nextY][$newPeaks][$newValleys][$newTrend] = 0;\n                            }\n                            $dp[$pos][$currY][$nextY][$newPeaks][$newValleys][$newTrend] += $count;\n                        }\n                    }\n                }\n            }\n        }\n    }\n}\n\n$ans = 0;\nif (isset($dp[$n])) {\n    foreach ($dp[$n] as $prevY => $byPrevY) {\n        foreach ($byPrevY as $currY => $byCurrY) {\n            foreach ($byCurrY as $peaks => $byPeaks) {\n                foreach ($byPeaks as $valleys => $byValleys) {\n                    if ($peaks == $t && $valleys == $t - 1) {\n                        foreach ($byValleys as $trend => $count) {\n                            $ans += $count;\n                        }\n                    }\n                }\n            }\n        }\n    }\n}\n\necho $ans . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "<?php\nlist($n, $t) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n\n$maxY = 4;\n$dp = [];\n\n// dp[pos][lastY][peaks][valleys][trend]\n// trend: 0 = start, 1 = up, 2 = down\nfor ($pos = 0; $pos <= $n; $pos++) {\n    $dp[$pos] = [];\n    for ($y = 1; $y <= $maxY; $y++) {\n        $dp[$pos][$y] = [];\n        for ($p = 0; $p <= $t; $p++) {\n            $dp[$pos][$y][$p] = [];\n            for ($v = 0; $v <= $t - 1; $v++) {\n                $dp[$pos][$y][$p][$v] = array_fill(0, 3, 0);\n            }\n        }\n    }\n}\n\n// Initialize for position 1\nfor ($y = 1; $y <= $maxY; $y++) {\n    $dp[1][$y][0][0][0] = 1;\n}\n\nfor ($pos = 2; $pos <= $n; $pos++) {\n    for ($lastY = 1; $lastY <= $maxY; $lastY++) {\n        for ($peaks = 0; $peaks <= $t; $peaks++) {\n            for ($valleys = 0; $valleys <= $t - 1; $valleys++) {\n                for ($trend = 0; $trend <= 2; $trend++) {\n                    $curVal = $dp[$pos - 1][$lastY][$peaks][$valleys][$trend];\n                    if ($curVal == 0) continue;\n\n                    for ($newY = 1; $newY <= $maxY; $newY++) {\n                        if ($newY == $lastY) continue; // no horizontal segment\n\n                        if ($pos == 2) {\n                            // Determine initial trend\n                            $newTrend = ($newY > $lastY) ? 1 : 2;\n                            $dp[$pos][$newY][$peaks][$valleys][$newTrend] += $curVal;\n                        } else {\n                            // Need previous y to detect peaks/valleys\n                            // We don't store prevY, but we can infer changes using trend:\n                            // If trend was up and now newY < lastY -> possible peak at pos-1\n                            // If trend was down and now newY > lastY -> possible valley at pos-1\n                            $newTrend = $trend;\n                            $newPeaks = $peaks;\n                            $newValleys = $valleys;\n\n                            if ($trend == 1) { // up\n                                if ($newY < $lastY) {\n                                    // peak at pos-1\n                                    $newPeaks++;\n                                    $newTrend = 2;\n                                } else { // still up\n                                    $newTrend = 1;\n                                }\n                            } elseif ($trend == 2) { // down\n                                if ($newY > $lastY) {\n                                    // valley at pos-1\n                                    $newValleys++;\n                                    $newTrend = 1;\n                                } else { // still down\n                                    $newTrend = 2;\n                                }\n                            } else {\n                                // trend 0 should not occur for pos>2\n                                continue;\n                            }\n\n                            if ($newPeaks > $t || $newValleys > $t - 1) continue;\n\n                            $dp[$pos][$newY][$newPeaks][$newValleys][$newTrend] += $curVal;\n                        }\n                    }\n                }\n            }\n        }\n    }\n}\n\n$result = 0;\nfor ($y = 1; $y <= $maxY; $y++) {\n    for ($trend = 1; $trend <= 2; $trend++) {\n        $result += $dp[$n][$y][$t][$t - 1][$trend];\n    }\n}\n\necho $result . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "<?php\nlist($n, $t) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n\n$maxY = 4;\n$dp = [];\n\n// dp[pos][prevY][prevTrend][peaks][valleys]\n// prevTrend: 0 = start, 1 = up, 2 = down\nfor ($pos = 0; $pos <= $n; $pos++) {\n    $dp[$pos] = [];\n    for ($y = 0; $y <= $maxY; $y++) {\n        $dp[$pos][$y] = [];\n        for ($trend = 0; $trend < 3; $trend++) {\n            $dp[$pos][$y][$trend] = [];\n            for ($p = 0; $p <= $t; $p++) {\n                $dp[$pos][$y][$trend][$p] = array_fill(0, $t, 0);\n            }\n        }\n    }\n}\n\n// Initialize for position 1\nfor ($y1 = 1; $y1 <= $maxY; $y1++) {\n    $dp[1][$y1][0][0][0] = 1;\n}\n\nfor ($pos = 2; $pos <= $n; $pos++) {\n    for ($prevY = 1; $prevY <= $maxY; $prevY++) {\n        for ($trend = 0; $trend < 3; $trend++) {\n            for ($peaks = 0; $peaks <= $t; $peaks++) {\n                for ($valleys = 0; $valleys < $t; $valleys++) {\n                    $curVal = $dp[$pos-1][$prevY][$trend][$peaks][$valleys];\n                    if ($curVal == 0) continue;\n\n                    for ($y = 1; $y <= $maxY; $y++) {\n                        if ($y == $prevY) continue; // no horizontal segment\n\n                        $newTrend = ($y > $prevY) ? 1 : 2;\n                        $newPeaks = $peaks;\n                        $newValleys = $valleys;\n\n                        if ($trend != 0 && $trend != $newTrend) {\n                            // trend change at prev point (pos-1)\n                            if ($trend == 1 && $newTrend == 2) {\n                                // up then down => peak at pos-1\n                                $newPeaks++;\n                            } elseif ($trend == 2 && $newTrend == 1) {\n                                // down then up => valley at pos-1\n                                $newValleys++;\n                            }\n                            if ($newPeaks > $t || $newValleys >= $t) continue;\n                        }\n\n                        $dp[$pos][$y][$newTrend][$newPeaks][$newValleys] += $curVal;\n                    }\n                }\n            }\n        }\n    }\n}\n\n$result = 0;\n$pos = $n;\nfor ($y = 1; $y <= $maxY; $y++) {\n    for ($trend = 0; $trend < 3; $trend++) {\n        $result += $dp[$pos][$y][$trend][$t][ $t-1 ];\n    }\n}\n\necho $result . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "<?php\nlist($n, $t) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n\n$maxY = 4;\n$count = 0;\n\n// y[1..n], 1-based\n$y = array_fill(0, $n + 1, 0);\n\nfunction dfs($pos, $n, $t, $maxY, &$y, $peaks, $valleys, $lastDir, $lastDiff, &$count) {\n    if ($pos > $n) {\n        if ($peaks == $t && $valleys == $t - 1) {\n            $count++;\n        }\n        return;\n    }\n\n    for ($val = 1; $val <= $maxY; $val++) {\n        if ($pos > 1 && $val == $y[$pos - 1]) continue; // no horizontal segment\n\n        $prevDir = $lastDir;\n        $prevDiff = $lastDiff;\n        $newPeaks = $peaks;\n        $newValleys = $valleys;\n\n        if ($pos > 1) {\n            $diff = $val - $y[$pos - 1];\n            $dir = ($diff > 0) ? 1 : -1;\n\n            if ($pos > 2 && $prevDir != 0 && $dir != $prevDir) {\n                // direction change at pos-1\n                if ($prevDir == 1 && $dir == -1) {\n                    $newPeaks++;\n                    if ($newPeaks > $t) continue;\n                } elseif ($prevDir == -1 && $dir == 1) {\n                    $newValleys++;\n                    if ($newValleys > $t - 1) continue;\n                }\n            }\n\n            $lastDirNew = $dir;\n            $lastDiffNew = $diff;\n        } else {\n            $lastDirNew = 0;\n            $lastDiffNew = 0;\n        }\n\n        $y[$pos] = $val;\n\n        // pruning: remaining positions can't create enough peaks/valleys\n        $remaining = $n - $pos;\n        // each new peak or valley needs at least 2 more points (one for change in, one for change out),\n        // but for a loose upper bound we can say remaining >= needed\n        if ($newPeaks > $t || $newValleys > $t - 1) continue;\n\n        dfs($pos + 1, $n, $t, $maxY, $y, $newPeaks, $newValleys, $lastDirNew, $lastDiffNew, $count);\n    }\n}\n\n// start DFS\ndfs(1, $n, $t, $maxY, $y, 0, 0, 0, 0, $count);\n\necho $count . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "<?php\nlist($n, $t) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n\n$maxY = 4;\n$dp = [];\n\n// dp[pos][prevY][dir][peaks][valleys]\n// dir: 0 = down, 1 = up, 2 = start (no direction yet)\nfor ($y = 1; $y <= $maxY; $y++) {\n    $dp[1][$y][2][0][0] = 1;\n}\n\nfor ($pos = 1; $pos < $n; $pos++) {\n    if (!isset($dp[$pos])) continue;\n    foreach ($dp[$pos] as $prevY => $dirStates) {\n        foreach ($dirStates as $dir => $peakStates) {\n            foreach ($peakStates as $peaks => $valleyStates) {\n                foreach ($valleyStates as $valleys => $count) {\n                    if ($count == 0) continue;\n                    for ($ny = 1; $ny <= $maxY; $ny++) {\n                        if ($ny == $prevY) continue; // no horizontal segment\n                        $newDir = ($ny > $prevY) ? 1 : 0;\n                        $newPeaks = $peaks;\n                        $newValleys = $valleys;\n\n                        if ($dir != 2 && $dir != $newDir) {\n                            // direction change at prev point (pos)\n                            if ($dir == 1 && $newDir == 0) {\n                                // up then down -> peak at pos\n                                $newPeaks++;\n                            } elseif ($dir == 0 && $newDir == 1) {\n                                // down then up -> valley at pos\n                                $newValleys++;\n                            }\n                        }\n\n                        if ($newPeaks > $t || $newValleys > $t - 1) continue;\n\n                        if (!isset($dp[$pos + 1][$ny][$newDir][$newPeaks][$newValleys])) {\n                            $dp[$pos + 1][$ny][$newDir][$newPeaks][$newValleys] = 0;\n                        }\n                        $dp[$pos + 1][$ny][$newDir][$newPeaks][$newValleys] += $count;\n                    }\n                }\n            }\n        }\n    }\n}\n\n$ans = 0;\nif (isset($dp[$n])) {\n    foreach ($dp[$n] as $y => $dirStates) {\n        foreach ($dirStates as $dir => $peakStates) {\n            if (!isset($peakStates[$t][$t - 1])) continue;\n            $ans += $peakStates[$t][$t - 1];\n        }\n    }\n}\n\necho $ans . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "<?php\nlist($n, $t) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n\n$maxY = 4;\n$dp = [];\n\n// dp[pos][lastY][trend][peaks][valleys] = count\n// trend: 0 = flat(start), 1 = up, 2 = down\nfor ($y = 1; $y <= $maxY; $y++) {\n    $dp[1][$y][0][0][0] = 1;\n}\n\nfor ($pos = 1; $pos < $n; $pos++) {\n    if (!isset($dp[$pos])) continue;\n    foreach ($dp[$pos] as $lastY => $byTrend) {\n        foreach ($byTrend as $trend => $byPeaks) {\n            foreach ($byPeaks as $peaks => $byValleys) {\n                foreach ($byValleys as $valleys => $cnt) {\n                    for ($ny = 1; $ny <= $maxY; $ny++) {\n                        if ($ny == $lastY) continue; // no horizontal segment\n                        $newTrend = ($ny > $lastY) ? 1 : 2;\n                        $newPeaks = $peaks;\n                        $newValleys = $valleys;\n\n                        if ($trend == 1 && $newTrend == 2) {\n                            // up then down -> peak at pos\n                            $newPeaks++;\n                        } elseif ($trend == 2 && $newTrend == 1) {\n                            // down then up -> valley at pos\n                            $newValleys++;\n                        }\n\n                        if ($newPeaks > $t || $newValleys > $t - 1) continue;\n\n                        if (!isset($dp[$pos + 1][$ny][$newTrend][$newPeaks][$newValleys])) {\n                            $dp[$pos + 1][$ny][$newTrend][$newPeaks][$newValleys] = 0;\n                        }\n                        $dp[$pos + 1][$ny][$newTrend][$newPeaks][$newValleys] += $cnt;\n                    }\n                }\n            }\n        }\n    }\n}\n\n$ans = 0;\nif (isset($dp[$n])) {\n    foreach ($dp[$n] as $lastY => $byTrend) {\n        foreach ($byTrend as $trend => $byPeaks) {\n            if (!isset($byPeaks[$t][$t - 1])) continue;\n            $ans += $byPeaks[$t][$t - 1];\n        }\n    }\n}\n\necho $ans . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "<?php\nlist($n, $t) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n\n$maxY = 4;\n$dp = [];\n\n// dp[pos][y][dir][peaks][valleys]\n// dir: 0 = down, 1 = up\nfor ($y = 1; $y <= $maxY; $y++) {\n    $dp[1][$y] = [0 => [0 => [0 => 1]], 1 => [0 => [0 => 1]]];\n}\n\nfor ($pos = 2; $pos <= $n; $pos++) {\n    for ($yPrev = 1; $yPrev <= $maxY; $yPrev++) {\n        if (!isset($dp[$pos-1][$yPrev])) continue;\n        foreach ($dp[$pos-1][$yPrev] as $dirPrev => $peaksArr) {\n            foreach ($peaksArr as $peaks => $valleysArr) {\n                foreach ($valleysArr as $valleys => $count) {\n                    for ($yCur = 1; $yCur <= $maxY; $yCur++) {\n                        if ($yCur == $yPrev) continue;\n                        $dirCur = ($yCur > $yPrev) ? 1 : 0;\n\n                        $newPeaks = $peaks;\n                        $newValleys = $valleys;\n\n                        if ($pos >= 3 && $dirPrev != $dirCur) {\n                            if ($dirPrev == 1 && $dirCur == 0) {\n                                $newPeaks++;\n                            } elseif ($dirPrev == 0 && $dirCur == 1) {\n                                $newValleys++;\n                            }\n                        }\n\n                        if ($newPeaks > $t || $newValleys > $t-1) continue;\n\n                        if (!isset($dp[$pos][$yCur][$dirCur][$newPeaks][$newValleys])) {\n                            $dp[$pos][$yCur][$dirCur][$newPeaks][$newValleys] = 0;\n                        }\n                        $dp[$pos][$yCur][$dirCur][$newPeaks][$newValleys] += $count;\n                    }\n                }\n            }\n        }\n    }\n}\n\n$result = 0;\nif (isset($dp[$n])) {\n    foreach ($dp[$n] as $y => $dirArr) {\n        foreach ($dirArr as $dir => $peaksArr) {\n            if (isset($peaksArr[$t][$t-1])) {\n                $result += $peaksArr[$t][$t-1];\n            }\n        }\n    }\n}\n\necho $result . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "<?php\nlist($n, $t) = array_map('intval', explode(' ', trim(fgets(STDIN))));\n\n$maxY = 4;\n$dp = [];\n\n// dp[pos][y][dir][peaks][valleys]\n// dir: 0 = down, 1 = up\nfor ($y = 1; $y <= $maxY; $y++) {\n    $dp[1][$y][0][0][0] = 0;\n    $dp[1][$y][1][0][0] = 0;\n}\nfor ($y = 1; $y <= $maxY; $y++) {\n    $dp[1][$y][0][0][0] = 0;\n    $dp[1][$y][1][0][0] = 0;\n}\nfor ($y = 1; $y <= $maxY; $y++) {\n    // initial direction is undefined; we will handle it by allowing both dirs from pos 2\n    $dp[1][$y][0][0][0] = 1;\n    $dp[1][$y][1][0][0] = 1;\n}\n\nfor ($pos = 2; $pos <= $n; $pos++) {\n    for ($yPrev = 1; $yPrev <= $maxY; $yPrev++) {\n        for ($dir = 0; $dir <= 1; $dir++) {\n            for ($p = 0; $p <= $t; $p++) {\n                for ($v = 0; $v <= $t - 1; $v++) {\n                    if (empty($dp[$pos - 1][$yPrev][$dir][$p][$v])) continue;\n                    $curVal = $dp[$pos - 1][$yPrev][$dir][$p][$v];\n                    if ($curVal == 0) continue;\n\n                    for ($yCur = 1; $yCur <= $maxY; $yCur++) {\n                        if ($yCur == $yPrev) continue; // no horizontal segment\n\n                        $newDir = ($yCur > $yPrev) ? 1 : 0;\n                        $newP = $p;\n                        $newV = $v;\n\n                        if ($pos >= 3) {\n                            // need y_{pos-2} to detect peak/valley; we encode via direction change\n                            // previous direction stored in $dir, newDir is current\n                            if ($dir != $newDir) {\n                                if ($dir == 1 && $newDir == 0) {\n                                    // up then down -> peak\n                                    $newP++;\n                                } elseif ($dir == 0 && $newDir == 1) {\n                                    // down then up -> valley\n                                    $newV++;\n                                }\n                            }\n                        }\n\n                        if ($newP > $t || $newV > $t - 1) continue;\n\n                        if (!isset($dp[$pos][$yCur][$newDir][$newP][$newV])) {\n                            $dp[$pos][$yCur][$newDir][$newP][$newV] = 0;\n                        }\n                        $dp[$pos][$yCur][$newDir][$newP][$newV] += $curVal;\n                    }\n                }\n            }\n        }\n    }\n}\n\n$result = 0;\nfor ($y = 1; $y <= $maxY; $y++) {\n    for ($dir = 0; $dir <= 1; $dir++) {\n        if (!empty($dp[$n][$y][$dir][$t][$t - 1])) {\n            $result += $dp[$n][$y][$dir][$t][$t - 1];\n        }\n    }\n}\n\necho $result . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 5460,
+            "prompt_tokens": 483,
+            "total_tokens": 5943,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 3,
+                "engine_ttft_ms": 310,
+                "engine_ttlt_ms": 15580,
+                "pre_inference_ms": 222,
+                "service_tbt_ms": 3,
+                "service_ttft_ms": 721,
+                "service_ttlt_ms": 15936,
+                "total_duration_ms": 15721,
+                "user_visible_ttft_ms": 499
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in PHP to solve this programming problem:\nDescription: Bob likes to draw camels: with a single hump, two humps, three humps, etc. He draws a camel by connecting points on a coordinate plane. Now he's drawing camels with t humps, representing them as polylines in the plane. Each polyline consists of n vertices with coordinates (x1,\u2009y1), (x2,\u2009y2), ..., (xn,\u2009yn). The first vertex has a coordinate x1\u2009=\u20091, the second \u2014 x2\u2009=\u20092, etc. Coordinates yi might be any, but should satisfy the following conditions:  there should be t humps precisely, i.e. such indexes j (2\u2009\u2264\u2009j\u2009\u2264\u2009n\u2009-\u20091), so that yj\u2009-\u20091\u2009&lt;\u2009yj\u2009&gt;\u2009yj\u2009+\u20091,  there should be precisely t\u2009-\u20091 such indexes j (2\u2009\u2264\u2009j\u2009\u2264\u2009n\u2009-\u20091), so that yj\u2009-\u20091\u2009&gt;\u2009yj\u2009&lt;\u2009yj\u2009+\u20091,  no segment of a polyline should be parallel to the Ox-axis,  all yi are integers between 1 and 4. For a series of his drawings of camels with t humps Bob wants to buy a notebook, but he doesn't know how many pages he will need. Output the amount of different polylines that can be drawn to represent camels with t humps for a given number n.\nInput Specification: The first line contains a pair of integers n and t (3\u2009\u2264\u2009n\u2009\u2264\u200920, 1\u2009\u2264\u2009t\u2009\u2264\u200910).\nOutput Specification: Output the required amount of camels with t humps.\n\nSample Input:\n6 1\nSample Output:\n6\n\nSample Input:\n4 2\nSample Output:\n0\n\nNotes: NoteIn the first sample test sequences of y-coordinates for six camels are: 123421, 123431, 123432, 124321, 134321 \u0438 234321 (each digit corresponds to one value of yi).\nTake input from standard input and output to standard output\nProvide the PHP code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "6d67559744583229455c5eafe68f7952",
+        "difficulty": 1900,
+        "prob_desc_sample_inputs": [
+            "6 1",
+            "4 2"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "dp"
+        ],
+        "prob_desc_output_spec": "Output the required amount of camels with t humps.",
+        "prob_desc_input_spec": "The first line contains a pair of integers n and t (3\u2009\u2264\u2009n\u2009\u2264\u200920, 1\u2009\u2264\u2009t\u2009\u2264\u200910).",
+        "lang_cluster": "PHP",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first sample test sequences of y-coordinates for six camels are: 123421, 123431, 123432, 124321, 134321 \u0438 234321 (each digit corresponds to one value of yi).",
+        "prob_desc_memory_limit": "64 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Bob likes to draw camels: with a single hump, two humps, three humps, etc. He draws a camel by connecting points on a coordinate plane. Now he's drawing camels with t humps, representing them as polylines in the plane. Each polyline consists of n vertices with coordinates (x1,\u2009y1), (x2,\u2009y2), ..., (xn,\u2009yn). The first vertex has a coordinate x1\u2009=\u20091, the second \u2014 x2\u2009=\u20092, etc. Coordinates yi might be any, but should satisfy the following conditions:  there should be t humps precisely, i.e. such indexes j (2\u2009\u2264\u2009j\u2009\u2264\u2009n\u2009-\u20091), so that yj\u2009-\u20091\u2009&lt;\u2009yj\u2009&gt;\u2009yj\u2009+\u20091,  there should be precisely t\u2009-\u20091 such indexes j (2\u2009\u2264\u2009j\u2009\u2264\u2009n\u2009-\u20091), so that yj\u2009-\u20091\u2009&gt;\u2009yj\u2009&lt;\u2009yj\u2009+\u20091,  no segment of a polyline should be parallel to the Ox-axis,  all yi are integers between 1 and 4. For a series of his drawings of camels with t humps Bob wants to buy a notebook, but he doesn't know how many pages he will need. Output the amount of different polylines that can be drawn to represent camels with t humps for a given number n.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1274283000",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "6",
+            "0"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"6 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"4 2\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 1\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"3 2\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 3\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 10\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"4 1\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"4 3\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"4 9\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"5 2\\r\\n\", \"output\": [\"70\"]}, {\"input\": \"5 3\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 5\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 9\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 10\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"6 2\\r\\n\", \"output\": [\"232\"]}, {\"input\": \"6 3\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6 4\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6 10\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"19 1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"19 2\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"19 3\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"19 4\\r\\n\", \"output\": [\"32632\"]}, {\"input\": \"19 5\\r\\n\", \"output\": [\"4594423\"]}, {\"input\": \"19 6\\r\\n\", \"output\": [\"69183464\"]}, {\"input\": \"19 7\\r\\n\", \"output\": [\"197939352\"]}, {\"input\": \"19 8\\r\\n\", \"output\": [\"109824208\"]}, {\"input\": \"19 9\\r\\n\", \"output\": [\"5846414\"]}, {\"input\": \"19 10\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"20 1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"20 2\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"20 3\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"20 4\\r\\n\", \"output\": [\"12628\"]}, {\"input\": \"20 5\\r\\n\", \"output\": [\"3715462\"]}, {\"input\": \"20 6\\r\\n\", \"output\": [\"96046590\"]}, {\"input\": \"20 7\\r\\n\", \"output\": [\"468541040\"]}, {\"input\": \"20 8\\r\\n\", \"output\": [\"503245466\"]}, {\"input\": \"20 9\\r\\n\", \"output\": [\"90700276\"]}, {\"input\": \"20 10\\r\\n\", \"output\": [\"0\"]}]"
+    }
+}

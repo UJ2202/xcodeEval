@@ -64,7 +64,8 @@ MODEL = os.environ.get("XCODEEVAL_MODEL", "gpt4o")
 
 VLLM_MODELS = {"qwen-nvfp4", "laguna-nvfp4"}
 EXTRA_KWARGS = {"chat_template_kwargs": {"enable_thinking": False}} if MODEL in VLLM_MODELS else {}
-MAX_TOKENS = 4096 if MODEL in VLLM_MODELS or MODEL == "nemotron-ultra-nvfp4" else 8192
+CLAUDE_MODELS = {"claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5", "claude-sonnet-4-5"}
+MAX_TOKENS = 32768 if MODEL in CLAUDE_MODELS else (4096 if MODEL in VLLM_MODELS or MODEL == "nemotron-ultra-nvfp4" else 8192)
 MAX_N = 8 if MODEL == "gpt4o" else 20
 
 # ── Anthropic / Azure AI Foundry support ─────────────────────────────────────

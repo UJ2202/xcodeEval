@@ -1,0 +1,352 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEHfRqDBPLStMwX32ebimALmnyCER",
+        "created": 1787073213,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```cpp\n#include <bits/stdc++.h>\nusing namespace std;\n\n// We need to count x such that sum of divisors \u03c3(x) = A.\n// For x = p^k (prime power), \u03c3(x) = (p^(k+1)-1)/(p-1).\n// General \u03c3 is multiplicative, but brute forcing all x is impossible.\n// However, for each divisor d of A, we can try to reconstruct x whose \u03c3(x)=A\n// by factorizing A and using backtracking on prime powers.\n\nusing int64 = long long;\nusing i128 = __int128_t;\n\nint64 A;\nvector<int64> primes;\n\n// Miller-Rabin and Pollard-Rho for 64-bit factorization\nint64 mul_mod(int64 a, int64 b, int64 mod) {\n    return (i128)a * b % mod;\n}\n\nint64 pow_mod(int64 a, int64 d, int64 mod) {\n    int64 r = 1;\n    while (d) {\n        if (d & 1) r = mul_mod(r, a, mod);\n        a = mul_mod(a, a, mod);\n        d >>= 1;\n    }\n    return r;\n}\n\nbool isPrime(int64 n) {\n    if (n < 2) return false;\n    for (int64 p : {2,3,5,7,11,13,17,19,23,29,31,37}) {\n        if (n == p) return true;\n        if (n % p == 0) return n == p;\n    }\n    int64 d = n - 1, s = 0;\n    while ((d & 1) == 0) { d >>= 1; ++s; }\n    for (int64 a : {2,325,9375,28178,450775,9780504,1795265022}) {\n        if (a % n == 0) continue;\n        int64 x = pow_mod(a % n, d, n);\n        if (x == 1 || x == n - 1) continue;\n        bool comp = true;\n        for (int i = 1; i < s; ++i) {\n            x = mul_mod(x, x, n);\n            if (x == n - 1) { comp = false; break; }\n        }\n        if (comp) return false;\n    }\n    return true;\n}\n\nmt19937_64 rng(chrono::steady_clock::now().time_since_epoch().count());\n\nint64 pollard(int64 n) {\n    if (n % 2 == 0) return 2;\n    if (n % 3 == 0) return 3;\n    int64 c = uniform_int_distribution<int64>(1, n-1)(rng);\n    int64 x = uniform_int_distribution<int64>(0, n-1)(rng);\n    int64 y = x;\n    int64 d = 1;\n    auto f = [&](int64 v){ return (mul_mod(v, v, n) + c) % n; };\n    while (d == 1) {\n        x = f(x);\n        y = f(f(y));\n        d = gcd(abs(x - y), n);\n    }\n    if (d == n) return pollard(n);\n    return d;\n}\n\nvoid factorRec(int64 n, map<int64,int> &fac) {\n    if (n == 1) return;\n    if (isPrime(n)) { fac[n]++; return; }\n    int64 d = pollard(n);\n    factorRec(d, fac);\n    factorRec(n/d, fac);\n}\n\n// Backtracking over prime powers of x given factorization of A\nvector<pair<int64,int>> facA;\nint64 answer = 0;\n\n// We will generate all multiplicative decompositions of A into \u03c3(p^k) factors.\n// For each prime p and exponent k, \u03c3(p^k) = (p^(k+1)-1)/(p-1).\n// We try all possible p^k such that \u03c3(p^k) divides remaining value.\n\nvoid dfs(int idx, int64 remaining, int64 currentX) {\n    if (remaining == 1) {\n        if (currentX > 0) answer++;\n        return;\n    }\n    if (idx == (int)primes.size()) return;\n\n    // Option: skip this prime as a base for p^k\n    dfs(idx + 1, remaining, currentX);\n\n    int64 p = primes[idx];\n    // Try k >= 1 while \u03c3(p^k) divides remaining\n    int64 pk = p;\n    for (int k = 1; ; ++k) {\n        // compute sigma = (p^(k+1)-1)/(p-1)\n        int64 num = pk * p - 1;\n        int64 den = p - 1;\n        if (num % den != 0) break;\n        int64 sigma = num / den;\n        if (sigma == 0 || remaining % sigma != 0) break;\n        if ((double)currentX * pk > 1e18) break;\n        dfs(idx + 1, remaining / sigma, currentX * pk);\n        if ((double)pk * p > 1e18) break;\n        pk *= p;\n    }\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    if (!(cin >> A)) return 0;\n    if (A == 1) {\n        // \u03c3(1)=1, so only x=1\n        cout << 1 << '\\n';\n        return 0;\n    }\n\n    map<int64,int> fac;\n    factorRec(A, fac);\n    for (auto &kv : fac) primes.push_back(kv.first);\n\n    dfs(0, A, 1);\n\n    cout << answer << '\\n';\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "```cpp\n#include <bits/stdc++.h>\nusing namespace std;\n\n// We need to count x such that sum of divisors sigma(x) = A\n// A <= 1e12, so we can factor A and use multiplicative properties.\n\n// For prime p: sigma(p^k) = (p^{k+1}-1)/(p-1)\n// For x = product p_i^{e_i}, sigma(x) = product sigma(p_i^{e_i})\n// We factor A and search over possible combinations of (p,e) such that\n// product sigma(p^e) = A. For each such combination, count how many x\n// have exactly those exponents (unique).\n\n// Precompute primes up to 1e6 for factoring.\nvector<long long> primes;\n\nvoid sieve(int n = 1000000) {\n    vector<bool> isPrime(n+1, true);\n    isPrime[0]=isPrime[1]=false;\n    for (int i=2;i*i<=n;i++) if(isPrime[i])\n        for(long long j=1LL*i*i;j<=n;j+=i) isPrime[j]=false;\n    for (int i=2;i<=n;i++) if(isPrime[i]) primes.push_back(i);\n}\n\n// Factor A\nvector<pair<long long,int>> factor(long long n){\n    vector<pair<long long,int>> res;\n    for(long long p:primes){\n        if(p*p>n) break;\n        if(n%p==0){\n            int c=0;\n            while(n%p==0){ n/=p; c++; }\n            res.push_back({p,c});\n        }\n    }\n    if(n>1) res.push_back({n,1});\n    return res;\n}\n\n// For given prime p and target value S, find all exponents e>=1 such that sigma(p^e)=S\n// sigma(p^e) = (p^{e+1}-1)/(p-1)\nvector<int> exponents_for_sigma(long long p, long long S){\n    vector<int> res;\n    // sigma(p^e) strictly increases with e\n    // We can iterate e while sigma <= S\n    long long pe = p; // p^1\n    long long num = p*p - 1; // p^{2}-1 for e=1\n    long long denom = p-1;\n    // But recomputing each time is easier and safe since S<=1e12\n    long long cur = 1 + p; // sigma(p^1)\n    int e = 1;\n    while(cur <= S){\n        if(cur == S) res.push_back(e);\n        // next: sigma(p^{e+1}) = sigma(p^e) + p^{e+1}\n        pe *= p;\n        if(pe > S* (p-1) +1) break; // rough bound\n        cur += pe;\n        e++;\n    }\n    return res;\n}\n\n// We recursively decompose A into product of sigma(p^e) factors.\n// To avoid overcounting, we enforce increasing primes.\nlong long A;\nlong long ans = 0;\n\nvoid dfs(long long remaining, long long lastPrime){\n    if(remaining == 1){\n        // One valid combination of prime powers -> one x\n        ans++;\n        return;\n    }\n    // remaining >1, factor remaining partially to get candidates\n    // We try primes p >= lastPrime such that sigma(p^e) divides remaining\n    // Upper bound for p: remaining-1 (since sigma(p^1)=1+p)\n    // But we can just iterate primes list.\n    for(long long p:primes){\n        if(p < lastPrime) continue;\n        if((p+1) > remaining) break; // sigma(p^1)=1+p must divide remaining\n        // For this p, find possible exponents\n        // But sigma(p^e) must divide remaining, so S is divisor of remaining.\n        // We'll generate S by trying exponents and checking divisibility.\n        long long pe = p;\n        long long cur = 1 + p; // sigma(p^1)\n        int e = 1;\n        while(cur <= remaining){\n            if(remaining % cur == 0){\n                dfs(remaining / cur, p+1); // next prime must be >p to avoid permutations\n            }\n            pe *= p;\n            if(pe > remaining* (p-1) +1) break;\n            cur += pe;\n            e++;\n        }\n    }\n    // Also consider the case remaining itself is sigma(q^1)=1+q with q prime>lastPrime\n    // That is already covered in loop when p such that 1+p==remaining.\n    // No need for extra handling.\n}\n\nint main(){\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    cin >> A;\n    if(A == 1){\n        // sigma(x)=1 only for x=1\n        cout << 1 << '\\n';\n        return 0;\n    }\n    sieve();\n    A = A;\n    dfs(A, 2);\n    cout << ans << '\\n';\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\n// We need to count positive integers x such that sum of divisors sigma(x) = A\n// A up to 1e12. We'll generate all x via multiplicative structure of sigma.\n\nlong long A;\nvector<long long> primes;\n\n// Generate primes up to 1e6 (enough for factorization of A)\nvoid sieve() {\n    const int N = 1000000;\n    vector<bool> isPrime(N + 1, true);\n    isPrime[0] = isPrime[1] = false;\n    for (int i = 2; i * i <= N; ++i)\n        if (isPrime[i])\n            for (int j = i * i; j <= N; j += i)\n                isPrime[j] = false;\n    for (int i = 2; i <= N; ++i)\n        if (isPrime[i]) primes.push_back(i);\n}\n\n// For a prime p and exponent e, sigma(p^e) = (p^{e+1}-1)/(p-1)\n// We'll recursively build all possible sigma(p^e) factors whose product is A.\n// For each factorization of A into sigma(p_i^{e_i}), we reconstruct x = product p_i^{e_i}.\n\nlong long ans = 0;\n\n// Precompute possible sigma(p^e) for a given prime p, not exceeding limit\nvoid gen_sigma_p(long long p, long long limit, vector<long long> &vals, vector<int> &exps) {\n    long long pe = 1;\n    long long sigma = 1; // sigma(p^0)\n    int e = 0;\n    while (sigma <= limit) {\n        vals.push_back(sigma);\n        exps.push_back(e);\n        // next exponent\n        if (limit / p < pe) break;\n        pe *= p;\n        sigma += pe;\n        ++e;\n    }\n}\n\n// DFS over primes to factor A multiplicatively into sigma(p^e)\nvoid dfs(int idx, long long curA, long long curX, long long lastPrime) {\n    if (curA == 1) {\n        if (curX > 1) ans++; // x must be positive; sigma(1)=1, but x=1 gives sigma=1\n        return;\n    }\n    if (idx >= (int)primes.size()) return;\n\n    for (int i = idx; i < (int)primes.size(); ++i) {\n        long long p = primes[i];\n        if (p < lastPrime) continue; // ensure non-decreasing primes to avoid duplicates\n        if (p - 1 > curA) break; // minimal sigma(p^1)=1+p > curA if p-1>curA? but cheap bound\n        vector<long long> vals;\n        vector<int> exps;\n        gen_sigma_p(p, curA, vals, exps);\n        for (size_t k = 1; k < vals.size(); ++k) { // skip sigma=1 (e=0)\n            long long s = vals[k];\n            if (curA % s) continue;\n            long long newX = curX;\n            // multiply by p^{e}\n            for (int t = 0; t < exps[k]; ++t) {\n                if (newX > A / p) { newX = -1; break; }\n                newX *= p;\n            }\n            if (newX == -1) continue;\n            dfs(i + 1, curA / s, newX, p + 1); // next primes strictly greater to avoid reuse\n        }\n    }\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    if (!(cin >> A)) return 0;\n\n    if (A == 1) {\n        // sigma(1)=1\n        cout << 1 << '\\n';\n        return 0;\n    }\n\n    sieve();\n\n    // handle prime x: sigma(p)=1+p=A => p=A-1 prime\n    long long p = A - 1;\n    bool isPrime = true;\n    if (p < 2) isPrime = false;\n    else {\n        for (long long d = 2; d * d <= p; ++d)\n            if (p % d == 0) { isPrime = false; break; }\n    }\n    if (isPrime) ans++; // x=p\n\n    // handle general case via DFS\n    dfs(0, A, 1, 2);\n\n    cout << ans << '\\n';\n    return 0;\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```cpp\n#include <bits/stdc++.h>\nusing namespace std;\n\n// We need to count positive integers x such that sum of divisors sigma(x) = A.\n// A up to 1e12. We'll generate all possible x by factorizing A and using\n// multiplicative structure of sigma function.\n\n// For a prime power p^k, sigma(p^k) = (p^{k+1}-1)/(p-1).\n// For x = product p_i^{e_i}, sigma(x) = product sigma(p_i^{e_i}).\n// So we need to factor A into factors each of which is of the form sigma(p^k).\n\n// Precompute primes up to 1e6 (since sqrt(1e12) = 1e6).\n// For each prime p, generate sigma(p^k) while it doesn't exceed A.\n// Then recursively factor A as product of these sigma values, ensuring\n// increasing primes to avoid duplicates.\n\nvector<long long> primes;\n\nvoid sieve(int n = 1000000) {\n    vector<bool> is_prime(n + 1, true);\n    is_prime[0] = is_prime[1] = false;\n    for (int i = 2; 1LL * i * i <= n; ++i)\n        if (is_prime[i])\n            for (int j = i * i; j <= n; j += i)\n                is_prime[j] = false;\n    for (int i = 2; i <= n; ++i)\n        if (is_prime[i]) primes.push_back(i);\n}\n\nlong long A;\nlong long answer = 0;\n\n// recursive search: remaining product 'rem', last prime index 'idx',\n// and current x value 'curX'. We ensure primes are used in increasing order.\nvoid dfs(long long rem, int idx, long long curX) {\n    if (rem == 1) {\n        // sigma(curX) == A\n        ++answer;\n        return;\n    }\n\n    // Try using prime powers starting from primes[idx]\n    for (int i = idx; i < (int)primes.size(); ++i) {\n        long long p = primes[i];\n\n        // For sigma(p^k) = (p^{k+1}-1)/(p-1) to divide rem, it must be <= rem.\n        // Also, p^{2} already > rem*(p-1)+1 implies no k>=1 possible.\n        if (p > rem + 1) break; // heuristic pruning\n\n        long long pk = 1;\n        long long sigma_pk = 1; // sigma(p^0)\n        // We need k>=1, so first step will make pk=p, sigma_pk = 1 + p + ... + p^k\n        for (int k = 1;; ++k) {\n            if (pk > (A / p)) break; // avoid overflow, pk *= p below\n            pk *= p;\n            // sigma(p^k) = (p^{k+1}-1)/(p-1)\n            // We can update incrementally: sigma_pk = sigma(p^{k-1}) + p^k\n            sigma_pk += pk;\n            if (sigma_pk > rem) break;\n            if (rem % sigma_pk == 0) {\n                // multiply x by p^k\n                if (curX > (A / pk)) continue; // avoid overflow and impossible x\n                dfs(rem / sigma_pk, i + 1, curX * pk);\n            }\n        }\n    }\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    if (!(cin >> A)) return 0;\n\n    sieve();\n\n    // Special case: x = 1 => sigma(1) = 1\n    if (A == 1) {\n        cout << 1 << '\\n';\n        return 0;\n    }\n\n    dfs(A, 0, 1);\n\n    cout << answer << '\\n';\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```cpp\n#include <bits/stdc++.h>\nusing namespace std;\n\n// We interpret J(x) as the sum of all positive divisors of x (sigma function).\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    long long A;\n    if (!(cin >> A)) return 0;\n\n    // Upper bound for x: if x >= 2*A, then sigma(x) >= 1 + x > A, so no need to check.\n    long long limit = 2 * A;\n    long long countSolutions = 0;\n\n    for (long long x = 1; x <= limit; ++x) {\n        long long sumDiv = 0;\n        long long r = sqrtl(x);\n        for (long long d = 1; d <= r; ++d) {\n            if (x % d == 0) {\n                sumDiv += d;\n                long long q = x / d;\n                if (q != d) sumDiv += q;\n                if (sumDiv > A) break; // early exit if already exceeded\n            }\n        }\n        if (sumDiv == A) ++countSolutions;\n    }\n\n    cout << countSolutions << '\\n';\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```cpp\n#include <bits/stdc++.h>\nusing namespace std;\n\n/*\nWe need to count positive integers x such that sum of divisors \u03c3(x) = A.\nLet A be given. For each x, \u03c3(x) = product over primes p^k || x of (p^{k+1}-1)/(p-1).\n\nWe will generate all possible x by backtracking over prime powers, ensuring:\n- \u03c3(x) does not exceed A\n- x does not exceed A (since \u03c3(x) >= x+1 for x>1, so x < A)\nWe use primes in increasing order to avoid duplicates and ensure unique factorization.\n\nWe precompute primes up to 1e6 (enough since A \u2264 1e12, and smallest prime factor\nof any remaining >1 part will be >1e6, but we handle that via a final check).\n*/\n\nconst long long A_MAX = (long long)1e12;\nvector<int> primes;\n\nvoid sieve(int n = 1000000) {\n    vector<bool> is_prime(n + 1, true);\n    is_prime[0] = is_prime[1] = false;\n    for (int i = 2; i * 1LL * i <= n; ++i)\n        if (is_prime[i])\n            for (int j = i * i; j <= n; j += i)\n                is_prime[j] = false;\n    for (int i = 2; i <= n; ++i)\n        if (is_prime[i]) primes.push_back(i);\n}\n\nlong long A;\nlong long ans = 0;\n\nvoid dfs(int idx, long long curX, long long curSigma, long long lastPrime) {\n    if (curSigma == A) {\n        if (curX > 0) ans++;\n        return;\n    }\n    if (curSigma > A) return;\n    if (idx >= (int)primes.size()) return;\n\n    for (int i = idx; i < (int)primes.size(); ++i) {\n        long long p = primes[i];\n        if (p < lastPrime) continue; // ensure non-decreasing primes\n        // Try multiplying by p^k\n        long long pk = p;\n        long long newX = curX;\n        long long newSigma = curSigma;\n        long long term = 1; // p^0\n        long long sumTerm = 1; // 1 + p + ... + p^k\n\n        // We will increase exponent k step by step\n        while (true) {\n            if (newX > A / p) break; // x would exceed A\n            newX *= p;\n            term *= p;\n            sumTerm += term;\n            if (sumTerm > (A / curSigma)) break; // sigma would exceed A\n            newSigma = curSigma * sumTerm;\n            if (newSigma > A) break;\n            dfs(i + 1, newX, newSigma, p);\n        }\n    }\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    if (!(cin >> A)) return 0;\n\n    sieve();\n\n    // Handle x = 1 separately: \u03c3(1) = 1\n    if (A == 1) {\n        cout << 1 << \"\\n\";\n        return 0;\n    }\n\n    // Start DFS with x=1, \u03c3=1\n    dfs(0, 1, 1, 2);\n\n    cout << ans << \"\\n\";\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```cpp\n#include <bits/stdc++.h>\nusing namespace std;\n\n// Problem: Count number of positive integers x such that sum of divisors \u03c3(x) = A\n// A up to 1e12. We use multiplicativity and structure of \u03c3(p^k).\n\n// Compute integer power safely (with overflow check against limit)\nbool pow_le(long long base, int exp, long long limit, long long &res) {\n    res = 1;\n    while (exp) {\n        if (exp & 1) {\n            if (base != 0 && res > limit / base) return false;\n            res *= base;\n        }\n        exp >>= 1;\n        if (exp) {\n            if (base != 0 && base > limit / base) return false;\n            base *= base;\n        }\n    }\n    return true;\n}\n\n// Factorization of A (<=1e12) by trial division\nvector<pair<long long,int>> factorize(long long n) {\n    vector<pair<long long,int>> f;\n    for (long long p = 2; p * p <= n; ++p) {\n        if (n % p == 0) {\n            int c = 0;\n            while (n % p == 0) {\n                n /= p;\n                ++c;\n            }\n            f.push_back({p,c});\n        }\n       }\n    if (n > 1) f.push_back({n,1});\n    return f;\n}\n\n// For given prime p and target sum S, find all exponents k>=1 such that \u03c3(p^k)=S\n// \u03c3(p^k) = (p^{k+1}-1)/(p-1). We solve for k by trying small k until \u03c3 exceeds S.\nvector<int> exponents_for_prime_sum(long long p, long long S) {\n    vector<int> res;\n    // \u03c3(p^k) grows quickly; k won't be large.\n    long long pk = 1;\n    for (int k = 1; ; ++k) {\n        if (!pow_le(p, k+1, LLONG_MAX, pk)) break;\n        long long num = pk - 1;\n        long long denom = p - 1;\n        if (num % denom != 0) continue;\n        long long sigma = num / denom;\n        if (sigma == S) res.push_back(k);\n        if (sigma >= S) break;\n    }\n    return res;\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    long long A;\n    if (!(cin >> A)) return 0;\n\n    if (A == 1) {\n        // \u03c3(1)=1 only\n        cout << 1 << '\\n';\n        return 0;\n    }\n\n    // Factorize A to generate candidate \u03c3(p^k) factors\n    auto fac = factorize(A);\n    int m = fac.size();\n\n    // For each factor A_i = p_i^{e_i}, we need to consider all ways to split it\n    // into product of \u03c3(p^k) terms. But \u03c3(p^k) are not prime powers generally.\n    // Instead, we search over primes p and exponents k such that \u03c3(p^k) divides A.\n\n    // Precompute all \u03c3(p^k) divisors of A and their corresponding (p,k).\n    // We'll store mapping from sigma value to list of (p,k).\n    unordered_map<long long, vector<pair<long long,int>>> sigma_map;\n\n    // Enumerate primes up to some bound: since \u03c3(p) = 1+p divides A, p <= A-1.\n    // But we can restrict: if \u03c3(p^1)=1+p divides A, then p <= A-1 but A<=1e12, primes up to 1e6 are enough\n    // because p^2 already huge. We'll just generate primes up to 1e6.\n    const int LIMIT = 1000000;\n    vector<int> primes;\n    vector<bool> is_comp(LIMIT+1,false);\n    for (int i=2;i<=LIMIT;++i){\n        if(!is_comp[i]){\n            primes.push_back(i);\n            if((long long)i*i<=LIMIT)\n                for(int j=i*i;j<=LIMIT;j+=i) is_comp[j]=true;\n        }\n    }\n\n    // For each prime p, compute \u03c3(p^k) while <=A and record if divides A\n    for (int p: primes) {\n        long long pk = 1;\n        for (int k = 1; ; ++k) {\n            if (!pow_le(p, k+1, LLONG_MAX, pk)) break;\n            long long num = pk - 1;\n            long long denom = p - 1;\n            if (num % denom != 0) continue;\n            long long sigma = num / denom;\n            if (sigma > A) break;\n            if (A % sigma == 0) {\n                sigma_map[sigma].push_back({p,k});\n            }\n        }\n    }\n\n    // Also handle case where p itself may be >1e6 but \u03c3(p)=1+p divides A.\n    // For each divisor d of A, if d-1 is prime >1e6, then \u03c3(p)=d.\n    // Enumerate divisors of A.\n    vector<long long> divisors;\n    function<void(int,long long)> gen = [&](int idx,long long cur){\n        if(idx==(int)fac.size()){\n            divisors.push_back(cur);\n            return;\n        }\n        auto [p,e]=fac[idx];\n        long long val=1;\n        for(int i=0;i<=e;++i){\n            gen(idx+1,cur*val);\n            val*=p;\n        }\n    };\n    gen(0,1);\n    sort(divisors.begin(),divisors.end());\n    divisors.erase(unique(divisors.begin(),divisors.end()),divisors.end());\n\n    auto is_prime_large = [&](long long n)->bool{\n        if(n<=1) return false;\n        if(n<=LIMIT) return !is_comp[n];\n        for(long long i=2;i*i<=n;++i)\n            if(n%i==0) return false;\n        return true;\n    };\n\n    for(long long d: divisors){\n        if(d<=2) continue;\n        long long p = d-1;\n        if(p>LIMIT && is_prime_large(p)){\n            sigma_map[d].push_back({p,1});\n        }\n    }\n\n    // Now we need to count number of ways to write A as product of \u03c3(p_i^{k_i})\n    // with distinct primes p_i, and then each such representation corresponds to\n    // exactly one x = product p_i^{k_i}.\n    long long ans = 0;\n\n    // Backtracking over divisors (\u03c3 factors)\n    // We'll use sorted list of sigma values that divide A and are in sigma_map.\n    vector<long long> sigmas;\n    for (auto &kv : sigma_map) {\n        sigmas.push_back(kv.first);\n    }\n    sort(sigmas.begin(), sigmas.end());\n\n    function<void(int,long long, long long)> dfs = [&](int idx, long long rem, long long used_mask){\n        if(rem == 1){\n            // valid factorization\n            ++ans;\n            return;\n        }\n        if(idx >= (int)sigmas.size()) return;\n        for(int i=idx;i<(int)sigmas.size();++i){\n            long long s = sigmas[i];\n            if(rem % s != 0) continue;\n            // For this sigma, we can choose any (p,k) pair whose prime not used yet.\n            for(auto &pk : sigma_map[s]){\n                long long p = pk.first;\n                // To track used primes, we can't use bitmask (primes large); instead,\n                // we ensure uniqueness by enforcing increasing order of primes.\n                // So we pass last prime used in used_mask (actually store as value).\n            }\n        }\n    };\n\n    // The above approach with arbitrary primes needs more complex state; due to\n    // time constraints, we instead directly search x by constructing from primes\n    // and exponents via backtracking over sigma factors with prime ordering.\n\n    // Collect all (sigma, p, k) triples\n    struct Node { long long sigma, p; int k; };\n    vector<Node> nodes;\n    for(auto &kv: sigma_map){\n        long long s = kv.first;\n        for(auto &pk: kv.second){\n            nodes.push_back({s, pk.first, pk.second});\n        }\n    }\n    sort(nodes.begin(), nodes.end(), [](const Node& a, const Node& b){\n        if(a.p!=b.p) return a.p<b.p;\n        if(a.sigma!=b.sigma) return a.sigma<b.sigma;\n        return a.k<b.k;\n    });\n\n    // Remove duplicates with same (sigma,p,k)\n    nodes.erase(unique(nodes.begin(), nodes.end(), [](const Node& a,const Node& b){\n        return a.sigma==b.sigma && a.p==b.p && a.k==b.k;\n    }), nodes.end());\n\n    // Backtrack over nodes, enforcing strictly increasing primes\n    function<void(int,long long,long long)> dfs2 = [&](int pos, long long rem, long long last_p){\n        if(rem==1){\n            ++ans;\n            return;\n        }\n        for(int i=pos;i<(int)nodes.size();++i){\n            if(nodes[i].p<=last_p) continue;\n            if(rem % nodes[i].sigma!=0) continue;\n            dfs2(i+1, rem / nodes[i].sigma, nodes[i].p);\n        }\n    };\n\n    dfs2(0, A, 1);\n\n    cout << ans << '\\n';\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\n// Function to compute sum of divisors of x\nlong long sumDiv(long long x) {\n    long long res = 0;\n    for (long long d = 1; d * d <= x; ++d) {\n        if (x % d == 0) {\n            res += d;\n            if (d * d != x) res += x / d;\n        }\n    }\n    return res;\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    long long A;\n    if (!(cin >> A)) return 0;\n\n    // J(x) = sum of divisors of x = A\n    // We need to count x such that sumDiv(x) = A.\n    // Upper bound for x: for x >= 2, sumDiv(x) >= x + 1, so x <= A - 1\n    // Also x is positive integer.\n    long long countSolutions = 0;\n\n    // x = 1: sumDiv(1) = 1\n    if (A == 1) {\n        cout << 1 << '\\n';\n        return 0;\n    }\n\n    // For x >= 2, x <= A - 1\n    for (long long x = 2; x <= A - 1; ++x) {\n        if (sumDiv(x) == A) ++countSolutions;\n    }\n\n    cout << countSolutions << '\\n';\n    return 0;\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 7593,
+            "prompt_tokens": 447,
+            "total_tokens": 8040,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 5,
+                "engine_ttft_ms": 315,
+                "engine_ttlt_ms": 41326,
+                "pre_inference_ms": 151,
+                "service_tbt_ms": 5,
+                "service_ttft_ms": 548,
+                "service_ttlt_ms": 41554,
+                "total_duration_ms": 41411,
+                "user_visible_ttft_ms": 397
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in C++ to solve this programming problem:\nDescription: It's tough to be a superhero. And it's twice as tough to resist the supervillain who is cool at math. Suppose that you're an ordinary Batman in an ordinary city of Gotham. Your enemy Joker mined the building of the city administration and you only have several minutes to neutralize the charge. To do that you should enter the cancel code on the bomb control panel.However, that mad man decided to give you a hint. This morning the mayor found a playing card under his pillow. There was a line written on the card:The bomb has a note saying \"J(x)\u2009=\u2009A\", where A is some positive integer. You suspect that the cancel code is some integer x that meets the equation J(x)\u2009=\u2009A. Now in order to decide whether you should neutralize the bomb or run for your life, you've got to count how many distinct positive integers x meet this equation.\nInput Specification: The single line of the input contains a single integer A (1\u2009\u2264\u2009A\u2009\u2264\u20091012).\nOutput Specification: Print the number of solutions of the equation J(x)\u2009=\u2009A.\n\nSample Input:\n3\nSample Output:\n1\n\nSample Input:\n24\nSample Output:\n3\n\nNotes: NoteRecord x|n means that number n divides number x. is defined as the largest positive integer that divides both a and b.In the first sample test the only suitable value of x is 2. Then J(2)\u2009=\u20091\u2009+\u20092.In the second sample test the following values of x match:  x\u2009=\u200914, J(14)\u2009=\u20091\u2009+\u20092\u2009+\u20097\u2009+\u200914\u2009=\u200924  x\u2009=\u200915, J(15)\u2009=\u20091\u2009+\u20093\u2009+\u20095\u2009+\u200915\u2009=\u200924  x\u2009=\u200923, J(23)\u2009=\u20091\u2009+\u200923\u2009=\u200924 \nTake input from standard input and output to standard output\nProvide the C++ code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "1f68bd6f8b40e45a5bd360b03a264ef4",
+        "difficulty": 2600,
+        "prob_desc_sample_inputs": [
+            "3",
+            "24"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "math",
+            "number theory",
+            "hashing",
+            "dp",
+            "dfs and similar"
+        ],
+        "prob_desc_output_spec": "Print the number of solutions of the equation J(x)\u2009=\u2009A.",
+        "prob_desc_input_spec": "The single line of the input contains a single integer A (1\u2009\u2264\u2009A\u2009\u2264\u20091012).",
+        "lang_cluster": "C++",
+        "source_code": "",
+        "prob_desc_notes": "NoteRecord x|n means that number n divides number x. is defined as the largest positive integer that divides both a and b.In the first sample test the only suitable value of x is 2. Then J(2)\u2009=\u20091\u2009+\u20092.In the second sample test the following values of x match:  x\u2009=\u200914, J(14)\u2009=\u20091\u2009+\u20092\u2009+\u20097\u2009+\u200914\u2009=\u200924  x\u2009=\u200915, J(15)\u2009=\u20091\u2009+\u20093\u2009+\u20095\u2009+\u200915\u2009=\u200924  x\u2009=\u200923, J(23)\u2009=\u20091\u2009+\u200923\u2009=\u200924 ",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "It's tough to be a superhero. And it's twice as tough to resist the supervillain who is cool at math. Suppose that you're an ordinary Batman in an ordinary city of Gotham. Your enemy Joker mined the building of the city administration and you only have several minutes to neutralize the charge. To do that you should enter the cancel code on the bomb control panel.However, that mad man decided to give you a hint. This morning the mayor found a playing card under his pillow. There was a line written on the card:The bomb has a note saying \"J(x)\u2009=\u2009A\", where A is some positive integer. You suspect that the cancel code is some integer x that meets the equation J(x)\u2009=\u2009A. Now in order to decide whether you should neutralize the bomb or run for your life, you've got to count how many distinct positive integers x meet this equation.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1430668800",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "1",
+            "3"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"3\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"24\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"2\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"4\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"5\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"6\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"8\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"9\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"11\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"12\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"13\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"14\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"15\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"16\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"17\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"18\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"19\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"20\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"100\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10000\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"1000000\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"1000000000000\\r\\n\", \"output\": [\"227\"]}, {\"input\": \"123456789876\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"963761198400\\r\\n\", \"output\": [\"100049\"]}, {\"input\": \"642507465600\\r\\n\", \"output\": [\"102634\"]}, {\"input\": \"481880599200\\r\\n\", \"output\": [\"38983\"]}, {\"input\": \"321253732800\\r\\n\", \"output\": [\"48603\"]}, {\"input\": \"293318625600\\r\\n\", \"output\": [\"99409\"]}, {\"input\": \"200560490130\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"988440062610\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"999999999989\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"999999999988\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"999999999990\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"999960000396\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"999961000378\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"999962000360\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"999961000374\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"999962000357\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"999963000340\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"999962000352\\r\\n\", \"output\": [\"90\"]}, {\"input\": \"999963000336\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"999964000320\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"549755813888\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"549755813887\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"549755813889\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"743008370688\\r\\n\", \"output\": [\"7606\"]}, {\"input\": \"743012742140\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"802632499200\\r\\n\", \"output\": [\"248276\"]}, {\"input\": \"330225942528\\r\\n\", \"output\": [\"5397\"]}, {\"input\": \"349479567360\\r\\n\", \"output\": [\"311891\"]}, {\"input\": \"698959134720\\r\\n\", \"output\": [\"399998\"]}, {\"input\": \"390949000000\\r\\n\", \"output\": [\"403\"]}, {\"input\": \"781898000000\\r\\n\", \"output\": [\"673\"]}, {\"input\": \"655274188800\\r\\n\", \"output\": [\"702440\"]}, {\"input\": \"873698918400\\r\\n\", \"output\": [\"804116\"]}, {\"input\": \"86204582016\\r\\n\", \"output\": [\"414\"]}, {\"input\": \"924458\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7882\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"91306\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"207434\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"290858\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"374282\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"457706\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"573834\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"624554\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"569088\\r\\n\", \"output\": [\"79\"]}, {\"input\": \"685216\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"768640\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"852064\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"935488\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"51616\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"102336\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"218464\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"301888\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"418016\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"944011\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"965667225600\\r\\n\", \"output\": [\"906098\"]}, {\"input\": \"804722688000\\r\\n\", \"output\": [\"941359\"]}, {\"input\": \"747242496000\\r\\n\", \"output\": [\"942082\"]}, {\"input\": \"871782912000\\r\\n\", \"output\": [\"996234\"]}, {\"input\": \"75246796800\\r\\n\", \"output\": [\"133237\"]}]"
+    }
+}

@@ -1,0 +1,353 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEHvZGmPcvRTEkM3Aqg8mvftCiX2P",
+        "created": 1787074213,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static int n;\n    static long k;\n    static long[][] dp; // dp[pos][lastGreater]\n    static long LIMIT = (long)1e18;\n\n    static long addLimit(long a, long b) {\n        long res = a + b;\n        if (res < 0 || res > LIMIT) return LIMIT;\n        return res;\n    }\n\n    static long solve(int pos, int lastGreater) {\n        if (pos == n) return 1;\n        if (dp[pos][lastGreater] != -1) return dp[pos][lastGreater];\n        long res = 0;\n        if (lastGreater == 1) {\n            // must be greater than pos\n            int cnt = n - pos;\n            if (cnt <= 0) return dp[pos][lastGreater] = 0;\n            res = cnt;\n        } else {\n            // lastGreater == 0: can be <= pos or > pos\n            int cntLE = pos;      // 1..pos\n            int cntGT = n - pos;  // pos+1..n\n            res = addLimit(res, cntLE * solve(pos + 1, 0));\n            res = addLimit(res, cntGT * solve(pos + 1, 1));\n        }\n        dp[pos][lastGreater] = res;\n        return res;\n    }\n\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        n = Integer.parseInt(st.nextToken());\n        k = Long.parseLong(st.nextToken());\n\n        dp = new long[n + 1][2];\n        for (int i = 0; i <= n; i++) Arrays.fill(dp[i], -1);\n\n        long total = solve(1, 0);\n        if (k > total) k = total; // safety\n\n        int[] p = new int[n + 1];\n        boolean[] used = new boolean[n + 1];\n\n        int lastGreater = 0;\n        for (int pos = 1; pos <= n; pos++) {\n            if (lastGreater == 1) {\n                // must pick unused value > pos\n                for (int v = pos + 1; v <= n; v++) {\n                    if (!used[v]) {\n                        long cnt = 1; // dp[pos][1] was just count of choices\n                        if (k > cnt) {\n                            k -= cnt;\n                        } else {\n                            p[pos] = v;\n                            used[v] = true;\n                            lastGreater = 1;\n                            break;\n                        }\n                    }\n                }\n            } else {\n                // lastGreater == 0\n                // first consider v <= pos\n                for (int v = 1; v <= pos; v++) {\n                    if (!used[v]) {\n                        long cnt = solve(pos + 1, 0);\n                        if (k > cnt) {\n                            k -= cnt;\n                        } else {\n                            p[pos] = v;\n                            used[v] = true;\n                            lastGreater = 0;\n                            break;\n                        }\n                    }\n                }\n                if (p[pos] == 0) {\n                    // need v > pos\n                    for (int v = pos + 1; v <= n; v++) {\n                        if (!used[v]) {\n                            long cnt = solve(pos + 1, 1);\n                            if (k > cnt) {\n                                k -= cnt;\n                            } else {\n                                p[pos] = v;\n                                used[v] = true;\n                                lastGreater = 1;\n                                break;\n                            }\n                        }\n                    }\n                }\n            }\n        }\n\n        StringBuilder sb = new StringBuilder();\n        for (int i = 1; i <= n; i++) {\n            if (i > 1) sb.append(' ');\n            sb.append(p[i]);\n        }\n        System.out.println(sb.toString());\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static int n;\n    static long k;\n    static long[][] dp; // dp[pos][lastGreater]\n    static int[] perm;\n\n    static long solveDP(int pos, int lastGreater) {\n        if (pos == n) return 1;\n        if (dp[pos][lastGreater] != -1) return dp[pos][lastGreater];\n        long res = 0;\n        int maxVal = (lastGreater == 1) ? pos : n;\n        for (int v = pos; v <= maxVal; v++) {\n            res += solveDP(pos + 1, v > pos ? 1 : 0);\n            if (res > 1000000000000000000L) {\n                res = 1000000000000000000L;\n                break;\n            }\n        }\n        dp[pos][lastGreater] = res;\n        return res;\n    }\n\n    static void buildPerm() {\n        perm = new int[n + 1];\n        int lastGreater = 0;\n        for (int pos = 1; pos <= n; pos++) {\n            int maxVal = (lastGreater == 1) ? pos : n;\n            for (int v = pos; v <= maxVal; v++) {\n                long cnt = solveDP(pos + 1, v > pos ? 1 : 0);\n                if (cnt >= k) {\n                    perm[pos] = v;\n                    if (v > pos) lastGreater = 1;\n                    break;\n                } else {\n                    k -= cnt;\n                }\n            }\n        }\n    }\n\n    static int[] buildCycles(int[] p) {\n        int[] comp = new int[n + 1];\n        boolean[] vis = new boolean[n + 1];\n        for (int i = 1; i <= n; i++) {\n            if (!vis[i]) {\n                List<Integer> cyc = new ArrayList<>();\n                int cur = i;\n                while (!vis[cur]) {\n                    vis[cur] = true;\n                    cyc.add(cur);\n                    cur = p[cur];\n                }\n                int max = cyc.get(0);\n                for (int x : cyc) if (x > max) max = x;\n                comp[max] = max;\n                for (int x : cyc) {\n                    if (x != max) comp[x] = max;\n                }\n            }\n        }\n        return comp;\n    }\n\n    static boolean checkFixed(int[] p) {\n        int[] comp = buildCycles(p);\n        int[] q = new int[n + 1];\n        int idx = 1;\n        for (int i = 1; i <= n; i++) {\n            if (comp[i] == i) {\n                for (int j = 1; j <= n; j++) {\n                    if (comp[j] == i) q[idx++] = j;\n                }\n            }\n        }\n        for (int i = 1; i <= n; i++) {\n            if (q[i] != p[i]) return false;\n        }\n        return true;\n    }\n\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        n = Integer.parseInt(st.nextToken());\n        k = Long.parseLong(st.nextToken());\n\n        dp = new long[n + 1][2];\n        for (int i = 0; i <= n; i++) Arrays.fill(dp[i], -1);\n\n        long total = solveDP(1, 0);\n        if (k > total) k = total;\n\n        buildPerm();\n\n        if (!checkFixed(perm)) {\n            // Should not happen if DP logic is correct, but just in case\n            // fall back to identity\n            for (int i = 1; i <= n; i++) perm[i] = i;\n        }\n\n        StringBuilder sb = new StringBuilder();\n        for (int i = 1; i <= n; i++) {\n            if (i > 1) sb.append(' ');\n            sb.append(perm[i]);\n        }\n        System.out.println(sb.toString());\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static int n;\n    static long k;\n    static long[][] dp; // dp[pos][last]\n    static int[] perm;\n\n    static long solveDP(int pos, int last) {\n        if (pos == n) return 1L;\n        if (dp[pos][last] != -1) return dp[pos][last];\n        long res = 0;\n        int start = (last == 0) ? 1 : last;\n        for (int v = start; v <= n; v++) {\n            res += solveDP(pos + 1, v);\n            if (res > 1000000000000000000L) { // cap at 1e18\n                res = 1000000000000000000L;\n                break;\n            }\n        }\n        dp[pos][last] = res;\n        return res;\n    }\n\n    static void buildPerm() {\n        perm = new int[n];\n        int last = 0;\n        for (int pos = 0; pos < n; pos++) {\n            int start = (last == 0) ? 1 : last;\n            for (int v = start; v <= n; v++) {\n                long cnt = solveDP(pos + 1, v);\n                if (cnt >= k) {\n                    perm[pos] = v;\n                    last = v;\n                    break;\n                } else {\n                    k -= cnt;\n                }\n            }\n        }\n    }\n\n    static List<List<Integer>> getCycles(int[] p) {\n        boolean[] vis = new boolean[n + 1];\n        List<List<Integer>> cycles = new ArrayList<>();\n        for (int i = 1; i <= n; i++) {\n            if (!vis[i]) {\n                List<Integer> cyc = new ArrayList<>();\n                int cur = i;\n                while (!vis[cur]) {\n                    vis[cur] = true;\n                    cyc.add(cur);\n                    cur = p[cur - 1];\n                }\n                cycles.add(cyc);\n            }\n        }\n        return cycles;\n    }\n\n    static int[] standardRepresentation(int[] p) {\n        List<List<Integer>> cycles = getCycles(p);\n        List<List<Integer>> stdCycles = new ArrayList<>();\n        for (List<Integer> cyc : cycles) {\n            int m = cyc.size();\n            int maxVal = -1, maxIdx = -1;\n            for (int i = 0; i < m; i++) {\n                if (cyc.get(i) > maxVal) {\n                    maxVal = cyc.get(i);\n                    maxIdx = i;\n                }\n            }\n            List<Integer> rotated = new ArrayList<>();\n            for (int i = 0; i < m; i++) {\n                rotated.add(cyc.get((maxIdx + i) % m));\n            }\n            stdCycles.add(rotated);\n        }\n        stdCycles.sort((a, b) -> Integer.compare(a.get(0), b.get(0)));\n        int[] res = new int[n];\n        int idx = 0;\n        for (List<Integer> cyc : stdCycles) {\n            for (int v : cyc) {\n                res[idx++] = v;\n            }\n        }\n        return res;\n    }\n\n    static boolean isFixed(int[] p) {\n        int[] s = standardRepresentation(p);\n        for (int i = 0; i < n; i++) {\n            if (s[i] != p[i]) return false;\n        }\n        return true;\n    }\n\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        n = Integer.parseInt(st.nextToken());\n        k = Long.parseLong(st.nextToken());\n\n        dp = new long[n + 1][n + 1];\n        for (int i = 0; i <= n; i++)\n            Arrays.fill(dp[i], -1);\n\n        long total = solveDP(0, 0);\n        if (k > total) k = total;\n\n        buildPerm();\n\n        // perm is non-decreasing; we must ensure it's fixed under operation.\n        // However, by construction using the DP, all such permutations are fixed.\n        // Just output perm.\n        StringBuilder sb = new StringBuilder();\n        for (int i = 0; i < n; i++) {\n            if (i > 0) sb.append(' ');\n            sb.append(perm[i]);\n        }\n        System.out.println(sb.toString());\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static int n;\n    static long k;\n    static long[][] dp; // dp[pos][last]\n    static long LIMIT = (long)1e18;\n\n    static long addLimit(long a, long b) {\n        long res = a + b;\n        if (res < 0 || res > LIMIT) return LIMIT;\n        return res;\n    }\n\n    static long solveDP(int pos, int last) {\n        if (pos == n) return 1;\n        if (dp[pos][last] != -1) return dp[pos][last];\n        long res = 0;\n        int remaining = n - pos;\n        for (int len = 1; len <= remaining; len++) {\n            int first = pos + len - 1;\n            if (first < last) continue;\n            res = addLimit(res, 1);\n        }\n        dp[pos][last] = res;\n        return res;\n    }\n\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        n = Integer.parseInt(st.nextToken());\n        k = Long.parseLong(st.nextToken());\n\n        dp = new long[n + 1][n + 2];\n        for (int i = 0; i <= n; i++)\n            Arrays.fill(dp[i], -1);\n\n        int[] p = new int[n];\n        int pos = 0;\n        int last = 0;\n        while (pos < n) {\n            int remaining = n - pos;\n            boolean chosen = false;\n            for (int len = 1; len <= remaining; len++) {\n                int first = pos + len - 1;\n                if (first < last) continue;\n                long cnt = 1; // one way for this block\n                if (cnt >= k) {\n                    // choose this block\n                    for (int i = 0; i < len; i++) {\n                        p[pos + i] = pos + len - i;\n                    }\n                    last = first;\n                    pos += len;\n                    chosen = true;\n                    break;\n                } else {\n                    k -= cnt;\n                }\n            }\n            if (!chosen) break;\n        }\n\n        StringBuilder sb = new StringBuilder();\n        for (int i = 0; i < n; i++) {\n            if (i > 0) sb.append(' ');\n            sb.append(p[i]);\n        }\n        System.out.println(sb.toString());\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static int n;\n    static long k;\n    static long[][] dp;\n    static long LIMIT = (long)1e18;\n\n    static long addLimit(long a, long b) {\n        long res = a + b;\n        if (res < 0 || res > LIMIT) return LIMIT;\n        return res;\n    }\n\n    static long mulLimit(long a, long b) {\n        if (a == 0 || b == 0) return 0;\n        if (a > LIMIT / b) return LIMIT;\n        return a * b;\n    }\n\n    static long countPerm(int pos) {\n        if (pos > n) return 1;\n        if (dp[pos][0] != -1) return dp[pos][0];\n\n        long res = 0;\n        for (int len = 1; pos + len - 1 <= n; len++) {\n            int maxVal = pos + len - 1;\n            long ways = 1;\n            for (int v = pos; v <= maxVal - 1; v++) {\n                ways = mulLimit(ways, maxVal - v);\n                if (ways >= LIMIT) break;\n            }\n            long sub = countPerm(pos + len);\n            ways = mulLimit(ways, sub);\n            res = addLimit(res, ways);\n            if (res >= LIMIT) break;\n        }\n        dp[pos][0] = res;\n        return res;\n    }\n\n    static void build(int pos, long k, int[] res) {\n        if (pos > n) return;\n        for (int len = 1; pos + len - 1 <= n; len++) {\n            int maxVal = pos + len - 1;\n            long ways = 1;\n            for (int v = pos; v <= maxVal - 1; v++) {\n                ways = mulLimit(ways, maxVal - v);\n                if (ways >= LIMIT) break;\n            }\n            long sub = countPerm(pos + len);\n            long block = mulLimit(ways, sub);\n            if (k > block) {\n                k -= block;\n            } else {\n                int[] cycle = new int[len];\n                cycle[0] = maxVal;\n                List<Integer> remaining = new ArrayList<>();\n                for (int v = pos; v <= maxVal - 1; v++) remaining.add(v);\n\n                long curK = (sub == 0 ? 1 : (k - 1) / sub + 1);\n                long remK = (sub == 0 ? 1 : (k - 1) % sub + 1);\n\n                for (int i = 1; i < len; i++) {\n                    int size = remaining.size();\n                    long blockSize = mulLimit(size == 0 ? 1 : 1, 1);\n                    for (int j = 0; j < size; j++) {\n                        long cnt = countPerm(pos + len);\n                        long total = mulLimit(cnt, 1);\n                        if (curK > total) {\n                            curK -= total;\n                        } else {\n                            cycle[i] = remaining.get(j);\n                            remaining.remove(j);\n                            break;\n                        }\n                    }\n                }\n\n                for (int i = 0; i < len; i++) res[pos + i - 1] = cycle[i];\n                build(pos + len, remK, res);\n                return;\n            }\n        }\n    }\n\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        n = Integer.parseInt(st.nextToken());\n        k = Long.parseLong(st.nextToken());\n\n        dp = new long[n + 2][1];\n        for (int i = 0; i <= n + 1; i++) Arrays.fill(dp[i], -1);\n\n        long total = countPerm(1);\n        if (k > total) k = total;\n\n        int[] res = new int[n];\n        build(1, k, res);\n\n        StringBuilder sb = new StringBuilder();\n        for (int i = 0; i < n; i++) {\n            if (i > 0) sb.append(' ');\n            sb.append(res[i]);\n        }\n        System.out.println(sb.toString());\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static int n;\n    static long k;\n    static long[] dp; // dp[i] = number of valid permutations of length i\n    static long LIMIT = (long)1e18;\n\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        n = Integer.parseInt(st.nextToken());\n        k = Long.parseLong(st.nextToken());\n\n        dp = new long[n + 1];\n        computeDP();\n\n        int[] perm = buildPermutation(n, k);\n        StringBuilder sb = new StringBuilder();\n        for (int i = 0; i < n; i++) {\n            if (i > 0) sb.append(' ');\n            sb.append(perm[i]);\n        }\n        System.out.println(sb.toString());\n    }\n\n    // dp recurrence:\n    // dp[0] = 1\n    // dp[1] = 1\n    // dp[i] = dp[i-1] + (i-1)*dp[i-2]  (clamped to LIMIT)\n    static void computeDP() {\n        dp[0] = 1;\n        if (n >= 1) dp[1] = 1;\n        for (int i = 2; i <= n; i++) {\n            long val = dp[i - 1] + (long)(i - 1) * dp[i - 2];\n            if (val > LIMIT) val = LIMIT;\n            dp[i] = val;\n        }\n    }\n\n    // Build k-th permutation in lexicographic order among permutations\n    // whose standard cyclic representation concatenation equals the permutation.\n    static int[] buildPermutation(int len, long k) {\n        int[] res = new int[len];\n        int pos = 0;\n        int cur = 1; // next smallest unused number\n        while (pos < len) {\n            int remaining = len - pos;\n            // Option 1: singleton cycle at position pos\n            long countSingleton = dp[remaining - 1];\n            if (countSingleton >= k) {\n                res[pos] = cur;\n                pos++;\n                cur++;\n            } else {\n                k -= countSingleton;\n                // Option 2: cycle of length L >= 2 starting at pos\n                boolean done = false;\n                for (int L = 2; L <= remaining; L++) {\n                    long countForL = dp[remaining - L];\n                    long totalForL = countForL * (L - 1);\n                    if (totalForL >= k) {\n                        // choose which of the next L-1 numbers is second in cycle\n                        int idx = (int)((k - 1) / countForL); // 0-based\n                        int secondVal = cur + 1 + idx;\n                        // cycle is [cur, secondVal, ...], but in concatenation\n                        // we place cur, then secondVal, then the rest of cycle\n                        // which are the remaining numbers in this block in increasing order\n                        res[pos] = cur;\n                        res[pos + 1] = secondVal;\n                        int write = pos + 2;\n                        for (int v = cur + 1; v <= cur + L - 1; v++) {\n                            if (v == secondVal) continue;\n                            res[write++] = v;\n                        }\n                        pos += L;\n                        cur += L;\n                        k = (k - 1) % countForL + 1;\n                        done = true;\n                        break;\n                    } else {\n                        k -= totalForL;\n                    }\n                }\n                if (!done) {\n                    // should not happen if k is valid\n                    break;\n                }\n            }\n        }\n        return res;\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static long[][] C = new long[51][51];\n    static long[] fact = new long[51];\n\n    static void precompute() {\n        for (int i = 0; i <= 50; i++) {\n            C[i][0] = C[i][i] = 1;\n            for (int j = 1; j < i; j++) {\n                C[i][j] = Math.min(1000000000000000000L, C[i - 1][j - 1] + C[i - 1][j]);\n            }\n        }\n        fact[0] = 1;\n        for (int i = 1; i <= 50; i++) {\n            fact[i] = Math.min(1000000000000000000L, fact[i - 1] * i);\n        }\n    }\n\n    static long countPerm(int n) {\n        long res = 0;\n        for (int m = 0; m <= n; m++) {\n            long add = C[n][m] * fact[m];\n            if (add > 1000000000000000000L) add = 1000000000000000000L;\n            res += add;\n            if (res > 1000000000000000000L) return 1000000000000000000L;\n        }\n        return res;\n    }\n\n    static long countWithPrefix(int n, int pos, int[] perm, boolean[] used) {\n        int fixed = 0;\n        for (int i = 1; i <= pos; i++) if (perm[i] == i) fixed++;\n        int remaining = n - pos;\n        long res = 0;\n        for (int m = 0; m <= remaining; m++) {\n            long waysChooseFixed = C[remaining][m];\n            long waysPerm = fact[m + fixed];\n            long add = waysChooseFixed * waysPerm;\n            if (add > 1000000000000000000L) add = 1000000000000000000L;\n            res += add;\n            if (res > 1000000000000000000L) return 1000000000000000000L;\n        }\n        return res;\n    }\n\n    public static void main(String[] args) throws Exception {\n        precompute();\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        int n = Integer.parseInt(st.nextToken());\n        long k = Long.parseLong(st.nextToken());\n\n        int[] perm = new int[n + 1];\n        boolean[] used = new boolean[n + 1];\n\n        for (int pos = 1; pos <= n; pos++) {\n            for (int v = 1; v <= n; v++) {\n                if (used[v]) continue;\n                perm[pos] = v;\n                used[v] = true;\n                long cnt = countWithPrefix(n, pos, perm, used);\n                if (cnt >= k) {\n                    break;\n                } else {\n                    k -= cnt;\n                    used[v] = false;\n                }\n            }\n        }\n\n        StringBuilder sb = new StringBuilder();\n        for (int i = 1; i <= n; i++) {\n            if (i > 1) sb.append(' ');\n            sb.append(perm[i]);\n        }\n        System.out.println(sb.toString());\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static int n;\n    static long k;\n    static long[][] dp; // dp[pos][lastGreater]\n    static long LIMIT = (long)1e18;\n\n    static long addLimit(long a, long b) {\n        long res = a + b;\n        if (res < 0 || res > LIMIT) return LIMIT;\n        return res;\n    }\n\n    static void buildDP() {\n        dp = new long[n + 2][n + 2];\n        dp[n + 1][0] = 1;\n        for (int pos = n; pos >= 1; pos--) {\n            for (int lg = 0; lg <= n; lg++) {\n                long val = 0;\n                // choose fixed point\n                val = addLimit(val, dp[pos + 1][lg]);\n                // choose start of new cycle\n                int newLg = lg + 1;\n                if (newLg <= n) {\n                    val = addLimit(val, dp[pos + 1][newLg]);\n                }\n                dp[pos][lg] = val;\n            }\n        }\n    }\n\n    static int[] solve() {\n        int[] perm = new int[n + 1]; // 1-based\n        int pos = 1;\n        int lastGreater = 0;\n        long remaining = k;\n\n        while (pos <= n) {\n            // option 1: fixed point\n            long cntFixed = dp[pos + 1][lastGreater];\n            if (cntFixed >= remaining) {\n                perm[pos] = pos;\n                pos++;\n                continue;\n            }\n            remaining -= cntFixed;\n\n            // option 2: start of new cycle\n            lastGreater++;\n            perm[pos] = pos; // temporarily, will adjust when closing cycle\n            // we need to build the cycle starting at pos\n            int start = pos;\n            int cur = pos;\n            List<Integer> cyclePositions = new ArrayList<>();\n            cyclePositions.add(cur);\n\n            while (true) {\n                if (cur == n) {\n                    // must close cycle to start\n                    perm[cur] = start;\n                    pos = n + 1;\n                    break;\n                }\n                // decide next position in cycle\n                // option A: close cycle now\n                long cntClose = dp[cur + 1][lastGreater];\n                if (cntClose >= remaining) {\n                    perm[cur] = start;\n                    pos = cur + 1;\n                    break;\n                }\n                remaining -= cntClose;\n\n                // option B: extend cycle to some next position > cur\n                int nextPos = -1;\n                for (int candidate = cur + 1; candidate <= n; candidate++) {\n                    long cnt = dp[candidate + 1][lastGreater];\n                    if (cnt >= remaining) {\n                        nextPos = candidate;\n                        break;\n                    }\n                    remaining -= cnt;\n                }\n                if (nextPos == -1) nextPos = cur + 1;\n                perm[cur] = nextPos;\n                cur = nextPos;\n                cyclePositions.add(cur);\n            }\n        }\n        return perm;\n    }\n\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        n = Integer.parseInt(st.nextToken());\n        k = Long.parseLong(st.nextToken());\n\n        buildDP();\n        int[] ans = solve();\n        StringBuilder sb = new StringBuilder();\n        for (int i = 1; i <= n; i++) {\n            if (i > 1) sb.append(' ');\n            sb.append(ans[i]);\n        }\n        System.out.println(sb.toString());\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 6535,
+            "prompt_tokens": 684,
+            "total_tokens": 7219,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 1,
+                "engine_ttft_ms": 49,
+                "engine_ttlt_ms": 4428,
+                "pre_inference_ms": 200,
+                "service_tbt_ms": 1,
+                "service_ttft_ms": 374,
+                "service_ttlt_ms": 5112,
+                "total_duration_ms": 4915,
+                "user_visible_ttft_ms": 174
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Java to solve this programming problem:\nDescription: Let's define the permutation of length n as an array p\u2009=\u2009[p1,\u2009p2,\u2009...,\u2009pn] consisting of n distinct integers from range from 1 to n. We say that this permutation maps value 1 into the value p1, value 2 into the value p2 and so on.Kyota Ootori has just learned about cyclic representation of a permutation. A cycle is a sequence of numbers such that each element of this sequence is being mapped into the next element of this sequence (and the last element of the cycle is being mapped into the first element of the cycle). The cyclic representation is a representation of p as a collection of cycles forming p. For example, permutation p\u2009=\u2009[4,\u20091,\u20096,\u20092,\u20095,\u20093] has a cyclic representation that looks like (142)(36)(5) because 1 is replaced by 4, 4 is replaced by 2, 2 is replaced by 1, 3 and 6 are swapped, and 5 remains in place. Permutation may have several cyclic representations, so Kyoya defines the standard cyclic representation of a permutation as follows. First, reorder the elements within each cycle so the largest element is first. Then, reorder all of the cycles so they are sorted by their first element. For our example above, the standard cyclic representation of [4,\u20091,\u20096,\u20092,\u20095,\u20093] is (421)(5)(63).Now, Kyoya notices that if we drop the parenthesis in the standard cyclic representation, we get another permutation! For instance, [4,\u20091,\u20096,\u20092,\u20095,\u20093] will become [4,\u20092,\u20091,\u20095,\u20096,\u20093].Kyoya notices that some permutations don't change after applying operation described above at all. He wrote all permutations of length n that do not change in a list in lexicographic order. Unfortunately, his friend Tamaki Suoh lost this list. Kyoya wishes to reproduce the list and he needs your help. Given the integers n and k, print the permutation that was k-th on Kyoya's list.\nInput Specification: The first line will contain two integers n, k (1\u2009\u2264\u2009n\u2009\u2264\u200950, 1\u2009\u2264\u2009k\u2009\u2264\u2009min{1018,\u2009l} where l is the length of the Kyoya's list).\nOutput Specification: Print n space-separated integers, representing the permutation that is the answer for the question. \n\nSample Input:\n4 3\nSample Output:\n1 3 2 4\n\nSample Input:\n10 1\nSample Output:\n1 2 3 4 5 6 7 8 9 10\n\nNotes: NoteThe standard cycle representation is (1)(32)(4), which after removing parenthesis gives us the original permutation. The first permutation on the list would be [1,\u20092,\u20093,\u20094], while the second permutation would be [1,\u20092,\u20094,\u20093].\nTake input from standard input and output to standard output\nProvide the Java code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "e03c6d3bb8cf9119530668765691a346",
+        "difficulty": 1900,
+        "prob_desc_sample_inputs": [
+            "4 3",
+            "10 1"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "greedy",
+            "combinatorics",
+            "binary search",
+            "constructive algorithms",
+            "math",
+            "implementation"
+        ],
+        "prob_desc_output_spec": "Print n space-separated integers, representing the permutation that is the answer for the question. ",
+        "prob_desc_input_spec": "The first line will contain two integers n, k (1\u2009\u2264\u2009n\u2009\u2264\u200950, 1\u2009\u2264\u2009k\u2009\u2264\u2009min{1018,\u2009l} where l is the length of the Kyoya's list).",
+        "lang_cluster": "Java",
+        "source_code": "",
+        "prob_desc_notes": "NoteThe standard cycle representation is (1)(32)(4), which after removing parenthesis gives us the original permutation. The first permutation on the list would be [1,\u20092,\u20093,\u20094], while the second permutation would be [1,\u20092,\u20094,\u20093].",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Let's define the permutation of length n as an array p\u2009=\u2009[p1,\u2009p2,\u2009...,\u2009pn] consisting of n distinct integers from range from 1 to n. We say that this permutation maps value 1 into the value p1, value 2 into the value p2 and so on.Kyota Ootori has just learned about cyclic representation of a permutation. A cycle is a sequence of numbers such that each element of this sequence is being mapped into the next element of this sequence (and the last element of the cycle is being mapped into the first element of the cycle). The cyclic representation is a representation of p as a collection of cycles forming p. For example, permutation p\u2009=\u2009[4,\u20091,\u20096,\u20092,\u20095,\u20093] has a cyclic representation that looks like (142)(36)(5) because 1 is replaced by 4, 4 is replaced by 2, 2 is replaced by 1, 3 and 6 are swapped, and 5 remains in place. Permutation may have several cyclic representations, so Kyoya defines the standard cyclic representation of a permutation as follows. First, reorder the elements within each cycle so the largest element is first. Then, reorder all of the cycles so they are sorted by their first element. For our example above, the standard cyclic representation of [4,\u20091,\u20096,\u20092,\u20095,\u20093] is (421)(5)(63).Now, Kyoya notices that if we drop the parenthesis in the standard cyclic representation, we get another permutation! For instance, [4,\u20091,\u20096,\u20092,\u20095,\u20093] will become [4,\u20092,\u20091,\u20095,\u20096,\u20093].Kyoya notices that some permutations don't change after applying operation described above at all. He wrote all permutations of length n that do not change in a list in lexicographic order. Unfortunately, his friend Tamaki Suoh lost this list. Kyoya wishes to reproduce the list and he needs your help. Given the integers n and k, print the permutation that was k-th on Kyoya's list.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1435163400",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "1 3 2 4",
+            "1 2 3 4 5 6 7 8 9 10"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"4 3\\r\\n\", \"output\": [\"1 3 2 4\"]}, {\"input\": \"10 1\\r\\n\", \"output\": [\"1 2 3 4 5 6 7 8 9 10\"]}, {\"input\": \"1 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"50 1\\r\\n\", \"output\": [\"1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50\"]}, {\"input\": \"10 57\\r\\n\", \"output\": [\"2 1 3 4 5 6 7 8 10 9\"]}, {\"input\": \"50 20365011074\\r\\n\", \"output\": [\"2 1 4 3 6 5 8 7 10 9 12 11 14 13 16 15 18 17 20 19 22 21 24 23 26 25 28 27 30 29 32 31 34 33 36 35 38 37 40 39 42 41 44 43 46 45 48 47 50 49\"]}, {\"input\": \"20 9999\\r\\n\", \"output\": [\"2 1 4 3 5 7 6 8 9 10 11 13 12 14 15 17 16 18 19 20\"]}, {\"input\": \"49 12586269025\\r\\n\", \"output\": [\"2 1 4 3 6 5 8 7 10 9 12 11 14 13 16 15 18 17 20 19 22 21 24 23 26 25 28 27 30 29 32 31 34 33 36 35 38 37 40 39 42 41 44 43 46 45 48 47 49\"]}, {\"input\": \"49 1\\r\\n\", \"output\": [\"1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49\"]}, {\"input\": \"10 89\\r\\n\", \"output\": [\"2 1 4 3 6 5 8 7 10 9\"]}, {\"input\": \"10 1\\r\\n\", \"output\": [\"1 2 3 4 5 6 7 8 9 10\"]}, {\"input\": \"5 8\\r\\n\", \"output\": [\"2 1 4 3 5\"]}, {\"input\": \"5 1\\r\\n\", \"output\": [\"1 2 3 4 5\"]}, {\"input\": \"25 121393\\r\\n\", \"output\": [\"2 1 4 3 6 5 8 7 10 9 12 11 14 13 16 15 18 17 20 19 22 21 24 23 25\"]}, {\"input\": \"25 1\\r\\n\", \"output\": [\"1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25\"]}, {\"input\": \"1 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"2 2\\r\\n\", \"output\": [\"2 1\"]}, {\"input\": \"3 3\\r\\n\", \"output\": [\"2 1 3\"]}, {\"input\": \"4 2\\r\\n\", \"output\": [\"1 2 4 3\"]}, {\"input\": \"5 8\\r\\n\", \"output\": [\"2 1 4 3 5\"]}, {\"input\": \"6 10\\r\\n\", \"output\": [\"2 1 3 4 6 5\"]}, {\"input\": \"7 20\\r\\n\", \"output\": [\"2 1 4 3 5 7 6\"]}, {\"input\": \"8 24\\r\\n\", \"output\": [\"2 1 3 4 5 7 6 8\"]}, {\"input\": \"9 1\\r\\n\", \"output\": [\"1 2 3 4 5 6 7 8 9\"]}, {\"input\": \"10 24\\r\\n\", \"output\": [\"1 2 4 3 5 6 7 9 8 10\"]}, {\"input\": \"11 77\\r\\n\", \"output\": [\"1 3 2 5 4 6 7 8 9 10 11\"]}, {\"input\": \"12 101\\r\\n\", \"output\": [\"1 3 2 4 5 6 8 7 10 9 11 12\"]}, {\"input\": \"13 240\\r\\n\", \"output\": [\"2 1 3 4 5 6 7 8 10 9 11 13 12\"]}, {\"input\": \"14 356\\r\\n\", \"output\": [\"1 3 2 5 4 6 8 7 10 9 12 11 14 13\"]}, {\"input\": \"15 463\\r\\n\", \"output\": [\"1 3 2 4 5 7 6 9 8 11 10 12 13 15 14\"]}, {\"input\": \"16 747\\r\\n\", \"output\": [\"1 3 2 4 5 7 6 9 8 11 10 12 13 14 15 16\"]}, {\"input\": \"17 734\\r\\n\", \"output\": [\"1 2 4 3 5 6 8 7 10 9 11 12 13 14 15 16 17\"]}, {\"input\": \"18 1809\\r\\n\", \"output\": [\"1 3 2 4 5 6 8 7 10 9 11 12 14 13 16 15 18 17\"]}, {\"input\": \"19 859\\r\\n\", \"output\": [\"1 2 3 4 6 5 8 7 9 10 11 12 14 13 15 16 18 17 19\"]}, {\"input\": \"20 491\\r\\n\", \"output\": [\"1 2 3 4 5 6 8 7 9 11 10 12 14 13 15 16 18 17 19 20\"]}, {\"input\": \"21 14921\\r\\n\", \"output\": [\"2 1 3 5 4 7 6 9 8 10 11 12 13 15 14 16 18 17 19 20 21\"]}, {\"input\": \"22 731\\r\\n\", \"output\": [\"1 2 3 4 5 6 7 9 8 10 11 13 12 14 16 15 18 17 19 21 20 22\"]}, {\"input\": \"23 45599\\r\\n\", \"output\": [\"2 1 4 3 6 5 8 7 9 10 11 13 12 15 14 16 18 17 20 19 21 22 23\"]}, {\"input\": \"24 47430\\r\\n\", \"output\": [\"2 1 3 4 5 6 7 8 10 9 11 12 13 14 16 15 17 19 18 21 20 22 24 23\"]}, {\"input\": \"25 58467\\r\\n\", \"output\": [\"1 3 2 4 6 5 7 8 9 11 10 12 13 15 14 16 17 19 18 20 21 22 23 24 25\"]}, {\"input\": \"26 168988\\r\\n\", \"output\": [\"2 1 4 3 5 6 7 8 9 10 12 11 13 15 14 16 17 18 19 20 21 23 22 24 26 25\"]}, {\"input\": \"27 298209\\r\\n\", \"output\": [\"2 1 4 3 5 7 6 9 8 10 12 11 14 13 15 16 17 19 18 21 20 22 24 23 25 27 26\"]}, {\"input\": \"28 77078\\r\\n\", \"output\": [\"1 2 3 5 4 6 7 8 9 10 11 13 12 14 16 15 17 18 20 19 22 21 23 24 25 27 26 28\"]}, {\"input\": \"29 668648\\r\\n\", \"output\": [\"2 1 3 5 4 6 8 7 9 10 12 11 13 14 15 16 17 19 18 20 22 21 23 25 24 26 27 29 28\"]}, {\"input\": \"30 582773\\r\\n\", \"output\": [\"1 3 2 4 5 6 8 7 10 9 11 13 12 14 15 16 17 19 18 20 21 23 22 25 24 26 28 27 29 30\"]}, {\"input\": \"31 1899100\\r\\n\", \"output\": [\"2 1 4 3 5 6 7 8 10 9 11 13 12 15 14 16 17 19 18 21 20 23 22 24 26 25 28 27 29 31 30\"]}, {\"input\": \"32 1314567\\r\\n\", \"output\": [\"1 2 4 3 6 5 8 7 9 11 10 13 12 14 16 15 18 17 19 20 22 21 23 24 25 26 27 28 30 29 32 31\"]}, {\"input\": \"33 1811927\\r\\n\", \"output\": [\"1 2 4 3 5 7 6 9 8 10 11 13 12 15 14 16 18 17 19 21 20 22 23 24 25 26 27 28 29 31 30 32 33\"]}, {\"input\": \"34 2412850\\r\\n\", \"output\": [\"1 2 4 3 5 6 7 9 8 10 11 13 12 14 16 15 18 17 19 20 21 22 23 25 24 26 28 27 29 31 30 32 34 33\"]}, {\"input\": \"35 706065\\r\\n\", \"output\": [\"1 2 3 4 5 6 8 7 9 11 10 13 12 15 14 16 18 17 20 19 21 23 22 25 24 27 26 28 29 31 30 32 33 35 34\"]}, {\"input\": \"36 7074882\\r\\n\", \"output\": [\"1 2 4 3 5 7 6 8 9 10 11 12 13 14 16 15 18 17 19 20 22 21 23 25 24 26 27 28 30 29 32 31 33 34 35 36\"]}, {\"input\": \"37 27668397\\r\\n\", \"output\": [\"2 1 3 4 5 7 6 9 8 11 10 13 12 15 14 16 18 17 19 21 20 23 22 24 25 26 28 27 30 29 32 31 34 33 35 36 37\"]}, {\"input\": \"38 23790805\\r\\n\", \"output\": [\"1 2 4 3 6 5 8 7 10 9 11 12 14 13 15 16 18 17 20 19 21 22 24 23 25 27 26 29 28 31 30 32 33 34 36 35 38 37\"]}, {\"input\": \"39 68773650\\r\\n\", \"output\": [\"2 1 3 4 5 6 8 7 10 9 12 11 13 15 14 16 17 19 18 20 21 23 22 24 26 25 28 27 29 31 30 32 33 34 35 36 37 39 38\"]}, {\"input\": \"40 43782404\\r\\n\", \"output\": [\"1 2 4 3 5 6 7 9 8 10 12 11 14 13 15 16 17 18 20 19 21 22 23 25 24 26 28 27 29 31 30 32 34 33 36 35 37 39 38 40\"]}, {\"input\": \"41 130268954\\r\\n\", \"output\": [\"1 3 2 4 6 5 7 8 10 9 11 12 13 14 16 15 17 19 18 20 21 23 22 25 24 26 27 28 30 29 31 32 34 33 35 36 37 38 39 41 40\"]}, {\"input\": \"42 40985206\\r\\n\", \"output\": [\"1 2 3 4 6 5 7 8 9 10 11 13 12 15 14 16 17 18 19 21 20 22 24 23 25 26 28 27 29 30 31 33 32 35 34 36 37 39 38 40 42 41\"]}, {\"input\": \"43 193787781\\r\\n\", \"output\": [\"1 2 4 3 5 6 8 7 9 10 12 11 13 14 16 15 17 18 19 20 21 22 24 23 25 26 27 28 29 30 31 32 33 35 34 36 38 37 39 40 41 43 42\"]}, {\"input\": \"44 863791309\\r\\n\", \"output\": [\"2 1 3 4 6 5 8 7 10 9 12 11 13 14 15 16 18 17 19 20 21 22 23 24 26 25 27 29 28 31 30 32 34 33 36 35 38 37 40 39 41 42 44 43\"]}, {\"input\": \"45 1817653076\\r\\n\", \"output\": [\"2 1 4 3 6 5 8 7 9 11 10 12 14 13 16 15 18 17 19 20 22 21 24 23 25 27 26 29 28 30 32 31 34 33 35 36 38 37 39 40 42 41 43 44 45\"]}, {\"input\": \"46 1176411936\\r\\n\", \"output\": [\"1 3 2 4 5 6 7 8 10 9 11 12 13 14 16 15 17 18 19 21 20 22 23 25 24 27 26 29 28 31 30 32 34 33 35 37 36 38 40 39 41 42 43 44 46 45\"]}, {\"input\": \"47 4199125763\\r\\n\", \"output\": [\"2 1 4 3 5 6 7 8 10 9 12 11 13 14 16 15 18 17 20 19 22 21 23 24 25 27 26 28 30 29 31 32 33 34 36 35 38 37 39 40 41 43 42 44 45 46 47\"]}, {\"input\": \"48 4534695914\\r\\n\", \"output\": [\"1 3 2 5 4 6 8 7 10 9 12 11 14 13 15 17 16 18 19 21 20 23 22 25 24 26 27 28 29 30 31 32 33 34 36 35 37 38 40 39 41 43 42 44 46 45 47 48\"]}, {\"input\": \"49 3790978105\\r\\n\", \"output\": [\"1 2 4 3 5 7 6 8 9 11 10 12 13 15 14 16 17 18 19 21 20 22 24 23 25 27 26 28 30 29 31 33 32 35 34 37 36 38 39 41 40 42 44 43 45 47 46 48 49\"]}, {\"input\": \"50 5608642004\\r\\n\", \"output\": [\"1 2 4 3 5 6 8 7 9 10 11 13 12 15 14 17 16 18 20 19 22 21 23 24 25 26 28 27 30 29 31 32 33 34 35 36 38 37 40 39 42 41 44 43 45 46 47 48 50 49\"]}]"
+    }
+}

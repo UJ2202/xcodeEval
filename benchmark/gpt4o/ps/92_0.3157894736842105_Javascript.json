@@ -1,0 +1,350 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEI5OcapGldATBfIk4AB32Ne51Gq6",
+        "created": 1787074822,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nlet idx = 0;\nconst n = input[idx++], m = input[idx++];\nconst f = new Array(n);\nfor (let i = 0; i < n; i++) f[i] = input[idx++];\n\nconst g = Array.from({ length: n }, () => []);\nconst gr = Array.from({ length: n }, () => []);\nfor (let i = 0; i < m; i++) {\n    const a = input[idx++] - 1;\n    const b = input[idx++] - 1;\n    g[a].push(b);\n    gr[b].push(a);\n}\n\n// Kosaraju to find SCCs\nconst used = new Array(n).fill(false);\nconst order = [];\nfunction dfs1(v) {\n    used[v] = true;\n    for (const to of g[v]) if (!used[to]) dfs1(to);\n    order.push(v);\n}\nfor (let i = 0; i < n; i++) if (!used[i]) dfs1(i);\n\nconst comp = new Array(n).fill(-1);\nlet compCnt = 0;\nfunction dfs2(v, c) {\n    comp[v] = c;\n    for (const to of gr[v]) if (comp[to] === -1) dfs2(to, c);\n}\nfor (let i = n - 1; i >= 0; i--) {\n    const v = order[i];\n    if (comp[v] === -1) {\n        dfs2(v, compCnt++);\n        compCnt++;\n    }\n}\n\n// Build condensation DAG\nconst dag = Array.from({ length: compCnt }, () => []);\nconst dagR = Array.from({ length: compCnt }, () => []);\nconst hasAssign = new Array(compCnt).fill(false);\nconst hasUse = new Array(compCnt).fill(false);\n\nfor (let v = 0; v < n; v++) {\n    const c = comp[v];\n    if (f[v] === 1) hasAssign[c] = true;\n    if (f[v] === 2) hasUse[c] = true;\n    for (const to of g[v]) {\n        const ct = comp[to];\n        if (c !== ct) {\n            dag[c].push(ct);\n            dagR[ct].push(c);\n        }\n    }\n}\n\n// Remove duplicate edges in DAG (optional but safer for DP)\nfor (let i = 0; i < compCnt; i++) {\n    if (dag[i].length > 1) {\n        const set = new Set(dag[i]);\n        dag[i] = Array.from(set);\n    }\n    if (dagR[i].length > 1) {\n        const set = new Set(dagR[i]);\n        dagR[i] = Array.from(set);\n    }\n}\n\n// Topological order of condensation DAG\nconst indeg = new Array(compCnt).fill(0);\nfor (let v = 0; v < compCnt; v++) {\n    for (const to of dag[v]) indeg[to]++;\n}\nconst q = [];\nfor (let i = 0; i < compCnt; i++) if (indeg[i] === 0) q.push(i);\nconst topo = [];\nfor (let qi = 0; qi < q.length; qi++) {\n    const v = q[qi];\n    topo.push(v);\n    for (const to of dag[v]) {\n        indeg[to]--;\n        if (indeg[to] === 0) q.push(to);\n    }\n}\n\n// DP: canReachUse\nconst canReachUse = new Array(compCnt).fill(false);\nfor (let i = compCnt - 1; i >= 0; i--) {\n    const v = topo[i];\n    if (hasUse[v]) {\n        canReachUse[v] = true;\n    } else {\n        for (const to of dag[v]) {\n            if (canReachUse[to]) {\n                canReachUse[v] = true;\n                break;\n            }\n        }\n    }\n}\n\n// DP: canReachAssign (reverse DAG)\nconst canReachAssign = new Array(compCnt).fill(false);\nfor (let i = 0; i < compCnt; i++) {\n    const v = topo[i];\n    if (hasAssign[v]) {\n        canReachAssign[v] = true;\n    } else {\n        for (const from of dagR[v]) {\n            if (canReachAssign[from]) {\n                canReachAssign[v] = true;\n                break;\n            }\n        }\n    }\n}\n\n// DP: hasAssignOnPath (from assign to use without other assigns)\nconst hasAssignOnPath = new Array(compCnt).fill(false);\nfor (let i = 0; i < compCnt; i++) {\n    const v = topo[i];\n    if (hasAssign[v]) {\n        hasAssignOnPath[v] = true;\n    } else {\n        for (const from of dagR[v]) {\n            if (hasAssignOnPath[from]) {\n                hasAssignOnPath[v] = true;\n                break;\n            }\n        }\n    }\n}\n\n// DP: hasAssignOnPathToUse (propagate forward only through nodes without assign)\nconst hasAssignOnPathToUse = new Array(compCnt).fill(false);\nfor (let i = 0; i < compCnt; i++) {\n    const v = topo[i];\n    if (hasAssignOnPath[v]) {\n        hasAssignOnPathToUse[v] = true;\n    }\n    if (hasAssignOnPathToUse[v] && !hasAssign[v]) {\n        for (const to of dag[v]) {\n            if (!hasAssignOnPathToUse[to]) {\n                hasAssignOnPathToUse[to] = true;\n            }\n        }\n    }\n}\n\n// Compute answer per node\nconst res = new Array(n);\nfor (let v = 0; v < n; v++) {\n    const c = comp[v];\n    res[v] = (canReachAssign[c] && canReachUse[c] && hasAssignOnPathToUse[c]) ? 1 : 0;\n}\n\nconsole.log(res.join('\\n'));",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nlet idx = 0;\nconst n = input[idx++], m = input[idx++];\nconst f = new Array(n);\nfor (let i = 0; i < n; i++) f[i] = input[idx++];\n\nconst g = Array.from({ length: n }, () => []);\nconst gr = Array.from({ length: n }, () => []);\nfor (let i = 0; i < m; i++) {\n    const a = input[idx++] - 1;\n    const b = input[idx++] - 1;\n    g[a].push(b);\n    gr[b].push(a);\n}\n\n// Kosaraju to find SCCs\nlet visited = new Array(n).fill(false);\nlet order = [];\n\nfunction dfs1(v) {\n    visited[v] = true;\n    for (const to of g[v]) if (!visited[to]) dfs1(to);\n    order.push(v);\n}\n\nfor (let i = 0; i < n; i++) if (!visited[i]) dfs1(i);\n\nvisited.fill(false);\nconst comp = new Array(n).fill(-1);\nlet compCnt = 0;\n\nfunction dfs2(v, c) {\n    visited[v] = true;\n    comp[v] = c;\n    for (const to of gr[v]) if (!visited[to]) dfs2(to, c);\n}\n\nfor (let i = n - 1; i >= 0; i--) {\n    const v = order[i];\n    if (!visited[v]) {\n        dfs2(v, compCnt);\n        compCnt++;\n    }\n}\n\n// Build condensation DAG\nconst dag = Array.from({ length: compCnt }, () => []);\nconst radj = Array.from({ length: compCnt }, () => []);\nconst hasAssign = new Array(compCnt).fill(false);\nconst hasUse = new Array(compCnt).fill(false);\n\nfor (let v = 0; v < n; v++) {\n    const c = comp[v];\n    if (f[v] === 1) hasAssign[c] = true;\n    if (f[v] === 2) hasUse[c] = true;\n    for (const to of g[v]) {\n        const ct = comp[to];\n        if (ct !== c) {\n            dag[c].push(ct);\n            radj[ct].push(c);\n        }\n    }\n}\n\n// Remove duplicate edges\nfor (let i = 0; i < compCnt; i++) {\n    dag[i] = Array.from(new Set(dag[i]));\n    radj[i] = Array.from(new Set(radj[i]));\n}\n\n// Topological order of condensation DAG\nlet indeg = new Array(compCnt).fill(0);\nfor (let i = 0; i < compCnt; i++) {\n    for (const to of dag[i]) indeg[to]++;\n}\nlet queue = [];\nfor (let i = 0; i < compCnt; i++) if (indeg[i] === 0) queue.push(i);\nlet topo = [];\nfor (let qi = 0; qi < queue.length; qi++) {\n    const v = queue[qi];\n    topo.push(v);\n    for (const to of dag[v]) {\n        indeg[to]--;\n        if (indeg[to] === 0) queue.push(to);\n    }\n}\n\n// DP: can reach a use without passing another assign\nconst canReachUse = new Array(compCnt).fill(false);\nfor (let i = compCnt - 1; i >= 0; i--) {\n    const c = topo[i];\n    if (hasUse[c]) canReachUse[c] = true;\n    for (const to of dag[c]) {\n        if (canReachUse[to] && !hasAssign[to]) {\n            canReachUse[c] = true;\n            break;\n        }\n    }\n}\n\n// DP: can be reached from an assign without passing another assign\nconst canFromAssign = new Array(compCnt).fill(false);\nfor (let i = 0; i < compCnt; i++) {\n    const c = topo[i];\n    if (hasAssign[c]) canFromAssign[c] = true;\n    for (const from of radj[c]) {\n        if (canFromAssign[from] && !hasAssign[c]) {\n            canFromAssign[c] = true;\n            break;\n        }\n    }\n}\n\n// Result per node\nlet res = new Array(n).fill(0);\nfor (let v = 0; v < n; v++) {\n    const c = comp[v];\n    if (canFromAssign[c] && canReachUse[c]) res[v] = 1;\n}\n\nconsole.log(res.join('\\n'));",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nlet idx = 0;\nconst n = input[idx++], m = input[idx++];\nconst f = new Array(n);\nfor (let i = 0; i < n; i++) f[i] = input[idx++];\n\nconst g = Array.from({ length: n }, () => []);\nconst gr = Array.from({ length: n }, () => []);\nfor (let i = 0; i < m; i++) {\n    const a = input[idx++] - 1;\n    const b = input[idx++] - 1;\n    g[a].push(b);\n    gr[b].push(a);\n}\n\n// Kosaraju to find SCCs\nconst used = new Array(n).fill(false);\nconst order = [];\nfunction dfs1(v) {\n    used[v] = true;\n    for (const to of g[v]) if (!used[to]) dfs1(to);\n    order.push(v);\n}\nfor (let i = 0; i < n; i++) if (!used[i]) dfs1(i);\n\nconst comp = new Array(n).fill(-1);\nlet compCnt = 0;\nfunction dfs2(v, c) {\n    comp[v] = c;\n    for (const to of gr[v]) if (comp[to] === -1) dfs2(to, c);\n}\nfor (let i = n - 1; i >= 0; i--) {\n    const v = order[i];\n    if (comp[v] === -1) {\n        dfs2(v, compCnt++);\n        compCnt++;\n    }\n}\n\n// Build condensation graph\nconst cg = Array.from({ length: compCnt }, () => []);\nconst cgRev = Array.from({ length: compCnt }, () => []);\nconst hasAssign = new Array(compCnt).fill(false);\nconst hasUse = new Array(compCnt).fill(false);\nconst hasSelfAssign = new Array(compCnt).fill(false);\n\nfor (let v = 0; v < n; v++) {\n    const c = comp[v];\n    if (f[v] === 1) hasAssign[c] = true;\n    if (f[v] === 2) hasUse[c] = true;\n}\n\nfor (let v = 0; v < n; v++) {\n    const cv = comp[v];\n    for (const to of g[v]) {\n        const cu = comp[to];\n        if (cv === cu) {\n            if (f[to] === 1) hasSelfAssign[cv] = true;\n        } else {\n            cg[cv].push(cu);\n            cgRev[cu].push(cv);\n        }\n    }\n}\n\n// DP on condensation graph\nconst goodFromAssign = new Array(compCnt).fill(false);\nconst badFromAssign = new Array(compCnt).fill(false);\n\n// Topological order of condensation graph\nconst indeg = new Array(compCnt).fill(0);\nfor (let v = 0; v < compCnt; v++) {\n    for (const to of cg[v]) indeg[to]++;\n}\nconst queue = [];\nfor (let i = 0; i < compCnt; i++) if (indeg[i] === 0) queue.push(i);\nconst topo = [];\nfor (let qi = 0; qi < queue.length; qi++) {\n    const v = queue[qi];\n    topo.push(v);\n    for (const to of cg[v]) {\n        indeg[to]--;\n        if (indeg[to] === 0) queue.push(to);\n    }\n}\n\n// Process in reverse topological order\nfor (let i = topo.length - 1; i >= 0; i--) {\n    const v = topo[i];\n    let good = hasUse[v];\n    let bad = hasSelfAssign[v];\n    for (const to of cg[v]) {\n        if (goodFromAssign[to]) good = true;\n        if (badFromAssign[to]) bad = true;\n    }\n    goodFromAssign[v] = good;\n    badFromAssign[v] = bad;\n}\n\n// Now determine interesting states\nconst res = new Array(n).fill(0);\n\n// For each component, check if it can be on a valid path\nconst compInteresting = new Array(compCnt).fill(false);\nfor (let c = 0; c < compCnt; c++) {\n    if (!hasAssign[c]) continue;\n    if (!goodFromAssign[c]) continue;\n    if (badFromAssign[c]) continue;\n    compInteresting[c] = true;\n}\n\n// For each node, if its component is interesting and node is reachable from an assign without passing another assign\n// We already ensured no other assign on path via DP; so any node in that component reachable from some assign is ok.\n// That is equivalent to: componentInteresting and there exists assign in component.\nfor (let v = 0; v < n; v++) {\n    const c = comp[v];\n    if (compInteresting[c]) res[v] = 1;\n}\n\nconsole.log(res.join('\\n'));",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nlet idx = 0;\nconst n = input[idx++], m = input[idx++];\nconst f = new Array(n);\nfor (let i = 0; i < n; i++) f[i] = input[idx++];\n\nconst g = Array.from({ length: n }, () => []);\nconst gr = Array.from({ length: n }, () => []);\nfor (let i = 0; i < m; i++) {\n    const a = input[idx++] - 1;\n    const b = input[idx++] - 1;\n    g[a].push(b);\n    gr[b].push(a);\n}\n\n// Kosaraju to find SCCs\nlet order = [];\nlet used = new Array(n).fill(false);\n\nfunction dfs1(v) {\n    used[v] = true;\n    for (const to of g[v]) if (!used[to]) dfs1(to);\n    order.push(v);\n}\n\nfor (let i = 0; i < n; i++) if (!used[i]) dfs1(i);\n\nlet comp = new Array(n).fill(-1);\nlet compCnt = 0;\n\nfunction dfs2(v, c) {\n    comp[v] = c;\n    for (const to of gr[v]) if (comp[to] === -1) dfs2(to, c);\n}\n\nfor (let i = n - 1; i >= 0; i--) {\n    const v = order[i];\n    if (comp[v] === -1) {\n        dfs2(v, compCnt++);\n        compCnt++;\n    }\n}\n\n// Build condensation graph\nconst cg = Array.from({ length: compCnt }, () => []);\nconst cgr = Array.from({ length: compCnt }, () => []);\nfor (let v = 0; v < n; v++) {\n    for (const to of g[v]) {\n        const cv = comp[v], cu = comp[to];\n        if (cv !== cu) {\n            cg[cv].push(cu);\n            cgr[cu].push(cv);\n        }\n    }\n}\n\n// Mark components that can reach a \"use\" (f==2)\nlet canReachUse = new Array(compCnt).fill(false);\nlet queue = [];\nlet inq = new Array(compCnt).fill(false);\n\nfor (let v = 0; v < n; v++) {\n    if (f[v] === 2) {\n        const c = comp[v];\n        if (!canReachUse[c]) {\n            canReachUse[c] = true;\n            queue.push(c);\n            inq[c] = true;\n        }\n    }\n}\n\nwhile (queue.length) {\n    const c = queue.shift();\n    for (const prev of cgr[c]) {\n        if (!canReachUse[prev]) {\n            canReachUse[prev] = true;\n            if (!inq[prev]) {\n                inq[prev] = true;\n                queue.push(prev);\n            }\n        }\n    }\n}\n\n// Mark components that can be reached from an \"assign\" (f==1)\nlet canReachAssign = new Array(compCnt).fill(false);\nqueue = [];\ninq.fill(false);\n\nfor (let v = 0; v < n; v++) {\n    if (f[v] === 1) {\n        const c = comp[v];\n        if (!canReachAssign[c]) {\n            canReachAssign[c] = true;\n            queue.push(c);\n            inq[c] = true;\n        }\n    }\n}\n\nwhile (queue.length) {\n    const c = queue.shift();\n    for (const nxt of cg[c]) {\n        if (!canReachAssign[nxt]) {\n            canReachAssign[nxt] = true;\n            if (!inq[nxt]) {\n                inq[nxt] = true;\n                queue.push(nxt);\n            }\n        }\n    }\n}\n\n// Mark components that contain an assign\nlet hasAssign = new Array(compCnt).fill(false);\nfor (let v = 0; v < n; v++) {\n    if (f[v] === 1) hasAssign[comp[v]] = true;\n}\n\n// Result per node\nlet res = new Array(n).fill(0);\nfor (let v = 0; v < n; v++) {\n    const c = comp[v];\n    if (hasAssign[c] && canReachUse[c] && canReachAssign[c]) res[v] = 1;\n}\n\nconsole.log(res.join('\\n'));",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nlet idx = 0;\nconst n = input[idx++], m = input[idx++];\nconst f = new Array(n);\nfor (let i = 0; i < n; i++) f[i] = input[idx++];\n\nconst g = Array.from({ length: n }, () => []);\nconst gr = Array.from({ length: n }, () => []);\nfor (let i = 0; i < m; i++) {\n    const a = input[idx++] - 1;\n    const b = input[idx++] - 1;\n    g[a].push(b);\n    gr[b].push(a);\n}\n\n// Kosaraju to find SCCs\nlet order = [];\nlet used = new Array(n).fill(false);\n\nfunction dfs1(v) {\n    used[v] = true;\n    for (const to of g[v]) if (!used[to]) dfs1(to);\n    order.push(v);\n}\n\nfor (let i = 0; i < n; i++) if (!used[i]) dfs1(i);\n\nlet comp = new Array(n).fill(-1);\nlet compCnt = 0;\n\nfunction dfs2(v, c) {\n    comp[v] = c;\n    for (const to of gr[v]) if (comp[to] === -1) dfs2(to, c);\n}\n\nfor (let i = n - 1; i >= 0; i--) {\n    const v = order[i];\n    if (comp[v] === -1) {\n        dfs2(v, compCnt++);\n        compCnt++;\n    }\n}\n\n// Build condensation graph\nconst cg = Array.from({ length: compCnt }, () => []);\nconst cgRev = Array.from({ length: compCnt }, () => []);\nlet hasAssign = new Array(compCnt).fill(false);\nlet hasUse = new Array(compCnt).fill(false);\n\nfor (let v = 0; v < n; v++) {\n    const c = comp[v];\n    if (f[v] === 1) hasAssign[c] = true;\n    if (f[v] === 2) hasUse[c] = true;\n    for (const to of g[v]) {\n        const ct = comp[to];\n        if (c !== ct) {\n            cg[c].push(ct);\n            cgRev[ct].push(c);\n        }\n    }\n}\n\n// Remove duplicate edges (optional but safer)\nfor (let i = 0; i < compCnt; i++) {\n    cg[i] = Array.from(new Set(cg[i]));\n    cgRev[i] = Array.from(new Set(cgRev[i]));\n}\n\n// DP from assign components forward\nlet assignReach = new Array(compCnt).fill(false);\nlet queue = [];\n\nfor (let c = 0; c < compCnt; c++) {\n    if (hasAssign[c]) {\n        assignReach[c] = true;\n        queue.push(c);\n    }\n}\n\nwhile (queue.length) {\n    const v = queue.shift();\n    for (const to of cg[v]) {\n        if (!assignReach[to]) {\n            assignReach[to] = true;\n            queue.push(to);\n        }\n    }\n}\n\n// DP from use components backward\nlet useReach = new Array(compCnt).fill(false);\nqueue = [];\n\nfor (let c = 0; c < compCnt; c++) {\n    if (hasUse[c]) {\n        useReach[c] = true;\n        queue.push(c);\n    }\n}\n\nwhile (queue.length) {\n    const v = queue.shift();\n    for (const to of cgRev[v]) {\n        if (!useReach[to]) {\n            useReach[to] = true;\n            queue.push(to);\n        }\n    }\n}\n\n// Mark interesting states\nconst res = new Array(n).fill(0);\nfor (let v = 0; v < n; v++) {\n    const c = comp[v];\n    if (assignReach[c] && useReach[c]) res[v] = 1;\n}\n\nconsole.log(res.join('\\n'));",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nlet idx = 0;\nconst n = input[idx++], m = input[idx++];\nconst f = new Array(n);\nfor (let i = 0; i < n; i++) f[i] = input[idx++];\n\nconst g = Array.from({ length: n }, () => []);\nconst gr = Array.from({ length: n }, () => []);\nfor (let i = 0; i < m; i++) {\n    const a = input[idx++] - 1;\n    const b = input[idx++] - 1;\n    g[a].push(b);\n    gr[b].push(a);\n}\n\n// Kosaraju for SCC\nlet order = [];\nlet used = new Array(n).fill(false);\nfunction dfs1(v) {\n    used[v] = true;\n    for (const to of g[v]) if (!used[to]) dfs1(to);\n    order.push(v);\n}\nfor (let i = 0; i < n; i++) if (!used[i]) dfs1(i);\n\nlet comp = new Array(n).fill(-1);\nlet compCnt = 0;\nfunction dfs2(v, c) {\n    comp[v] = c;\n    for (const to of gr[v]) if (comp[to] === -1) dfs2(to, c);\n}\nfor (let i = n - 1; i >= 0; i--) {\n    const v = order[i];\n    if (comp[v] === -1) {\n        dfs2(v, compCnt++);\n        compCnt++;\n    }\n}\n\n// Build condensation graph\nconst cg = Array.from({ length: compCnt }, () => []);\nconst crg = Array.from({ length: compCnt }, () => []);\nfor (let v = 0; v < n; v++) {\n    for (const to of g[v]) {\n        const cv = comp[v], cu = comp[to];\n        if (cv !== cu) {\n            cg[cv].push(cu);\n            crg[cu].push(cv);\n        }\n    }\n}\n\n// Mark components that can reach a 'use' (f==2)\nlet canReachUse = new Array(compCnt).fill(false);\nlet queue = [];\nlet inq = new Array(compCnt).fill(false);\nfor (let v = 0; v < n; v++) {\n    if (f[v] === 2) {\n        const c = comp[v];\n        if (!canReachUse[c]) {\n            canReachUse[c] = true;\n            queue.push(c);\n            inq[c] = true;\n        }\n    }\n}\nwhile (queue.length) {\n    const c = queue.shift();\n    for (const prev of crg[c]) {\n        if (!canReachUse[prev]) {\n            canReachUse[prev] = true;\n            if (!inq[prev]) {\n                inq[prev] = true;\n                queue.push(prev);\n            }\n        }\n    }\n}\n\n// Mark components that can be reached from an 'assign' (f==1) without passing another assign\nlet canReachAssign = new Array(compCnt).fill(false);\nqueue = [];\ninq.fill(false);\nfor (let v = 0; v < n; v++) {\n    if (f[v] === 1) {\n        const c = comp[v];\n        if (!canReachAssign[c]) {\n            canReachAssign[c] = true;\n            queue.push(c);\n            inq[c] = true;\n        }\n    }\n}\nwhile (queue.length) {\n    const c = queue.shift();\n    for (const nxt of cg[c]) {\n        if (!canReachAssign[nxt]) {\n            canReachAssign[nxt] = true;\n            if (!inq[nxt]) {\n                inq[nxt] = true;\n                queue.push(nxt);\n            }\n        }\n    }\n}\n\n// Result: node is interesting if its component canReachAssign && canReachUse\nlet res = new Array(n);\nfor (let i = 0; i < n; i++) {\n    const c = comp[i];\n    res[i] = (canReachAssign[c] && canReachUse[c]) ? 1 : 0;\n}\n\nconsole.log(res.join('\\n'));",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nlet idx = 0;\nconst n = input[idx++], m = input[idx++];\nconst f = new Array(n);\nfor (let i = 0; i < n; i++) f[i] = input[idx++];\n\nconst g = Array.from({ length: n }, () => []);\nconst gr = Array.from({ length: n }, () => []);\nfor (let i = 0; i < m; i++) {\n    const a = input[idx++] - 1;\n    const b = input[idx++] - 1;\n    g[a].push(b);\n    gr[b].push(a);\n}\n\n// Kosaraju to find SCCs\nconst used = new Array(n).fill(false);\nconst order = [];\nfunction dfs1(v) {\n    used[v] = true;\n    for (const to of g[v]) if (!used[to]) dfs1(to);\n    order.push(v);\n}\nfor (let i = 0; i < n; i++) if (!used[i]) dfs1(i);\n\nconst comp = new Array(n).fill(-1);\nlet compCnt = 0;\nfunction dfs2(v, c) {\n    comp[v] = c;\n    for (const to of gr[v]) if (comp[to] === -1) dfs2(to, c);\n}\nfor (let i = n - 1; i >= 0; i--) {\n    const v = order[i];\n    if (comp[v] === -1) dfs2(v, compCnt++);\n}\n\n// Build condensation graph\nconst cg = Array.from({ length: compCnt }, () => []);\nconst hasAssign = new Array(compCnt).fill(false);\nconst hasUse = new Array(compCnt).fill(false);\nfor (let v = 0; v < n; v++) {\n    const c = comp[v];\n    if (f[v] === 1) hasAssign[c] = true;\n    if (f[v] === 2) hasUse[c] = true;\n    for (const to of g[v]) {\n        const ct = comp[to];\n        if (c !== ct) cg[c].push(ct);\n    }\n}\n\n// Remove duplicate edges\nfor (let c = 0; c < compCnt; c++) {\n    if (cg[c].length > 1) {\n        cg[c].sort((a, b) => a - b);\n        let w = 1;\n        for (let i = 1; i < cg[c].length; i++) {\n            if (cg[c][i] !== cg[c][i - 1]) cg[c][w++] = cg[c][i];\n        }\n        cg[c].length = w;\n    }\n}\n\n// DP: can reach a use without passing another assign\nconst good = new Array(compCnt).fill(false);\nconst visited = new Array(compCnt).fill(false);\n\nfunction dfsGood(c) {\n    visited[c] = true;\n    let res = hasUse[c];\n    for (const to of cg[c]) {\n        if (!visited[to]) dfsGood(to);\n        if (!hasAssign[to] && good[to]) res = true;\n    }\n    good[c] = res;\n}\n\nfor (let c = 0; c < compCnt; c++) {\n    if (!visited[c]) dfsGood(c);\n}\n\nconst ans = new Array(n);\nfor (let v = 0; v < n; v++) {\n    const c = comp[v];\n    ans[v] = (hasAssign[c] && good[c]) ? 1 : 0;\n}\n\nconsole.log(ans.join('\\n'));",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "const fs = require('fs');\n\nconst input = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nlet idx = 0;\nconst n = input[idx++], m = input[idx++];\nconst f = new Array(n);\nfor (let i = 0; i < n; i++) f[i] = input[idx++];\n\nconst g = Array.from({ length: n }, () => []);\nconst gr = Array.from({ length: n }, () => []);\nfor (let i = 0; i < m; i++) {\n    const a = input[idx++] - 1;\n    const b = input[idx++] - 1;\n    g[a].push(b);\n    gr[b].push(a);\n}\n\n// Kosaraju to find SCCs\nlet order = [];\nlet used = new Array(n).fill(false);\n\nfunction dfs1(v) {\n    used[v] = true;\n    for (const to of g[v]) if (!used[to]) dfs1(to);\n    order.push(v);\n}\n\nfor (let i = 0; i < n; i++) if (!used[i]) dfs1(i);\n\nlet comp = new Array(n).fill(-1);\nlet compCnt = 0;\n\nfunction dfs2(v, c) {\n    comp[v] = c;\n    for (const to of gr[v]) if (comp[to] === -1) dfs2(to, c);\n}\n\nfor (let i = n - 1; i >= 0; i--) {\n    const v = order[i];\n    if (comp[v] === -1) {\n        dfs2(v, compCnt++);\n    }\n}\n\n// Build condensation graph\nconst hasAssign = new Array(compCnt).fill(false);\nconst hasUse = new Array(compCnt).fill(false);\nfor (let v = 0; v < n; v++) {\n    if (f[v] === 1) hasAssign[comp[v]] = true;\n    if (f[v] === 2) hasUse[comp[v]] = true;\n}\n\nconst cg = Array.from({ length: compCnt }, () => []);\nconst cgr = Array.from({ length: compCnt }, () => []);\nconst edgeSet = new Set();\nfor (let v = 0; v < n; v++) {\n    const cv = comp[v];\n    for (const to of g[v]) {\n        const cu = comp[to];\n        if (cv !== cu) {\n            const key = cv * compCnt + cu;\n            if (!edgeSet.has(key)) {\n                edgeSet.add(key);\n                cg[cv].push(cu);\n                cgr[cu].push(cv);\n            }\n        }\n    }\n}\n\n// DP forward: can reach a use from component\nconst canReachUse = new Array(compCnt).fill(false);\nconst indeg = new Array(compCnt).fill(0);\nfor (let v = 0; v < compCnt; v++) {\n    for (const to of cg[v]) indeg[to]++;\n}\n\nlet queue = [];\nfor (let i = 0; i < compCnt; i++) if (indeg[i] === 0) queue.push(i);\n\nlet topo = [];\nwhile (queue.length) {\n    const v = queue.shift();\n    topo.push(v);\n    for (const to of cg[v]) {\n        indeg[to]--;\n        if (indeg[to] === 0) queue.push(to);\n    }\n}\n\nfor (let i = compCnt - 1; i >= 0; i--) {\n    const v = topo[i];\n    if (hasUse[v]) canReachUse[v] = true;\n    for (const to of cg[v]) {\n        if (canReachUse[to]) canReachUse[v] = true;\n    }\n}\n\n// DP backward: can be reached from an assign without passing another assign\nconst canFromAssign = new Array(compCnt).fill(false);\nconst outdeg = new Array(compCnt).fill(0);\nfor (let v = 0; v < compCnt; v++) {\n    for (const to of cg[v]) outdeg[v]++;\n}\n\nqueue = [];\nfor (let i = 0; i < compCnt; i++) if (outdeg[i] === 0) queue.push(i);\n\nlet revTopo = [];\nwhile (queue.length) {\n    const v = queue.shift();\n    revTopo.push(v);\n    for (const from of cgr[v]) {\n        outdeg[from]--;\n        if (outdeg[from] === 0) queue.push(from);\n    }\n}\n\nfor (let i = compCnt - 1; i >= 0; i--) {\n    const v = revTopo[i];\n    if (hasAssign[v]) canFromAssign[v] = true;\n    for (const from of cgr[v]) {\n        if (canFromAssign[v] && !hasAssign[from]) {\n            canFromAssign[from] = true;\n        }\n    }\n}\n\nconst res = new Array(n);\nfor (let v = 0; v < n; v++) {\n    const c = comp[v];\n    res[v] = (canFromAssign[c] && canReachUse[c]) ? 1 : 0;\n}\n\nconsole.log(res.join('\\n'));",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 7941,
+            "prompt_tokens": 734,
+            "total_tokens": 8675,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 1,
+                "engine_ttft_ms": 49,
+                "engine_ttlt_ms": 7066,
+                "pre_inference_ms": 201,
+                "service_tbt_ms": 1,
+                "service_ttft_ms": 359,
+                "service_ttlt_ms": 7357,
+                "total_duration_ms": 7170,
+                "user_visible_ttft_ms": 158
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Javascript to solve this programming problem:\nDescription: Life is not easy for the perfectly common variable named Vasya. Wherever it goes, it is either assigned a value, or simply ignored, or is being used!Vasya's life goes in states of a program. In each state, Vasya can either be used (for example, to calculate the value of another variable), or be assigned a value, or ignored. Between some states are directed (oriented) transitions.A path is a sequence of states v1,\u2009v2,\u2009...,\u2009vx, where for any 1\u2009\u2264\u2009i\u2009&lt;\u2009x exists a transition from vi to vi\u2009+\u20091.Vasya's value in state v is interesting to the world, if exists path p1,\u2009p2,\u2009...,\u2009pk such, that pi\u2009=\u2009v for some i (1\u2009\u2264\u2009i\u2009\u2264\u2009k), in state p1 Vasya gets assigned a value, in state pk Vasya is used and there is no state pi (except for p1) where Vasya gets assigned a value.Help Vasya, find the states in which Vasya's value is interesting to the world.\nInput Specification: The first line contains two space-separated integers n and m (1\u2009\u2264\u2009n,\u2009m\u2009\u2264\u2009105) \u2014 the numbers of states and transitions, correspondingly. The second line contains space-separated n integers f1,\u2009f2,\u2009...,\u2009fn (0\u2009\u2264\u2009fi\u2009\u2264\u20092), fi described actions performed upon Vasya in state i: 0 represents ignoring, 1 \u2014 assigning a value, 2 \u2014 using. Next m lines contain space-separated pairs of integers ai,\u2009bi (1\u2009\u2264\u2009ai,\u2009bi\u2009\u2264\u2009n, ai\u2009\u2260\u2009bi), each pair represents the transition from the state number ai to the state number bi. Between two states can be any number of transitions.\nOutput Specification: Print n integers r1,\u2009r2,\u2009...,\u2009rn, separated by spaces or new lines. Number ri should equal 1, if Vasya's value in state i is interesting to the world and otherwise, it should equal 0. The states are numbered from 1 to n in the order, in which they are described in the input.\n\nSample Input:\n4 3\n1 0 0 2\n1 2\n2 3\n3 4\nSample Output:\n1\n1\n1\n1\n\nSample Input:\n3 1\n1 0 2\n1 3\nSample Output:\n1\n0\n1\n\nSample Input:\n3 1\n2 0 1\n1 3\nSample Output:\n0\n0\n0\n\nNotes: NoteIn the first sample the program states can be used to make the only path in which the value of Vasya interests the world, 1  2  3  4; it includes all the states, so in all of them Vasya's value is interesting to the world.The second sample the only path in which Vasya's value is interesting to the world is , \u2014 1  3; state 2 is not included there.In the third sample we cannot make from the states any path in which the value of Vasya would be interesting to the world, so the value of Vasya is never interesting to the world.\nTake input from standard input and output to standard output\nProvide the Javascript code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "87d869a0fd4a510c5e7e310886b86a57",
+        "difficulty": 1700,
+        "prob_desc_sample_inputs": [
+            "4 3\n1 0 0 2\n1 2\n2 3\n3 4",
+            "3 1\n1 0 2\n1 3",
+            "3 1\n2 0 1\n1 3"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "graphs"
+        ],
+        "prob_desc_output_spec": "Print n integers r1,\u2009r2,\u2009...,\u2009rn, separated by spaces or new lines. Number ri should equal 1, if Vasya's value in state i is interesting to the world and otherwise, it should equal 0. The states are numbered from 1 to n in the order, in which they are described in the input.",
+        "prob_desc_input_spec": "The first line contains two space-separated integers n and m (1\u2009\u2264\u2009n,\u2009m\u2009\u2264\u2009105) \u2014 the numbers of states and transitions, correspondingly. The second line contains space-separated n integers f1,\u2009f2,\u2009...,\u2009fn (0\u2009\u2264\u2009fi\u2009\u2264\u20092), fi described actions performed upon Vasya in state i: 0 represents ignoring, 1 \u2014 assigning a value, 2 \u2014 using. Next m lines contain space-separated pairs of integers ai,\u2009bi (1\u2009\u2264\u2009ai,\u2009bi\u2009\u2264\u2009n, ai\u2009\u2260\u2009bi), each pair represents the transition from the state number ai to the state number bi. Between two states can be any number of transitions.",
+        "lang_cluster": "Javascript",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first sample the program states can be used to make the only path in which the value of Vasya interests the world, 1  2  3  4; it includes all the states, so in all of them Vasya's value is interesting to the world.The second sample the only path in which Vasya's value is interesting to the world is , \u2014 1  3; state 2 is not included there.In the third sample we cannot make from the states any path in which the value of Vasya would be interesting to the world, so the value of Vasya is never interesting to the world.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Life is not easy for the perfectly common variable named Vasya. Wherever it goes, it is either assigned a value, or simply ignored, or is being used!Vasya's life goes in states of a program. In each state, Vasya can either be used (for example, to calculate the value of another variable), or be assigned a value, or ignored. Between some states are directed (oriented) transitions.A path is a sequence of states v1,\u2009v2,\u2009...,\u2009vx, where for any 1\u2009\u2264\u2009i\u2009&lt;\u2009x exists a transition from vi to vi\u2009+\u20091.Vasya's value in state v is interesting to the world, if exists path p1,\u2009p2,\u2009...,\u2009pk such, that pi\u2009=\u2009v for some i (1\u2009\u2264\u2009i\u2009\u2264\u2009k), in state p1 Vasya gets assigned a value, in state pk Vasya is used and there is no state pi (except for p1) where Vasya gets assigned a value.Help Vasya, find the states in which Vasya's value is interesting to the world.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1333897500",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "1\n1\n1\n1",
+            "1\n0\n1",
+            "0\n0\n0"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"4 3\\r\\n1 0 0 2\\r\\n1 2\\r\\n2 3\\r\\n3 4\\r\\n\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\"]}, {\"input\": \"3 1\\r\\n1 0 2\\r\\n1 3\\r\\n\", \"output\": [\"1\\r\\n0\\r\\n1\"]}, {\"input\": \"3 1\\r\\n2 0 1\\r\\n1 3\\r\\n\", \"output\": [\"0\\r\\n0\\r\\n0\"]}, {\"input\": \"4 4\\r\\n1 0 2 0\\r\\n1 2\\r\\n2 3\\r\\n3 4\\r\\n4 1\\r\\n\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n0\"]}, {\"input\": \"10000 10000\\r\\n0 1 2 2 2 0 1 0 1 0 0 0 1 2 2 0 0 0 2 1 2 0 1 0 2 1 1 1 1 0 1 1 0 2 1 2 0 1 0 1 2 2 0 0 0 1 0 0 0 2 2 2 1 2 2 1 0 2 2 1 1 2 0 2 1 1 2 2 1 0 0 2 1 0 1 0 2 0 2 0 2 0 0 0 0 0 0 0 2 0 0 0 1 2 2 2 1 2 2 1 2 1 1 1 0 1 2 0 2 2 0 0 1 0 0 0 1 0 2 2 1 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"10000 10000\\r\\n1 1 1 2 1 2 2 1 2 1 2 1 1 1 1 1 2 1 2 1 1 2 2 2 2 2 1 1 2 2 1 1 2 1 1 2 1 1 2 1 2 1 1 1 1 2 1 2 2 2 2 1 1 1 2 1 1 2 1 2 2 1 1 1 2 1 1 1 1 1 1 2 1 2 2 2 1 2 1 2 2 2 2 2 2 2 2 2 2 2 1 1 1 2 2 1 2 2 2 2 2 2 2 2 1 2 1 1 2 2 1 2 1 2 1 1 1 2 1 1 2 ...\", \"output\": [\"0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n...\"]}, {\"input\": \"10000 100000\\r\\n0 1 2 1 1 2 2 0 0 2 1 0 1 1 2 2 0 1 1 2 1 2 2 1 2 2 0 0 2 1 1 2 1 1 2 1 2 0 1 2 0 1 0 1 2 1 0 0 1 2 2 0 1 0 1 2 2 1 0 0 1 1 2 2 1 2 2 2 2 2 2 2 2 2 0 1 2 2 1 0 1 1 0 0 2 2 1 0 1 2 2 0 1 0 2 2 2 1 1 1 0 1 1 0 1 0 0 2 1 1 2 0 1 1 2 2 0 0 1 0 0...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"2 100000\\r\\n1 0\\r\\n2 1\\r\\n1 2\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n2 1\\r\\n2 1\\r\\n1 2\\r\\n2 1\\r\\n1 2\\r\\n1 2\\r\\n...\", \"output\": [\"0\\r\\n0\"]}, {\"input\": \"100000 100000\\r\\n0 2 1 1 1 2 0 0 1 0 1 1 2 1 0 1 2 0 1 2 2 2 2 1 1 1 0 2 1 1 2 0 0 2 1 0 0 0 0 2 1 0 2 2 1 0 0 1 2 0 0 2 0 1 2 1 0 1 0 2 0 0 1 1 0 0 2 2 0 1 1 0 2 2 2 1 1 2 2 1 1 1 1 0 0 0 1 0 2 0 2 2 2 2 0 2 0 2 0 1 0 1 0 1 1 1 2 0 0 1 2 0 0 2 1 0 2 0 0 1 ...\", \"output\": [\"0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n2 2 2 1 1 2 1 1 1 1 2 2 1 2 1 1 2 1 2 2 1 2 2 2 1 1 1 2 2 1 1 2 1 1 1 1 1 1 2 2 1 1 1 2 2 1 2 1 2 1 2 1 1 1 1 2 2 1 2 1 1 2 2 1 2 2 1 2 2 1 1 1 1 1 2 2 1 1 2 2 1 1 1 1 1 1 1 1 2 1 2 2 1 1 1 1 1 2 1 2 1 1 2 1 1 1 1 2 2 2 1 1 1 1 1 2 1 1 2 1 ...\", \"output\": [\"0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\", \"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n1 1 0 0 1 0 1 0 1 0 1 0 1 1 0 1 1 1 1 0 0 0 0 1 0 0 0 1 0 1 1 1 1 0 1 1 0 1 1 1 0 0 1 0 0 1 0 1 1 1 0 0 0 0 1 1 0 1 0 0 1 0 1 0 1 1 0 1 1 1 0 0 1 0 1 1 1 1 0 0 1 1 0 1 1 1 1 0 0 1 1 1 0 1 1 0 1 0 1 0 0 0 1 0 1 1 1 0 0 1 0 0 1 1 0 0 0 1 0 0 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"100000 100000\\r\\n0 0 2 2 0 2 2 0 0 0 2 0 0 2 2 0 0 2 2 2 0 2 0 2 0 2 2 0 2 2 2 0 2 2 2 0 2 0 2 2 2 0 0 0 2 0 0 2 2 0 2 2 2 0 0 0 2 2 2 2 0 0 2 0 0 2 2 0 2 0 0 2 0 0 2 0 2 0 2 0 0 2 0 0 2 2 0 2 0 2 0 2 2 2 2 2 0 0 2 0 2 0 2 2 0 2 2 2 0 2 2 0 0 0 0 0 2 2 0 0 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"2 1\\r\\n2 1\\r\\n2 1\\r\\n\", \"output\": [\"1\\r\\n1\"]}, {\"input\": \"100000 99999\\r\\n2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"100000 10\\r\\n2 2 2 2 2 2 1 1 1 2 2 2 1 1 1 2 1 1 2 2 1 2 1 1 2 1 2 2 2 2 1 2 2 2 1 2 2 2 2 1 2 2 2 1 1 1 2 2 1 2 2 1 1 1 1 1 1 2 1 2 2 2 1 2 2 1 1 1 1 1 1 2 1 2 2 1 2 1 2 1 1 2 1 2 1 1 1 2 2 2 2 2 2 1 2 2 2 2 2 1 1 1 1 2 2 1 2 2 2 1 2 1 1 1 1 2 2 2 2 2 1 1 ...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"3 2\\r\\n1 2 0\\r\\n1 2\\r\\n3 2\\r\\n\", \"output\": [\"1\\r\\n1\\r\\n0\"]}, {\"input\": \"50000 99997\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"100000 99999\\r\\n0 0 2 0 2 2 2 2 2 1 1 0 1 0 2 0 2 0 2 1 0 1 2 0 0 2 0 2 0 1 0 2 1 1 1 2 2 0 1 2 2 0 1 0 2 1 0 0 1 1 2 2 2 1 2 2 2 0 0 1 0 0 0 0 1 0 1 0 0 2 2 2 0 2 0 2 0 1 2 2 2 0 0 0 1 0 0 1 1 0 0 0 1 1 0 2 0 1 1 2 0 0 1 1 2 1 1 1 2 2 0 0 1 0 0 0 2 1 1 1 0...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"99991 100000\\r\\n1 1 2 0 1 2 0 0 0 2 2 2 0 0 1 0 1 0 0 0 0 2 1 1 2 0 2 2 2 2 1 2 2 2 0 2 0 2 0 1 2 2 2 0 2 1 2 1 2 0 1 0 0 2 0 2 1 2 1 1 1 1 0 0 2 2 0 2 1 1 1 0 2 2 0 0 2 1 1 1 2 2 1 1 2 0 1 0 1 2 2 1 1 0 1 2 1 0 0 1 0 1 1 0 1 0 1 1 0 0 1 2 2 2 0 2 1 2 0 1 0...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"99001 100000\\r\\n0 1 1 1 1 1 2 0 1 0 2 1 2 2 2 1 2 1 2 1 2 2 0 2 1 1 0 1 2 2 0 2 2 1 2 0 0 0 1 2 2 1 2 1 2 1 2 0 0 2 0 0 1 0 1 1 1 2 2 1 2 2 2 1 2 1 0 0 2 1 2 1 1 2 0 0 2 0 2 2 2 2 1 2 1 2 2 0 2 0 2 0 0 0 1 1 2 0 2 2 0 0 0 1 2 2 2 1 1 0 2 1 2 2 2 0 2 1 2 1 2...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"99001 100000\\r\\n1 2 2 0 1 1 2 0 1 1 0 1 0 0 0 0 1 2 1 2 2 1 1 2 1 0 1 0 0 0 2 1 1 1 0 2 2 2 1 2 2 1 0 1 0 1 2 0 1 1 1 0 1 0 1 0 0 0 1 2 0 1 2 0 0 2 1 2 1 0 0 0 2 2 0 2 1 1 2 2 2 0 0 2 1 2 1 0 0 1 0 1 0 0 1 0 1 0 1 2 2 0 1 1 0 2 2 0 2 2 2 0 2 2 2 0 1 1 2 0 2...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"100000 99999\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n...\"]}, {\"input\": \"99001 100000\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0...\", \"output\": [\"0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"99001 100000\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0...\", \"output\": [\"1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n...\"]}, {\"input\": \"90001 100000\\r\\n1 0 0 0 1 2 0 0 0 0 0 0 0 2 0 0 0 0 0 1 0 2 2 1 0 0 1 1 0 0 0 0 0 1 0 0 0 1 0 2 0 1 0 0 0 0 2 0 0 0 0 0 2 0 0 2 0 0 0 0 0 2 0 0 0 0 0 0 1 2 1 0 0 0 0 1 1 0 0 2 0 0 0 2 2 0 0 0 2 0 0 0 0 0 0 0 1 2 0 2 0 0 0 2 2 1 0 0 0 0 0 0 1 2 0 0 0 0 0 0 0...\", \"output\": [\"0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"99001 100000\\r\\n0 2 0 1 2 1 1 2 2 0 1 1 2 1 2 0 0 0 0 0 2 1 1 2 2 1 2 2 0 0 1 2 2 2 0 0 0 2 1 0 1 0 0 2 0 1 2 2 0 1 2 2 0 2 0 2 2 2 2 2 0 2 2 2 0 1 0 1 1 0 0 0 0 2 0 2 2 0 1 1 0 0 2 0 0 2 0 1 1 2 0 0 0 1 1 2 0 1 2 2 1 0 1 0 0 1 0 2 2 2 2 1 1 0 1 2 2 1 0 2 1...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n...\"]}, {\"input\": \"90001 100000\\r\\n0 0 1 1 0 1 2 1 2 1 0 0 0 2 2 0 2 1 1 1 1 1 1 0 0 1 0 0 0 0 2 1 2 2 0 1 1 1 1 0 2 2 0 2 1 0 1 0 1 2 0 2 1 2 2 1 2 0 1 2 1 1 1 2 1 1 0 1 2 1 1 1 2 1 2 1 0 2 0 0 0 1 2 0 0 2 0 1 2 0 0 1 2 0 2 0 2 2 2 1 0 1 0 1 0 2 0 2 2 1 0 2 1 1 1 1 0 2 1 1 1...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n1\\r\\n0\\r\\n0\\r\\n0\\r\\n1\\r\\n1\\r\\n1\\r\\n0\\r\\n...\"]}, {\"input\": \"30000 74999\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ...\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n...\"]}, {\"input\": \"8 8\\r\\n1 0 0 2 1 0 0 2\\r\\n1 2\\r\\n2 3\\r\\n3 2\\r\\n2 4\\r\\n6 8\\r\\n7 6\\r\\n6 7\\r\\n5 6\\r\\n\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\"]}, {\"input\": \"6 6\\r\\n1 0 0 0 0 2\\r\\n1 2\\r\\n2 3\\r\\n3 4\\r\\n4 5\\r\\n5 2\\r\\n3 6\\r\\n\", \"output\": [\"1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\\r\\n1\"]}, {\"input\": \"100000 99999\\r\\n1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1...\", \"output\": [\"0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n0\\r\\n...\"]}]"
+    }
+}

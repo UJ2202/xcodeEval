@@ -1,0 +1,390 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-9d06523e2e0811e2",
+        "created": 1787075063,
+        "model": "laguna-nvfp4",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.27.1-tp2-af6339fc",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nvar reader = bufio.NewReader(os.Stdin)\n\nfunc main() {\n\tvar n, k int\n\tfmt.Fscan(reader, &n, &k)\n\n\t// Find the maximum m such that m! <= k\n\tm := 1\n\tfact := 1\n\tfor {\n\t\tnextFact := fact * (m + 1)\n\t\tif nextFact > k {\n\t\t\tbreak\n\t\t}\n\t\tfact = nextFact\n\t\tm++\n\t}\n\n\tif m > n {\n\t\tfmt.Println(-1)\n\t\treturn\n\t}\n\n\t// Generate the k-th permutation of the last m elements\n\telements := make([]int, m)\n\tfor i := 0; i < m; i++ {\n\t\telements[i] = n - m + 1 + i\n\t}\n\n\tperm := make([]int, m)\n\tk-- // convert to 0-based index\n\tfor i := 0; i < m; i++ {\n\t\tf := factorial(m - 1 - i)\n\t\tidx := k / f\n\t\tperm[i] = elements[idx]\n\t\telements = append(elements[:idx], elements[idx+1:]...)\n\t\tk %= f\n\t}\n\n\t// Build the full permutation\n\tfullPerm := make([]int, n)\n\tfor i := 0; i < n-m; i++ {\n\t\tfullPerm[i] = i + 1\n\t}\n\tfor i := 0; i < m; i++ {\n\t\tfullPerm[n-m+i] = perm[i]\n\t}\n\n\t// Count lucky positions and values\n\tluckyPositions := make(map[int]bool)\n\tfor i := 1; i <= n; i++ {\n\t\tif isLucky(i) {\n\t\t\tluckyPositions[i] = true\n\t\t}\n\t}\n\n\tcount := 0\n\tfor i := 1; i <= n; i++ {\n\t\tif luckyPositions[i] && isLucky(fullPerm[i-1]) {\n\t\t\tcount++\n\t\t}\n\t}\n\n\tfmt.Println(count)\n}\n\nfunc factorial(n int) int {\n\tresult := 1\n\tfor i := 2; i <= n; i++ {\n\t\tresult *= i\n\t}\n\treturn result\n}\n\nfunc isLucky(num int) bool {\n\tif num == 0 {\n\t\treturn false\n\t}\n\tfor num > 0 {\n\t\tdigit := num % 10\n\t\tif digit != 4 && digit != 7 {\n\t\t\treturn false\n\t\t}\n\t\tnum /= 10\n\t}\n\treturn true\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tr := bufio.NewReader(os.Stdin)\n\tvar n, k int64\n\tfmt.Fscan(r, &n, &k)\n\n\t// Find the maximum m such that m! <= k\n\tm := int64(1)\n\tfact := int64(1)\n\tfor {\n\t\tnextFact := fact * (m + 1)\n\t\tif nextFact > k {\n\t\t\tbreak\n\t\t}\n\t\tfact = nextFact\n\t\tm++\n\t}\n\n\t// Check if m! < k (invalid)\n\tif fact < k {\n\t\tfmt.Println(-1)\n\t\treturn\n\t}\n\n\t// Generate the k-th permutation (0-based) of m elements\n\tperm := make([]int64, m)\n\tavailable := make([]int64, m)\n\tfor i := int64(0); i < m; i++ {\n\t\tavailable[i] = i + 1\n\t}\n\n\tcurrentK := k - 1\n\tfor i := int64(0); i < m; i++ {\n\t\t// Compute factorial of (m - i - 1)\n\t\tf := int64(1)\n\t\tfor j := int64(1); j <= (m - i - 1); j++ {\n\t\t\tf *= j\n\t\t}\n\t\tindex := currentK / f\n\t\tperm[i] = available[index]\n\t\t// Remove the element at index from available\n\t\tavailable = append(available[:index], available[index+1:]...)\n\t\tcurrentK %= f\n\t}\n\n\t// Generate all lucky numbers up to n\n\tluckyNumbers := generateLuckyNumbers(n)\n\n\t// Convert to a set for O(1) lookups\n\tluckySet := make(map[int64]bool)\n\tfor _, num := range luckyNumbers {\n\t\tluckySet[num] = true\n\t}\n\n\t// Count the number of valid positions\n\tcount := 0\n\tfor i := int64(1); i <= n; i++ {\n\t\tif !luckySet[i] {\n\t\t\tcontinue\n\t\t}\n\t\t// Determine the value at position i\n\t\tvar val int64\n\t\tif i <= n-m {\n\t\t\tval = i\n\t\t} else {\n\t\t\tpermIndex := i - (n - m) - 1\n\t\t\tval = perm[permIndex]\n\t\t}\n\t\tif luckySet[val] {\n\t\t\tcount++\n\t\t}\n\t}\n\n\tfmt.Println(count)\n}\n\n// Generate all lucky numbers up to max using BFS\nfunc generateLuckyNumbers(max int64) []int64 {\n\tvar result []int64\n\tqueue := []int64{4, 7}\n\tfor len(queue) > 0 {\n\t\tnum := queue[0]\n\t\tqueue = queue[1:]\n\t\tif num > max {\n\t\t\tcontinue\n\t\t}\n\t\tresult = append(result, num)\n\t\tqueue = append(queue, num*10+4)\n\t\tqueue = append(queue, num*10+7)\n\t}\n\treturn result\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc isLucky(x int) bool {\n\tif x == 0 {\n\t\treturn false\n\t}\n\tfor x > 0 {\n\t\td := x % 10\n\t\tif d != 4 && d != 7 {\n\t\t\treturn false\n\t\t}\n\t\tx /= 10\n\t}\n\treturn true\n}\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n, k int\n\tfmt.Fscan(reader, &n, &k)\n\n\t// Determine the largest m such that m! <= k\n\tm := 0\n\tfact := 1\n\tfor {\n\t\tnextFact := fact * (m + 1)\n\t\tif nextFact > k {\n\t\t\tbreak\n\t\t}\n\t\tfact = nextFact\n\t\tm++\n\t}\n\n\t// Check if k exceeds m!\n\tif k > fact {\n\t\tfmt.Println(-1)\n\t\treturn\n\t}\n\n\t// Generate the k-th permutation of the last m elements\n\tperm := make([]int, m)\n\tavailable := make([]int, n)\n\tfor i := 0; i < n; i++ {\n\t\tavailable[i] = i + 1\n\t}\n\n\tcurrentK := k - 1 // 0-based index\n\tfor i := 0; i < m; i++ {\n\t\t// Calculate (m - i - 1)!\n\t\tf := 1\n\t\tfor j := 1; j <= (m - i - 1); j++ {\n\t\t\tf *= j\n\t\t}\n\t\tindex := currentK / f\n\t\tperm[i] = available[index]\n\t\t// Remove the element at index from available\n\t\tavailable = append(available[:index], available[index+1:]...)\n\t\tcurrentK %= f\n\t}\n\n\t// Count the lucky positions in the permutation\n\tcount := 0\n\tfor i := 0; i < m; i++ {\n\t\tpos := n - m + i + 1 // 1-based position\n\t\tval := perm[i]\n\t\tif isLucky(pos) && isLucky(val) {\n\t\t\tcount++\n\t\t}\n\t}\n\n\tfmt.Println(count)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n, k int64\n\tfmt.Fscan(reader, &n, &k)\n\n\t// Find the maximum m such that m! <= k\n\tm := int64(0)\n\tfact := int64(1)\n\tfor {\n\t\tnextFact := fact * (m + 1)\n\t\tif nextFact > k {\n\t\t\tbreak\n\t\t}\n\t\tm++\n\t\tfact = nextFact\n\t}\n\n\t// Check if k exceeds m!\n\tif m > n || fact < k {\n\t\tfmt.Println(-1)\n\t\treturn\n\t}\n\n\t// Generate the k-th permutation of the last m elements\n\tperm := generatePermutation(m, k)\n\n\t// Generate all lucky numbers up to n\n\tluckyNumbers := generateLuckyNumbers(n)\n\tluckySet := make(map[int64]bool)\n\tfor _, num := range luckyNumbers {\n\t\tluckySet[num] = true\n\t}\n\n\t// Calculate the answer\n\tcount := 0\n\tfor _, pos := range luckyNumbers {\n\t\tif pos > n {\n\t\t\tcontinue\n\t\t}\n\t\tif pos <= n - m {\n\t\t\t// Position is in the fixed part (1 to n-m)\n\t\t\tif luckySet[pos] {\n\t\t\t\tcount++\n\t\t\t}\n\t\t} else {\n\t\t\t// Position is in the permuted part\n\t\t\tidx := pos - (n - m) - 1 // Convert to 0-based index\n\t\t\tif idx >= 0 && idx < m {\n\t\t\t\tval := perm[idx]\n\t\t\t\tif luckySet[val] {\n\t\t\t\t\tcount++\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tfmt.Println(count)\n}\n\n// Generates the k-th permutation (1-based) of numbers 1..m\nfunc generatePermutation(m, k int64) []int64 {\n\tnumbers := make([]int64, m)\n\tfor i := int64(0); i < m; i++ {\n\t\tnumbers[i] = i + 1\n\t}\n\n\tperm := make([]int64, m)\n\tk-- // Convert to 0-based index\n\tfor i := int64(0); i < m; i++ {\n\t\tfact := factorial(m - i - 1)\n\t\tindex := k / fact\n\t\tperm[i] = numbers[index]\n\t\tnumbers = append(numbers[:index], numbers[index+1:]...)\n\t\tk %= fact\n\t}\n\treturn perm\n}\n\nfunc factorial(n int64) int64 {\n\tresult := int64(1)\n\tfor i := int64(2); i <= n; i++ {\n\t\tresult *= i\n\t}\n\treturn result\n}\n\n// Generates all lucky numbers up to max using BFS\nfunc generateLuckyNumbers(max int64) []int64 {\n\tvar lucky []int64\n\tqueue := []int64{4, 7}\n\tfor len(queue) > 0 {\n\t\tnum := queue[0]\n\t\tqueue = queue[1:]\n\t\tif num <= max {\n\t\t\tlucky = append(lucky, num)\n\t\t\tqueue = append(queue, num*10+4, num*10+7)\n\t\t}\n\t}\n\treturn lucky\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n, k int\n\tfmt.Fscan(reader, &n, &k)\n\n\t// Determine the maximum m such that m! <= k\n\tm := 0\n\tfact := 1\n\tfor {\n\t\tnextFact := fact * (m + 1)\n\t\tif nextFact > k {\n\t\t\tbreak\n\t\t}\n\t\tm++\n\t\tfact = nextFact\n\t}\n\n\tif m > n {\n\t\tfmt.Println(-1)\n\t\treturn\n\t}\n\n\t// Generate the k-th permutation of the last m elements\n\tperm := make([]int, m)\n\tavailable := make([]int, m)\n\tfor i := 0; i < m; i++ {\n\t\tavailable[i] = n - m + 1 + i\n\t}\n\n\tk-- // convert to 0-based index\n\tfor i := 0; i < m; i++ {\n\t\tf := 1\n\t\tfor j := 1; j <= m - 1 - i; j++ {\n\t\t\tf *= j\n\t\t}\n\t\tindex := k / f\n\t\tperm[i] = available[index]\n\t\tavailable = append(available[:index], available[index+1:]...)\n\t\tk %= f\n\t}\n\n\t// Generate all lucky numbers up to n\n\tluckyNumbers := generateLuckyNumbers(n)\n\n\t// Create a set for quick lookup\n\tluckySet := make(map[int]bool)\n\tfor _, num := range luckyNumbers {\n\t\tluckySet[num] = true\n\t}\n\n\tcount := 0\n\n\t// Check the first (n - m) elements (1 to n - m)\n\tfor i := 1; i <= n - m; i++ {\n\t\tif luckySet[i] && luckySet[i] {\n\t\t\tcount++\n\t\t}\n\t}\n\n\t// Check the last m elements\n\tfor i := 0; i < m; i++ {\n\t\tposition := n - m + 1 + i\n\t\tvalue := perm[i]\n\t\tif luckySet[position] && luckySet[value] {\n\t\t\tcount++\n\t\t}\n\t}\n\n\tfmt.Println(count)\n}\n\nfunc generateLuckyNumbers(n int) []int {\n\tvar result []int\n\tvar generate func(current int)\n\tgenerate = func(current int) {\n\t\tif current > n {\n\t\t\treturn\n\t\t}\n\t\tif current != 0 {\n\t\t\tresult = append(result, current)\n\t\t}\n\t\tgenerate(current*10 + 4)\n\t\tgenerate(current*10 + 7)\n\t}\n\tgenerate(0)\n\treturn result\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tr := bufio.NewReader(os.Stdin)\n\tvar n, k int64\n\tfmt.Fscan(r, &n, &k)\n\n\t// Find the maximum m such that m! <= k\n\tm := int64(0)\n\tfact := int64(1)\n\tfor {\n\t\tnextFact := fact * (m + 1)\n\t\tif nextFact > k {\n\t\t\tbreak\n\t\t}\n\t\tfact = nextFact\n\t\tm++\n\t}\n\n\tif m > n {\n\t\tfmt.Println(-1)\n\t\treturn\n\t}\n\n\t// Generate the k-th permutation of the last m elements\n\telements := make([]int64, m)\n\tfor i := int64(0); i < m; i++ {\n\t\telements[i] = n - m + 1 + i\n\t}\n\n\tperm := make([]int64, m)\n\tremaining := k - 1 // 0-based index\n\tfor i := int64(0); i < m; i++ {\n\t\tf := factorial(m - 1 - i)\n\t\tidx := remaining / f\n\t\tperm[i] = elements[idx]\n\t\telements = append(elements[:idx], elements[idx+1:]...)\n\t\tremaining %= f\n\t}\n\n\t// Build the full permutation\n\tfullPerm := make([]int64, n)\n\tfor i := int64(0); i < n-m; i++ {\n\t\tfullPerm[i] = i + 1\n\t}\n\tfor i := int64(0); i < m; i++ {\n\t\tfullPerm[n-m+i] = perm[i]\n\t}\n\n\t// Count lucky positions and values\n\tluckySet := generateLuckyNumbers(n)\n\tcount := 0\n\tfor i := int64(0); i < n; i++ {\n\t\tpos := i + 1\n\t\tif isLucky(pos, luckySet) && isLucky(fullPerm[i], luckySet) {\n\t\t\tcount++\n\t\t}\n\t}\n\tfmt.Println(count)\n}\n\nfunc factorial(x int64) int64 {\n\tres := int64(1)\n\tfor i := int64(2); i <= x; i++ {\n\t\tres *= i\n\t}\n\treturn res\n}\n\nfunc generateLuckyNumbers(max int64) map[int64]bool {\n\tlucky := make(map[int64]bool)\n\tqueue := []int64{4, 7}\n\tfor len(queue) > 0 {\n\t\tnum := queue[0]\n\t\tqueue = queue[1:]\n\t\tif num > max {\n\t\t\tcontinue\n\t\t}\n\t\tlucky[num] = true\n\t\tqueue = append(queue, num*10+4, num*10+7)\n\t}\n\treturn lucky\n}\n\nfunc isLucky(num int64, luckySet map[int64]bool) bool {\n\treturn luckySet[num]\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n, k int\n\tfmt.Fscanf(reader, \"%d %d\", &n, &k)\n\n\t// Check if k-th permutation exists\n\tfact := 1\n\tfor i := 1; i <= n; i++ {\n\t\tif fact > 1000000000 {\n\t\t\tbreak\n\t\t}\n\t\tfact *= i\n\t}\n\tif k > fact {\n\t\tfmt.Println(-1)\n\t\treturn\n\t}\n\n\t// Generate the k-th permutation (1-based)\n\tperm := make([]int, n)\n\tfor i := 0; i < n; i++ {\n\t\tperm[i] = i + 1\n\t}\n\n\t// Adjust k to 0-based\n\tk--\n\tfor i := 0; i < n; i++ {\n\t\t// Find the number of remaining elements\n\t\tremaining := n - i\n\t\t// Calculate factorial of (remaining-1)\n\t\tf := 1\n\t\tfor j := 1; j < remaining; j++ {\n\t\t\tf *= j\n\t\t}\n\t\t// Find the index of the element to place at position i\n\t\tindex := k / f\n\t\tk %= f\n\t\t// Swap the element at index with the element at position i\n\t\tperm[i], perm[i+index] = perm[i+index], perm[i]\n\t\t// Sort the remaining elements to maintain order\n\t\tfor j := i + 1; j < n-1; j++ {\n\t\t\tfor l := j + 1; l < n; l++ {\n\t\t\t\tif perm[j] > perm[l] {\n\t\t\t\t\tperm[j], perm[l] = perm[l], perm[j]\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\t// Count lucky positions and lucky numbers\n\tluckyPositions := make(map[int]bool)\n\tluckyNumbers := make(map[int]bool)\n\n\t// Generate all lucky numbers up to n\n\tvar generateLucky func(current int)\n\tgenerateLucky = func(current int) {\n\t\tif current > n {\n\t\t\treturn\n\t\t}\n\t\tif current > 0 {\n\t\t\tluckyNumbers[current] = true\n\t\t\tluckyPositions[current] = true\n\t\t}\n\t\tgenerateLucky(current*10 + 4)\n\t\tgenerateLucky(current*10 + 7)\n\t}\n\tgenerateLucky(0)\n\n\tcount := 0\n\tfor i := 0; i < n; i++ {\n\t\tposition := i + 1\n\t\tif luckyPositions[position] && luckyNumbers[perm[i]] {\n\t\t\tcount++\n\t\t}\n\t}\n\n\tfmt.Println(count)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n, k int\n\tfmt.Fscan(reader, &n, &k)\n\n\t// Find the maximum m such that m! <= k\n\tm := 0\n\tfact := 1\n\tfor {\n\t\tnextFact := fact * (m + 1)\n\t\tif nextFact > k {\n\t\t\tbreak\n\t\t}\n\t\tm++\n\t\tfact = nextFact\n\t}\n\n\t// Check if k exceeds m!\n\tif m < n && k > fact {\n\t\tfmt.Println(-1)\n\t\treturn\n\t}\n\n\t// Generate the k-th permutation of the last m elements\n\tperm := generatePermutation(m, k)\n\n\t// Generate all lucky numbers up to n\n\tluckyNumbers := generateLuckyNumbers(n)\n\n\t// Create a set for quick lookup\n\tluckySet := make(map[int]bool)\n\tfor _, num := range luckyNumbers {\n\t\tluckySet[num] = true\n\t}\n\n\t// Count valid positions\n\tcount := 0\n\tfor i := 0; i < m; i++ {\n\t\tpos := n - m + i + 1\n\t\tval := perm[i]\n\t\tif luckySet[pos] && luckySet[val] {\n\t\t\tcount++\n\t\t}\n\t}\n\n\tfmt.Println(count)\n}\n\nfunc generatePermutation(m, k int) []int {\n\tif m == 0 {\n\t\treturn []int{}\n\t}\n\tnumbers := make([]int, m)\n\tfor i := 0; i < m; i++ {\n\t\tnumbers[i] = i + 1\n\t}\n\tk-- // Convert to 0-based index\n\tperm := []int{}\n\tfact := factorial(m - 1)\n\tfor i := 0; i < m; i++ {\n\t\tindex := k / fact\n\t\tperm = append(perm, numbers[index])\n\t\tnumbers = append(numbers[:index], numbers[index+1:]...)\n\t\tif i < m-1 {\n\t\t\tk %= fact\n\t\t\tfact /= (m - 1 - i)\n\t\t}\n\t}\n\treturn perm\n}\n\nfunc factorial(n int) int {\n\tresult := 1\n\tfor i := 2; i <= n; i++ {\n\t\tresult *= i\n\t}\n\treturn result\n}\n\nfunc generateLuckyNumbers(n int) []int {\n\tvar lucky []int\n\tvar generate func(current int)\n\tgenerate = func(current int) {\n\t\tif current > n {\n\t\t\treturn\n\t\t}\n\t\tif current != 0 {\n\t\t\tlucky = append(lucky, current)\n\t\t}\n\t\tgenerate(current*10 + 4)\n\t\tgenerate(current*10 + 7)\n\t}\n\tgenerate(0)\n\treturn lucky\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 8,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufuf.NewReader(os.Stdin)\n\tvar n, k int\n\tfmt.Fscan(reader, &n, &k)\n\t\n\t// Generate all lucky numbers up to n\n\tluckyNumbers := generateLuckyNumbers(n)\n\t\n\t// Check if k-th permutation exists\n\tfact := 1\n\tfor i := 1; i <= n; i++ {\n\t\tfact *= i\n\t\tif fact > k {\n\t\t\tbreak\n\t\t}\n\t}\n\t\n\tif fact < k {\n\t\tfmt.Println(-1)\n\t\treturn\n\t}\n\t\n\t// Generate k-th permutation (0-indexed)\n\tk--\n\tperm := make([]int, n)\n\tavailable := make([]bool, n+1)\n\tfor i := 1; i <= n; i++ {\n\t\tavailable[i] = true\n\t}\n\t\n\t// Generate the k-th permutation\n\tfor i := 0; i < n; i++ {\n\t\tfact = 1\n\t\tfor j := 1; j <= n-i-1; j++ {\n\t\t\tfact *= j\n\t\t}\n\t\t\n\t\tindex := k / fact\n\t\tk %= fact\n\t\t\n\t\t// Find the index-th available number\n\t\tcount := 0\n\t\tfor j := 1; j <= n; j++ {\n\t\t\tif available[j] {\n\t\t\t\tif count == index {\n\t\t\t\t\tperm[i] = j\n\t\t\t\t\tavailable[j] = false\n\t\t\t\t\tbreak\n\t\t\t\t}\n\t\t\t\tcount++\n\t\t\t}\n\t\t}\n\t}\n\t\n\t// Count positions where both index and value are lucky\n\tluckySet := make(map[int]bool)\n\tfor _, num := range luckyNumbers {\n\t\tluckySet[num] = true\n\t}\n\t\n\tcount := 0\n\tfor i := 0; i < n; i++ {\n\t\tif luckySet[i+1] && luckySet[perm[i]] {\n\t\t\tcount++\n\t\t}\n\t}\n\t\n\tfmt.Println(count)\n}\n\nfunc generateLuckyNumbers(n int) []int {\n\tvar result []int\n\tvar generate func(num int)\n\tgenerate = func(num int) {\n\t\tif num > n {\n\t\t\treturn\n\t\t}\n\t\tif num > 0 {\n\t\t\tresult = append(result, num)\n\t\t}\n\t\tgenerate(num*10 + 4)\n\t\tgenerate(num*10 + 7)\n\t}\n\tgenerate(0)\n\treturn result\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 9,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n, k int64\n\tfmt.Fscan(in, &n, &k)\n\n\t// Determine the maximum m such that m! < k\n\tvar m int64 = 0\n\tfact := int64(1)\n\tfor {\n\t\tnextFact := fact * (m + 1)\n\t\tif nextFact >= k {\n\t\t\tbreak\n\t\t}\n\t\tm++\n\t\tfact = nextFact\n\t}\n\n\t// Check if k exceeds the maximum possible permutations\n\tif m >= n {\n\t\tfmt.Println(-1)\n\t\treturn\n\t}\n\n\t// Generate the k-th permutation of the last m elements\n\tperm := make([]int64, m)\n\tfor i := 0; i < int(m); i++ {\n\t\tperm[i] = n - m + 1 + int64(i)\n\t}\n\n\tk-- // Convert to 0-based index\n\tfact = 1\n\tfor i := 1; i <= int(m); i++ {\n\t\tfact *= i\n\t}\n\tfor i := 0; i < int(m); i++ {\n\t\tfact /= (m - int64(i))\n\t\tindex := k / fact\n\t\tk %= fact\n\t\tperm[i], perm[index] = perm[index], perm[i]\n\t}\n\n\t// Count lucky positions and numbers\n\tluckySet := make(map[int64]bool)\n\tvar luckyNumbers []int64\n\tvar generate func(current int64)\n\tgenerate = func(current int64) {\n\t\tif current > n {\n\t\t\treturn\n\t\t}\n\t\tif current > 0 {\n\t\t\tluckySet[current] = true\n\t\t\tluckyNumbers = append(luckyNumbers, current)\n\t\t}\n\t\tgenerate(current*10 + 4)\n\t\tgenerate(current*10 + 7)\n\t}\n\tgenerate(0)\n\n\tcount := 0\n\tfor _, num := range luckyNumbers {\n\t\tif num > n {\n\t\t\tcontinue\n\t\t}\n\t\tif num > n-m {\n\t\t\t// Position is in the fixed part (1..n-m)\n\t\t\tif num == num { // Always true, but check if the number is in the fixed part\n\t\t\t\t// The number at position num is num itself\n\t\t\t\tif luckySet[num] {\n\t\t\t\t\tcount++\n\t\t\t\t}\n\t\t\t}\n\t\t} else {\n\t\t\t// Position is in the permuted part\n\t\t\tposInPerm := num - (n - m)\n\t\t\tif posInPerm >= 1 && posInPerm <= m {\n\t\t\t\tval := perm[posInPerm-1]\n\t\t\t\tif luckySet[val] {\n\t\t\t\t\tcount++\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tfmt.Println(count)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 10,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc isLucky(x int) bool {\n\tif x == 0 {\n\t\treturn false\n\t}\n\tfor x > 0 {\n\t\td := x % 10\n\t\tif d != 4 && d != 7 {\n\t\t\treturn false\n\t\t}\n\t\tx /= 10\n\t}\n\treturn true\n}\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n, k int\n\tfmt.Fscan(in, &n, &k)\n\n\t// Find the largest m such that m! <= k\n\tm := 1\n\tfact := 1\n\tfor {\n\t\tnextFact := fact * (m + 1)\n\t\tif nextFact > k {\n\t\t\tbreak\n\t\t}\n\t\tfact = nextFact\n\t\tm++\n\t}\n\n\tif m > n {\n\t\tfmt.Println(-1)\n\t\treturn\n\t}\n\n\t// Generate the k-th permutation (1-based) of the last m elements\n\tperm := make([]int, m)\n\tfor i := 0; i < m; i++ {\n\t\tperm[i] = n - m + 1 + i\n\t}\n\n\tk-- // convert to 0-based index\n\tfor i := 0; i < m; i++ {\n\t\tf := 1\n\t\tfor j := 2; j <= m-i-1; j++ {\n\t\t\tf *= j\n\t\t}\n\t\tidx := k / f\n\t\tk %= f\n\t\tperm[i], perm[idx] = perm[idx], perm[i]\n\t}\n\n\t// Count lucky positions in the permutation part\n\tcount := 0\n\tfor i := 0; i < m; i++ {\n\t\tpos := n - m + 1 + i\n\t\tif isLucky(pos) && isLucky(perm[i]) {\n\t\t\tcount++\n\t\t}\n\t}\n\n\tfmt.Println(count)\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 11,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n, k int\n\tfmt.Fscanf(reader, \"%d %d\", &n, &k)\n\n\t// Determine the maximum m such that m! <= k\n\tm := 0\n\tfact := 1\n\tfor {\n\t\tnextFact := fact * (m + 1)\n\t\tif nextFact > k {\n\t\t\tbreak\n\t\t}\n\t\tfact = nextFact\n\t\tm++\n\t}\n\n\t// Check if k exceeds m!\n\tif k > fact {\n\t\tfmt.Println(-1)\n\t\treturn\n\t}\n\n\t// Generate the k-th permutation (0-based) of the last m elements\n\tperm := make([]int, m)\n\tavailable := make([]int, m)\n\tfor i := 0; i < m; i++ {\n\t\tavailable[i] = n - m + 1 + i\n\t}\n\n\tk-- // Convert to 0-based index\n\tfor i := 0; i < m; i++ {\n\t\tfact = fact / (m - i)\n\t\tindex := k / fact\n\t\tperm[i] = available[index]\n\t\tavailable = append(available[:index], available[index+1:]...)\n\t\tk = k % fact\n\t}\n\n\t// Count lucky positions and values\n\tluckyPositions := make(map[int]bool)\n\tluckyValues := make(map[int]bool)\n\n\t// Check positions 1 to n for lucky numbers\n\tfor i := 1; i <= n; i++ {\n\t\tif isLucky(i) {\n\t\t\tluckyPositions[i] = true\n\t\t}\n\t}\n\n\t// Check the permutation values for lucky numbers\n\tfor _, num := range perm {\n\t\tif isLucky(num) {\n\t\t\tluckyValues[num] = true\n\t\t}\n\t}\n\n\t// Count the intersection\n\tcount := 0\n\tfor pos := range luckyPositions {\n\t\tif pos > n-m {\n\t\t\tcontinue\n\t\t}\n\t\t// The position is in the first (n-m) elements, which are fixed as 1,2,...,n-m\n\t\tif isLucky(pos) && isLucky(pos) {\n\t\t\tcount++\n\t\t}\n\t}\n\tfor i := 0; i < m; i++ {\n\t\tpos := n - m + 1 + i\n\t\tif luckyPositions[pos] && luckyValues[perm[i]] {\n\t\t\tcount++\n\t\t}\n\t}\n\n\tfmt.Println(count)\n}\n\nfunc isLucky(x int) bool {\n\tif x == 0 {\n\t\treturn false\n\t}\n\tfor x > 0 {\n\t\td := x % 10\n\t\tif d != 4 && d != 7 {\n\t\t\treturn false\n\t\t}\n\t\tx /= 10\n\t}\n\treturn true\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 12,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n, k int\n\tfmt.Fscan(reader, &n, &k)\n\n\t// Find the maximum m such that m! <= k\n\tm := 0\n\tfact := 1\n\tfor {\n\t\tnextFact := fact * (m + 1)\n\t\tif nextFact > k {\n\t\t\tbreak\n\t\t}\n\t\tfact = nextFact\n\t\tm++\n\t}\n\n\tif m > n {\n\t\tfmt.Println(-1)\n\t\treturn\n\t}\n\n\t// Generate the k-th permutation of the last m elements\n\tperm := make([]int, m)\n\tavailable := make([]int, m)\n\tfor i := 0; i < m; i++ {\n\t\tavailable[i] = n - m + 1 + i\n\t}\n\n\tk-- // convert to 0-based index\n\tfor i := 0; i < m; i++ {\n\t\tf := 1\n\t\tfor j := 1; j <= m - i - 1; j++ {\n\t\t\tf *= j\n\t\t}\n\t\tindex := k / f\n\t\tperm[i] = available[index]\n\t\tavailable = append(available[:index], available[index+1:]...)\n\t\tk %= f\n\t}\n\n\t// Count lucky positions and values\n\tluckyPositions := make(map[int]bool)\n\tmaxPossible := n\n\tfor num := 4; num <= maxPossible; num++ {\n\t\tif isLucky(num) {\n\t\t\tluckyPositions[num] = true\n\t\t}\n\t}\n\n\tcount := 0\n\tfor i := 1; i <= n; i++ {\n\t\tvar val int\n\t\tif i <= n-m {\n\t\t\tval = i\n\t\t} else {\n\t\t\tval = perm[i-(n-m)-1]\n\t\t}\n\t\tif luckyPositions[i] && isLucky(val) {\n\t\t\tcount++\n\t\t}\n\t}\n\n\tfmt.Println(count)\n}\n\nfunc isLucky(num int) bool {\n\tfor num > 0 {\n\t\td := num % 10\n\t\tif d != 4 && d != 7 {\n\t\t\treturn false\n\t\t}\n\t\tnum /= 10\n\t}\n\treturn true\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 13,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n, k int\n\tfmt.Fscan(reader, &n, &k)\n\n\t// Check if k-th permutation exists\n\t// The number of permutations is n! which must be >= k\n\t// But for large n, n! is huge, so we need to check if k <= n!\n\t// However, for n >= 1, the number of permutations is n!\n\t// We need to check if k <= n!\n\t// But n can be up to 1e9, so we can't compute n! directly\n\t// Instead, we note that for n >= 13, n! > 1e9, so k <= 1e9 < n!\n\t// For n < 13, we compute n! and check if k <= n!\n\n\t// First, determine the maximum m such that m! <= k\n\t// Actually, we need to find the largest m where m! < k\n\t// The first m elements will be in their original positions\n\t// The remaining elements (from position m+1 to n) will be permuted\n\n\t// Let's find the maximum m such that m! < k\n\t// For n >= 13, since 13! > 1e9, all elements from 1 to n-13 will be in their original positions\n\t// and the last 13 elements will be permuted\n\n\t// Actually, let's think differently:\n\t// The k-th permutation of n elements:\n\t// If n is large enough that n! > k, then the first (n - m) elements stay in place\n\t// where m is the largest number such that m! <= k\n\t// Wait, that's not quite right either.\n\n\t// Let me reconsider:\n\t// For the k-th permutation (1-indexed), we can think of it as:\n\t// The first elements that don't change are those where the remaining elements\n\t// can still form k permutations.\n\n\t// Actually, the key insight is:\n\t// If n! < k, then the k-th permutation doesn't exist.\n\t// For n >= 13, n! is astronomically large (> 1e9), so k <= 1e9 means it always exists.\n\t// For n < 13, we need to check if k <= n!.\n\n\t// Let's compute factorials up to 12!\n\tfact := make([]int, 13)\n\tfact[0] = 1\n\tfor i := 1; i <= 12; i++ {\n\t\tfact[i] = fact[i-1] * i\n\t}\n\n\t// Check if k-th permutation exists\n\tif n <= 12 && k > fact[n] {\n\t\tfmt.Println(-1)\n\t\treturn\n\t}\n\n\t// Now, for the actual permutation:\n\t// If n is large (say n > 12), then the first (n - 12) elements are in their natural order\n\t// because 12! > 1e9 >= k, so we can't even reach permutations that change those elements.\n\t// The last 12 elements are permuted.\n\n\t// Wait, let me think again.\n\t// The k-th permutation: we use the factorial number system.\n\t// For position i (0-indexed), we determine which element to place.\n\t// The number of permutations of the remaining (n-i-1) elements is (n-i-1)!.\n\t// We find how many full blocks of (n-i-1)! fit into k-1 (0-indexed).\n\n\t// But for very large n, (n-i-1)! will be huge, so the first elements won't change.\n\t// Specifically, if (n-i-1)! > k-1, then we place the smallest available element.\n\n\t// So the elements that change are only the last few, where (n-i-1)! <= k-1.\n\t// Since k <= 1e9, and 12! = 479001600, 13! = 6227020800,\n\t// we need at most the last 13 elements to be permuted.\n\n\t// Let's find how many elements from the end are affected\n\t// We need the largest m such that m! <= k-1 (0-indexed k)\n\t// Actually, we need to find the smallest m such that m! >= k\n\t// Then the last m elements are permuted, and the rest stay in place.\n\n\t// Hmm, let me think about this more carefully with the algorithm.\n\n\t// The standard algorithm for finding the k-th permutation (0-indexed):\n\t// k = k - 1 (convert to 0-indexed)\n\t// For each position i from 0 to n-1:\n\t//   f = (n-i-1)!\n\t//   index = k / f\n\t//   select the index-th unused element\n\t//   k = k % f\n\n\t// For large n, when (n-i-1)! > k, index will be 0, meaning we select the smallest unused element.\n\t// This continues until (n-i-1)! <= k.\n\n\t// So the elements that change are only the last few.\n\t// Let's find the point where changes start.\n\n\t// Convert k to 0-indexed\n\tk--\n\n\t// Find the number of elements that will be permuted\n\t// These are the last 'm' elements where m is the smallest such that m! > k\n\t// Actually, m is the largest such that (m-1)! <= k\n\t// No wait, let me think again.\n\n\t// If we have n elements and k (0-indexed), the first element that changes is at position\n\t// where (n-1-i)! <= k. \n\t// For the first positions, (n-1)!, (n-2)!, etc. are all > k (for large n),\n\t// so those elements stay in place.\n\n\t// Let's find the largest m such that m! <= k\n\t// Then the last (m+1) elements are permuted.\n\t// Actually no. Let me trace through an example.\n\n\t// n=7, k=4 (1-indexed), so k=3 (0-indexed)\n\t// Elements: [1,2,3,4,5,6,7]\n\t// Position 0: f = 6! = 720 > 3, so index = 0, select 1, k stays 3\n\t// Position 1: f = 5! = 120 > 3, so index = 0, select 2, k stays 3\n\t// Position 2: f = 4! = 24 > 3, so index = 0, select 3, k stays 3\n\t// Position 3: f = 3! = 6 > 3, so index = 0, select 4, k stays 3\n\t// Position 4: f = 2! = 2 <= 3, so index = 3/2 = 1, select 6 (2nd unused), k = 3%2 = 1\n\t// Position 5: f = 1! = 1 <= 1, so index = 1/1 = 1, select 7 (2nd unused), k = 1%1 = 0\n\t// Position 6: f = 0! = 1, index = 0, select 5 (1st unused)\n\t// Result: [1,2,3,4,6,7,5]\n\n\t// So the elements that change are from position 4 onwards (0-indexed).\n\t// The number of changing elements is related to when f becomes <= k.\n\n\t// For our problem, we need to:\n\t// 1. Determine which elements change (the last m elements)\n\t// 2. Generate the permutation of those m elements\n\t// 3. Check which positions i have both i and a[i] as lucky numbers\n\n\t// Let's find m: the number of elements that change\n\t// m is the smallest number such that m! > k (0-indexed)\n\t// No, m is such that (m-1)! <= k but m! > k? No...\n\n\t// Actually, looking at the example:\n\t// k=3 (0-indexed), and the changes start at position 4 (0-indexed)\n\t// At position 4, f = 2! = 2 <= 3\n\t// At position 3, f = 3! = 6 > 3\n\t// So changes start when f = (n-1-i)! <= k\n\n\t// The number of changing elements is the number of positions where f <= k\n\t// For position i (0-indexed), f = (n-1-i)!\n\t// We need (n-1-i)! <= k\n\t// The smallest i where this happens: n-1-i is the largest value where fact[n-1-i] <= k\n\t// Let's say n-1-i = m, so i = n-1-m\n\t// The number of changing elements is n - i = n - (n-1-m) = m+1\n\n\t// So we need to find the largest m such that m! <= k\n\t// Then the last (m+1) elements are permuted.\n\n\t// Wait, in the example: k=3, the largest m where m! <= 3 is m=2 (2!=2<=3, 3!=6>3)\n\t// So the last 3 elements are permuted? But in the example, positions 4,5,6 (0-indexed) change,\n\t// which is 3 elements. That matches!\n\n\t// But wait, for n=7, the last 3 elements are positions 4,5,6.\n\t// The first 4 elements (positions 0,1,2,3) stay in place.\n\t// So the number of unchanged elements is n - (m+1) = 7 - 3 = 4. Correct!\n\n\t// So the algorithm is:\n\t// 1. Find the largest m such that m! <= k (0-indexed)\n\t// 2. The last (m+1) elements are permuted\n\t// 3. The first (n - m - 1) elements stay in place\n\n\t// But we need to be careful: if k = 0, then m = 0 (0! = 1 > 0, so actually m doesn't exist)\n\t// In that case, no elements change (the identity permutation).\n\n\t// Let's handle this:\n\t// If k = 0, the permutation is [1, 2, ..., n], and we just count lucky positions.\n\t// Otherwise, find the largest m such that m! <= k.\n\n\t// Actually, let me reconsider. We want the largest m such that m! <= k.\n\t// For k=0: no m satisfies m! <= 0 (since 0! = 1), so m = -1, meaning 0 elements change.\n\t// For k=1: 0! = 1 <= 1, 1! = 1 <= 1, 2! = 2 > 1, so m = 1, meaning 2 elements change.\n\t// For k=3: 0! = 1 <= 3, 1! = 1 <= 3, 2! = 2 <= 3, 3! = 6 > 3, so m = 2, meaning 3 elements change.\n\n\t// This seems right. Let me code it up.\n\n\t// Find the largest m such that m! <= k\n\tm := -1\n\tfor i := 0; i <= 12; i++ {\n\t\tif fact[i] <= k {\n\t\t\tm = i\n\t\t} else {\n\t\t\tbreak\n\t\t}\n\t}\n\n\t// The last (m+1) elements are permuted\n\t// The first (n - m - 1) elements stay in place\n\t// If m = -1, no elements change\n\n\t// Generate the permutation of the last (m+1) elements\n\t// These elements are: (n - m), (n - m + 1), ..., n\n\t// We need to find the k-th permutation (0-indexed) of these elements\n\n\t// Actually, let me reconsider the algorithm.\n\t// The standard algorithm uses the factorial number system.\n\t// For the last (m+1) elements, we generate the k-th permutation.\n\n\t// But we need to be more careful. Let me re-examine.\n\n\t// The full algorithm for k-th permutation (0-indexed) of [1, 2, ..., n]:\n\t// k_remaining = k\n\t// available = [1, 2, ..., n]\n\t// result = []\n\t// for i from 0 to n-1:\n\t//   f = (n-1-i)!\n\t//   index = k_remaining / f\n\t//   result.append(available[index])\n\t//   available.remove(available[index])\n\t//   k_remaining = k_remaining % f\n\n\t// For large n, when f > k_remaining, index = 0, so we always pick the first available.\n\t// This means the first (n - m - 1) elements are [1, 2, ..., n-m-1] in order.\n\t// The last (m+1) elements are a permutation of [n-m, n-m+1, ..., n].\n\n\t// So we only need to generate the permutation of the last (m+1) elements.\n\n\t// Let's generate the permutation of the last (m+1) elements\n\t// Elements: [n-m, n-m+1, ..., n]\n\t// k-th permutation (0-indexed) of these (m+1) elements\n\n\t// But wait, we need to use the correct k value.\n\t// After the first (n-m-1) elements are fixed, the remaining k is still the original k\n\t// because all the divisions resulted in index=0 and k_remaining stayed the same.\n\n\t// Actually no. Let me re-trace:\n\t// For positions 0 to (n-m-2), f > k, so index = 0, k_remaining stays k.\n\t// At position (n-m-1), f = m! <= k, so index = k / m!, k_remaining = k % m!\n\t// And so on.\n\n\t// So the k value for the last (m+1) elements is the original k.\n\n\t// Let's generate the permutation\n\tpermSize := m + 1\n\tif permSize <= 0 {\n\t\t// No permutation needed, identity permutation\n\t\t// Count lucky positions in [1, 2, ..., n]\n\t\tfmt.Println(countLuckyPositions(n))\n\t\treturn\n\t}\n\n\t// Generate the k-th permutation of [n-m, n-m+1, ..., n]\n\telements := make([]int, permSize)\n\tfor i := 0; i < permSize; i++ {\n\t\telements[i] = n - m + i\n\t}\n\n\tkRemaining := k\n\tpermuted := make([]int, permSize)\n\tfor i := 0; i < permSize; i++ {\n\t\tf := fact[permSize-1-i]\n\t\tindex := kRemaining / f\n\t\tpermuted[i] = elements[index]\n\t\t// Remove elements[index] from elements\n\t\telements = append(elements[:index], elements[index+1:]...)\n\t\tkRemaining = kRemaining % f\n\t}\n\n\t// Now, the full permutation is:\n\t// [1, 2, ..., n-m-1] followed by permuted[0], permuted[1], ..., permuted[m]\n\t// The positions that change are from (n-m) to n (1-indexed)\n\n\t// We need to count positions i (1-indexed) where both i and a[i] are lucky numbers.\n\t// For positions 1 to (n-m-1), a[i] = i, so we need i to be lucky.\n\t// For positions (n-m) to n, a[i] = permuted[i - (n-m)].\n\n\t// Count lucky positions in the unchanged part\n\tcount := countLuckyPositions(n - m - 1)\n\n\t// Count lucky positions in the permuted part\n\tfor i := 0; i < permSize; i++ {\n\t\tpos := n - m + i // 1-indexed position\n\t\tval := permuted[i]\n\t\tif isLucky(pos) && isLucky(val) {\n\t\t\tcount++\n\t\t}\n\t}\n\n\tfmt.Println(count)\n}\n\nfunc isLucky(x int) bool {\n\tif x <= 0 {\n\t\treturn false\n\t}\n\tfor x > 0 {\n\t\td := x % 10\n\t\tif d != 4 && d != 7 {\n\t\t\treturn false\n\t\t}\n\t\tx /= 10\n\t}\n\treturn true\n}\n\nfunc countLuckyPositions(n int) int {\n\tif n <= 0 {\n\t\treturn 0\n\t}\n\tcount := 0\n\t// Generate all lucky numbers up to n\n\t// Lucky numbers are composed of digits 4 and 7\n\t// We can generate them using BFS/DFS\n\tluckyNumbers := generateLuckyNumbers(n)\n\tfor _, ln := range luckyNumbers {\n\t\tif ln <= n {\n\t\t\tcount++\n\t\t}\n\t}\n\treturn count\n}\n\nfunc generateLuckyNumbers(limit int) []int {\n\tvar result []int\n\t// Generate using BFS\n\tqueue := []int{4, 7}\n\tfor len(queue) > 0 {\n\t\tnum := queue[0]\n\t\tqueue = queue[1:]\n\t\tif num > limit {\n\t\t\tcontinue\n\t\t}\n\t\tresult = append(result, num)\n\t\tqueue = append(queue, num*10+4, num*10+7)\n\t}\n\treturn result\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 14,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tr := bufio.NewReader(os.Stdin)\n\tvar n, k int64\n\tfmt.Fscan(r, &n, &k)\n\n\t// Find the largest m such that m! < k\n\tvar m int64 = 0\n\tfact := int64(1)\n\tfor {\n\t\tnextFact := fact * (m + 1)\n\t\tif nextFact >= k {\n\t\t\tbreak\n\t\t}\n\t\tfact = nextFact\n\t\tm++\n\t}\n\n\tif m > n {\n\t\tfmt.Println(-1)\n\t\treturn\n\t}\n\n\t// Generate the k-th permutation of the last m elements\n\tperm := make([]int64, m)\n\tfor i := 0; i < int(m); i++ {\n\t\tperm[i] = n - m + 1 + int64(i)\n\t}\n\n\tk--\n\tfor i := int(m) - 1; i >= 0; i-- {\n\t\tf := factorial(int64(i))\n\t\tidx := k / f\n\t\tk %= f\n\t\tperm[i], perm[len(perm)-1-int(m-1-i)] = perm[len(perm)-1-int(m-1-i)], perm[i]\n\t}\n\n\t// Count lucky positions and check if their values are lucky\n\tluckyPositions := make(map[int64]bool)\n\tcount := 0\n\tfor i := int64(1); i <= n; i++ {\n\t\tif isLucky(i) {\n\t\t\tluckyPositions[i] = true\n\t\t}\n\t}\n\n\t// Check the first (n - m) elements (they are in their original positions)\n\tfor i := int64(1); i <= n-m; i++ {\n\t\tif luckyPositions[i] && isLucky(i) {\n\t\t\tcount++\n\t\t}\n\t}\n\n\t// Check the last m elements (they are in the permutation)\n\tfor i := int64(0); i < m; i++ {\n\t\tpos := n - m + 1 + i\n\t\tif luckyPositions[pos] && isLucky(perm[i]) {\n\t\t\tcount++\n\t\t}\n\t}\n\n\tfmt.Println(count)\n}\n\nfunc factorial(n int64) int64 {\n\tif n <= 1 {\n\t\treturn 1\n\t}\n\treturn n * factorial(n-1)\n}\n\nfunc isLucky(n int64) bool {\n\tif n == 0 {\n\t\treturn false\n\t}\n\tfor n > 0 {\n\t\td := n % 10\n\t\tif d != 4 && d != 7 {\n\t\t\treturn false\n\t\t}\n\t\tn /= 10\n\t}\n\treturn true\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 15,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n, k int64\n\tfmt.Fscan(reader, &n, &k)\n\n\t// Find the maximum m such that m! <= k\n\tm := int64(1)\n\tfact := int64(1)\n\tfor {\n\t\tnextFact := fact * (m + 1)\n\t\tif nextFact > k {\n\t\t\tbreak\n\t\t}\n\t\tfact = nextFact\n\t\tm++\n\t}\n\n\tif m > n {\n\t\tfmt.Println(-1)\n\t\treturn\n\t}\n\n\t// Generate the permutation for the last m elements\n\tperm := generatePermutation(m, k)\n\n\t// Check for lucky positions and elements\n\tluckyPositions := generateLuckyNumbers(n)\n\tluckyElements := generateLuckyNumbers(n)\n\n\tcount := 0\n\tfor i := int64(0); i < m; i++ {\n\t\tpos := n - m + i + 1\n\t\tif isLucky(pos) && isLucky(perm[i]) {\n\t\t\tcount++\n\t\t}\n\t}\n\n\t// Check the first (n - m) elements\n\tfor i := int64(1); i <= n-m; i++ {\n\t\tif isLucky(i) && isLucky(i) {\n\t\t\tcount++\n\t\t}\n\t}\n\n\tfmt.Println(count)\n}\n\nfunc generatePermutation(m, k int64) []int64 {\n\tnumbers := make([]int64, m)\n\tfor i := int64(0); i < m; i++ {\n\t\tnumbers[i] = i + 1\n\t}\n\n\tk--\n\tperm := make([]int64, m)\n\tfact := factorial(m - 1)\n\tfor i := int64(0); i < m; i++ {\n\t\tindex := k / fact\n\t\tperm[i] = numbers[index]\n\t\tnumbers = append(numbers[:index], numbers[index+1:]...)\n\t\tif i < m-1 {\n\t\t\tk %= fact\n\t\t\tfact /= (m - 1 - i)\n\t\t}\n\t}\n\treturn perm\n}\n\nfunc factorial(n int64) int64 {\n\tresult := int64(1)\n\tfor i := int64(2); i <= n; i++ {\n\t\tresult *= i\n\t}\n\treturn result\n}\n\nfunc isLucky(x int64) bool {\n\tfor x > 0 {\n\t\tdigit := x % 10\n\t\tif digit != 4 && digit != 7 {\n\t\t\treturn false\n\t\t}\n\t\tx /= 10\n\t}\n\treturn true\n}\n\nfunc generateLuckyNumbers(limit int64) []int64 {\n\tvar lucky []int64\n\tqueue := []int64{4, 7}\n\tfor len(queue) > 0 {\n\t\tnum := queue[0]\n\t\tqueue = queue[1:]\n\t\tif num > limit {\n\t\t\tcontinue\n\t\t}\n\t\tlucky = append(lucky, num)\n\t\tqueue = append(queue, num*10+4, num*10+7)\n\t}\n\treturn lucky\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 16,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n, k int\n\tfmt.Fscan(in, &n, &k)\n\n\t// Determine the size of the suffix that can be permuted.\n\t// The first (n - m) elements stay fixed; the last m elements are permuted.\n\tm := 0\n\tfact := 1\n\tfor {\n\t\tif fact >= k {\n\t\t\tbreak\n\t\t}\n\t\tm++\n\t\tif m > n {\n\t\t\tbreak\n\t\t}\n\t\tfact *= m\n\t}\n\n\tif m > n {\n\t\tfmt.Println(-1)\n\t\treturn\n\t}\n\n\t// Generate the k-th permutation (0-indexed) of the last m elements.\n\tbase := n - m\n\tperm := make([]int, m)\n\tfor i := 0; i < m; i++ {\n\t\tperm[i] = base + 1 + i\n\t}\n\n\tk-- // convert to 0-based index\n\tfor i := 0; i < m; i++ {\n\t\tf := 1\n\t\tfor j := 2; j <= m-1-i; j++ {\n\t\t\tf *= j\n\t\t}\n\t\tidx := k / f\n\t\tk %= f\n\t\tperm[i], perm[i+idx] = perm[i+idx], perm[i]\n\t}\n\n\t// Build the full permutation.\n\ta := make([]int, n+1) // 1-indexed\n\tfor i := 1; i <= base; i++ {\n\t\ta[i] = i\n\t}\n\tfor i := 0; i < m; i++ {\n\t\ta[base+1+i] = perm[i]\n\t}\n\n\t// Count positions where both i and a[i] are lucky numbers.\n\tcount := 0\n\tfor i := 1; i <= n; i++ {\n\t\tif isLucky(i) && isLucky(a[i]) {\n\t\t\tcount++\n\t\t}\n\t}\n\tfmt.Println(count)\n}\n\nfunc isLucky(x int) bool {\n\tif x <= 0 {\n\t\treturn false\n\t}\n\tfor x > 0 {\n\t\td := x % 10\n\t\tif d != 4 && d != 7 {\n\t\t\treturn false\n\t\t}\n\t\tx /= 10\n\t}\n\treturn true\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 17,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n, k int\n\tfmt.Fscan(reader, &n, &k)\n\n\t// Find the maximum m such that m! <= k\n\tm := 0\n\tfact := 1\n\tfor {\n\t\tnextFact := fact * (m + 1)\n\t\tif nextFact > k {\n\t\t\tbreak\n\t\t}\n\t\tfact = nextFact\n\t\tm++\n\t}\n\n\tif m > n {\n\t\tfmt.Println(-1)\n\t\treturn\n\t}\n\n\t// Generate the k-th permutation (0-based) of the last m elements\n\tperm := generatePermutation(m, k-1)\n\n\t// Count lucky numbers up to n\n\tluckyCount := countLucky(n)\n\n\t// Count lucky numbers in the permutation part (last m elements)\n\tpermLucky := 0\n\tfor _, num := range perm {\n\t\tif isLucky(num) {\n\t\t\tpermLucky++\n\t\t}\n\t}\n\n\t// Count lucky numbers in the first (n - m) elements (1 to n-m)\n\tnonPermLucky := countLucky(n - m)\n\n\t// Total answer is the sum of lucky positions in both parts\n\tfmt.Println(luckyCount + permLucky - nonPermLucky)\n}\n\nfunc generatePermutation(m, k int) []int {\n\tnumbers := make([]int, m)\n\tfor i := 0; i < m; i++ {\n\t\tnumbers[i] = i + 1\n\t}\n\tperm := []int{}\n\tfor i := 0; i < m; i++ {\n\t\tfact := factorial(m - 1 - i)\n\t\tindex := k / fact\n\t\tk %= fact\n\t\tperm = append(perm, numbers[index])\n\t\tnumbers = append(numbers[:index], numbers[index+1:]...)\n\t}\n\treturn perm\n}\n\nfunc factorial(x int) int {\n\tres := 1\n\tfor i := 1; i <= x; i++ {\n\t\tres *= i\n\t}\n\treturn res\n}\n\nfunc isLucky(x int) bool {\n\tif x == 0 {\n\t\treturn false\n\t}\n\tfor x > 0 {\n\t\td := x % 10\n\t\tif d != 4 && d != 7 {\n\t\t\treturn false\n\t\t}\n\t\tx /= 10\n\t}\n\treturn true\n}\n\nfunc countLucky(x int) int {\n\tif x < 4 {\n\t\treturn 0\n\t}\n\tcount := 0\n\t// Generate all lucky numbers up to x using BFS\n\tqueue := []int{4, 7}\n\tfor len(queue) > 0 {\n\t\tnum := queue[0]\n\t\tqueue = queue[1:]\n\t\tif num <= x {\n\t\t\tcount++\n\t\t\tqueue = append(queue, num*10+4, num*10+7)\n\t\t}\n\t}\n\treturn count\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 18,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tin := bufio.NewReader(os.Stdin)\n\tvar n, k int\n\tfmt.Fscan(in, &n, &k)\n\n\t// Determine the maximum m such that m! <= k\n\tm := 0\n\tfact := 1\n\tfor {\n\t\tnextFact := fact * (m + 1)\n\t\tif nextFact > k {\n\t\t\tbreak\n\t\t}\n\t\tfact = nextFact\n\t\tm++\n\t}\n\n\tif m > n {\n\t\tfmt.Println(-1)\n\t\treturn\n\t}\n\n\t// Generate the k-th permutation of the last m elements\n\tperm := generateKthPermutation(m, k)\n\n\t// Compute the answer\n\tluckyPositions := generateLuckyNumbers(n)\n\tluckyNumbers := generateLuckyNumbers(n)\n\n\tcount := 0\n\n\t// Check positions 1 to n-m (fixed part)\n\tfor _, pos := range luckyPositions {\n\t\tif pos <= n-m {\n\t\t\tval := pos\n\t\t\tif isLucky(val) {\n\t\t\t\tcount++\n\t\t\t}\n\t\t}\n\t}\n\n\t// Check positions in the permutation part (n-m+1 to n)\n\tfor i := 0; i < m; i++ {\n\t\tpos := (n - m + 1) + i\n\t\tval := perm[i]\n\t\tif isLucky(pos) && isLucky(val) {\n\t\t\tcount++\n\t\t}\n\t}\n\n\tfmt.Println(count)\n}\n\nfunc generateKthPermutation(m, k int) []int {\n\telements := make([]int, m)\n\tfor i := 0; i < m; i++ {\n\t\telements[i] = i + 1\n\t}\n\n\tk-- // convert to 0-based index\n\tperm := []int{}\n\tfact := factorial(m - 1)\n\tfor i := m - 1; i >= 0; i-- {\n\t\tindex := k / fact\n\t\tperm = append(perm, elements[index])\n\t\telements = append(elements[:index], elements[index+1:]...)\n\t\tif i > 0 {\n\t\t\tk %= fact\n\t\t\tfact /= i\n\t\t}\n\t}\n\treturn perm\n}\n\nfunc factorial(n int) int {\n\tresult := 1\n\tfor i := 2; i <= n; i++ {\n\t\tresult *= i\n\t}\n\treturn result\n}\n\nfunc generateLuckyNumbers(max int) []int {\n\tlucky := []int{}\n\tqueue := []int{4, 7}\n\tfor len(queue) > 0 {\n\t\tnum := queue[0]\n\t\tqueue = queue[1:]\n\t\tif num > max {\n\t\t\tcontinue\n\t\t}\n\t\tlucky = append(lucky, num)\n\t\tqueue = append(queue, num*10+4, num*10+7)\n\t}\n\treturn lucky\n}\n\nfunc isLucky(num int) bool {\n\tif num == 0 {\n\t\treturn false\n\t}\n\tfor num > 0 {\n\t\tdigit := num % 10\n\t\tif digit != 4 && digit != 7 {\n\t\t\treturn false\n\t\t}\n\t\tnum /= 10\n\t}\n\treturn true\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 19,
+                "message": {
+                    "content": "```go\npackage main\n\nimport (\n\t\"bufio\"\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tr := bufio.NewReader(os.Stdin)\n\tvar n, k int64\n\tfmt.Fscan(r, &n, &k)\n\n\t// Find the largest m such that m! < k\n\t// The last m elements will be permuted; the rest stay in order.\n\tm := int64(0)\n\tfact := int64(1)\n\tfor fact < k {\n\t\tm++\n\t\tfact *= m\n\t}\n\n\tif m > n {\n\t\tfmt.Println(-1)\n\t\treturn\n\t}\n\n\t// Generate the k-th permutation of the last m elements (1-indexed k)\n\tperm := make([]int64, m)\n\tfor i := range perm {\n\t\tperm[i] = n - m + 1 + int64(i)\n\t}\n\n\tk-- // convert to 0-indexed\n\tfact = 1\n\tfor i := int64(1); i < m; i++ {\n\t\tfact *= i\n\t}\n\n\tresult := make([]int64, m)\n\tavailable := make([]int64, m)\n\tcopy(available, perm)\n\n\tfor i := int64(0); i < m; i++ {\n\t\tfact = fact / (m - i)\n\t\tidx := k / fact\n\t\tk = k % fact\n\t\tresult[i] = available[idx]\n\t\tavailable = append(available[:idx], available[idx+1:]...)\n\t}\n\n\t// Build the full permutation\n\tfull := make([]int64, n)\n\tfor i := int64(0); i < n-m; i++ {\n\t\tfull[i] = i + 1\n\t}\n\tfor i := int64(0); i < m; i++ {\n\t\tfull[n-m+i] = result[i]\n\t}\n\n\t// Count lucky positions where both index and value are lucky\n\tcount := 0\n\tfor i := int64(0); i < n; i++ {\n\t\tif isLucky(i+1) && isLucky(full[i]) {\n\t\t\tcount++\n\t\t}\n\t}\n\n\tfmt.Println(count)\n}\n\nfunc isLucky(x int64) bool {\n\tif x == 0 {\n\t\treturn false\n\t}\n\tfor x > 0 {\n\t\td := x % 10\n\t\tif d != 4 && d != 7 {\n\t\t\treturn false\n\t\t}\n\t\tx /= 10\n\t}\n\treturn true\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 16086,
+            "prompt_tokens": 511,
+            "total_tokens": 16597
+        },
+        "prompt": "Write a program in Go to solve this programming problem:\nDescription: Petya loves lucky numbers. Everybody knows that lucky numbers are positive integers whose decimal representation contains only the lucky digits 4 and 7. For example, numbers 47, 744, 4 are lucky and 5, 17, 467 are not.One day Petya dreamt of a lexicographically k-th permutation of integers from 1 to n. Determine how many lucky numbers in the permutation are located on the positions whose indexes are also lucky numbers.\nInput Specification: The first line contains two integers n and k (1\u2009\u2264\u2009n,\u2009k\u2009\u2264\u2009109) \u2014 the number of elements in the permutation and the lexicographical number of the permutation.\nOutput Specification: If the k-th permutation of numbers from 1 to n does not exist, print the single number \"-1\" (without the quotes). Otherwise, print the answer to the problem: the number of such indexes i, that i and ai are both lucky numbers.\n\nSample Input:\n7 4\nSample Output:\n1\n\nSample Input:\n4 7\nSample Output:\n1\n\nNotes: NoteA permutation is an ordered set of n elements, where each integer from 1 to n occurs exactly once. The element of permutation in position with index i is denoted as ai (1\u2009\u2264\u2009i\u2009\u2264\u2009n). Permutation a is lexicographically smaller that permutation b if there is such a i (1\u2009\u2264\u2009i\u2009\u2264\u2009n), that ai\u2009&lt;\u2009bi, and for any j (1\u2009\u2264\u2009j\u2009&lt;\u2009i) aj\u2009=\u2009bj. Let's make a list of all possible permutations of n elements and sort it in the order of lexicographical increasing. Then the lexicographically k-th permutation is the k-th element of this list of permutations.In the first sample the permutation looks like that:1 2 3 4 6 7 5The only suitable position is 4.In the second sample the permutation looks like that:2 1 3 4The only suitable position is 4.\nTake input from standard input and output to standard output\nProvide the Go code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "cb2aa02772f95fefd1856960b6ceac4c",
+        "difficulty": 1900,
+        "prob_desc_sample_inputs": [
+            "7 4",
+            "4 7"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "brute force",
+            "combinatorics",
+            "number theory"
+        ],
+        "prob_desc_output_spec": "If the k-th permutation of numbers from 1 to n does not exist, print the single number \"-1\" (without the quotes). Otherwise, print the answer to the problem: the number of such indexes i, that i and ai are both lucky numbers.",
+        "prob_desc_input_spec": "The first line contains two integers n and k (1\u2009\u2264\u2009n,\u2009k\u2009\u2264\u2009109) \u2014 the number of elements in the permutation and the lexicographical number of the permutation.",
+        "lang_cluster": "Go",
+        "source_code": "",
+        "prob_desc_notes": "NoteA permutation is an ordered set of n elements, where each integer from 1 to n occurs exactly once. The element of permutation in position with index i is denoted as ai (1\u2009\u2264\u2009i\u2009\u2264\u2009n). Permutation a is lexicographically smaller that permutation b if there is such a i (1\u2009\u2264\u2009i\u2009\u2264\u2009n), that ai\u2009&lt;\u2009bi, and for any j (1\u2009\u2264\u2009j\u2009&lt;\u2009i) aj\u2009=\u2009bj. Let's make a list of all possible permutations of n elements and sort it in the order of lexicographical increasing. Then the lexicographically k-th permutation is the k-th element of this list of permutations.In the first sample the permutation looks like that:1 2 3 4 6 7 5The only suitable position is 4.In the second sample the permutation looks like that:2 1 3 4The only suitable position is 4.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Petya loves lucky numbers. Everybody knows that lucky numbers are positive integers whose decimal representation contains only the lucky digits 4 and 7. For example, numbers 47, 744, 4 are lucky and 5, 17, 467 are not.One day Petya dreamt of a lexicographically k-th permutation of integers from 1 to n. Determine how many lucky numbers in the permutation are located on the positions whose indexes are also lucky numbers.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1319727600",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "1",
+            "1"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"7 4\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"4 7\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"7 5040\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10 1023\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 7477\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"10 10000\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"3 7\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"27 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"40 8544\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"47 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"47 8547744\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"50 1000000000\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"64 87\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"98 854555\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"100 1\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"9985 5888454\\r\\n\", \"output\": [\"30\"]}, {\"input\": \"1 1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"1 2\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"2 1000000000\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"10 1000000000\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"20 1000000000\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"777777 1\\r\\n\", \"output\": [\"126\"]}, {\"input\": \"777777 2\\r\\n\", \"output\": [\"125\"]}, {\"input\": \"777474 10000\\r\\n\", \"output\": [\"120\"]}, {\"input\": \"1000000000 1\\r\\n\", \"output\": [\"1022\"]}, {\"input\": \"777777777 5\\r\\n\", \"output\": [\"1021\"]}, {\"input\": \"777777777 1\\r\\n\", \"output\": [\"1022\"]}, {\"input\": \"777477774 1\\r\\n\", \"output\": [\"989\"]}, {\"input\": \"444747744 1000000000\\r\\n\", \"output\": [\"554\"]}, {\"input\": \"475 88555458\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"12 855448\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"20 1000000000\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"47 99998544\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"49 1000000000\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"854459 95554455\\r\\n\", \"output\": [\"126\"]}, {\"input\": \"77777779 1000000000\\r\\n\", \"output\": [\"508\"]}, {\"input\": \"77 47\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"6999 85488877\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"7479 58884598\\r\\n\", \"output\": [\"24\"]}, {\"input\": \"1000000000 1000000000\\r\\n\", \"output\": [\"1022\"]}, {\"input\": \"7 1000\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 124\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 2048\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 3001\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 127\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 980\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 5000\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 4095\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"7 3856\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 5032\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 4999\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 3\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"2 4\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"7 985\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"4 25\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"6 121\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"11 39916801\\r\\n\", \"output\": [\"-1\"]}, {\"input\": \"29 1000000000\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"10 4589\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10 100000\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10 98564\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"10 1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"10 100000009\\r\\n\", \"output\": [\"-1\"]}]"
+    }
+}

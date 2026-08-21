@@ -1,0 +1,391 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-9cdfa859e9dbfde0",
+        "created": 1787082971,
+        "model": "qwen-nvfp4",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.27.1-d7a14dad",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "<?php\n// Read input\n$line = trim(fgets(STDIN));\nif ($line === false) {\n    exit(0);\n}\n$parts = explode(' ', $line);\nif (count($parts) < 4) {\n    exit(0);\n}\n$x = $parts[0];\n$y = $parts[1];\n$l = $parts[2];\n$r = $parts[3];\n\n// Convert to integers (PHP handles large integers as strings or floats, but for 10^18 we need care)\n// Since x, y, l, r can be up to 10^18, we should use arbitrary precision or careful handling.\n// However, PHP's int is 64-bit on 64-bit systems, which can hold up to ~9.2e18.\n// 10^18 is 1e18, which is less than 9.2e18, so 64-bit int is sufficient.\n// But to be safe with multiplication and addition, we might overflow.\n// Let's use standard int. If the system is 32-bit, this will fail, but typically online judges use 64-bit.\n// We'll assume 64-bit integers.\n\n$x = (int)$x;\n$y = (int)$y;\n$l = (int)$l;\n$r = (int)$r;\n\n// Generate all unlucky years in [l, r]\n// An unlucky year is of the form x^a + y^b where a, b >= 0.\n// Note: x^0 = 1, y^0 = 1.\n\n// We need to generate all possible values of x^a and y^b that are <= r.\n// Since x >= 2, the number of powers is logarithmic.\n// Max power: x^k <= r => k <= log_x(r). For x=2, r=1e18, k is about 60.\n// So we can generate all powers of x up to r, and all powers of y up to r.\n\n$unluckyYears = [];\n\n// Generate powers of x\n$powerX = 1;\n$powersX = [];\nwhile ($powerX <= $r) {\n    $powersX[] = $powerX;\n    // Check for overflow or next power\n    if ($powerX > (int)($r / $x)) {\n        break;\n    }\n    $powerX *= $x;\n}\n\n// Generate powers of y\n$powerY = 1;\n$powersY = [];\nwhile ($powerY <= $r) {\n    $powersY[] = $powerY;\n    if ($powerY > (int)($r / $y)) {\n        break;\n    }\n    $powerY *= $y;\n}\n\n// Now, for each pair (px, py) in powersX x powersY, check if px + py is in [l, r]\n// and add it to the set of unlucky years.\nforeach ($powersX as $px) {\n    foreach ($powersY as $py) {\n        $sum = $px + $py;\n        if ($sum >= $l && $sum <= $r) {\n            $unluckyYears[$sum] = true;\n        }\n    }\n}\n\n// Sort the unlucky years\n$unluckyList = array_keys($unluckyYears);\nsort($unluckyList);\n\n// Find the maximum gap between consecutive unlucky years, and also consider the boundaries l and r.\n// The Golden Age is a contiguous interval of years with NO unlucky years.\n// So we look at the gaps between unlucky years.\n// Also consider the gap before the first unlucky year (from l to first_unlucky - 1)\n// and the gap after the last unlucky year (from last_unlucky + 1 to r).\n\n$maxGap = 0;\n\nif (empty($unluckyList)) {\n    // No unlucky years in [l, r], so the whole interval is a Golden Age\n    $maxGap = $r - $l + 1;\n} else {\n    // Gap before the first unlucky year\n    $firstUnlucky = $unluckyList[0];\n    $gapBefore = $firstUnlucky - $l;\n    if ($gapBefore > $maxGap) {\n        $maxGap = $gapBefore;\n    }\n\n    // Gaps between consecutive unlucky years\n    for ($i = 0; $i < count($unluckyList) - 1; $i++) {\n        $current = $unluckyList[$i];\n        $next = $unluckyList[$i + 1];\n        // The gap is from current + 1 to next - 1\n        $gap = $next - $current - 1;\n        if ($gap > $maxGap) {\n            $maxGap = $gap;\n        }\n    }\n\n    // Gap after the last unlucky year\n    $lastUnlucky = $unluckyList[count($unluckyList) - 1];\n    $gapAfter = $r - $lastUnlucky;\n    if ($gapAfter > $maxGap) {\n        $maxGap = $gapAfter;\n    }\n}\n\necho $maxGap;\necho \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "<?php\n// Read input\n$line = trim(fgets(STDIN));\nif ($line === false) {\n    exit(0);\n}\n$parts = explode(' ', $line);\nif (count($parts) < 4) {\n    exit(0);\n}\n\n$x = $parts[0];\n$y = $parts[1];\n$l = $parts[2];\n$r = $parts[3];\n\n// Convert to integers (PHP handles large integers up to PHP_INT_MAX, but 10^18 is within range for 64-bit)\n$x = (int)$x;\n$y = (int)$y;\n$l = (int)$l;\n$r = (int)$r;\n\n// Generate all unlucky years in the range [l, r]\n// An unlucky year n = x^a + y^b where a, b >= 0\n// Since x, y >= 2, the powers grow exponentially.\n// Max power: 2^a <= 10^18 => a <= log2(10^18) \u2248 60\n// So we only need to check a and b up to about 60-70.\n\n$unluckyYears = [];\n\n// Generate powers of x\n$powersX = [];\n$val = 1;\nwhile ($val <= $r) {\n    $powersX[] = $val;\n    // Check for overflow\n    if ($val > $r / $x) {\n        break;\n    }\n    $val *= $x;\n}\n\n// Generate powers of y\n$powersY = [];\n$val = 1;\nwhile ($val <= $r) {\n    $powersY[] = $val;\n    if ($val > $r / $y) {\n        break;\n    }\n    $val *= $y;\n}\n\n// For each pair of powers, compute sum and check if in [l, r]\nforeach ($powersX as $px) {\n    foreach ($powersY as $py) {\n        $sum = $px + $py;\n        if ($sum >= $l && $sum <= $r) {\n            $unluckyYears[$sum] = true;\n        }\n    }\n}\n\n// If no unlucky years, the entire interval is golden\nif (empty($unluckyYears)) {\n    echo ($r - $l + 1) . \"\\n\";\n    exit(0);\n}\n\n// Get sorted list of unlucky years\n$unluckyList = array_keys($unluckyYears);\nsort($unluckyList);\n\n// Find the maximum gap between consecutive unlucky years\n// Also consider gaps from l to first unlucky year, and last unlucky year to r\n$maxGap = 0;\n\n// Gap from l to first unlucky year\n$firstUnlucky = $unluckyList[0];\nif ($firstUnlucky > $l) {\n    $maxGap = max($maxGap, $firstUnlucky - $l);\n}\n\n// Gaps between consecutive unlucky years\nfor ($i = 0; $i < count($unluckyList) - 1; $i++) {\n    $gap = $unluckyList[$i + 1] - $unluckyList[$i] - 1;\n    if ($gap > $maxGap) {\n        $maxGap = $gap;\n    }\n}\n\n// Gap from last unlucky year to r\n$lastUnlucky = $unluckyList[count($unluckyList) - 1];\nif ($lastUnlucky < $r) {\n    $maxGap = max($maxGap, $r - $lastUnlucky);\n}\n\necho $maxGap . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "<?php\n// Read input\n$line = trim(fgets(STDIN));\nif ($line === false || $line === '') {\n    exit(0);\n}\n$parts = explode(' ', $line);\n$x = $parts[0];\n$y = $parts[1];\n$l = $parts[2];\n$r = $parts[3];\n\n// Convert to integers (PHP handles large integers up to PHP_INT_MAX, which is 9.2e18 for 64-bit)\n$x = (int)$x;\n$y = (int)$y;\n$l = (int)$l;\n$r = (int)$r;\n\n// We need to find all \"unlucky\" years in [l, r].\n// An unlucky year is of the form x^a + y^b where a, b >= 0.\n// Since x, y >= 2, the powers grow exponentially.\n// The maximum value is 10^18.\n// The number of powers of x up to 10^18 is at most log2(10^18) \u2248 60.\n// Similarly for y.\n// So we can generate all possible values of x^a and y^b that are <= 10^18.\n\n// Generate all powers of x: x^0, x^1, x^2, ... <= 10^18\n$powersX = [];\n$val = 1;\nwhile ($val <= 1000000000000000000) {\n    $powersX[] = $val;\n    if ($val > 1000000000000000000 / $x) break;\n    $val *= $x;\n}\n\n// Generate all powers of y: y^0, y^1, y^2, ... <= 10^18\n$powersY = [];\n$val = 1;\nwhile ($val <= 1000000000000000000) {\n    $powersY[] = $val;\n    if ($val > 1000000000000000000 / $y) break;\n    $val *= $y;\n}\n\n// Now, generate all sums x^a + y^b that are within [l, r]\n$unluckyYears = [];\nforeach ($powersX as $px) {\n    foreach ($powersY as $py) {\n        $sum = $px + $py;\n        if ($sum >= $l && $sum <= $r) {\n            $unluckyYears[] = $sum;\n        }\n    }\n}\n\n// Remove duplicates and sort\n$unluckyYears = array_unique($unluckyYears);\nsort($unluckyYears);\n\n// Find the maximum gap between consecutive unlucky years\n// Also consider the gaps from l to the first unlucky year, and from the last unlucky year to r\n$maxGap = 0;\n\nif (empty($unluckyYears)) {\n    // No unlucky years in [l, r], so the whole interval is a Golden Age\n    $maxGap = $r - $l + 1;\n} else {\n    // Gap before the first unlucky year\n    $firstUnlucky = $unluckyYears[0];\n    $gap = $firstUnlucky - $l;\n    if ($gap > $maxGap) {\n        $maxGap = $gap;\n    }\n    \n    // Gaps between consecutive unlucky years\n    for ($i = 0; $i < count($unluckyYears) - 1; $i++) {\n        $gap = $unluckyYears[$i + 1] - $unluckyYears[$i] - 1;\n        if ($gap > $maxGap) {\n            $maxGap = $gap;\n        }\n    }\n    \n    // Gap after the last unlucky year\n    $lastUnlucky = $unluckyYears[count($unluckyYears) - 1];\n    $gap = $r - $lastUnlucky;\n    if ($gap > $maxGap) {\n        $maxGap = $gap;\n    }\n}\n\necho $maxGap;\necho \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "<?php\n// Read input\n$line = trim(fgets(STDIN));\nif ($line === false) return;\n$parts = explode(' ', $line);\n$x = (int)$parts[0];\n$y = (int)$parts[1];\n$l = (int)$parts[2];\n$r = (int)$parts[3];\n\n// Generate all unlucky years in [l, r]\n// Unlucky year n = x^a + y^b where a, b >= 0\n// Since x, y >= 2, the powers grow exponentially.\n// Max value is 10^18.\n// For x >= 2, x^a <= 10^18 => a <= log2(10^18) \u2248 60\n// Similarly for y.\n\n$unlucky = [];\n\n// Generate all powers of x that are <= r (since x^a + y^b >= 1, and we only care about sums in [l, r])\n// Actually, x^a can be up to r (if y^b=0, but b>=0 so y^b>=1, so x^a <= r-1)\n// But to be safe, generate powers up to r.\n\n$px = [];\n$val = 1;\nwhile ($val <= $r) {\n    $px[] = $val;\n    if ($val > (int)($r / $x)) break; // avoid overflow\n    $val *= $x;\n}\n\n$py = [];\n$val = 1;\nwhile ($val <= $r) {\n    $py[] = $val;\n    if ($val > (int)($r / $y)) break;\n    $val *= $y;\n}\n\n// For each pair (px[i], py[j]), check if sum is in [l, r]\n// Number of elements in px and py is at most about 60 each, so 3600 pairs max.\nforeach ($px as $a) {\n    foreach ($py as $b) {\n        $sum = $a + $b;\n        if ($sum >= $l && $sum <= $r) {\n            $unlucky[$sum] = true;\n        }\n    }\n}\n\n// Now find the maximum gap between consecutive unlucky years in [l, r]\n// Also consider the gap from l to first unlucky year, and from last unlucky year to r.\n\n$sortedUnlucky = array_keys($unlucky);\nsort($sortedUnlucky);\n\n$maxGap = 0;\n\n// Gap before first unlucky year\nif (count($sortedUnlucky) > 0) {\n    $first = $sortedUnlucky[0];\n    if ($first > $l) {\n        $maxGap = max($maxGap, $first - $l);\n    }\n}\n\n// Gaps between consecutive unlucky years\nfor ($i = 0; $i < count($sortedUnlucky) - 1; $i++) {\n    $curr = $sortedUnlucky[$i];\n    $next = $sortedUnlucky[$i + 1];\n    // The golden age is from curr+1 to next-1\n    $gap = $next - $curr - 1;\n    if ($gap > $maxGap) {\n        $maxGap = $gap;\n    }\n}\n\n// Gap after last unlucky year\nif (count($sortedUnlucky) > 0) {\n    $last = $sortedUnlucky[count($sortedUnlucky) - 1];\n    if ($last < $r) {\n        $maxGap = max($maxGap, $r - $last);\n    }\n}\n\n// If there are no unlucky years in [l, r], the entire interval is golden age\nif (count($sortedUnlucky) == 0) {\n    $maxGap = $r - $l + 1;\n}\n\necho $maxGap;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "<?php\n// Read input\n$line = trim(fgets(STDIN));\nif ($line === false) return;\n$parts = explode(' ', $line);\n$x = (int)$parts[0];\n$y = (int)$parts[1];\n$l = (int)$parts[2];\n$r = (int)$parts[3];\n\n// Generate all unlucky years in [l, r]\n$unlucky = [];\n\n// Add powers of x\n$px = 1;\nwhile ($px <= $r) {\n    if ($px >= $l) {\n        $unlucky[] = $px;\n    }\n    // Check if next power would overflow\n    if ($px > $r / $x) break;\n    $px *= $x;\n}\n\n// Add powers of y\n$py = 1;\nwhile ($py <= $r) {\n    if ($py >= $l) {\n        $unlucky[] = $py;\n    }\n    if ($py > $r / $y) break;\n    $py *= $y;\n}\n\n// Add sums of powers of x and powers of y\n$px = 1;\nwhile ($px <= $r) {\n    $py = 1;\n    while ($py <= $r) {\n        $sum = $px + $py;\n        if ($sum >= $l && $sum <= $r) {\n            $unlucky[] = $sum;\n        }\n        if ($py > $r / $y) break;\n        $py *= $y;\n    }\n    if ($px > $r / $x) break;\n    $px *= $x;\n}\n\n// Sort and remove duplicates\nsort($unlucky);\n$unlucky = array_unique($unlucky);\n$unlucky = array_values($unlucky);\n\n// Find maximum gap between consecutive unlucky years\n// Also consider gaps from l to first unlucky year and last unlucky year to r\n$maxGap = 0;\n\nif (empty($unlucky)) {\n    // No unlucky years in [l, r], so the whole interval is golden\n    $maxGap = $r - $l + 1;\n} else {\n    // Gap before first unlucky year\n    $first = $unlucky[0];\n    if ($first > $l) {\n        $maxGap = max($maxGap, $first - $l);\n    }\n    \n    // Gaps between consecutive unlucky years\n    for ($i = 0; $i < count($unlucky) - 1; $i++) {\n        $gap = $unlucky[$i + 1] - $unlucky[$i] - 1;\n        if ($gap > $maxGap) {\n            $maxGap = $gap;\n        }\n    }\n    \n    // Gap after last unlucky year\n    $last = $unlucky[count($unlucky) - 1];\n    if ($last < $r) {\n        $maxGap = max($maxGap, $r - $last);\n    }\n}\n\necho $maxGap . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "<?php\n// Read input\n$line = trim(fgets(STDIN));\nif ($line === false || $line === '') {\n    return;\n}\n$parts = explode(' ', $line);\nif (count($parts) < 4) {\n    return;\n}\n$x = (int)$parts[0];\n$y = (int)$parts[1];\n$l = (int)$parts[2];\n$r = (int)$parts[3];\n\n// Function to check if a number n can be represented as x^a + y^b\n// where a, b are non-negative integers.\n// We need to find if there exist a, b >= 0 such that x^a + y^b = n.\n\n// Since x, y >= 2, the powers grow exponentially.\n// The maximum value for a is such that x^a <= n.\n// Similarly for b.\n\n// We can iterate over possible values of a, compute x^a, then check if n - x^a is a perfect power of y.\n// Or iterate over b, compute y^b, then check if n - y^b is a perfect power of x.\n\n// To avoid overflow and handle large numbers (up to 10^18), we must be careful with multiplication.\n// PHP integers are 64-bit on most systems, which can hold up to ~9.2 * 10^18.\n// However, x^a can exceed 10^18 quickly. We should stop when the power exceeds n.\n\n// Helper function to check if 'rem' is a perfect power of 'base'.\n// i.e., does there exist k >= 0 such that base^k == rem?\nfunction isPerfectPower($rem, $base) {\n    if ($rem < 1) {\n        return false;\n    }\n    // base^0 = 1\n    if ($rem == 1) {\n        return true;\n    }\n    \n    $current = 1;\n    $k = 0;\n    // We need to find k such that base^k == rem.\n    // Since base >= 2, the number of iterations is at most log_base(rem).\n    // rem <= 10^18, so log_2(10^18) is about 60. This is very fast.\n    \n    while ($current < $rem) {\n        // Check for overflow before multiplying\n        // If current * base > rem, we can break.\n        // But we need to be careful with the multiplication itself.\n        // Since rem <= 10^18 and base <= 10^18, current * base might overflow 64-bit int.\n        // However, if current * base > rem, we break.\n        // We can check: if current > rem / base, then current * base > rem.\n        \n        if ($current > (int)($rem / $base)) {\n            break;\n        }\n        \n        $current = $current * $base;\n        $k++;\n        \n        if ($current == $rem) {\n            return true;\n        }\n    }\n    \n    return false;\n}\n\n// Function to check if n is an unlucky year\nfunction isUnlucky($n, $x, $y) {\n    // Iterate over possible powers of x\n    $powerX = 1; // x^0\n    while ($powerX <= $n) {\n        $rem = $n - $powerX;\n        if ($rem >= 0) {\n            if (isPerfectPower($rem, $y)) {\n                return true;\n            }\n        }\n        \n        // Calculate next power of x\n        // Check for overflow\n        if ($powerX > (int)($n / $x)) {\n            break;\n        }\n        $powerX = $powerX * $x;\n    }\n    \n    return false;\n}\n\n// We need to find the maximum length of an interval [L, R] within [l, r]\n// such that no year in [L, R] is unlucky.\n// This is equivalent to finding the maximum gap between consecutive unlucky years in [l, r],\n// or the gap from l to the first unlucky year, or from the last unlucky year to r.\n\n// Let's collect all unlucky years in [l, r].\n// However, r-l can be up to 10^18, so we cannot iterate through all years.\n// But the number of unlucky years is small because x^a + y^b grows exponentially.\n// The number of pairs (a, b) such that x^a + y^b <= 10^18 is small.\n// Max a is log_x(10^18) ~ 60. Max b is log_y(10^18) ~ 60.\n// So there are at most 60*60 = 3600 unlucky years in the entire range [1, 10^18].\n// We can generate all unlucky years <= r, filter those >= l, sort them, and find the max gap.\n\n$unluckyYears = [];\n\n// Generate all x^a <= r\n$powersX = [];\n$px = 1;\nwhile ($px <= $r) {\n    $powersX[] = $px;\n    if ($px > (int)($r / $x)) {\n        break;\n    }\n    $px = $px * $x;\n}\n\n// Generate all y^b <= r\n$powersY = [];\n$py = 1;\nwhile ($py <= $r) {\n    $powersY[] = $py;\n    if ($py > (int)($r / $y)) {\n        break;\n    }\n    $py = $py * $y;\n}\n\n// For each pair (px, py), sum = px + py. If l <= sum <= r, add to unluckyYears.\nforeach ($powersX as $px) {\n    foreach ($powersY as $py) {\n        $sum = $px + $py;\n        if ($sum > $r) {\n            break; // Since powersY is sorted, we can break early if needed, but the loop is small anyway\n        }\n        if ($sum >= $l) {\n            $unluckyYears[] = $sum;\n        }\n    }\n}\n\n// Remove duplicates and sort\n$unluckyYears = array_unique($unluckyYears);\nsort($unluckyYears);\n\n// Now find the maximum gap\n// The gaps are:\n// 1. From l to the first unlucky year: firstUnlucky - l\n// 2. Between consecutive unlucky years: next - current - 1 (length of interval of lucky years)\n//    Wait, the problem asks for the length of the interval of years that are NOT unlucky.\n//    If unlucky years are at positions u1, u2, ..., uk.\n//    The lucky intervals are:\n//    [l, u1-1] -> length u1 - l\n//    [u1+1, u2-1] -> length u2 - u1 - 1\n//    ...\n//    [uk+1, r] -> length r - uk\n    \n// Let's calculate the maximum length.\n$maxLen = 0;\n\nif (empty($unluckyYears)) {\n    // No unlucky years in [l, r], so the whole interval is a Golden Age\n    $maxLen = $r - $l + 1;\n} else {\n    $first = $unluckyYears[0];\n    $maxLen = max($maxLen, $first - $l);\n    \n    for ($i = 0; $i < count($unluckyYears) - 1; $i++) {\n        $gap = $unluckyYears[$i+1] - $unluckyYears[$i] - 1;\n        if ($gap > $maxLen) {\n            $maxLen = $gap;\n        }\n    }\n    \n    $last = $unluckyYears[count($unluckyYears) - 1];\n    $maxLen = max($maxLen, $r - $last);\n}\n\necho $maxLen;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "<?php\n// Read input\n$line = trim(fgets(STDIN));\nif ($line === false || $line === '') {\n    exit(0);\n}\n$parts = explode(' ', $line);\nif (count($parts) < 4) {\n    exit(0);\n}\n$x = $parts[0];\n$y = $parts[1];\n$l = $parts[2];\n$r = $parts[3];\n\n// Convert to integers (PHP handles large integers as strings or floats, but for up to 10^18, we need to be careful)\n// Since x, y, l, r can be up to 10^18, we should use arbitrary precision or careful handling.\n// However, PHP's int is 64-bit signed, which can hold up to ~9.2 * 10^18. So 10^18 fits in a 64-bit int.\n// But operations like x^a might overflow. We need to generate powers carefully.\n\n// Function to generate all values of x^a that are <= r\nfunction getPowers($base, $limit) {\n    $powers = [];\n    $val = 1;\n    while ($val <= $limit) {\n        $powers[] = $val;\n        // Check for overflow before multiplying\n        if ($val > $limit / $base) {\n            break;\n        }\n        $val *= $base;\n    }\n    return $powers;\n}\n\n$xpowers = getPowers($x, $r);\n$ypowers = getPowers($y, $r);\n\n// Generate all unlucky years in [l, r]\n$unlucky = [];\nforeach ($xpowers as $xp) {\n    foreach ($ypowers as $yp) {\n        $sum = $xp + $yp;\n        if ($sum >= $l && $sum <= $r) {\n            $unlucky[] = $sum;\n        }\n    }\n}\n\n// Sort and remove duplicates\nsort($unlucky);\n$unlucky = array_unique($unlucky);\n$unlucky = array_values($unlucky);\n\n// Find the maximum gap between consecutive unlucky years\n// Also consider the gap from l to the first unlucky year\n// And the gap from the last unlucky year to r\n\n$maxGap = 0;\n\nif (empty($unlucky)) {\n    // No unlucky years in [l, r], so the whole interval is Golden Age\n    $maxGap = $r - $l + 1;\n} else {\n    // Gap before the first unlucky year\n    $firstUnlucky = $unlucky[0];\n    $gapBefore = $firstUnlucky - $l;\n    if ($gapBefore > $maxGap) {\n        $maxGap = $gapBefore;\n    }\n\n    // Gaps between consecutive unlucky years\n    $count = count($unlucky);\n    for ($i = 1; $i < $count; $i++) {\n        $gap = $unlucky[$i] - $unlucky[$i - 1] - 1;\n        if ($gap > $maxGap) {\n            $maxGap = $gap;\n        }\n    }\n\n    // Gap after the last unlucky year\n    $lastUnlucky = $unlucky[$count - 1];\n    $gapAfter = $r - $lastUnlucky;\n    if ($gapAfter > $maxGap) {\n        $maxGap = $gapAfter;\n    }\n}\n\necho $maxGap;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "<?php\n// Read input\n$line = trim(fgets(STDIN));\nif ($line === false || $line === '') {\n    exit(0);\n}\n$parts = explode(' ', $line);\nif (count($parts) < 4) {\n    exit(0);\n}\n$x = (int)$parts[0];\n$y = (int)$parts[1];\n$l = (int)$parts[2];\n$r = (int)$parts[3];\n\n// Function to generate all values of x^a + y^b within [l, r]\nfunction generateUnluckyYears($x, $y, $l, $r) {\n    $unlucky = [];\n    \n    // Generate all powers of x: x^a for a >= 0\n    // x^0 = 1\n    // x^1 = x\n    // ...\n    // We need x^a + y^b to be within [l, r]\n    // So x^a <= r and y^b <= r\n    // Since x, y >= 2, the number of powers is small (log2(10^18) ~ 60)\n    \n    $powersX = [];\n    $val = 1;\n    while ($val <= $r) {\n        $powersX[] = $val;\n        // Check for overflow\n        if ($val > (PHP_INT_MAX / $x)) {\n            break;\n        }\n        $val *= $x;\n    }\n    \n    $powersY = [];\n    $val = 1;\n    while ($val <= $r) {\n        $powersY[] = $val;\n        if ($val > (PHP_INT_MAX / $y)) {\n            break;\n        }\n        $val *= $y;\n    }\n    \n    // For each combination, check if sum is in [l, r]\n    foreach ($powersX as $px) {\n        foreach ($powersY as $py) {\n            $sum = $px + $py;\n            if ($sum >= $l && $sum <= $r) {\n                $unlucky[] = $sum;\n            }\n        }\n    }\n    \n    // Remove duplicates and sort\n    $unlucky = array_unique($unlucky);\n    sort($unlucky);\n    \n    return $unlucky;\n}\n\n$unluckyYears = generateUnluckyYears($x, $y, $l, $r);\n\n// Find the maximum gap between consecutive unlucky years\n// The golden age is the interval between two unlucky years (exclusive)\n// Or from l to first unlucky year\n// Or from last unlucky year to r\n\n$maxGap = 0;\n\nif (empty($unluckyYears)) {\n    // No unlucky years in [l, r], so the whole interval is golden age\n    $maxGap = $r - $l + 1;\n} else {\n    // Check gap from l to first unlucky year\n    $first = $unluckyYears[0];\n    $gap = $first - $l;\n    if ($gap > $maxGap) {\n        $maxGap = $gap;\n    }\n    \n    // Check gaps between consecutive unlucky years\n    for ($i = 1; $i < count($unluckyYears); $i++) {\n        $prev = $unluckyYears[$i - 1];\n        $curr = $unluckyYears[$i];\n        $gap = $curr - $prev - 1;\n        if ($gap > $maxGap) {\n            $maxGap = $gap;\n        }\n    }\n    \n    // Check gap from last unlucky year to r\n    $last = $unluckyYears[count($unluckyYears) - 1];\n    $gap = $r - $last;\n    if ($gap > $maxGap) {\n        $maxGap = $gap;\n    }\n}\n\necho $maxGap . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 8,
+                "message": {
+                    "content": "<?php\n// Read input\n$line = trim(fgets(STDIN));\nif ($line === false) exit(0);\n$parts = explode(' ', $line);\nif (count($parts) < 4) exit(0);\n\n$x = $parts[0];\n$y = $parts[1];\n$l = $parts[2];\n$r = $parts[3];\n\n// Convert to integers (PHP handles large integers up to PHP_INT_MAX, which is 9.2e18 for 64-bit)\n// Given constraints: x, y, l, r up to 10^18, which fits in 64-bit signed integer.\n$x = (int)$x;\n$y = (int)$y;\n$l = (int)$l;\n$r = (int)$r;\n\n// Generate all unlucky years in [l, r]\n// Unlucky year n = x^a + y^b where a, b >= 0\n\n// We need to generate all possible values of x^a and y^b that are <= r\n// Since x, y >= 2, the powers grow exponentially.\n// Max exponent: log2(10^18) \u2248 60. So at most ~60 values for each.\n\n$unlucky = [];\n\n// Generate powers of x: x^0, x^1, x^2, ... <= r\n$px = [];\n$val = 1;\nwhile ($val <= $r) {\n    $px[] = $val;\n    // Check for overflow\n    if ($val > $r / $x) break;\n    $val *= $x;\n}\n\n// Generate powers of y: y^0, y^1, y^2, ... <= r\n$py = [];\n$val = 1;\nwhile ($val <= $r) {\n    $py[] = $val;\n    if ($val > $r / $y) break;\n    $val *= $y;\n}\n\n// For each pair (px[i], py[j]), compute sum = px[i] + py[j]\n// If sum is in [l, r], add to unlucky set\n$unluckySet = [];\nforeach ($px as $a) {\n    foreach ($py as $b) {\n        $sum = $a + $b;\n        if ($sum >= $l && $sum <= $r) {\n            $unluckySet[$sum] = true;\n        }\n    }\n}\n\n// Now find the maximum gap between consecutive unlucky years\n// Also consider the gap from l to first unlucky year, and from last unlucky year to r\n\n$unluckyYears = array_keys($unluckySet);\nsort($unluckyYears);\n\n$maxGap = 0;\n\nif (empty($unluckyYears)) {\n    // No unlucky years in [l, r], so the whole interval is a Golden Age\n    $maxGap = $r - $l + 1;\n} else {\n    // Gap from l to first unlucky year\n    $first = $unluckyYears[0];\n    $gap = $first - $l;\n    if ($gap > $maxGap) $maxGap = $gap;\n\n    // Gaps between consecutive unlucky years\n    for ($i = 0; $i < count($unluckyYears) - 1; $i++) {\n        $gap = $unluckyYears[$i + 1] - $unluckyYears[$i] - 1;\n        if ($gap > $maxGap) $maxGap = $gap;\n    }\n\n    // Gap from last unlucky year to r\n    $last = $unluckyYears[count($unluckyYears) - 1];\n    $gap = $r - $last;\n    if ($gap > $maxGap) $maxGap = $gap;\n}\n\necho $maxGap . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 9,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\n$line = trim(fgets(STDIN));\n$parts = explode(' ', $line);\n$x = intval($parts[0]);\n$y = intval($parts[1]);\n$l = intval($parts[2]);\n$r = intval($parts[3]);\n\n// Generate all unlucky years in [l, r]\n// Unlucky year n = x^a + y^b where a, b >= 0\n// Since x, y >= 2 and n <= 1e18, the exponents a and b are bounded.\n// x^a <= 1e18 => a <= log_x(1e18)\n// y^b <= 1e18 => b <= log_y(1e18)\n\n// We'll generate all possible values of x^a and y^b that are <= r (since n = x^a + y^b <= r)\n// Actually, x^a + y^b <= r, so x^a <= r and y^b <= r.\n\n// Generate all powers of x: x^0, x^1, x^2, ... while value <= r\n$xpowers = [];\n$val = 1;\nwhile ($val <= $r) {\n    $xpowers[] = $val;\n    if ($val > $r / $x) break; // avoid overflow\n    $val *= $x;\n}\n\n// Generate all powers of y: y^0, y^1, y^2, ... while value <= r\n$ypowers = [];\n$val = 1;\nwhile ($val <= $r) {\n    $ypowers[] = $val;\n    if ($val > $r / $y) break; // avoid overflow\n    $val *= $y;\n}\n\n// Generate all unlucky years in [l, r]\n$unlucky = [];\nforeach ($xpowers as $xa) {\n    foreach ($ypowers as $yb) {\n        $n = $xa + $yb;\n        if ($n >= $l && $n <= $r) {\n            $unlucky[] = $n;\n        }\n    }\n}\n\n// Sort and remove duplicates\nsort($unlucky);\n$unlucky = array_unique($unlucky);\n$unlucky = array_values($unlucky);\n\n// Find the maximum gap between consecutive unlucky years\n// The Golden Age is the interval between two consecutive unlucky years (exclusive of the unlucky years themselves)\n// Or from l to the first unlucky year, or from the last unlucky year to r.\n\n$maxGap = 0;\n\n// Check from l to first unlucky year\nif (count($unlucky) > 0) {\n    $first = $unlucky[0];\n    if ($first > $l) {\n        $maxGap = max($maxGap, $first - $l);\n    }\n    \n    // Check between consecutive unlucky years\n    for ($i = 0; $i < count($unlucky) - 1; $i++) {\n        $gap = $unlucky[$i + 1] - $unlucky[$i] - 1;\n        if ($gap > $maxGap) {\n            $maxGap = $gap;\n        }\n    }\n    \n    // Check from last unlucky year to r\n    $last = $unlucky[count($unlucky) - 1];\n    if ($last < $r) {\n        $maxGap = max($maxGap, $r - $last);\n    }\n} else {\n    // No unlucky years in [l, r]\n    $maxGap = $r - $l + 1;\n}\n\necho $maxGap . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 10,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\n$line = trim(fgets(STDIN));\n$parts = explode(' ', $line);\n$x = (int)$parts[0];\n$y = (int)$parts[1];\n$l = (int)$parts[2];\n$r = (int)$parts[3];\n\n// Generate all unlucky years in [l, r]\n// Unlucky year n = x^a + y^b where a, b >= 0\n// Since x, y >= 2 and n <= 10^18, the exponents are bounded.\n// x^a <= 10^18 => a <= log_x(10^18)\n// y^b <= 10^18 => b <= log_y(10^18)\n\nfunction generatePowers($base, $maxVal) {\n    $powers = [];\n    $val = 1;\n    while ($val <= $maxVal) {\n        $powers[] = $val;\n        if ($val > $maxVal / $base) break;\n        $val *= $base;\n    }\n    return $powers;\n}\n\n$xpowers = generatePowers($x, $r);\n$ypowers = generatePowers($y, $r);\n\n$unlucky = [];\nforeach ($xpowers as $xp) {\n    foreach ($ypowers as $yp) {\n        $sum = $xp + $yp;\n        if ($sum >= $l && $sum <= $r) {\n            $unlucky[$sum] = true;\n        }\n    }\n}\n\n// Sort unlucky years\n$unluckyYears = array_keys($unlucky);\nsort($unluckyYears);\n\n// Find maximum gap between consecutive unlucky years\n// Also consider gaps from l to first unlucky year, and last unlucky year to r\n$maxGap = 0;\n\nif (empty($unluckyYears)) {\n    // No unlucky years in [l, r], so the entire interval is golden\n    $maxGap = $r - $l + 1;\n} else {\n    // Gap before first unlucky year\n    $first = $unluckyYears[0];\n    $gapBefore = $first - $l;\n    if ($gapBefore > $maxGap) {\n        $maxGap = $gapBefore;\n    }\n    \n    // Gaps between consecutive unlucky years\n    for ($i = 0; $i < count($unluckyYears) - 1; $i++) {\n        $gap = $unluckyYears[$i + 1] - $unluckyYears[$i] - 1;\n        if ($gap > $maxGap) {\n            $maxGap = $gap;\n        }\n    }\n    \n    // Gap after last unlucky year\n    $last = $unluckyYears[count($unluckyYears) - 1];\n    $gapAfter = $r - $last;\n    if ($gapAfter > $maxGap) {\n        $maxGap = $gapAfter;\n    }\n}\n\necho $maxGap . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 11,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\n$line = trim(fgets(STDIN));\n$parts = explode(' ', $line);\n$x = (int)$parts[0];\n$y = (int)$parts[1];\n$l = (int)$parts[2];\n$r = (int)$parts[3];\n\n// Generate all unlucky years in [l, r]\n// Unlucky year n = x^a + y^b where a, b >= 0\n// Since x, y >= 2 and n <= 10^18, the exponents are bounded.\n// x^a <= 10^18 => a <= log_x(10^18)\n// y^b <= 10^18 => b <= log_y(10^18)\n\nfunction generatePowers($base, $limit) {\n    $powers = [];\n    $val = 1;\n    while ($val <= $limit) {\n        $powers[] = $val;\n        if ($val > $limit / $base) break;\n        $val *= $base;\n    }\n    return $powers;\n}\n\n$limit = $r; // Max value we care about\n$xPowers = generatePowers($x, $limit);\n$yPowers = generatePowers($y, $limit);\n\n$unlucky = [];\nforeach ($xPowers as $xp) {\n    foreach ($yPowers as $yp) {\n        $sum = $xp + $yp;\n        if ($sum >= $l && $sum <= $r) {\n            $unlucky[$sum] = true;\n        }\n    }\n}\n\n// Sort unlucky years\n$unluckyYears = array_keys($unlucky);\nsort($unluckyYears);\n\n// Find maximum gap between consecutive unlucky years, considering boundaries l and r\n// Golden Age is a contiguous interval with no unlucky years.\n// We need to find the maximum length of such interval within [l, r].\n\n$maxGolden = 0;\n\n// Check from l to first unlucky year\nif (count($unluckyYears) > 0) {\n    $first = $unluckyYears[0];\n    if ($first > $l) {\n        $maxGolden = max($maxGolden, $first - $l);\n    }\n    \n    // Check between consecutive unlucky years\n    for ($i = 0; $i < count($unluckyYears) - 1; $i++) {\n        $gap = $unluckyYears[$i + 1] - $unluckyYears[$i] - 1;\n        if ($gap > 0) {\n            $maxGolden = max($maxGolden, $gap);\n        }\n    }\n    \n    // Check from last unlucky year to r\n    $last = $unluckyYears[count($unluckyYears) - 1];\n    if ($last < $r) {\n        $maxGolden = max($maxGolden, $r - $last);\n    }\n} else {\n    // No unlucky years in [l, r]\n    $maxGolden = $r - $l + 1;\n}\n\necho $maxGolden . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 12,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\n$line = fgets(STDIN);\n$parts = explode(' ', trim($line));\n$x = (int)$parts[0];\n$y = (int)$parts[1];\n$l = (int)$parts[2];\n$r = (int)$parts[3];\n\n// Generate all unlucky years in [l, r]\n// Unlucky year: n = x^a + y^b where a, b >= 0\n// Since x, y >= 2, the powers grow quickly.\n// We need to find all values of x^a and y^b that are <= r (since n >= 1, and n <= r)\n\nfunction generatePowers($base, $limit) {\n    $powers = [];\n    $val = 1; // base^0\n    while ($val <= $limit) {\n        $powers[] = $val;\n        // Check for overflow\n        if ($val > (int)($limit / $base)) {\n            break;\n        }\n        $val *= $base;\n    }\n    return $powers;\n}\n\n// Generate all x^a such that x^a <= r\n$xPowers = generatePowers($x, $r);\n// Generate all y^b such that y^b <= r\n$yPowers = generatePowers($y, $r);\n\n// Find all unlucky years in [l, r]\n$unlucky = [];\nforeach ($xPowers as $xp) {\n    foreach ($yPowers as $yp) {\n        $n = $xp + $yp;\n        if ($n >= $l && $n <= $r) {\n            $unlucky[] = $n;\n        }\n    }\n}\n\n// Sort and remove duplicates\nsort($unlucky);\n$unlucky = array_values(array_unique($unlucky));\n\n// Find the maximum gap between consecutive unlucky years\n// The Golden Age is a contiguous interval with no unlucky years.\n// We need to consider:\n// 1. From l to the first unlucky year (exclusive)\n// 2. Between consecutive unlucky years\n// 3. From the last unlucky year to r (exclusive)\n\nif (empty($unlucky)) {\n    // No unlucky years in [l, r], so the entire interval is Golden Age\n    echo ($r - $l + 1) . \"\\n\";\n    exit(0);\n}\n\n$maxGap = 0;\n\n// Check before the first unlucky year\n$firstUnlucky = $unlucky[0];\nif ($firstUnlucky > $l) {\n    $gap = $firstUnlucky - $l;\n    if ($gap > $maxGap) {\n        $maxGap = $gap;\n    }\n}\n\n// Check between consecutive unlucky years\nfor ($i = 0; $i < count($unlucky) - 1; $i++) {\n    $gap = $unlucky[$i + 1] - $unlucky[$i] - 1;\n    if ($gap > $maxGap) {\n        $maxGap = $gap;\n    }\n}\n\n// Check after the last unlucky year\n$lastUnlucky = $unlucky[count($unlucky) - 1];\nif ($lastUnlucky < $r) {\n    $gap = $r - $lastUnlucky;\n    if ($gap > $maxGap) {\n        $maxGap = $gap;\n    }\n}\n\necho $maxGap . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 13,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\n$line = trim(fgets(STDIN));\n$parts = explode(' ', $line);\n$x = (int)$parts[0];\n$y = (int)$parts[1];\n$l = (int)$parts[2];\n$r = (int)$parts[3];\n\n// Generate all unlucky years in [l, r]\n// n = x^a + y^b where a, b >= 0\n// Since x, y >= 2, the powers grow quickly.\n// Max value is 10^18, so max exponent is about log2(10^18) ~ 60\n\nfunction get_powers($base, $max_val) {\n    $powers = [];\n    $val = 1;\n    while ($val <= $max_val) {\n        $powers[] = $val;\n        if ($val > $max_val / $base) break;\n        $val *= $base;\n    }\n    return $powers;\n}\n\n$unlucky = [];\n\n// Generate all x^a\n$xpowers = get_powers($x, $r);\n// Generate all y^b\n$ypowers = get_powers($y, $r);\n\n// For each combination, check if sum is in [l, r]\nforeach ($xpowers as $xp) {\n    foreach ($ypowers as $yp) {\n        $sum = $xp + $yp;\n        if ($sum >= $l && $sum <= $r) {\n            $unlucky[$sum] = true;\n        }\n    }\n}\n\n// Sort unlucky years\n$unlucky_years = array_keys($unlucky);\nsort($unlucky_years);\n\n// Find maximum gap between consecutive unlucky years, considering boundaries l and r\n// The golden age is the maximum number of consecutive non-unlucky years in [l, r]\n\n// We need to find the maximum length of an interval [s, e] within [l, r] such that no year in [s, e] is unlucky.\n// This is equivalent to finding the maximum gap between consecutive unlucky years (including boundaries).\n\n// Consider the boundaries: before the first unlucky year and after the last unlucky year.\n// Let's create a list of \"breakpoints\": l-1, all unlucky years, r+1\n// Then the gap between consecutive breakpoints gives the length of golden age.\n\n$breakpoints = [];\n$breakpoints[] = $l - 1;\nforeach ($unlucky_years as $uy) {\n    $breakpoints[] = $uy;\n}\n$breakpoints[] = $r + 1;\n\nsort($breakpoints);\n\n$max_golden = 0;\nfor ($i = 0; $i < count($breakpoints) - 1; $i++) {\n    $start = $breakpoints[$i] + 1;\n    $end = $breakpoints[$i + 1] - 1;\n    if ($start <= $end) {\n        $len = $end - $start + 1;\n        if ($len > $max_golden) {\n            $max_golden = $len;\n        }\n    }\n}\n\necho $max_golden . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 14,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\n$line = trim(fgets(STDIN));\n$parts = explode(' ', $line);\n$x = (int)$parts[0];\n$y = (int)$parts[1];\n$l = (int)$parts[2];\n$r = (int)$parts[3];\n\n// Generate all unlucky years in [l, r]\n// Unlucky year n = x^a + y^b where a, b >= 0\n// Since x, y >= 2 and n <= 10^18, the exponents are bounded.\n// x^a <= 10^18 => a <= log_x(10^18)\n// For x=2, a <= ~60\n// For y=2, b <= ~60\n\n$unlucky = [];\n\n// Generate all powers of x that are <= r (actually we need x^a + y^b <= r, so x^a <= r)\n$xpowers = [];\n$val = 1;\nwhile ($val <= $r) {\n    $xpowers[] = $val;\n    if ($val > $r / $x) break;\n    $val *= $x;\n}\n\n$ypowers = [];\n$val = 1;\nwhile ($val <= $r) {\n    $ypowers[] = $val;\n    if ($val > $r / $y) break;\n    $val *= $y;\n}\n\n// For each pair, compute sum and check if in [l, r]\nforeach ($xpowers as $xp) {\n    foreach ($ypowers as $yp) {\n        $sum = $xp + $yp;\n        if ($sum >= $l && $sum <= $r) {\n            $unlucky[$sum] = true;\n        }\n    }\n}\n\n// Sort unlucky years\n$unluckyYears = array_keys($unlucky);\nsort($unluckyYears);\n\n// Find maximum gap between consecutive unlucky years, also consider boundaries\n// The golden age is a consecutive sequence of non-unlucky years.\n// We need to find the maximum length of such a sequence within [l, r].\n\n// Let's collect all unlucky years in [l, r]\n// Then the gaps are:\n// From l to first unlucky year - 1\n// Between consecutive unlucky years\n// From last unlucky year + 1 to r\n\n$maxLen = 0;\n$prev = $l - 1;\nforeach ($unluckyYears as $u) {\n    $gap = $u - $prev - 1;\n    if ($gap > $maxLen) {\n        $maxLen = $gap;\n    }\n    $prev = $u;\n}\n// After the last unlucky year\n$gap = $r - $prev;\nif ($gap > $maxLen) {\n    $maxLen = $gap;\n}\n\necho $maxLen . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 15,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\n$line = trim(fgets(STDIN));\n$parts = explode(' ', $line);\n$x = (int)$parts[0];\n$y = (int)$parts[1];\n$l = (int)$parts[2];\n$r = (int)$parts[3];\n\n// Generate all unlucky years in [l, r]\n// Unlucky year: n = x^a + y^b where a, b >= 0\n// Since x, y >= 2, the powers grow quickly.\n// Max exponent: for x=2, 2^a <= 10^18 => a <= 60\n// Similarly for y.\n\n$unlucky = [];\n\n// Generate all powers of x that are <= r (since x^a + y^b >= 1, and we need sum <= r)\n// Actually x^a can be up to r (if y^b = 0, but y^b >= 1 since b>=0, y^0=1)\n// So x^a <= r - 1, similarly y^b <= r - 1\n\n$powersX = [];\n$px = 1;\nwhile ($px <= $r) {\n    $powersX[] = $px;\n    if ($px > (int)($r / $x)) break; // avoid overflow\n    $px *= $x;\n}\n\n$powersY = [];\n$py = 1;\nwhile ($py <= $r) {\n    $powersY[] = $py;\n    if ($py > (int)($r / $y)) break;\n    $py *= $y;\n}\n\n// For each pair, compute sum and check if in [l, r]\nforeach ($powersX as $px) {\n    foreach ($powersY as $py) {\n        $sum = $px + $py;\n        if ($sum >= $l && $sum <= $r) {\n            $unlucky[$sum] = true;\n        }\n    }\n}\n\n// Sort unlucky years\n$unluckyYears = array_keys($unlucky);\nsort($unluckyYears);\n\n// Find maximum gap between consecutive unlucky years\n// Also consider gaps from l to first unlucky, and last unlucky to r\n$maxGap = 0;\n\nif (empty($unluckyYears)) {\n    // No unlucky years in [l, r], so the whole interval is golden\n    $maxGap = $r - $l + 1;\n} else {\n    // Gap before first unlucky year\n    $first = $unluckyYears[0];\n    if ($first > $l) {\n        $maxGap = max($maxGap, $first - $l);\n    }\n    \n    // Gaps between consecutive unlucky years\n    for ($i = 0; $i < count($unluckyYears) - 1; $i++) {\n        $gap = $unluckyYears[$i + 1] - $unluckyYears[$i] - 1;\n        if ($gap > $maxGap) {\n            $maxGap = $gap;\n        }\n    }\n    \n    // Gap after last unlucky year\n    $last = $unluckyYears[count($unluckyYears) - 1];\n    if ($last < $r) {\n        $maxGap = max($maxGap, $r - $last);\n    }\n}\n\necho $maxGap . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 16,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\n$line = trim(fgets(STDIN));\n$parts = explode(' ', $line);\n$x = (int)$parts[0];\n$y = (int)$parts[1];\n$l = (int)$parts[2];\n$r = (int)$parts[3];\n\n// Generate all unlucky years in [l, r]\n// Unlucky year n = x^a + y^b where a, b >= 0\n// Since x, y >= 2 and n <= 10^18, the exponents are bounded.\n// x^a <= 10^18 => a <= log_x(10^18)\n// y^b <= 10^18 => b <= log_y(10^18)\n\n// Generate all powers of x that are <= 10^18 (or more precisely, <= r - 1 since min y^b is 1)\n// Actually, x^a + y^b <= r, so x^a <= r-1 and y^b <= r-1\n// But to be safe, let's generate powers up to 10^18\n\nfunction generatePowers($base, $limit) {\n    $powers = [];\n    $val = 1; // base^0\n    while ($val <= $limit) {\n        $powers[] = $val;\n        if ($val > (int)($limit / $base)) {\n            break;\n        }\n        $val *= $base;\n    }\n    return $powers;\n}\n\n$limit = $r; // max possible value for x^a or y^b is r (since the other term is at least 1)\n// Actually x^a + y^b <= r, so x^a <= r - 1 and y^b <= r - 1\n// But let's just use r as limit for simplicity, we'll filter later\n\n$powersX = generatePowers($x, $limit);\n$powersY = generatePowers($y, $limit);\n\n// Generate all unlucky years\n$unluckySet = [];\nforeach ($powersX as $px) {\n    foreach ($powersY as $py) {\n        $n = $px + $py;\n        if ($n >= $l && $n <= $r) {\n            $unluckySet[$n] = true;\n        }\n    }\n}\n\n// Sort unlucky years\n$unluckyYears = array_keys($unluckySet);\nsort($unluckyYears);\n\n// Find maximum gap between consecutive unlucky years, also consider boundaries\n// The golden age is a contiguous interval with no unlucky years\n// We need to find the maximum length of such interval within [l, r]\n\n// Consider the gaps:\n// 1. From l to first unlucky year - 1\n// 2. Between consecutive unlucky years\n// 3. From last unlucky year + 1 to r\n\n$maxLen = 0;\n\nif (empty($unluckyYears)) {\n    // No unlucky years in [l, r], so the whole interval is golden\n    $maxLen = $r - $l + 1;\n} else {\n    // Gap before first unlucky year\n    $first = $unluckyYears[0];\n    if ($first > $l) {\n        $len = $first - $l;\n        if ($len > $maxLen) {\n            $maxLen = $len;\n        }\n    }\n    \n    // Gaps between consecutive unlucky years\n    for ($i = 0; $i < count($unluckyYears) - 1; $i++) {\n        $cur = $unluckyYears[$i];\n        $next = $unluckyYears[$i + 1];\n        // The gap is from cur+1 to next-1, length = next - cur - 1\n        $len = $next - $cur - 1;\n        if ($len > $maxLen) {\n            $maxLen = $len;\n        }\n    }\n    \n    // Gap after last unlucky year\n    $last = $unluckyYears[count($unluckyYears) - 1];\n    if ($last < $r) {\n        $len = $r - $last;\n        if ($len > $maxLen) {\n            $maxLen = $len;\n        }\n    }\n}\n\necho $maxLen . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 17,
+                "message": {
+                    "content": "```php\n<?php\n\nfunction isUnlucky($n, $x, $y) {\n    // Check if n can be represented as x^a + y^b for non-negative integers a, b\n    // We need to check all possible values of x^a and y^b that are <= n\n    \n    // Generate all powers of x that are <= n\n    $powersX = [];\n    $val = 1;\n    while ($val <= $n) {\n        $powersX[] = $val;\n        if ($val > $n / $x) break;\n        $val *= $x;\n    }\n    \n    // Generate all powers of y that are <= n\n    $powersY = [];\n    $val = 1;\n    while ($val <= $n) {\n        $powersY[] = $val;\n        if ($val > $n / $y) break;\n        $val *= $y;\n    }\n    \n    // For each power of x, check if n - powerX is a power of y\n    // We can use a set for powersY for O(1) lookup\n    $setY = [];\n    foreach ($powersY as $p) {\n        $setY[$p] = true;\n    }\n    \n    foreach ($powersX as $px) {\n        $remaining = $n - $px;\n        if ($remaining < 0) break;\n        if (isset($setY[$remaining])) {\n            return true;\n        }\n    }\n    \n    return false;\n}\n\nfunction main() {\n    $input = trim(fgets(STDIN));\n    $parts = explode(' ', $input);\n    $x = (int)$parts[0];\n    $y = (int)$parts[1];\n    $l = (int)$parts[2];\n    $r = (int)$parts[3];\n    \n    // Find all unlucky years in [l, r]\n    // Since x, y >= 2 and n <= 10^18, the number of powers is at most about 60 for each\n    // So we can generate all unlucky years in the range\n    \n    // Generate all possible x^a values that could be part of a sum in [l, r]\n    // x^a + y^b is in [l, r] means x^a is in [l - y^b, r - y^b]\n    // But it's easier to just generate all x^a <= r and all y^b <= r, then check sums\n    \n    $unluckySet = [];\n    \n    // Generate powers of x up to r\n    $powersX = [];\n    $val = 1;\n    while ($val <= $r) {\n        $powersX[] = $val;\n        if ($val > $r / $x) break;\n        $val *= $x;\n    }\n    \n    // Generate powers of y up to r\n    $powersY = [];\n    $val = 1;\n    while ($val <= $r) {\n        $powersY[] = $val;\n        if ($val > $r / $y) break;\n        $val *= $y;\n    }\n    \n    // For each combination, check if sum is in [l, r]\n    foreach ($powersX as $px) {\n        foreach ($powersY as $py) {\n            $sum = $px + $py;\n            if ($sum >= $l && $sum <= $r) {\n                $unluckySet[$sum] = true;\n            }\n        }\n    }\n    \n    // Now find the maximum gap between consecutive unlucky years\n    // Also consider the gaps before the first unlucky year and after the last unlucky year\n    \n    $unluckyYears = array_keys($unluckySet);\n    sort($unluckyYears);\n    \n    if (empty($unluckyYears)) {\n        // No unlucky years in [l, r], so the entire interval is golden age\n        echo ($r - $l + 1) . \"\\n\";\n        return;\n    }\n    \n    $maxGap = 0;\n    \n    // Gap before the first unlucky year\n    $firstUnlucky = $unluckyYears[0];\n    $gapBefore = $firstUnlucky - $l;\n    if ($gapBefore > $maxGap) {\n        $maxGap = $gapBefore;\n    }\n    \n    // Gaps between consecutive unlucky years\n    for ($i = 1; $i < count($unluckyYears); $i++) {\n        $gap = $unluckyYears[$i] - $unluckyYears[$i - 1] - 1;\n        if ($gap > $maxGap) {\n            $maxGap = $gap;\n        }\n    }\n    \n    // Gap after the last unlucky year\n    $lastUnlucky = $unluckyYears[count($unluckyYears) - 1];\n    $gapAfter = $r - $lastUnlucky;\n    if ($gapAfter > $maxGap) {\n        $maxGap = $gapAfter;\n    }\n    \n    echo $maxGap . \"\\n\";\n}\n\nmain();\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 18,
+                "message": {
+                    "content": "```php\n<?php\n// Read input\n$line = trim(fgets(STDIN));\n$parts = explode(' ', $line);\n$x = (int)$parts[0];\n$y = (int)$parts[1];\n$l = (int)$parts[2];\n$r = (int)$parts[3];\n\n// Generate all unlucky years in [l, r]\n// Unlucky year n = x^a + y^b where a, b >= 0\n// Since x, y >= 2, the powers grow quickly.\n// Max value is 10^18, so max exponent for base 2 is about 60.\n\n$unlucky = [];\n\n// Generate all powers of x that are <= r\n$powersX = [];\n$px = 1;\nwhile ($px <= $r) {\n    $powersX[] = $px;\n    if ($px > $r / $x) break; // avoid overflow\n    $px *= $x;\n}\n\n// Generate all powers of y that are <= r\n$powersY = [];\n$py = 1;\nwhile ($py <= $r) {\n    $powersY[] = $py;\n    if ($py > $r / $y) break; // avoid overflow\n    $py *= $y;\n}\n\n// For each pair (x^a, y^b), compute sum and check if in [l, r]\nforeach ($powersX as $px) {\n    foreach ($powersY as $py) {\n        $sum = $px + $py;\n        if ($sum >= $l && $sum <= $r) {\n            $unlucky[$sum] = true;\n        }\n    }\n}\n\n// Sort unlucky years\n$unluckyYears = array_keys($unlucky);\nsort($unluckyYears);\n\n// Find maximum gap between consecutive unlucky years\n// Also consider gaps from l to first unlucky year, and last unlucky year to r\n$maxGap = 0;\n\nif (empty($unluckyYears)) {\n    // No unlucky years in [l, r], so the entire interval is golden\n    $maxGap = $r - $l + 1;\n} else {\n    // Gap before first unlucky year\n    $first = $unluckyYears[0];\n    if ($first > $l) {\n        $maxGap = max($maxGap, $first - $l);\n    }\n    \n    // Gaps between consecutive unlucky years\n    for ($i = 0; $i < count($unluckyYears) - 1; $i++) {\n        $gap = $unluckyYears[$i + 1] - $unluckyYears[$i] - 1;\n        if ($gap > $maxGap) {\n            $maxGap = $gap;\n        }\n    }\n    \n    // Gap after last unlucky year\n    $last = $unluckyYears[count($unluckyYears) - 1];\n    if ($last < $r) {\n        $maxGap = max($maxGap, $r - $last);\n    }\n}\n\necho $maxGap . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 19,
+                "message": {
+                    "content": "```php\n<?php\n\n// Read input\n$line = fgets(STDIN);\n$parts = explode(' ', trim($line));\n$x = (int)$parts[0];\n$y = (int)$parts[1];\n$l = (int)$parts[2];\n$r = (int)$parts[3];\n\n// Generate all unlucky years in [l, r]\n// Unlucky year: n = x^a + y^b where a, b >= 0\n// Since x, y >= 2 and r <= 10^18, the exponents are bounded.\n// x^a <= 10^18 => a <= log_x(10^18) which is at most about 60 for x=2\n// Similarly for y.\n\n$unlucky = [];\n\n// Generate all powers of x: x^a for a = 0, 1, 2, ...\n$powersX = [];\n$val = 1;\nwhile ($val <= $r) {\n    $powersX[] = $val;\n    if ($val > $r / $x) break;\n    $val *= $x;\n}\n\n// Generate all powers of y: y^b for b = 0, 1, 2, ...\n$powersY = [];\n$val = 1;\nwhile ($val <= $r) {\n    $powersY[] = $val;\n    if ($val > $r / $y) break;\n    $val *= $y;\n}\n\n// For each pair (x^a, y^b), check if sum is in [l, r]\nforeach ($powersX as $px) {\n    foreach ($powersY as $py) {\n        $sum = $px + $py;\n        if ($sum >= $l && $sum <= $r) {\n            $unlucky[$sum] = true;\n        }\n    }\n}\n\n// Sort unlucky years\n$unluckyYears = array_keys($unlucky);\nsort($unluckyYears);\n\n// Find maximum gap between consecutive unlucky years\n// Also consider gaps from l to first unlucky year, and last unlucky year to r\n$maxGap = 0;\n\nif (empty($unluckyYears)) {\n    // No unlucky years in [l, r], so the entire interval is golden\n    echo ($r - $l + 1) . \"\\n\";\n    exit;\n}\n\n// Gap before first unlucky year\n$first = $unluckyYears[0];\nif ($first > $l) {\n    $maxGap = max($maxGap, $first - $l);\n}\n\n// Gaps between consecutive unlucky years\nfor ($i = 0; $i < count($unluckyYears) - 1; $i++) {\n    $gap = $unluckyYears[$i + 1] - $unluckyYears[$i] - 1;\n    if ($gap > $maxGap) {\n        $maxGap = $gap;\n    }\n}\n\n// Gap after last unlucky year\n$last = $unluckyYears[count($unluckyYears) - 1];\nif ($last < $r) {\n    $maxGap = max($maxGap, $r - $last);\n}\n\necho $maxGap . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 17919,
+            "prompt_tokens": 513,
+            "total_tokens": 18432
+        },
+        "prompt": "Write a program in PHP to solve this programming problem:\nDescription: Unlucky year in Berland is such a year that its number n can be represented as n\u2009=\u2009xa\u2009+\u2009yb, where a and b are non-negative integer numbers. For example, if x\u2009=\u20092 and y\u2009=\u20093 then the years 4 and 17 are unlucky (4\u2009=\u200920\u2009+\u200931, 17\u2009=\u200923\u2009+\u200932\u2009=\u200924\u2009+\u200930) and year 18 isn't unlucky as there is no such representation for it.Such interval of years that there are no unlucky years in it is called The Golden Age.You should write a program which will find maximum length of The Golden Age which starts no earlier than the year l and ends no later than the year r. If all years in the interval [l,\u2009r] are unlucky then the answer is 0.\nInput Specification: The first line contains four integer numbers x, y, l and r (2\u2009\u2264\u2009x,\u2009y\u2009\u2264\u20091018, 1\u2009\u2264\u2009l\u2009\u2264\u2009r\u2009\u2264\u20091018).\nOutput Specification: Print the maximum length of The Golden Age within the interval [l,\u2009r]. If all years in the interval [l,\u2009r] are unlucky then print 0.\n\nSample Input:\n2 3 1 10\nSample Output:\n1\n\nSample Input:\n3 5 10 22\nSample Output:\n8\n\nSample Input:\n2 3 3 5\nSample Output:\n0\n\nNotes: NoteIn the first example the unlucky years are 2, 3, 4, 5, 7, 9 and 10. So maximum length of The Golden Age is achived in the intervals [1,\u20091], [6,\u20096] and [8,\u20098].In the second example the longest Golden Age is the interval [15,\u200922].\nTake input from standard input and output to standard output\nProvide the PHP code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "68ca8a8730db27ac2230f9fe9b120f5f",
+        "difficulty": 1800,
+        "prob_desc_sample_inputs": [
+            "2 3 1 10",
+            "3 5 10 22",
+            "2 3 3 5"
+        ],
+        "prob_desc_time_limit": "1 second",
+        "tags": [
+            "brute force",
+            "math"
+        ],
+        "prob_desc_output_spec": "Print the maximum length of The Golden Age within the interval [l,\u2009r]. If all years in the interval [l,\u2009r] are unlucky then print 0.",
+        "prob_desc_input_spec": "The first line contains four integer numbers x, y, l and r (2\u2009\u2264\u2009x,\u2009y\u2009\u2264\u20091018, 1\u2009\u2264\u2009l\u2009\u2264\u2009r\u2009\u2264\u20091018).",
+        "lang_cluster": "PHP",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first example the unlucky years are 2, 3, 4, 5, 7, 9 and 10. So maximum length of The Golden Age is achived in the intervals [1,\u20091], [6,\u20096] and [8,\u20098].In the second example the longest Golden Age is the interval [15,\u200922].",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Unlucky year in Berland is such a year that its number n can be represented as n\u2009=\u2009xa\u2009+\u2009yb, where a and b are non-negative integer numbers. For example, if x\u2009=\u20092 and y\u2009=\u20093 then the years 4 and 17 are unlucky (4\u2009=\u200920\u2009+\u200931, 17\u2009=\u200923\u2009+\u200932\u2009=\u200924\u2009+\u200930) and year 18 isn't unlucky as there is no such representation for it.Such interval of years that there are no unlucky years in it is called The Golden Age.You should write a program which will find maximum length of The Golden Age which starts no earlier than the year l and ends no later than the year r. If all years in the interval [l,\u2009r] are unlucky then the answer is 0.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1496675100",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "1",
+            "8",
+            "0"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"2 3 1 10\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"3 5 10 22\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"2 3 3 5\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 2 1 10\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"2 2 1 1000000\\r\\n\", \"output\": [\"213568\"]}, {\"input\": \"2 2 1 1000000000000000000\\r\\n\", \"output\": [\"144115188075855871\"]}, {\"input\": \"2 3 1 1000000\\r\\n\", \"output\": [\"206415\"]}, {\"input\": \"2 3 1 1000000000000000000\\r\\n\", \"output\": [\"261485717957290893\"]}, {\"input\": \"12345 54321 1 1000000\\r\\n\", \"output\": [\"933334\"]}, {\"input\": \"54321 12345 1 1000000000000000000\\r\\n\", \"output\": [\"976614248345331214\"]}, {\"input\": \"2 3 100000000 1000000000000\\r\\n\", \"output\": [\"188286357653\"]}, {\"input\": \"2 14 732028847861235712 732028847861235712\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"14 2 732028847861235713 732028847861235713\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"3 2 6 7\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"16 5 821690667 821691481\\r\\n\", \"output\": [\"815\"]}, {\"input\": \"1000000000000000000 2 1 1000000000000000000\\r\\n\", \"output\": [\"423539247696576511\"]}, {\"input\": \"2 1000000000000000000 1000000000000000 1000000000000000000\\r\\n\", \"output\": [\"423539247696576511\"]}, {\"input\": \"2 2 1000000000000000000 1000000000000000000\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"3 3 1 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"2 3 626492297402423196 726555387600422608\\r\\n\", \"output\": [\"100063090197999413\"]}, {\"input\": \"4 4 1 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"304279187938024110 126610724244348052 78460471576735729 451077737144268785\\r\\n\", \"output\": [\"177668463693676057\"]}, {\"input\": \"510000000000 510000000000 1 1000000000000000000\\r\\n\", \"output\": [\"999998980000000000\"]}, {\"input\": \"2 10000000000000000 1 1000000000000000000\\r\\n\", \"output\": [\"413539247696576512\"]}, {\"input\": \"84826654960259 220116531311479700 375314289098080160 890689132792406667\\r\\n\", \"output\": [\"515374843694326508\"]}, {\"input\": \"1001 9999 1 1000000000000000000\\r\\n\", \"output\": [\"988998989390034998\"]}, {\"input\": \"106561009498593483 3066011339919949 752858505287719337 958026822891358781\\r\\n\", \"output\": [\"205168317603639445\"]}, {\"input\": \"650233444262690661 556292951587380938 715689923804218376 898772439356652923\\r\\n\", \"output\": [\"183082515552434548\"]}, {\"input\": \"4294967297 4294967297 1 1000000000000000000\\r\\n\", \"output\": [\"999999991410065406\"]}, {\"input\": \"1000000000000000000 1000000000000000000 1000000000000000000 1000000000000000000\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"2 2 1 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"73429332516742239 589598864615747534 555287238606698050 981268715519611449\\r\\n\", \"output\": [\"318240518387121676\"]}, {\"input\": \"282060925969693883 446418005951342865 709861829378794811 826972744183396568\\r\\n\", \"output\": [\"98493812262359820\"]}, {\"input\": \"97958277744315833 443452631396066615 33878596673318768 306383421710156519\\r\\n\", \"output\": [\"208425143965840685\"]}, {\"input\": \"40975442958818854 7397733549114401 299774870238987084 658001214206968260\\r\\n\", \"output\": [\"358226343967981177\"]}, {\"input\": \"699 700 1 1000\\r\\n\", \"output\": [\"697\"]}, {\"input\": \"483076744475822225 425097332543006422 404961220953110704 826152774360856248\\r\\n\", \"output\": [\"343076029885034022\"]}, {\"input\": \"4294967297 4294967297 1 999999999999999999\\r\\n\", \"output\": [\"999999991410065405\"]}, {\"input\": \"702012794 124925148 2623100012 1000000000000000000\\r\\n\", \"output\": [\"491571744457491660\"]}, {\"input\": \"433333986179614514 1000000000000000000 433333986179614515 726628630292055493\\r\\n\", \"output\": [\"293294644112440978\"]}, {\"input\": \"999999999999999999 364973116927770629 4 4\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"4 2 40 812\\r\\n\", \"output\": [\"191\"]}, {\"input\": \"2 3 1 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"1556368728 1110129598 120230736 1258235681\\r\\n\", \"output\": [\"989898863\"]}, {\"input\": \"7 9 164249007852879073 459223650245359577\\r\\n\", \"output\": [\"229336748650748455\"]}, {\"input\": \"324693328712373699 541961409169732375 513851377473048715 873677521504257312\\r\\n\", \"output\": [\"324693328712373697\"]}, {\"input\": \"370083000139673112 230227213530985315 476750241623737312 746365058930029530\\r\\n\", \"output\": [\"146054845259371103\"]}, {\"input\": \"4 3 584 899\\r\\n\", \"output\": [\"146\"]}, {\"input\": \"4 3 286 581\\r\\n\", \"output\": [\"161\"]}, {\"input\": \"304045744870965151 464630021384225732 142628934177558000 844155070300317027\\r\\n\", \"output\": [\"304045744870965149\"]}, {\"input\": \"195627622825327857 666148746663834172 1 1000000000000000000\\r\\n\", \"output\": [\"470521123838506314\"]}, {\"input\": \"459168731438725410 459955118458373596 410157890472128901 669197645706452507\\r\\n\", \"output\": [\"209242527248078910\"]}, {\"input\": \"999999999999999999 999999999999999999 1 1000000000000000000\\r\\n\", \"output\": [\"999999999999999997\"]}, {\"input\": \"752299248283963354 680566564599126819 73681814274367577 960486443362068685\\r\\n\", \"output\": [\"606884750324759243\"]}, {\"input\": \"20373217421623606 233158243228114207 97091516440255589 395722640217125926\\r\\n\", \"output\": [\"142191179567388113\"]}, {\"input\": \"203004070900 20036005000 1 1000000000000000000\\r\\n\", \"output\": [\"999999776959924100\"]}, {\"input\": \"565269817339236857 318270460838647700 914534538271870694 956123707310168659\\r\\n\", \"output\": [\"41589169038297966\"]}, {\"input\": \"2 5 330 669\\r\\n\", \"output\": [\"131\"]}, {\"input\": \"9 9 91 547\\r\\n\", \"output\": [\"385\"]}, {\"input\": \"9 4 866389615074294253 992899492208527253\\r\\n\", \"output\": [\"126509877134233001\"]}, {\"input\": \"3037000500 3037000500 1 1000000000000000000\\r\\n\", \"output\": [\"999999993925999000\"]}, {\"input\": \"4294967297 4294967297 12 1000000000000000000\\r\\n\", \"output\": [\"999999991410065406\"]}, {\"input\": \"5 3 78510497842978003 917156799600023483\\r\\n\", \"output\": [\"238418579101562499\"]}, {\"input\": \"749206377024033575 287723056504284448 387669391392789697 931234393488075794\\r\\n\", \"output\": [\"361536985631243879\"]}, {\"input\": \"999999999999999999 454135 1000000000000000000 1000000000000000000\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"759826429841877401 105086867783910112 667080043736858072 797465019478234768\\r\\n\", \"output\": [\"92746386105019330\"]}, {\"input\": \"1000000000000000000 1000000000000000000 5 7\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"440968000218771383 43378854522801881 169393324037146024 995429539593716237\\r\\n\", \"output\": [\"511082684852142973\"]}, {\"input\": \"15049917793417622 113425474361704411 87565655389309185 803955352361026671\\r\\n\", \"output\": [\"675479960205904638\"]}, {\"input\": \"4 6 264626841724745187 925995096479842591\\r\\n\", \"output\": [\"369878143059623936\"]}, {\"input\": \"4294967297 4294967297 13 1000000000000000000\\r\\n\", \"output\": [\"999999991410065406\"]}, {\"input\": \"315729630349763416 22614591055604717 66895291338255006 947444311481017774\\r\\n\", \"output\": [\"609100090075649641\"]}, {\"input\": \"3 10 173 739\\r\\n\", \"output\": [\"386\"]}, {\"input\": \"161309010783040325 128259041753158864 5843045875031294 854024306926137845\\r\\n\", \"output\": [\"564456254389938656\"]}, {\"input\": \"239838434825939759 805278168279318096 202337849919104640 672893754916863788\\r\\n\", \"output\": [\"433055320090924028\"]}, {\"input\": \"9 9 435779695685310822 697902619874412541\\r\\n\", \"output\": [\"262122924189101720\"]}, {\"input\": \"967302429573451368 723751675006196376 143219686319239751 266477897142546404\\r\\n\", \"output\": [\"123258210823306654\"]}, {\"input\": \"10 8 139979660652061677 941135332855173888\\r\\n\", \"output\": [\"697020144779318016\"]}, {\"input\": \"4294967297 1000000000000000000 4294967296 17179869184\\r\\n\", \"output\": [\"12884901886\"]}, {\"input\": \"100914030314340517 512922595840756536 812829791042966971 966156272123068006\\r\\n\", \"output\": [\"153326481080101036\"]}, {\"input\": \"288230376151711744 288230376151711744 1 1000000000000000000\\r\\n\", \"output\": [\"423539247696576512\"]}, {\"input\": \"6 9 681 750\\r\\n\", \"output\": [\"49\"]}, {\"input\": \"880356874212472951 178538501711453307 162918237570625233 224969951233811739\\r\\n\", \"output\": [\"46431449522358431\"]}, {\"input\": \"2 7 405373082004080437 771991379629433514\\r\\n\", \"output\": [\"153172782079203571\"]}, {\"input\": \"10 11 10 11\\r\\n\", \"output\": [\"1\"]}]"
+    }
+}

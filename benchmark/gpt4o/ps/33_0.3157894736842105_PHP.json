@@ -1,0 +1,354 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEI90olyfjBmSusJahLHpdWN4B4Ur",
+        "created": 1787075046,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "<?php\nfscanf(STDIN, \"%d %d %d\", $n, $c1, $c2);\n$s = trim(fgets(STDIN));\n\n$adults = 0;\nfor ($i = 0; $i < $n; $i++) {\n    if ($s[$i] === '1') $adults++;\n}\n\nif ($adults == 0) {\n    // Problem guarantees at least one adult, but just in case\n    echo \"0\\n\";\n    exit;\n}\n\n$INF = PHP_INT_MAX;\n$dp = array_fill(0, $adults + 1, $INF);\n$dp[0] = 0;\n\nfor ($i = 1; $i <= $adults; $i++) {\n    // group size x from 1 to i\n    // dp[i] = min over x: dp[i - x] + c1 + c2 * (x - 1)^2\n    $best = $INF;\n    for ($x = 1; $x <= $i; $x++) {\n        $cost = $dp[$i - $x] + $c1 + $c2 * ($x - 1) * ($x - 1);\n        if ($cost < $best) $best = $cost;\n    }\n    $dp[$i] = $best;\n}\n\necho $dp[$adults] . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "<?php\n// Read input\n$line = trim(fgets(STDIN));\nlist($n, $c1, $c2) = array_map('intval', explode(' ', $line));\n$s = trim(fgets(STDIN));\n\n// Count adults\n$adults = 0;\nfor ($i = 0; $i < $n; $i++) {\n    if ($s[$i] === '1') $adults++;\n}\n\n// If no pupils or only adults, one group is optimal\n// But general solution below handles all cases\n\n// Precompute prefix sums of adults\n$prefAdults = array_fill(0, $n + 1, 0);\nfor ($i = 0; $i < $n; $i++) {\n    $prefAdults[$i + 1] = $prefAdults[$i] + ($s[$i] === '1' ? 1 : 0);\n}\n\n// DP[i] = minimal cost to cover first i people (0..i-1)\n$INF = PHP_INT_MAX;\n$dp = array_fill(0, $n + 1, $INF);\n$dp[0] = 0;\n\n// For each end position i, try all possible starts j\nfor ($i = 1; $i <= $n; $i++) {\n    // We need at least one adult in [j, i-1]\n    // Brute force j from i-1 down to 0, break if no adults possible\n    for ($j = $i - 1; $j >= 0; $j--) {\n        $adultsInGroup = $prefAdults[$i] - $prefAdults[$j];\n        if ($adultsInGroup == 0) {\n            // No adults in this and any smaller j will also have no adults\n            break;\n        }\n        $x = $i - $j;\n        $cost = $c1 + $c2 * ($x - 1) * ($x - 1);\n        if ($dp[$j] != $INF) {\n            $val = $dp[$j] + $cost;\n            if ($val < $dp[$i]) $dp[$i] = $val;\n        }\n    }\n}\n\necho $dp[$n] . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "<?php\n// Read first line\n$line = trim(fgets(STDIN));\nlist($n, $c1, $c2) = array_map('intval', explode(' ', $line));\n\n// Read second line (string of 0s and 1s)\n$s = trim(fgets(STDIN));\n\n// Count adults\n$adults = 0;\nfor ($i = 0; $i < $n; $i++) {\n    if ($s[$i] === '1') $adults++;\n}\n\n// If no pupils, everyone is adult; optimal is one group\n// But problem guarantees at least one adult; pupils may be zero.\n$adultsCount = $adults;\n\n// Precompute cost for all possible group sizes 1..n\n// cost[x] = c1 + c2 * (x-1)^2\n$cost = [];\n$cost[0] = 0;\nfor ($x = 1; $x <= $n; $x++) {\n    $cost[$x] = $c1 + $c2 * ($x - 1) * ($x - 1);\n}\n\n// DP over number of adults used: dp[a] = minimal cost to serve a people\n// Initialize with INF\n$INF = PHP_INT_MAX;\n$dp = array_fill(0, $adultsCount + 1, $INF);\n$dp[0] = 0;\n\n// We must partition all n people into groups, each group has at least 1 adult.\n// Let groups: each group size = x, adults in group = y (1 <= y <= min(a_remaining, x))\n// But we don't care about pupils/adults positions; only counts.\n// Total people = n, adults = A. Pupils = n - A.\n// For each group, we choose size x and adults y, pupils = x - y.\n// Summing over groups: sum x = n, sum y = A.\n// This is equivalent to partitioning adults into groups (each group has at least 1 adult),\n// and distributing pupils arbitrarily among groups (including possibly zero in some).\n// For a fixed multiset of group sizes (x_i) and adult counts (y_i), cost depends only on x_i.\n// Pupils only affect x_i but not constraints beyond total count.\n//\n// We can think: choose k groups, each must have at least 1 adult, so k <= A.\n// Let a_i be adults per group, sum a_i = A, a_i >= 1.\n// Let p_i be pupils per group, p_i >= 0, sum p_i = P.\n// Group size x_i = a_i + p_i.\n// We want to minimize sum cost[x_i] with sum x_i = n.\n// This is equivalent to: we choose k and group sizes x_i >=1 with sum x_i = n,\n// and assign at least 1 adult per group (so k <= A).\n// Feasibility: given k and x_i, we need to check if we can assign adults: since each group needs 1 adult,\n// we use k adults, remaining A-k adults can be placed arbitrarily among groups (increasing x_i but fixed).\n// So feasibility requires k <= A and also total people n = A + P = sum x_i, always.\n// Thus the only constraint is number of groups k <= A.\n//\n// So problem reduces to partitioning n into k positive integers x_i, with k <= A,\n// minimizing sum cost[x_i]. This is independent of adult positions.\n//\n// DP over total people and groups count would be large; instead, note cost is convex in x.\n// For convex cost, optimal partition uses group sizes differing by at most 1.\n// So for given k, best is to split n into k groups as equal as possible:\n// q = intdiv(n, k), r = n % k.\n// Then we have r groups of size q+1 and k-r groups of size q.\n// Total cost(k) = r * cost[q+1] + (k-r) * cost[q].\n// We need k from 1 to min(A, n) (can't have more groups than people).\n//\n// Compute minimal over k.\n\n$A = $adultsCount;\n$maxGroups = min($A, $n);\n$answer = $INF;\n\nfor ($k = 1; $k <= $maxGroups; $k++) {\n    $q = intdiv($n, $k);\n    $r = $n % $k;\n    // group sizes: r groups of q+1, k-r groups of q\n    $total = 0;\n    if ($q >= 1) {\n        $total += ($k - $r) * $cost[$q];\n        if ($r > 0) {\n            $total += $r * $cost[$q + 1];\n        }\n    } else {\n        // q == 0 means k > n, but we restrict k <= n, so won't happen\n        continue;\n    }\n    if ($total < $answer) $answer = $total;\n}\n\necho $answer . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "<?php\n// Read first line\n$line = trim(fgets(STDIN));\nlist($n, $c1, $c2) = array_map('intval', explode(' ', $line));\n\n// Read second line (string of 0s and 1s)\n$s = trim(fgets(STDIN));\n\n// Count adults\n$adults = 0;\nfor ($i = 0; $i < $n; $i++) {\n    if ($s[$i] === '1') $adults++;\n}\n\n// If no pupils, each adult can go alone\nif ($adults == $n) {\n    echo $n * $c1 . PHP_EOL;\n    exit;\n}\n\n// Precompute cost for all possible group sizes\n$cost = [];\nfor ($x = 1; $x <= $n; $x++) {\n    $cost[$x] = $c1 + $c2 * ($x - 1) * ($x - 1);\n}\n\n// DP over number of adults: dp[a] = minimal cost to serve a adults (no pupils)\n$INF = PHP_INT_MAX;\n$dp = array_fill(0, $adults, $INF);\n$dp[0] = 0;\n\nfor ($a = 1; $a <= $adults; $a++) {\n    $best = $INF;\n    // group size x from 1 to a\n    for ($x = 1; $x <= $a; $x++) {\n        if ($dp[$a - $x] == $INF) continue;\n        $val = $dp[$a - $x] + $cost[$x];\n        if ($val < $best) $best = $val;\n    }\n    $dp[$a] = $best;\n}\n\n// Now we have pupils; they must be attached to groups containing adults.\n// Optimal strategy: form groups of adults only (as per dp) and then\n// distribute pupils among these groups without changing cost, because\n// cost depends only on total size, but we can always rearrange adults\n// and pupils among groups as long as each group has at least one adult.\n// So we need to find minimal cost over all partitions of total people\n// into groups with at least one adult each. This is equivalent to:\n// choose number of groups g (1..adults), assign at least 1 adult per group,\n// and total size n distributed among g groups. Each group size >=1,\n// adults per group >=1, pupils can be anywhere.\n// For fixed g, minimal cost is achieved when group sizes are as equal as possible.\n// But we must ensure at least one adult per group: since adults >= g, we can.\n// So we iterate g from 1 to adults, compute minimal possible cost for g groups.\n\n$pupils = $n - $adults;\n$ans = $INF;\n\nfor ($g = 1; $g <= $adults; $g++) {\n    // Each group has at least 1 adult, so we use g adults as mandatory.\n    // Remaining adults: adults - g, pupils: pupils.\n    // Total remaining people: (adults - g) + pupils = n - g.\n    // We need to distribute these among g groups (can be zero in some).\n    // So final group sizes sum to n, with each >=1. This is just partitioning\n    // n into g positive integers. Minimal sum of convex function is when\n    // sizes differ by at most 1.\n    $base = intdiv($n, $g);\n    $rem = $n % $g; // rem groups of size base+1, others base\n    $cur = 0;\n    for ($i = 0; $i < $g; $i++) {\n        $sz = $base + ($i < $rem ? 1 : 0);\n        $cur += $cost[$sz];\n        if ($cur >= $ans) break;\n    }\n    if ($cur < $ans) $ans = $cur;\n}\n\necho $ans . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "<?php\n// Read input\n$line = trim(fgets(STDIN));\nlist($n, $c1, $c2) = array_map('intval', explode(' ', $line));\n$s = trim(fgets(STDIN));\n\n// Count adults\n$adults = 0;\nfor ($i = 0; $i < $n; $i++) {\n    if ($s[$i] === '1') $adults++;\n}\n\n// If no pupils, everyone is adult; best is one group\nif ($adults == $n) {\n    $x = $n;\n    $cost = $c1 + $c2 * ($x - 1) * ($x - 1);\n    echo $cost . PHP_EOL;\n    exit;\n}\n\n// There is at least one adult and at least one pupil\n// Strategy: all adults in one group, each pupil joins that group (one big group)\n$x = $n;\n$cost = $c1 + $c2 * ($x - 1) * ($x - 1);\necho $cost . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "<?php\n// Read first line: n, c1, c2\n$line = trim(fgets(STDIN));\nlist($n, $c1, $c2) = array_map('intval', explode(' ', $line));\n\n// Read second line: string of zeros and ones\n$s = trim(fgets(STDIN));\n\n// Count adults (ones)\n$adults = 0;\nfor ($i = 0; $i < $n; $i++) {\n    if ($s[$i] === '1') $adults++;\n}\n\n// If there are no pupils, each adult can be alone\n// But the cost function is convex, so we should still compute via DP\n// However, since every group must have at least one adult, and there are no pupils,\n// we can treat all as adults and group them optimally.\n\n// Precompute prefix sums of adults and total people\n$prefAdults = array_fill(0, $n + 1, 0);\nfor ($i = 0; $i < $n; $i++) {\n    $prefAdults[$i + 1] = $prefAdults[$i] + ($s[$i] === '1' ? 1 : 0);\n}\n\n// DP[i] = minimal cost to cover first i people (0..i-1)\n$INF = PHP_INT_MAX;\n$dp = array_fill(0, $n + 1, $INF);\n$dp[0] = 0;\n\n// We need at least one adult in each group, so for segment [j, i-1],\n// adults count = prefAdults[i] - prefAdults[j] must be >= 1.\nfor ($i = 1; $i <= $n; $i++) {\n    // Iterate backwards to find previous j where segment [j, i-1] has at least one adult.\n    // Once we hit a position where there are no adults in [j, i-1], we break.\n    for ($j = $i - 1; $j >= 0; $j--) {\n        $adultsInSegment = $prefAdults[$i] - $prefAdults[$j];\n        if ($adultsInSegment == 0) {\n            // No adults in this segment, can't extend further back\n            break;\n        }\n        $x = $i - $j; // group size\n        $cost = $c1 + $c2 * ($x - 1) * ($x - 1);\n        if ($dp[$j] != $INF) {\n            $candidate = $dp[$j] + $cost;\n            if ($candidate < $dp[$i]) {\n                $dp[$i] = $candidate;\n            }\n        }\n    }\n}\n\necho $dp[$n] . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "<?php\n// Read input\n$line = trim(fgets(STDIN));\nlist($n, $c1, $c2) = array_map('intval', explode(' ', $line));\n$s = trim(fgets(STDIN));\n\n// Count adults and pupils\n$adults = 0;\n$pupils = 0;\nfor ($i = 0; $i < $n; $i++) {\n    if ($s[$i] === '1') $adults++;\n    else $pupils++;\n}\n\n// If no pupils, each adult alone\nif ($pupils == 0) {\n    echo $adults * $c1 . PHP_EOL;\n    exit;\n}\n\n// Precompute cost for group size x\n// cost(x) = c1 + c2 * (x-1)^2\n// We need x up to n\n$cost = array_fill(0, $n + 1, 0);\nfor ($x = 1; $x <= $n; $x++) {\n    $cost[$x] = $c1 + $c2 * ($x - 1) * ($x - 1);\n}\n\n// DP over number of pupils: dp[k] = min cost to serve k pupils\n// dp[0] = 0, dp[k] = min over g (group size) where 1<=g<=n and pupils in group <=g and >=1\n// For each group: choose p pupils (1..min(g, remaining pupils)), at least 1 adult in group\n// So adults in group = g - p >=1 => p <= g-1\n// Thus p in [1, min(g-1, remaining pupils)]\n// We'll iterate over total pupils served so far and try adding a group with p pupils.\n$INF = PHP_INT_MAX;\n$dp = array_fill(0, $pupils + 1, $INF);\n$dp[0] = 0;\n\n// Precompute possible (g,p) pairs to avoid recomputation\n$pairs = [];\nfor ($g = 1; $g <= $n; $g++) {\n    // Need at least 1 adult, so max pupils per group is g-1\n    $maxP = $g - 1;\n    if ($maxP <= 0) continue;\n    for ($p = 1; $p <= $maxP; $p++) {\n        $pairs[] = [$p, $cost[$g]];\n    }\n}\n\n// Optimize: sort pairs by pupils count to allow early break\nusort($pairs, function($a, $b) {\n    if ($a[0] == $b[0]) return 0;\n    return ($a[0] < $b[0]) ? -1 : 1;\n});\n\n// DP\nfor ($k = 0; $k <= $pupils; $k++) {\n    if ($dp[$k] == $INF) continue;\n    foreach ($pairs as $pair) {\n        $p = $pair[0];\n        $c = $pair[1];\n        if ($k + $p > $pupils) break;\n        if ($dp[$k + $p] > $dp[$k] + $c) {\n            $dp[$k + $p] = $dp[$k] + $c;\n        }\n    }\n}\n\n// Now we have minimal cost for serving all pupils, but must ensure adults count suffices\n// Each group with p pupils has at least 1 adult, so total groups <= adults\n// We didn't track groups count, so we need another DP tracking groups and pupils.\n// However, constraints are large; we need a more direct approach.\n\n// Better model:\n// Let G be number of groups, each group has at least 1 adult.\n// Total adults >= G.\n// Pupils distributed among groups; if group i has size x_i, pupils in it = x_i - 1 (since at least 1 adult).\n// Total pupils = sum(x_i - 1) = (sum x_i) - G.\n// Total people n = sum x_i => pupils = n - adults, consistent.\n// But cost depends only on group sizes x_i, not on distribution of adults/pupils beyond constraints.\n// We only need to partition n people into G groups with sizes x_i >=1, and ensure G <= adults and pupils >= G? No.\n// Condition \"at least one adult per group\" means number of groups G cannot exceed adults.\n// Any partition of n into G parts (x_i>=1) is feasible if G<=adults and pupils >=0 (always).\n// So we just choose G (1..adults) and partition n into G positive integers to minimize sum cost(x_i).\n\n// This is classic: minimize sum(c1 + c2*(x_i-1)^2) with sum x_i = n, x_i>=1.\n// For fixed G, sum c1 = G*c1, and we need to minimize sum (x_i-1)^2 with sum (x_i-1) = n-G, and x_i-1>=0.\n// This is minimized when (x_i-1) differ by at most 1 (balanced distribution).\n// Let t = n - G. Distribute t among G slots: each gets floor(t/G) or ceil(t/G).\n// Let q = intdiv(t, G), r = t % G. Then r groups have (q+1), others q.\n// So x_i = 1 + (q or q+1).\n// Then sum (x_i-1)^2 = r*(q+1)^2 + (G-r)*q^2.\n// Total cost(G) = G*c1 + c2 * [r*(q+1)^2 + (G-r)*q^2].\n\n// We just iterate G from 1 to adults and take minimal cost.\n\n$adultsCount = $adults;\n$best = PHP_INT_MAX;\n\nfor ($G = 1; $G <= $adultsCount; $G++) {\n    $t = $n - $G; // total extra people beyond 1 per group\n    if ($t < 0) break; // not possible\n    $q = intdiv($t, $G);\n    $r = $t % $G;\n    $sumSquares = $r * ($q + 1) * ($q + 1) + ($G - $r) * $q * $q;\n    $costTotal = $G * $c1 + $c2 * $sumSquares;\n    if ($costTotal < $best) $best = $costTotal;\n}\n\necho $best . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_result": {
+                        "error": {
+                            "code": "content_filter_error",
+                            "message": "The contents are not filtered"
+                        }
+                    },
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "<?php\n// Read first line\n$line = trim(fgets(STDIN));\nlist($n, $c1, $c2) = array_map('intval', explode(' ', $line));\n\n// Read second line: string of 0/1\n$s = trim(fgets(STDIN));\n\n// Count adults\n$adults = 0;\nfor ($i = 0; $i < $n; $i++) {\n    if ($s[$i] === '1') $adults++;\n}\n\n// If no pupils or only adults, optimal is one group of all\n// But general solution below covers all cases.\n\n// Precompute cost for group size x: c1 + c2 * (x-1)^2\n// We need to decide how many groups (k), each must contain at least 1 adult.\n// Let k be number of groups, 1 <= k <= adults.\n// We must partition n people into k groups, each size >=1.\n// Cost depends only on sizes, not composition, as long as each group has an adult.\n// To minimize cost for fixed k, we should make group sizes as equal as possible.\n// So base size = intdiv(n, k), remainder r = n % k\n// r groups of size base+1, (k-r) groups of size base.\n// Total cost = r * cost(base+1) + (k-r) * cost(base).\n\n// We must ensure feasibility: each group has at least one adult.\n// With k groups, we need at least k adults. So k <= adults.\n// Also, pupils can be distributed arbitrarily, no extra constraint.\n\n// We need to find k in [1, adults] minimizing total cost.\n// n up to 2e5, adults up to n. We can iterate k from 1 to adults.\n// Complexity O(n) which is fine.\n\n// However, adults can be up to 2e5, iteration is fine.\n\n$maxK = $adults;\n$best = PHP_INT_MAX;\n\nfor ($k = 1; $k <= $maxK; $k++) {\n    $base = intdiv($n, $k);\n    $r = $n % $k;\n\n    $x1 = $base;\n    $x2 = $base + 1;\n\n    $cost1 = $c1 + $c2 * ($x1 - 1) * ($x1 - 1);\n    $cost2 = $c1 + $c2 * ($x2 - 1) * ($x2 - 1);\n\n    $total = ($k - $r) * $cost1 + $r * $cost2;\n\n    if ($total < $best) $best = $total;\n}\n\necho $best . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 5483,
+            "prompt_tokens": 568,
+            "total_tokens": 6051,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 4,
+                "engine_ttft_ms": 312,
+                "engine_ttlt_ms": 23455,
+                "pre_inference_ms": 227,
+                "service_tbt_ms": 4,
+                "service_ttft_ms": 719,
+                "service_ttlt_ms": 23837,
+                "total_duration_ms": 23619,
+                "user_visible_ttft_ms": 492
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in PHP to solve this programming problem:\nDescription: Pupils decided to go to amusement park. Some of them were with parents. In total, n people came to the park and they all want to get to the most extreme attraction and roll on it exactly once.Tickets for group of x people are sold on the attraction, there should be at least one adult in each group (it is possible that the group consists of one adult). The ticket price for such group is c1\u2009+\u2009c2\u00b7(x\u2009-\u20091)2 (in particular, if the group consists of one person, then the price is c1). All pupils who came to the park and their parents decided to split into groups in such a way that each visitor join exactly one group, and the total price of visiting the most extreme attraction is as low as possible. You are to determine this minimum possible total price. There should be at least one adult in each group. \nInput Specification: The first line contains three integers n, c1 and c2 (1\u2009\u2264\u2009n\u2009\u2264\u2009200\u2009000, 1\u2009\u2264\u2009c1,\u2009c2\u2009\u2264\u2009107)\u00a0\u2014 the number of visitors and parameters for determining the ticket prices for a group. The second line contains the string of length n, which consists of zeros and ones. If the i-th symbol of the string is zero, then the i-th visitor is a pupil, otherwise the i-th person is an adult. It is guaranteed that there is at least one adult. It is possible that there are no pupils.\nOutput Specification: Print the minimum price of visiting the most extreme attraction for all pupils and their parents. Each of them should roll on the attraction exactly once.\n\nSample Input:\n3 4 1\n011\nSample Output:\n8\n\nSample Input:\n4 7 2\n1101\nSample Output:\n18\n\nNotes: NoteIn the first test one group of three people should go to the attraction. Then they have to pay 4\u2009+\u20091\u2009*\u2009(3\u2009-\u20091)2\u2009=\u20098.In the second test it is better to go to the attraction in two groups. The first group should consist of two adults (for example, the first and the second person), the second should consist of one pupil and one adult (the third and the fourth person). Then each group will have a size of two and for each the price of ticket is 7\u2009+\u20092\u2009*\u2009(2\u2009-\u20091)2\u2009=\u20099. Thus, the total price for two groups is 18.\nTake input from standard input and output to standard output\nProvide the PHP code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "78d013b01497053b8e321fe7b6ce3760",
+        "difficulty": 2100,
+        "prob_desc_sample_inputs": [
+            "3 4 1\n011",
+            "4 7 2\n1101"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "ternary search"
+        ],
+        "prob_desc_output_spec": "Print the minimum price of visiting the most extreme attraction for all pupils and their parents. Each of them should roll on the attraction exactly once.",
+        "prob_desc_input_spec": "The first line contains three integers n, c1 and c2 (1\u2009\u2264\u2009n\u2009\u2264\u2009200\u2009000, 1\u2009\u2264\u2009c1,\u2009c2\u2009\u2264\u2009107)\u00a0\u2014 the number of visitors and parameters for determining the ticket prices for a group. The second line contains the string of length n, which consists of zeros and ones. If the i-th symbol of the string is zero, then the i-th visitor is a pupil, otherwise the i-th person is an adult. It is guaranteed that there is at least one adult. It is possible that there are no pupils.",
+        "lang_cluster": "PHP",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first test one group of three people should go to the attraction. Then they have to pay 4\u2009+\u20091\u2009*\u2009(3\u2009-\u20091)2\u2009=\u20098.In the second test it is better to go to the attraction in two groups. The first group should consist of two adults (for example, the first and the second person), the second should consist of one pupil and one adult (the third and the fourth person). Then each group will have a size of two and for each the price of ticket is 7\u2009+\u20092\u2009*\u2009(2\u2009-\u20091)2\u2009=\u20099. Thus, the total price for two groups is 18.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Pupils decided to go to amusement park. Some of them were with parents. In total, n people came to the park and they all want to get to the most extreme attraction and roll on it exactly once.Tickets for group of x people are sold on the attraction, there should be at least one adult in each group (it is possible that the group consists of one adult). The ticket price for such group is c1\u2009+\u2009c2\u00b7(x\u2009-\u20091)2 (in particular, if the group consists of one person, then the price is c1). All pupils who came to the park and their parents decided to split into groups in such a way that each visitor join exactly one group, and the total price of visiting the most extreme attraction is as low as possible. You are to determine this minimum possible total price. There should be at least one adult in each group. ",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1491406500",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "8",
+            "18"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"3 4 1\\r\\n011\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"4 7 2\\r\\n1101\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"1 2 2\\r\\n1\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"2 3 10\\r\\n01\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"5 10 3\\r\\n11100\\r\\n\", \"output\": [\"35\"]}, {\"input\": \"10 2 2\\r\\n1111101111\\r\\n\", \"output\": [\"20\"]}, {\"input\": \"20 3 13\\r\\n01111110011111010101\\r\\n\", \"output\": [\"120\"]}, {\"input\": \"50 13 44\\r\\n11101110100110111100010110001111001001110010111011\\r\\n\", \"output\": [\"1270\"]}, {\"input\": \"100 1000 1000\\r\\n0000010100101100110100101111001111111111100101111100111011110001011110110111111010000000101000111000\\r\\n\", \"output\": [\"100000\"]}, {\"input\": \"1000 10000 10000\\r\\n1111011110111111111111111111011111111001111111111111111111011111111101111111111111101011111111111011111111111111111101111111111011111111101111111111111111111111111111111110111110110111111111111101111110101111111101111111111111111111111110111111011001111011111111111110101101111111101111111101111111101111111111110101111111111111111111011011111101111101111111111111111111111111110111011100111111101111101111101101111111111111110111011111111111111111111111111111111111111111111111011111111011111...\", \"output\": [\"10000000\"]}, {\"input\": \"10000 100 1000000\\r\\n101111011011011111011111100110111001100110101111100100011101011011110110001011001101011010111110101011011101111111111010111101001110111111111010011100110111111110101101111111011010111111101111101100011000101010111101110111111101011110010100111010110011011011101111111111011011010110011010111110111101110010101011011100011110100011101100101010111100111111101111100011000110110001111111110111101110101010111110111101011111111110101001101001100111100110110000011111110001110010001011011101001110...\", \"output\": [\"3759624100\"]}, {\"input\": \"20001 1000 100\\r\\n000100010100111100011011010110111011110111110011000110010010010000110111001000010101111000110110111010101000100111100100101010101010000010111101011000010011111011110001110001110111001000110111110001011100010011001110110100010011101010001010101101000110001000001010011001100010011111001010001101111101110010001011011000101111110001111101010010101101000000100110011100100100001110111001010011110011000111100001011011111011100101100111110010011010111001001011011000111110101011000101010111000111110...\", \"output\": [\"9333800\"]}, {\"input\": \"50000 100 1000\\r\\n100001000000100000101110011001101100001101110010010001000101011000010000000000000000100111001000000100111010000110011011011011011101011100100010000010000001011010010000011100100100000010000000000001000011010011001000110110110100001001001010100011011000110010000011001000001110100100000000111110000110000010010011001111101000000000100001110001011001000011101010010100110110100011110001010000010101000111100001010110011100000100001000001010000000000100100000000110100010100010101111111010010000101...\", \"output\": [\"62539900\"]}, {\"input\": \"99999 10000 10000\\r\\n010010000000000000000001000000000001000100001000001000000010000000000110000000001000100000000000100000000000000000100010000000100000000001001010000000010000000000010110000000000000000001000010000000000000000000000000000001100000000000000100000000000000000000010010000000000000100010000100010000101001000001000001000000110000100000000000000000000000100000000000010000001000000000001000000000101000000000000000000000000000010000000001000010000100001000000100000000000000000000000100000001001000...\", \"output\": [\"6092190000\"]}, {\"input\": \"200000 1234 234123\\r\\n00000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000100000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000001000000000000000000...\", \"output\": [\"1612837280853\"]}, {\"input\": \"200000 123 1242\\r\\n00000010000000000000001000000000010000000000000000000000000000000000010000000000000000000000000000000000000000000000010000000000000000000001100000000000000000000000000000000000000000000000000000000000010000000000000000000000100000000000000000000000000000001000000000000000000000000000000000100000000000000000000010000000000000000100000000101000000000000000000000000000000000000000001000000000000000000000000100010000000100000000000000000000000000000000000100100000000010001001000001000000100000...\", \"output\": [\"4251434880\"]}, {\"input\": \"200000 10000000 10000000\\r\\n00000000000000000000001000000000000000000000001000001010000100100000000000000000001001000000000000000000000000000000000000000100000011010000000000010000000000000000000000000000000010000000000000000100000000000000000000000000000000000000000000010000000100000000000100000000000101000000000000000000100010001000001000000001010010000000000000000001000000000000000000000000000000000000000000000010000000000010000000000000000000000000000000000000000000010000000000000000000000000000000000000...\", \"output\": [\"31778720000000\"]}, {\"input\": \"200000 10000 10000\\r\\n11110111111111111111111111101111111111111111101111111111101111111110111111101111111111111111111111111110111101111111111111011111111111100111111111111101101111111111111111111111111111111111110111111111111111111111101111011011111111111111111111011011111110111110111111111111101111110111111111110111101111111111111111111111110101110111111111111111110111111111111111111011111111101111101111111101101101111111111111111111111111111111111110111111111111111111111111110111001111111111111011111110111...\", \"output\": [\"2000000000\"]}, {\"input\": \"200000 1000 10000000\\r\\n000100001100000000100001100000010011110000001000001000000100001100000100000101000100000001000010100001010000011010010100001001011010000000000000111000011100110001000100001000000000000000001000101110110001001100010101000000000011100110000110100001011100110110000001000010100100000101010000000000000010000000001000000011010101100000110000011110000000000001111011010001101011011011000000100000000000101011010001100001000000011001010000000100011011000001100000000000000100111010001010100010001...\", \"output\": [\"3897475478000\"]}, {\"input\": \"200000 10000000 3\\r\\n111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111...\", \"output\": [\"2189709470\"]}, {\"input\": \"200000 10000000 10000000\\r\\n10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000...\", \"output\": [\"399996000020000000\"]}, {\"input\": \"200000 3 44\\r\\n000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000...\", \"output\": [\"42909231279\"]}, {\"input\": \"200000 2 44\\r\\n110111111011110111111110111110101110110010101010110111111011100011101111111111011011011101000010110111101110101001111101101110101111111100111100011111111111111111111100001101111011111110111011100110110011011111011101011111010101100111010001111110111111111111011011111111111111101101110011101010101101111011011011001110111100100111111111111001111110111101111111110111111001111111101100111011111111111000110000101111110111101111101111101111011111110010110111101101111111010111110000101111010110101101...\", \"output\": [\"2588662\"]}, {\"input\": \"200000 33 1212\\r\\n111111111111111111111111110110111111111111111111111111111111111111101111111111111111111111110111111111111111111101111111111111111111111111111111111111111111110111111011111111111111110111111111111111111111111101111111111111101111111101111111111111111111110110111111111111111111111111111011111111111111111101111111111101111111110111111111111111111111111111111111111101111111111111111111111111111111111111111111111111111101111111111111101111111111111110111111111111111111111111011111111111111111111...\", \"output\": [\"15754935\"]}, {\"input\": \"200000 123123 45345\\r\\n1111111011101111111111111111111111111111111111111111111111111111111010111111111110111111111111111111111111111111111111111111011111111111111111111111101111111111111111111111111111111111111111111111111111111111111111111111001111011111111111111111111111111110111111111111111111111111111111111011111111111111111111111111111111111111111111110011110111111111011111111111111111111111011111111111111111111101111111111111111111111111011110111111111111111111111111111111110111111111111101111111111111...\", \"output\": [\"16846800000\"]}, {\"input\": \"200000 234531 565456\\r\\n010000000100100000000000001000000000100100000000000000000000000010000000000000000000000000000000000000000100000000000000010000001000000100000000001010010000000010000000100000000000000000000010000000000000000000000000000100010000001000101000000000000000001000000000000001000000000000000000000000000000000000000000000000000000001000000001000000000000100000000000000101001000000010010010011000000001001000001000000010010001000000000001000000000000000000000000000010100001000000010000001100000...\", \"output\": [\"1194827034888\"]}, {\"input\": \"200000 10000000 123434\\r\\n0010111000100000111111000111011010010001100101001011100000001010111000101010110010011000100110001001101000000001110101000001101100000010111111010000001010000110011110100101000010001001100011001000000011100000000110010101010010001000101001110111001100100101001101111001001100100001111000011000110001000111000111101001011010000101011110100011000101100010011001011100101110110111111110010010101001110011011010000010000100110100101010010000000011110000011101001010001111101001001001101011001...\", \"output\": [\"397773019028\"]}, {\"input\": \"200000 10000000 234345\\r\\n0000000100000001000000000010000100000000000000000000000100000001010010000010000000100000000000100000000000100010000001100000100001000000000000101010000000000000000000010000000000000000000010000000000000001000100000000001000100000000000000000000010000000000000000001000000000100100000010000000000001000000000000000001100001000000000011000000000000000000000010000000000000000000001000100000000000000000000000000000100000001000000010000000000000000000001000000000000000000000010000000000000...\", \"output\": [\"552374355975\"]}, {\"input\": \"200000 1000 1203\\r\\n0001000111000000010000100010110000101111000001000100010100001010000000000001110000101000010000000101001000100000110001000001100011000000010010000110000000010001010011000000101000001110100100000101010100000110100000100000000000010100110110010000100000100001000000010000010100000100000101100000010000001011000101010000000000100010000010000000101001001000000000010100010000000000000100100010000001010100000110000100000001010101000100000011001101000001000100011010010010011010000000010010100001100...\", \"output\": [\"498073375\"]}, {\"input\": \"200000 1000000 1000000\\r\\n1110111111111111111111011110101111111111111110111110111111111111111111111111111111111111111111111111111111111111111111111111010111100111110111111011111111111111111111111111111111011011101111111111111111111011110110111111111111111111111111111111111111111111111111101111111111110111111111110111111111011111111110111111111111111111111100111111110111110111111111111111110111111111110111111111111111101111111111111111111111111111111111011111111100110011111111111111111111011111111011111111111...\", \"output\": [\"200000000000\"]}, {\"input\": \"200000 11200 100\\r\\n0000000010000100100100000000100100000000000000000000000000000010000000100000000000000000000000000000000000000000000011000000000000000000000001000101000001000000001110000000010000000100000001001000000000000000000000100000000000000100000010101010000000000000100100000000000001000010000000010010000000000010010000000000000000010110001010010010101010001001110000000000000000000100000110000000000000000000000010000000000010000000000000100001000101000000010000000000100000110000000000011001100001111...\", \"output\": [\"385454600\"]}]"
+    }
+}

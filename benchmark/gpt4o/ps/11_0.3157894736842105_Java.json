@@ -1,0 +1,342 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEHsY3hFifNOaj57nSIiDaWh4JCbq",
+        "created": 1787074026,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static int n, m;\n    static int[][] edges;\n    static int best = 0;\n\n    // colors[v] in [0..6], 0 means uncolored, 1..6 are dot counts\n    static int[] colors;\n\n    // For each unordered pair (a,b) with 1<=a<=b<=6 we have exactly one domino.\n    // We'll map (a,b) to index in [0..20], and track usedDomino[index]\n    static boolean[] usedDomino = new boolean[21];\n\n    static int[][] dominoAB = new int[21]; // dominoAB[i][0]=a, [1]=b\n\n    static int edgeCount;\n\n    static int encodeDomino(int a, int b) {\n        if (a > b) {\n            int t = a; a = b; b = t;\n        }\n        int idx = 0;\n        for (int i = 1; i <= 6; i++) {\n            for (int j = i; j <= 6; j++) {\n                if (i == a && j == b) return idx;\n                idx++;\n            }\n        }\n        return -1;\n    }\n\n    static void initDominoes() {\n        int idx = 0;\n        for (int a = 1; a <= 6; a++) {\n            for (int b = a; b <= 6; b++) {\n                dominoAB[idx] = new int[]{a, b};\n                idx++;\n            }\n        }\n    }\n\n    static void dfs(int idx, int placed) {\n        if (idx == edgeCount) {\n            if (placed > best) best = placed;\n            return;\n        }\n\n        // Upper bound pruning: remaining edges + placed <= best\n        if (placed + (edgeCount - idx) <= best) return;\n\n        int u = edges[idx][0];\n        int v = edges[idx][1];\n\n        int cu = colors[u];\n        int cv = colors[v];\n\n        // Try not placing any domino on this edge\n        dfs(idx + 1, placed);\n\n        // Try placing dominoes\n        // We need to consider all possible (dots at u, dots at v) consistent with current colors\n        for (int a = 1; a <= 6; a++) {\n            if (cu != 0 && cu != a) continue;\n            for (int b = 1; b <= 6; b++) {\n                if (cv != 0 && cv != b) continue;\n\n                // We can orient domino either (a,b) or (b,a), but domino type is unordered (min,max)\n                int da = a, db = b;\n                int idxDom = encodeDomino(da, db);\n                if (idxDom == -1 || usedDomino[idxDom]) continue;\n\n                usedDomino[idxDom] = true;\n\n                int oldCu = cu, oldCv = cv;\n                colors[u] = a;\n                colors[v] = b;\n\n                dfs(idx + 1, placed + 1);\n\n                colors[u] = oldCu;\n                colors[v] = oldCv;\n                usedDomino[idxDom] = false;\n            }\n        }\n    }\n\n    public static void main(String[] args) throws Exception {\n        FastScanner fs = new FastScanner(System.in);\n        n = fs.nextInt();\n        m = fs.nextInt();\n        edges = new int[m][2];\n        for (int i = 0; i < m; i++) {\n            int a = fs.nextInt() - 1;\n            int b = fs.nextInt() - 1;\n            edges[i][0] = a;\n            edges[i][1] = b;\n        }\n        edgeCount = m;\n        colors = new int[n];\n        initDominoes();\n        dfs(0, 0);\n        System.out.println(best);\n    }\n\n    // FastScanner\n    static class FastScanner {\n        private final InputStream in;\n        private final byte[] buffer = new byte[1 << 16];\n        private int ptr = 0, len = 0;\n\n        FastScanner(InputStream is) {\n            in = is;\n        }\n\n        private int read() throws IOException {\n            if (ptr >= len) {\n                len = in.read(buffer);\n                ptr = 0;\n                if (len <= 0) return -1;\n            }\n            return buffer[ptr++];\n        }\n\n        int nextInt() throws IOException {\n            int c;\n            do {\n                c = read();\n                if (c == -1) return -1;\n            } while (c <= ' ');\n            int sign = 1;\n            if (c == '-') {\n                sign = -1;\n                c = read();\n            }\n            int val = 0;\n            while (c > ' ') {\n                val = val * 10 + c - '0';\n                c = read();\n            }\n            return val * sign;\n        }\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static int n, m;\n    static int[][] edges;\n    static int best = 0;\n\n    // For each vertex: assigned dot (0 if unassigned)\n    static int[] vertexDot = new int[8]; // 1..7\n\n    // Domino availability: for a<=b, index = (a-1)*6 - (a-1)*a/2 + (b-a)\n    static boolean[] usedDomino = new boolean[21];\n\n    // Precompute mapping from (a,b) to index\n    static int[][] domIndex = new int[7][7];\n\n    static void initDomIndex() {\n        int idx = 0;\n        for (int a = 1; a <= 6; a++) {\n            for (int b = a; b <= 6; b++) {\n                domIndex[a][b] = idx;\n                domIndex[b][a] = idx;\n                idx++;\n            }\n        }\n    }\n\n    static int getDomIndex(int a, int b) {\n        return domIndex[a][b];\n    }\n\n    static void dfs(int eIdx, int placed) {\n        if (placed + (m - eIdx) <= best) return;\n        if (eIdx == m) {\n            if (placed > best) best = placed;\n            return;\n        }\n\n        int u = edges[eIdx][0];\n        int v = edges[eIdx][1];\n\n        int du = vertexDot[u];\n        int dv = vertexDot[v];\n\n        // Try to place a domino on this edge\n        // Case 1: both vertices already assigned\n        if (du != 0 && dv != 0) {\n            if (du != dv) {\n                int idx = getDomIndex(Math.min(du, dv), Math.max(du, dv));\n                if (!usedDomino[idx]) {\n                    usedDomino[idx] = true;\n                    dfs(eIdx + 1, placed + 1);\n                    usedDomino[idx] = false;\n                }\n            }\n        } else if (du != 0 || dv != 0) {\n            // Case 2: one assigned, one not\n            int assigned = (du != 0) ? du : dv;\n            int assignedVertex = (du != 0) ? u : v;\n            int unassignedVertex = (du != 0) ? v : u;\n\n            // We must choose a different dot for the other end\n            for (int x = 1; x <= 6; x++) {\n                if (x == assigned) continue;\n                int idx = getDomIndex(Math.min(assigned, x), Math.max(assigned, x));\n                if (usedDomino[idx]) continue;\n\n                vertexDot[unassignedVertex] = x;\n                usedDomino[idx] = true;\n\n                dfs(eIdx + 1, placed + 1);\n\n                usedDomino[idx] = false;\n                vertexDot[unassignedVertex] = 0;\n            }\n        } else {\n            // Case 3: both unassigned\n            // Try all unordered pairs (a,b) with a!=b\n            for (int a = 1; a <= 6; a++) {\n                for (int b = a + 1; b <= 6; b++) {\n                    int idx = getDomIndex(a, b);\n                    if (usedDomino[idx]) continue;\n\n                    // Two orientations: u->a,v->b and u->b,v->a\n                    // Orientation 1\n                    vertexDot[u] = a;\n                    vertexDot[v] = b;\n                    usedDomino[idx] = true;\n                    dfs(eIdx + 1, placed + 1);\n                    // Orientation 2\n                    vertexDot[u] = b;\n                    vertexDot[v] = a;\n                    dfs(eIdx + 1, placed + 1);\n\n                    usedDomino[idx] = false;\n                    vertexDot[u] = 0;\n                    vertexDot[v] = 0;\n                }\n            }\n        }\n\n        // Option: skip this edge\n        dfs(eIdx + 1, placed);\n    }\n\n    public static void main(String[] args) throws Exception {\n        initDomIndex();\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        n = Integer.parseInt(st.nextToken());\n        m = Integer.parseInt(st.nextToken());\n        edges = new int[m][2];\n        for (int i = 0; i < m; i++) {\n            st = new StringTokenizer(br.readLine());\n            edges[i][0] = Integer.parseInt(st.nextToken());\n            edges[i][1] = Integer.parseInt(st.nextToken());\n        }\n\n        dfs(0, 0);\n        System.out.println(best);\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static int n, m;\n    static int[][] edges;\n    static int best = 0;\n\n    // For each vertex (0..n-1), value in [0..6], 0 means unassigned\n    static int[] vertexVal = new int[7];\n\n    // Domino availability: for a<=b, index = (a-1)*6 - (a-1)*a/2 + (b-a)\n    static boolean[] usedDomino = new boolean[21];\n\n    static int dominoIndex(int a, int b) {\n        if (a > b) {\n            int t = a; a = b; b = t;\n        }\n        return (a - 1) * 6 - (a - 1) * a / 2 + (b - a);\n    }\n\n    static void dfs(int idx, int placed) {\n        if (idx == m) {\n            if (placed > best) best = placed;\n            return;\n        }\n\n        // Prune: even if we place dominoes on all remaining edges, can't beat best\n        if (placed + (m - idx) <= best) return;\n\n        int u = edges[idx][0];\n        int v = edges[idx][1];\n\n        int valU = vertexVal[u];\n        int valV = vertexVal[v];\n\n        // Try skipping this edge\n        dfs(idx + 1, placed);\n\n        // Try placing dominoes\n        for (int a = 1; a <= 6; a++) {\n            for (int b = a; b <= 6; b++) {\n                int di = dominoIndex(a, b);\n                if (usedDomino[di]) continue;\n\n                // Orientation 1: u<-a, v<-b\n                if ((valU == 0 || valU == a) && (valV == 0 || valV == b)) {\n                    int oldU = valU, oldV = valV;\n                    usedDomino[di] = true;\n                    vertexVal[u] = a;\n                    vertexVal[v] = b;\n                    dfs(idx + 1, placed + 1);\n                    vertexVal[u] = oldU;\n                    vertexVal[v] = oldV;\n                    usedDomino[di] = false;\n                }\n\n                // Orientation 2: u<-b, v<-a (only if a != b)\n                if (a != b) {\n                    if ((valU == 0 || valU == b) && (valV == 0 || valV == a)) {\n                        int oldU = valU, oldV = valV;\n                        usedDomino[di] = true;\n                        vertexVal[u] = b;\n                        vertexVal[v] = a;\n                        dfs(idx + 1, placed + 1);\n                        vertexVal[u] = oldU;\n                        vertexVal[v] = oldV;\n                        usedDomino[di] = false;\n                    }\n                }\n            }\n        }\n    }\n\n    public static void main(String[] args) throws Exception {\n        FastScanner fs = new FastScanner(System.in);\n        n = fs.nextInt();\n        m = fs.nextInt();\n        edges = new int[m][2];\n        for (int i = 0; i < m; i++) {\n            int a = fs.nextInt() - 1;\n            int b = fs.nextInt() - 1;\n            edges[i][0] = a;\n            edges[i][1] = b;\n        }\n\n        Arrays.fill(vertexVal, 0);\n        Arrays.fill(usedDomino, false);\n\n        dfs(0, 0);\n        System.out.println(best);\n    }\n\n    // Simple fast scanner\n    static class FastScanner {\n        private final InputStream in;\n        private final byte[] buffer = new byte[1 << 16];\n        private int ptr = 0, len = 0;\n\n        FastScanner(InputStream is) {\n            in = is;\n        }\n\n        private int read() throws IOException {\n            if (ptr >= len) {\n                len = in.read(buffer);\n                ptr = 0;\n                if (len <= 0) return -1;\n            }\n            return buffer[ptr++];\n        }\n\n        int nextInt() throws IOException {\n            int c;\n            do {\n                c = read();\n                if (c == -1) return -1;\n            } while (c <= ' ');\n\n            int sign = 1;\n            if (c == '-') {\n                sign = -1;\n                c = read();\n            }\n\n            int val = 0;\n            while (c > ' ') {\n                val = val * 10 + (c - '0');\n                c = read();\n            }\n            return val * sign;\n        }\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static int n, m;\n    static int[][] edges;\n    static int best = 0;\n\n    // vertex label: 0 = unassigned, 1..6 = dot count\n    static int[] vLabel = new int[8];\n\n    // domino used[a][b] where 1<=a<=b<=6\n    static boolean[][] used = new boolean[7][7];\n\n    static void dfs(int idx, int placed) {\n        if (idx == m) {\n            if (placed > best) best = placed;\n            return;\n        }\n\n        // upper bound pruning: remaining edges + placed <= best?\n        if (placed + (m - idx) <= best) return;\n\n        int u = edges[idx][0];\n        int v = edges[idx][1];\n\n        int lu = vLabel[u];\n        int lv = vLabel[v];\n\n        // Option 1: skip this edge\n        dfs(idx + 1, placed);\n\n        // Option 2: try to place domino\n        // We must choose numbers a,b (1..6) with a<=b and not used\n        // and consistent with vertex labels (if already assigned).\n        for (int a = 1; a <= 6; a++) {\n            for (int b = a; b <= 6; b++) {\n                if (used[a][b]) continue;\n\n                // We can orient (a->u, b->v) or (b->u, a->v)\n                // Try both orientations.\n\n                // orientation 1: u gets a, v gets b\n                if ((lu == 0 || lu == a) && (lv == 0 || lv == b)) {\n                    int oldLu = lu, oldLv = lv;\n                    vLabel[u] = a;\n                    vLabel[v] = b;\n                    used[a][b] = true;\n\n                    dfs(idx + 1, placed + 1);\n\n                    used[a][b] = false;\n                    vLabel[u] = oldLu;\n                    vLabel[v] = oldLv;\n                }\n\n                // orientation 2: u gets b, v gets a (only if a!=b to avoid duplicate)\n                if (a != b) {\n                    if ((lu == 0 || lu == b) && (lv == 0 || lv == a)) {\n                        int oldLu = lu, oldLv = lv;\n                        vLabel[u] = b;\n                        vLabel[v] = a;\n                        used[a][b] = true;\n\n                        dfs(idx + 1, placed + 1);\n\n                        used[a][b] = false;\n                        vLabel[u] = oldLu;\n                        vLabel[v] = oldLv;\n                    }\n                }\n            }\n        }\n    }\n\n    public static void main(String[] args) throws Exception {\n        FastScanner fs = new FastScanner(System.in);\n        n = fs.nextInt();\n        m = fs.nextInt();\n        edges = new int[m][2];\n        for (int i = 0; i < m; i++) {\n            int a = fs.nextInt();\n            int b = fs.nextInt();\n            edges[i][0] = a;\n            edges[i][1] = b;\n        }\n\n        // simple heuristic: sort edges by degree sum to help pruning\n        int[] deg = new int[n + 1];\n        for (int[] e : edges) {\n            deg[e[0]]++;\n            deg[e[1]]++;\n        }\n        Integer[] order = new Integer[m];\n        for (int i = 0; i < m; i++) order[i] = i;\n        Arrays.sort(order, (i, j) -> {\n            int s1 = deg[edges[i][0]] + deg[edges[i][1]];\n            int s2 = deg[edges[j][0]] + deg[edges[j][1]];\n            return Integer.compare(s2, s1);\n        });\n        int[][] sortedEdges = new int[m][2];\n        for (int i = 0; i < m; i++) {\n            sortedEdges[i] = edges[order[i]];\n        }\n        edges = sortedEdges;\n\n        dfs(0, 0);\n        System.out.println(best);\n    }\n\n    // Fast scanner\n    static class FastScanner {\n        private final InputStream in;\n        private final byte[] buffer = new byte[1 << 16];\n        private int ptr = 0, len = 0;\n\n        FastScanner(InputStream is) {\n            in = is;\n        }\n\n        private int read() throws IOException {\n            if (ptr >= len) {\n                len = in.read(buffer);\n                ptr = 0;\n                if (len <= 0) return -1;\n            }\n            return buffer[ptr++];\n        }\n\n        int nextInt() throws IOException {\n            int c;\n            do {\n                c = read();\n                if (c == -1) return -1;\n            } while (c <= ' ');\n\n            int sign = 1;\n            if (c == '-') {\n                sign = -1;\n                c = read();\n            }\n\n            int val = 0;\n            while (c > ' ') {\n                val = val * 10 + c - '0';\n                c = read();\n            }\n            return val * sign;\n        }\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_result": {
+                        "error": {
+                            "code": "content_filter_error",
+                            "message": "The contents are not filtered"
+                        }
+                    },
+                    "content_filter_results": {}
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static int n, m;\n    static int[][] edges;\n    static int best = 0;\n\n    public static void main(String[] args) throws Exception {\n        FastScanner fs = new FastScanner(System.in);\n        n = fs.nextInt();\n        m = fs.nextInt();\n        edges = new int[m][2];\n        for (int i = 0; i < m; i++) {\n            int a = fs.nextInt() - 1;\n            int b = fs.nextInt() - 1;\n            edges[i][0] = a;\n            edges[i][1] = b;\n        }\n\n        // Precompute all 7^n assignments of dot counts to vertices\n        int totalAssignments = 1;\n        for (int i = 0; i < n; i++) totalAssignments *= 7; // 0..6\n        int[] vertexDots = new int[n];\n\n        for (int mask = 0; mask < totalAssignments; mask++) {\n            int tmp = mask;\n            for (int v = 0; v < n; v++) {\n                vertexDots[v] = tmp % 7;\n                tmp /= 7;\n            }\n            // vertexDots[v] in 0..6, 0 means no incoming domino, 1..6 dots\n            int possibleEdges = 0;\n            for (int i = 0; i < m; i++) {\n                int u = edges[i][0];\n                int v = edges[i][1];\n                int du = vertexDots[u];\n                int dv = vertexDots[v];\n                if (du == 0 && dv == 0) continue;\n                if (du == 0 || dv == 0) {\n                    possibleEdges++;\n                } else {\n                    // need a domino with (du,dv) or (dv,du)\n                    possibleEdges++;\n                }\n            }\n            if (possibleEdges <= best) continue;\n\n            // Build bipartite graph: left = edges, right = domino types (21)\n            // Domino types indexed 0..20 for pairs (a,b) with 1<=a<=b<=6\n            int[][] adj = new int[m][2]; // store endpoints' dots for quick use\n            for (int i = 0; i < m; i++) {\n                int u = edges[i][0];\n                int v = edges[i][1];\n                adj[i][0] = vertexDots[u];\n                adj[i][1] = vertexDots[v];\n            }\n\n            List<Integer>[] g = new ArrayList[m];\n            for (int i = 0; i < m; i++) g[i] = new ArrayList<>();\n\n            for (int i = 0; i < m; i++) {\n                int du = adj[i][0];\n                int dv = adj[i][1];\n                if (du == 0 && dv == 0) continue;\n                if (du == 0 || dv == 0) {\n                    int d = du != 0 ? du : dv;\n                    int idx = dominoIndex(d, d);\n                    g[i].add(idx);\n                } else {\n                    int a = du, b = dv;\n                    int idx1 = dominoIndex(Math.min(a, b), Math.max(a, b));\n                    g[i].add(idx1);\n                }\n            }\n\n            int match = maxBipartiteMatching(g, 21);\n            if (match > best) best = match;\n        }\n\n        System.out.println(best);\n    }\n\n    // Map (a,b) with 1<=a<=b<=6 to index 0..20\n    static int dominoIndex(int a, int b) {\n        int idx = 0;\n        for (int i = 1; i <= 6; i++) {\n            for (int j = i; j <= 6; j++) {\n                if (i == a && j == b) return idx;\n                idx++;\n            }\n        }\n        return -1;\n    }\n\n    static int maxBipartiteMatching(List<Integer>[] g, int rightSize) {\n        int m = g.length;\n        int[] matchR = new int[rightSize];\n        Arrays.fill(matchR, -1);\n        int res = 0;\n        for (int u = 0; u < m; u++) {\n            boolean[] vis = new boolean[rightSize];\n            if (dfs(u, g, matchR, vis)) res++;\n        }\n        return res;\n    }\n\n    static boolean dfs(int u, List<Integer>[] g, int[] matchR, boolean[] vis) {\n        for (int v : g[u]) {\n            if (vis[v]) continue;\n            vis[v] = true;\n            if (matchR[v] == -1 || dfs(matchR[v], g, matchR, vis)) {\n                matchR[v] = u;\n                return true;\n            }\n        }\n        return false;\n    }\n\n    // Fast scanner\n    static class FastScanner {\n        private final InputStream in;\n        private final byte[] buffer = new byte[1 << 16];\n        private int ptr = 0, len = 0;\n\n        FastScanner(InputStream is) {\n            in = is;\n        }\n\n        private int read() throws IOException {\n            if (ptr >= len) {\n                len = in.read(buffer);\n                ptr = 0;\n                if (len <= 0) return -1;\n            }\n            return buffer[ptr++];\n        }\n\n        int nextInt() throws IOException {\n            int c;\n            do {\n                c = read();\n                if (c == -1) return -1;\n            } while (c <= ' ');\n            int sign = 1;\n            if (c == '-') {\n                sign = -1;\n                c = read();\n            }\n            int val = 0;\n            while (c > ' ') {\n                val = val * 10 + c - '0';\n                c = read();\n            }\n            return val * sign;\n        }\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static int n, m;\n    static int[][] edges; // [m][2]\n    static int best = 0;\n\n    // dominoUsed[a][b] where 1<=a<=b<=6\n    static boolean[][] dominoUsed = new boolean[7][7];\n\n    // vertex label 0..6 meaning number of dots, 0 = unlabeled\n    static int[] label;\n\n    static void dfs(int idx, int usedCount) {\n        if (idx == m) {\n            if (usedCount > best) best = usedCount;\n            return;\n        }\n\n        // Prune: remaining edges + usedCount <= best\n        if (usedCount + (m - idx) <= best) return;\n\n        int u = edges[idx][0];\n        int v = edges[idx][1];\n\n        int lu = label[u];\n        int lv = label[v];\n\n        // Try to place a domino on this edge\n        // Cases for labels:\n        // lu, lv in {0..6}, 0 means unlabeled\n\n        // We'll try all possible (a,b) with 1<=a<=b<=6 and available\n        // but constrained by existing labels.\n\n        // Determine allowed pairs\n        for (int a = 1; a <= 6; a++) {\n            for (int b = a; b <= 6; b++) {\n                if (dominoUsed[a][b]) continue;\n\n                // Two orientations: (a->u, b->v) and (b->u, a->v)\n                // But if a==b, both orientations are same.\n                // Orientation 1:\n                if (canAssign(lu, a) && canAssign(lv, b)) {\n                    int oldLu = lu, oldLv = lv;\n                    boolean changedU = false, changedV = false;\n\n                    if (lu == 0) {\n                        label[u] = a;\n                        changedU = true;\n                    }\n                    if (lv == 0) {\n                        label[v] = b;\n                        changedV = true;\n                    }\n\n                    dominoUsed[a][b] = true;\n                    dfs(idx + 1, usedCount + 1);\n                    dominoUsed[a][b] = false;\n\n                    if (changedU) label[u] = oldLu;\n                    if (changedV) label[v] = oldLv;\n                }\n\n                if (a != b) {\n                    // Orientation 2: swap\n                    if (canAssign(lu, b) && canAssign(lv, a)) {\n                        int oldLu = lu, oldLv = lv;\n                        boolean changedU = false, changedV = false;\n\n                        if (lu == 0) {\n                            label[u] = b;\n                            changedU = true;\n                        }\n                        if (lv == 0) {\n                            label[v] = a;\n                            changedV = true;\n                        }\n\n                        dominoUsed[a][b] = true;\n                        dfs(idx + 1, usedCount + 1);\n                        dominoUsed[a][b] = false;\n\n                        if (changedU) label[u] = oldLu;\n                        if (changedV) label[v] = oldLv;\n                    }\n                }\n            }\n        }\n\n        // Option: skip this edge\n        dfs(idx + 1, usedCount);\n    }\n\n    static boolean canAssign(int currentLabel, int newLabel) {\n        return currentLabel == 0 || currentLabel == newLabel;\n    }\n\n    public static void main(String[] args) throws Exception {\n        FastScanner fs = new FastScanner(System.in);\n        n = fs.nextInt();\n        m = fs.nextInt();\n        edges = new int[m][2];\n        for (int i = 0; i < m; i++) {\n            int a = fs.nextInt();\n            int b = fs.nextInt();\n            edges[i][0] = a - 1;\n            edges[i][1] = b - 1;\n        }\n\n        label = new int[n];\n\n        dfs(0, 0);\n\n        System.out.println(best);\n    }\n\n    // Simple fast scanner\n    static class FastScanner {\n        private final InputStream in;\n        private final byte[] buffer = new byte[1 << 16];\n        private int ptr = 0, len = 0;\n\n        FastScanner(InputStream is) {\n            in = is;\n        }\n\n        private int read() throws IOException {\n            if (ptr >= len) {\n                len = in.read(buffer);\n                ptr = 0;\n                if (len <= 0) return -1;\n            }\n            return buffer[ptr++];\n        }\n\n        int nextInt() throws IOException {\n            int c;\n            do {\n                c = read();\n                if (c == -1) return -1;\n            } while (c <= ' ');\n\n            int sign = 1;\n            if (c == '-') {\n                sign = -1;\n                c = read();\n            }\n\n            int val = 0;\n            while (c > ' ') {\n                val = val * 10 + (c - '0');\n                c = read();\n            }\n            return val * sign;\n        }\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static int n, m;\n    static int[][] edges;\n    static int best = 0;\n\n    public static void main(String[] args) throws Exception {\n        FastScanner fs = new FastScanner(System.in);\n        n = fs.nextInt();\n        m = fs.nextInt();\n        edges = new int[m][2];\n        for (int i = 0; i < m; i++) {\n            int a = fs.nextInt() - 1;\n            int b = fs.nextInt() - 1;\n            edges[i][0] = a;\n            edges[i][1] = b;\n        }\n\n        // Precompute all 7^n assignments of dot counts to vertices\n        int totalAssign = 1;\n        for (int i = 0; i < n; i++) totalAssign *= 7; // 0..6, where 0 means \"unused\"\n        int[] dots = new int[n];\n\n        for (int mask = 0; mask < totalAssign; mask++) {\n            int tmp = mask;\n            for (int v = 0; v < n; v++) {\n                dots[v] = tmp % 7;\n                tmp /= 7;\n            }\n            // Skip assignments where all vertices are 0 (no dots)\n            boolean any = false;\n            for (int v = 0; v < n; v++) {\n                if (dots[v] != 0) {\n                    any = true;\n                    break;\n                }\n            }\n            if (!any) continue;\n\n            int val = solveForAssignment(dots);\n            if (val > best) best = val;\n        }\n\n        System.out.println(best);\n    }\n\n    // For a fixed assignment of dots to vertices, compute maximum number of edges\n    // that can be covered with distinct domino types.\n    static int solveForAssignment(int[] dots) {\n        // Build list of candidate edges with their (a,b) dot pair\n        int k = 0;\n        int[][] cand = new int[m][3]; // u, v, pairIndex\n        for (int i = 0; i < m; i++) {\n            int u = edges[i][0];\n            int v = edges[i][1];\n            int du = dots[u];\n            int dv = dots[v];\n            if (du == 0 || dv == 0) continue; // cannot use this edge\n            int a = Math.min(du, dv);\n            int b = Math.max(du, dv);\n            int idx = pairIndex(a, b);\n            cand[k][0] = u;\n            cand[k][1] = v;\n            cand[k][2] = idx;\n            k++;\n        }\n        if (k == 0) return 0;\n\n        // Backtracking over candidate edges with 21-bit mask for used domino types\n        return backtrack(cand, k, 0, 0, 0);\n    }\n\n    // pairIndex for 1<=a<=b<=6, map to 0..20\n    static int pairIndex(int a, int b) {\n        // number of pairs with first < a: sum_{i=1}^{a-1} (7 - i) = (a-1)*(8-a)/2\n        int offset = (a - 1) * (8 - a) / 2;\n        return offset + (b - a);\n    }\n\n    static int backtrack(int[][] cand, int k, int pos, int usedMask, int count) {\n        if (pos == k) return count;\n        int remaining = k - pos;\n        if (count + remaining <= best) {\n            // global pruning using best; but best is global over all assignments,\n            // here we only need local best, so we skip this pruning\n        }\n        // Option 1: skip this edge\n        int bestLocal = count;\n        bestLocal = Math.max(bestLocal, backtrack(cand, k, pos + 1, usedMask, count));\n\n        // Option 2: use this edge if domino type not used\n        int idx = cand[pos][2];\n        if ((usedMask & (1 << idx)) == 0) {\n            bestLocal = Math.max(bestLocal,\n                    backtrack(cand, k, pos + 1, usedMask | (1 << idx), count + 1));\n        }\n        return bestLocal;\n    }\n\n    // Fast scanner\n    static class FastScanner {\n        private final InputStream in;\n        private final byte[] buffer = new byte[1 << 16];\n        private int ptr = 0, len = 0;\n\n        FastScanner(InputStream is) {\n            in = is;\n        }\n\n        private int read() throws IOException {\n            if (ptr >= len) {\n                len = in.read(buffer);\n                ptr = 0;\n                if (len <= 0) return -1;\n            }\n            return buffer[ptr++];\n        }\n\n        int nextInt() throws IOException {\n            int c;\n            do {\n                c = read();\n                if (c == -1) return -1;\n            } while (c <= ' ');\n            int sign = 1;\n            if (c == '-') {\n                sign = -1;\n                c = read();\n            }\n            int val = 0;\n            while (c > ' ') {\n                val = val * 10 + c - '0';\n                c = read();\n            }\n            return val * sign;\n        }\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static int n, m;\n    static int[][] edges; // [m][2]\n    static int best = 0;\n\n    // dominoUsed[a][b] where 1<=a<=b<=6\n    static boolean[][] dominoUsed = new boolean[7][7];\n\n    // vertex label 1..n, 0 means unlabeled, 1..6 assigned\n    static int[] label;\n\n    static void dfs(int idx, int placed) {\n        if (idx == m) {\n            if (placed > best) best = placed;\n            return;\n        }\n\n        // upper bound: remaining edges + placed\n        if (placed + (m - idx) <= best) return;\n\n        int u = edges[idx][0];\n        int v = edges[idx][1];\n\n        int lu = label[u];\n        int lv = label[v];\n\n        // Try to place a domino\n        // We will iterate over all possible (x,y) with 1<=x<=y<=6\n        for (int x = 1; x <= 6; x++) {\n            for (int y = x; y <= 6; y++) {\n                if (dominoUsed[x][y]) continue;\n\n                // Two orientations: (x->u, y->v) and (y->u, x->v)\n                // orientation 1\n                if (canPlace(u, v, x, y)) {\n                    boolean needAssignU = (lu == 0);\n                    boolean needAssignV = (lv == 0);\n                    int oldLu = lu, oldLv = lv;\n\n                    dominoUsed[x][y] = true;\n                    if (needAssignU) label[u] = x;\n                    if (needAssignV) label[v] = y;\n\n                    dfs(idx + 1, placed + 1);\n\n                    if (needAssignU) label[u] = oldLu;\n                    if (needAssignV) label[v] = oldLv;\n                    dominoUsed[x][y] = false;\n                }\n\n                // orientation 2, avoid duplicate when x==y\n                if (x != y && canPlace(u, v, y, x)) {\n                    boolean needAssignU = (lu == 0);\n                    boolean needAssignV = (lv == 0);\n                    int oldLu = lu, oldLv = lv;\n\n                    dominoUsed[x][y] = true;\n                    if (needAssignU) label[u] = y;\n                    if (needAssignV) label[v] = x;\n\n                    dfs(idx + 1, placed + 1);\n\n                    if (needAssignU) label[u] = oldLu;\n                    if (needAssignV) label[v] = oldLv;\n                    dominoUsed[x][y] = false;\n                }\n            }\n        }\n\n        // Option: skip this edge\n        dfs(idx + 1, placed);\n    }\n\n    static boolean canPlace(int u, int v, int dotU, int dotV) {\n        int lu = label[u];\n        int lv = label[v];\n        if (lu != 0 && lu != dotU) return false;\n        if (lv != 0 && lv != dotV) return false;\n        return true;\n    }\n\n    public static void main(String[] args) throws Exception {\n        FastScanner fs = new FastScanner(System.in);\n        n = fs.nextInt();\n        m = fs.nextInt();\n        edges = new int[m][2];\n        for (int i = 0; i < m; i++) {\n            int a = fs.nextInt();\n            int b = fs.nextInt();\n            edges[i][0] = a;\n            edges[i][1] = b;\n        }\n        label = new int[n + 1];\n\n        dfs(0, 0);\n\n        System.out.println(best);\n    }\n\n    // Fast scanner\n    static class FastScanner {\n        private final InputStream in;\n        private final byte[] buffer = new byte[1 << 16];\n        private int ptr = 0, len = 0;\n\n        FastScanner(InputStream is) {\n            in = is;\n        }\n\n        private int read() throws IOException {\n            if (ptr >= len) {\n                len = in.read(buffer);\n                ptr = 0;\n                if (len <= 0) return -1;\n            }\n            return buffer[ptr++];\n        }\n\n        int nextInt() throws IOException {\n            int c;\n            do {\n                c = read();\n                if (c == -1) return -1;\n            } while (c <= ' ');\n            int sign = 1;\n            if (c == '-') {\n                sign = -1;\n                c = read();\n            }\n            int val = 0;\n            while (c > ' ') {\n                val = val * 10 + (c - '0');\n                c = read();\n            }\n            return val * sign;\n        }\n    }\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 8815,
+            "prompt_tokens": 736,
+            "total_tokens": 9551,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 3,
+                "engine_ttft_ms": 314,
+                "engine_ttlt_ms": 22858,
+                "pre_inference_ms": 184,
+                "service_tbt_ms": 3,
+                "service_ttft_ms": 626,
+                "service_ttlt_ms": 23137,
+                "total_duration_ms": 22963,
+                "user_visible_ttft_ms": 441
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Java to solve this programming problem:\nDescription: Anadi has a set of dominoes. Every domino has two parts, and each part contains some dots. For every $$$a$$$ and $$$b$$$ such that $$$1 \\leq a \\leq b \\leq 6$$$, there is exactly one domino with $$$a$$$ dots on one half and $$$b$$$ dots on the other half. The set contains exactly $$$21$$$ dominoes. Here is an exact illustration of his set:  Also, Anadi has an undirected graph without self-loops and multiple edges. He wants to choose some dominoes and place them on the edges of this graph. He can use at most one domino of each type. Each edge can fit at most one domino. It's not necessary to place a domino on each edge of the graph.When placing a domino on an edge, he also chooses its direction. In other words, one half of any placed domino must be directed toward one of the endpoints of the edge and the other half must be directed toward the other endpoint. There's a catch: if there are multiple halves of dominoes directed toward the same vertex, each of these halves must contain the same number of dots.How many dominoes at most can Anadi place on the edges of his graph?\nInput Specification: The first line contains two integers $$$n$$$ and $$$m$$$ ($$$1 \\leq n \\leq 7$$$, $$$0 \\leq m \\leq \\frac{n\\cdot(n-1)}{2}$$$) \u2014 the number of vertices and the number of edges in the graph. The next $$$m$$$ lines contain two integers each. Integers in the $$$i$$$-th line are $$$a_i$$$ and $$$b_i$$$ ($$$1 \\leq a, b \\leq n$$$, $$$a \\neq b$$$) and denote that there is an edge which connects vertices $$$a_i$$$ and $$$b_i$$$. The graph might be disconnected. It's however guaranteed that the graph doesn't contain any self-loops, and that there is at most one edge between any pair of vertices.\nOutput Specification: Output one integer which denotes the maximum number of dominoes which Anadi can place on the edges of the graph.\n\nSample Input:\n4 4\n1 2\n2 3\n3 4\n4 1\nSample Output:\n4\n\nSample Input:\n7 0\nSample Output:\n0\n\nSample Input:\n3 1\n1 3\nSample Output:\n1\n\nSample Input:\n7 21\n1 2\n1 3\n1 4\n1 5\n1 6\n1 7\n2 3\n2 4\n2 5\n2 6\n2 7\n3 4\n3 5\n3 6\n3 7\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7\nSample Output:\n16\n\nNotes: NoteHere is an illustration of Anadi's graph from the first sample test:  And here is one of the ways to place a domino on each of its edges:  Note that each vertex is faced by the halves of dominoes with the same number of dots. For instance, all halves directed toward vertex $$$1$$$ have three dots.\nTake input from standard input and output to standard output\nProvide the Java code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "11e6559cfb71b8f6ca88242094b17a2b",
+        "difficulty": 1700,
+        "prob_desc_sample_inputs": [
+            "4 4\n1 2\n2 3\n3 4\n4 1",
+            "7 0",
+            "3 1\n1 3",
+            "7 21\n1 2\n1 3\n1 4\n1 5\n1 6\n1 7\n2 3\n2 4\n2 5\n2 6\n2 7\n3 4\n3 5\n3 6\n3 7\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "brute force",
+            "graphs"
+        ],
+        "prob_desc_output_spec": "Output one integer which denotes the maximum number of dominoes which Anadi can place on the edges of the graph.",
+        "prob_desc_input_spec": "The first line contains two integers $$$n$$$ and $$$m$$$ ($$$1 \\leq n \\leq 7$$$, $$$0 \\leq m \\leq \\frac{n\\cdot(n-1)}{2}$$$) \u2014 the number of vertices and the number of edges in the graph. The next $$$m$$$ lines contain two integers each. Integers in the $$$i$$$-th line are $$$a_i$$$ and $$$b_i$$$ ($$$1 \\leq a, b \\leq n$$$, $$$a \\neq b$$$) and denote that there is an edge which connects vertices $$$a_i$$$ and $$$b_i$$$. The graph might be disconnected. It's however guaranteed that the graph doesn't contain any self-loops, and that there is at most one edge between any pair of vertices.",
+        "lang_cluster": "Java",
+        "source_code": "",
+        "prob_desc_notes": "NoteHere is an illustration of Anadi's graph from the first sample test:  And here is one of the ways to place a domino on each of its edges:  Note that each vertex is faced by the halves of dominoes with the same number of dots. For instance, all halves directed toward vertex $$$1$$$ have three dots.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Anadi has a set of dominoes. Every domino has two parts, and each part contains some dots. For every $$$a$$$ and $$$b$$$ such that $$$1 \\leq a \\leq b \\leq 6$$$, there is exactly one domino with $$$a$$$ dots on one half and $$$b$$$ dots on the other half. The set contains exactly $$$21$$$ dominoes. Here is an exact illustration of his set:  Also, Anadi has an undirected graph without self-loops and multiple edges. He wants to choose some dominoes and place them on the edges of this graph. He can use at most one domino of each type. Each edge can fit at most one domino. It's not necessary to place a domino on each edge of the graph.When placing a domino on an edge, he also chooses its direction. In other words, one half of any placed domino must be directed toward one of the endpoints of the edge and the other half must be directed toward the other endpoint. There's a catch: if there are multiple halves of dominoes directed toward the same vertex, each of these halves must contain the same number of dots.How many dominoes at most can Anadi place on the edges of his graph?",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1569143100",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "4",
+            "0",
+            "1",
+            "16"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"4 4\\r\\n1 2\\r\\n2 3\\r\\n3 4\\r\\n4 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 1\\r\\n1 3\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 21\\r\\n1 2\\r\\n1 3\\r\\n1 4\\r\\n1 5\\r\\n1 6\\r\\n1 7\\r\\n2 3\\r\\n2 4\\r\\n2 5\\r\\n2 6\\r\\n2 7\\r\\n3 4\\r\\n3 5\\r\\n3 6\\r\\n3 7\\r\\n4 5\\r\\n4 6\\r\\n4 7\\r\\n5 6\\r\\n5 7\\r\\n6 7\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"4 4\\r\\n4 2\\r\\n2 3\\r\\n3 4\\r\\n2 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"5 7\\r\\n4 3\\r\\n3 2\\r\\n1 4\\r\\n5 3\\r\\n5 2\\r\\n4 5\\r\\n1 5\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"6 9\\r\\n2 5\\r\\n3 6\\r\\n1 2\\r\\n1 4\\r\\n2 6\\r\\n6 1\\r\\n3 4\\r\\n1 3\\r\\n5 3\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"7 5\\r\\n5 6\\r\\n3 7\\r\\n7 2\\r\\n4 2\\r\\n1 4\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"7 14\\r\\n7 3\\r\\n2 4\\r\\n2 1\\r\\n2 5\\r\\n5 3\\r\\n6 7\\r\\n4 7\\r\\n5 4\\r\\n7 5\\r\\n4 3\\r\\n4 1\\r\\n6 1\\r\\n6 3\\r\\n3 1\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 15\\r\\n4 6\\r\\n7 3\\r\\n3 1\\r\\n6 5\\r\\n2 7\\r\\n3 6\\r\\n7 6\\r\\n2 6\\r\\n7 5\\r\\n3 5\\r\\n5 4\\r\\n4 7\\r\\n2 1\\r\\n2 4\\r\\n2 3\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"7 18\\r\\n1 5\\r\\n5 7\\r\\n1 3\\r\\n1 6\\r\\n4 5\\r\\n3 7\\r\\n6 7\\r\\n4 7\\r\\n2 7\\r\\n1 2\\r\\n7 1\\r\\n5 6\\r\\n6 2\\r\\n4 2\\r\\n5 3\\r\\n3 6\\r\\n4 6\\r\\n4 3\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 14\\r\\n2 7\\r\\n5 7\\r\\n3 4\\r\\n4 2\\r\\n2 3\\r\\n4 1\\r\\n6 5\\r\\n4 7\\r\\n6 2\\r\\n6 1\\r\\n5 3\\r\\n5 1\\r\\n7 6\\r\\n3 1\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 11\\r\\n4 7\\r\\n6 4\\r\\n5 1\\r\\n1 4\\r\\n5 4\\r\\n1 2\\r\\n3 4\\r\\n4 2\\r\\n6 1\\r\\n3 1\\r\\n7 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"7 18\\r\\n3 2\\r\\n5 3\\r\\n6 7\\r\\n7 3\\r\\n5 4\\r\\n4 6\\r\\n2 4\\r\\n7 1\\r\\n5 6\\r\\n5 2\\r\\n5 1\\r\\n3 4\\r\\n7 4\\r\\n6 1\\r\\n3 6\\r\\n7 2\\r\\n1 3\\r\\n1 2\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 17\\r\\n1 7\\r\\n5 6\\r\\n6 3\\r\\n1 2\\r\\n1 6\\r\\n3 4\\r\\n6 7\\r\\n4 5\\r\\n1 3\\r\\n1 5\\r\\n4 1\\r\\n5 2\\r\\n3 5\\r\\n4 6\\r\\n7 5\\r\\n7 2\\r\\n6 2\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"7 10\\r\\n3 6\\r\\n6 1\\r\\n4 6\\r\\n1 7\\r\\n7 4\\r\\n5 3\\r\\n5 6\\r\\n6 7\\r\\n7 5\\r\\n5 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"1 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 1\\r\\n2 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"3 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 2\\r\\n2 3\\r\\n1 3\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"3 3\\r\\n1 2\\r\\n2 3\\r\\n1 3\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"4 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"4 2\\r\\n2 4\\r\\n1 3\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"4 6\\r\\n2 1\\r\\n1 4\\r\\n2 4\\r\\n3 1\\r\\n3 2\\r\\n3 4\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"5 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 3\\r\\n5 1\\r\\n1 4\\r\\n5 4\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"5 10\\r\\n1 2\\r\\n3 4\\r\\n1 3\\r\\n2 3\\r\\n5 4\\r\\n5 1\\r\\n4 1\\r\\n5 3\\r\\n5 2\\r\\n2 4\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"6 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6 3\\r\\n4 2\\r\\n5 4\\r\\n4 3\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"6 6\\r\\n4 3\\r\\n4 6\\r\\n1 2\\r\\n4 5\\r\\n6 3\\r\\n3 2\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"6 15\\r\\n4 3\\r\\n2 1\\r\\n3 6\\r\\n1 3\\r\\n4 1\\r\\n2 3\\r\\n3 5\\r\\n4 5\\r\\n6 1\\r\\n2 5\\r\\n1 5\\r\\n2 6\\r\\n6 4\\r\\n5 6\\r\\n4 2\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"6 12\\r\\n2 1\\r\\n4 3\\r\\n1 5\\r\\n6 4\\r\\n6 2\\r\\n3 6\\r\\n1 6\\r\\n2 4\\r\\n1 4\\r\\n2 5\\r\\n5 4\\r\\n1 3\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 1\\r\\n5 3\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 2\\r\\n5 1\\r\\n3 5\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"7 3\\r\\n1 5\\r\\n5 7\\r\\n2 7\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"7 4\\r\\n3 7\\r\\n7 5\\r\\n1 3\\r\\n1 6\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7 6\\r\\n3 5\\r\\n7 1\\r\\n3 7\\r\\n5 4\\r\\n7 4\\r\\n3 6\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"7 7\\r\\n2 5\\r\\n6 1\\r\\n5 4\\r\\n7 2\\r\\n3 2\\r\\n4 1\\r\\n7 3\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"7 8\\r\\n4 1\\r\\n5 7\\r\\n6 4\\r\\n7 1\\r\\n6 3\\r\\n3 4\\r\\n3 1\\r\\n6 7\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"7 9\\r\\n2 6\\r\\n7 4\\r\\n2 5\\r\\n2 7\\r\\n4 2\\r\\n3 5\\r\\n5 6\\r\\n6 7\\r\\n7 3\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"7 11\\r\\n2 4\\r\\n1 3\\r\\n5 2\\r\\n2 7\\r\\n1 4\\r\\n4 3\\r\\n2 1\\r\\n7 6\\r\\n3 2\\r\\n7 4\\r\\n4 5\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"7 12\\r\\n6 3\\r\\n3 5\\r\\n7 5\\r\\n1 5\\r\\n1 7\\r\\n7 6\\r\\n4 1\\r\\n2 1\\r\\n1 6\\r\\n5 6\\r\\n3 4\\r\\n4 2\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 13\\r\\n6 5\\r\\n5 7\\r\\n4 2\\r\\n7 2\\r\\n4 1\\r\\n6 7\\r\\n4 3\\r\\n1 6\\r\\n2 5\\r\\n5 4\\r\\n2 1\\r\\n6 4\\r\\n6 2\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 16\\r\\n3 5\\r\\n1 3\\r\\n3 7\\r\\n4 2\\r\\n1 4\\r\\n1 6\\r\\n7 6\\r\\n5 1\\r\\n7 2\\r\\n4 3\\r\\n3 6\\r\\n2 3\\r\\n2 5\\r\\n4 5\\r\\n2 6\\r\\n5 7\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 17\\r\\n4 6\\r\\n1 7\\r\\n7 5\\r\\n3 7\\r\\n7 2\\r\\n2 5\\r\\n6 7\\r\\n1 3\\r\\n5 1\\r\\n6 2\\r\\n4 2\\r\\n3 2\\r\\n1 2\\r\\n5 3\\r\\n4 5\\r\\n3 4\\r\\n1 6\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 19\\r\\n6 1\\r\\n6 4\\r\\n6 5\\r\\n1 7\\r\\n2 7\\r\\n3 5\\r\\n7 6\\r\\n2 4\\r\\n5 7\\r\\n3 4\\r\\n6 2\\r\\n4 1\\r\\n5 1\\r\\n4 7\\r\\n3 2\\r\\n4 5\\r\\n3 1\\r\\n2 5\\r\\n6 3\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 20\\r\\n4 7\\r\\n1 4\\r\\n2 3\\r\\n4 3\\r\\n3 7\\r\\n7 5\\r\\n4 5\\r\\n1 2\\r\\n6 7\\r\\n3 1\\r\\n3 5\\r\\n1 5\\r\\n1 7\\r\\n2 6\\r\\n6 4\\r\\n5 2\\r\\n5 6\\r\\n6 3\\r\\n1 6\\r\\n2 7\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 21\\r\\n3 5\\r\\n7 2\\r\\n2 3\\r\\n6 5\\r\\n5 2\\r\\n4 7\\r\\n2 6\\r\\n2 4\\r\\n6 7\\r\\n5 1\\r\\n1 4\\r\\n4 5\\r\\n5 7\\r\\n4 6\\r\\n3 1\\r\\n1 2\\r\\n3 4\\r\\n7 1\\r\\n3 7\\r\\n6 1\\r\\n3 6\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 12\\r\\n3 4\\r\\n5 4\\r\\n1 7\\r\\n7 3\\r\\n2 5\\r\\n3 2\\r\\n1 4\\r\\n5 6\\r\\n6 1\\r\\n6 3\\r\\n2 1\\r\\n5 7\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 7\\r\\n7 6\\r\\n4 2\\r\\n3 1\\r\\n4 7\\r\\n6 3\\r\\n2 5\\r\\n1 5\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"7 6\\r\\n7 5\\r\\n5 2\\r\\n1 5\\r\\n5 4\\r\\n3 5\\r\\n6 5\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"7 15\\r\\n5 1\\r\\n3 2\\r\\n2 5\\r\\n3 5\\r\\n6 1\\r\\n4 3\\r\\n6 2\\r\\n4 5\\r\\n7 5\\r\\n3 6\\r\\n3 1\\r\\n7 3\\r\\n4 6\\r\\n6 5\\r\\n6 7\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 18\\r\\n3 7\\r\\n3 2\\r\\n2 1\\r\\n1 7\\r\\n5 1\\r\\n3 4\\r\\n5 6\\r\\n4 2\\r\\n6 2\\r\\n1 4\\r\\n2 5\\r\\n6 3\\r\\n3 1\\r\\n6 7\\r\\n6 1\\r\\n7 2\\r\\n6 4\\r\\n3 5\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 19\\r\\n1 2\\r\\n7 3\\r\\n3 4\\r\\n4 7\\r\\n3 6\\r\\n7 5\\r\\n6 2\\r\\n4 6\\r\\n6 7\\r\\n5 2\\r\\n3 2\\r\\n6 5\\r\\n4 1\\r\\n2 4\\r\\n4 5\\r\\n6 1\\r\\n3 1\\r\\n1 7\\r\\n5 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 16\\r\\n3 2\\r\\n6 3\\r\\n6 1\\r\\n5 6\\r\\n7 5\\r\\n5 2\\r\\n6 2\\r\\n2 1\\r\\n5 4\\r\\n4 1\\r\\n7 2\\r\\n1 5\\r\\n2 4\\r\\n7 3\\r\\n1 7\\r\\n6 7\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 12\\r\\n4 1\\r\\n6 4\\r\\n3 4\\r\\n3 1\\r\\n2 4\\r\\n7 5\\r\\n5 4\\r\\n2 1\\r\\n6 7\\r\\n2 3\\r\\n7 4\\r\\n6 5\\r\\n\", \"output\": [\"11\"]}]"
+    }
+}

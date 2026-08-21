@@ -1,0 +1,342 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEI72VMClPBE3c0XbukStvnxw1qzN",
+        "created": 1787074924,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "<?php\nfscanf(STDIN, \"%d %d\", $n, $m);\n$edges = [];\nfor ($i = 0; $i < $m; $i++) {\n    fscanf(STDIN, \"%d %d\", $a, $b);\n    $a--; $b--;\n    $edges[] = [$a, $b];\n}\n$E = count($edges);\n$best = 0;\n\n// Precompute all unordered domino types (a,b) with 1<=a<=b<=6\n$dominos = [];\nfor ($a = 1; $a <= 6; $a++) {\n    for ($b = $a; $b <= 6; $b++) {\n        $dominos[] = [$a, $b];\n    }\n}\n$D = count($dominos); // 21\n\n// For each vertex, color in [0..6] (0 means unused)\n$colors = array_fill(0, $n, 0);\n\n// For each domino type, used or not\n$usedDomino = array_fill(0, $D, false);\n\nfunction dfsEdge($idx, $placed, $E, $edges, &$colors, &$usedDomino, $dominos, $D, &$best, $n) {\n    if ($idx == $E) {\n        if ($placed > $best) $best = $placed;\n        return;\n    }\n    // Prune: even if we place domino on all remaining edges, can't beat best\n    if ($placed + ($E - $idx) <= $best) return;\n\n    [$u, $v] = $edges[$idx];\n\n    // Option 1: skip this edge\n    dfsEdge($idx + 1, $placed, $E, $edges, $colors, $usedDomino, $dominos, $D, $best, $n);\n\n    // Option 2: try placing each unused domino with both orientations\n    for ($d = 0; $d < $D; $d++) {\n        if ($usedDomino[$d]) continue;\n        [$a, $b] = $dominos[$d];\n\n        // orientation 1: a -> u, b -> v\n        $cu = $colors[$u];\n        $cv = $colors[$v];\n        if (($cu == 0 || $cu == $a) && ($cv == 0 || $cv == $b)) {\n            $colors[$u] = $a;\n            $colors[$v] = $b;\n            $usedDomino[$d] = true;\n            dfsEdge($idx + 1, $placed + 1, $E, $edges, $colors, $usedDomino, $dominos, $D, $best, $n);\n            $usedDomino[$d] = false;\n            $colors[$u] = $cu;\n            $colors[$v] = $cv;\n        }\n\n        // orientation 2: b -> u, a -> v (only if a!=b to avoid duplicate)\n        if ($a != $b) {\n            $cu = $colors[$u];\n            $cv = $colors[$v];\n            if (($cu == 0 || $cu == $b) && ($cv == 0 || $cv == $a)) {\n                $colors[$u] = $b;\n                $colors[$v] = $a;\n                $usedDomino[$d] = true;\n                dfsEdge($idx + 1, $placed + 1, $E, $edges, $colors, $usedDomino, $dominos, $D, $best, $n);\n                $usedDomino[$d] = false;\n                $colors[$u] = $cu;\n                $colors[$v] = $cv;\n            }\n        }\n    }\n}\n\ndfsEdge(0, 0, $E, $edges, $colors, $usedDomino, $dominos, $D, $best, $n);\necho $best . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_result": {
+                        "error": {
+                            "code": "content_filter_error",
+                            "message": "The contents are not filtered"
+                        }
+                    },
+                    "content_filter_results": {}
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "<?php\nfscanf(STDIN, \"%d %d\", $n, $m);\n$edges = [];\nfor ($i = 0; $i < $m; $i++) {\n    fscanf(STDIN, \"%d %d\", $a, $b);\n    $a--; $b--;\n    $edges[] = [$a, $b];\n}\n$E = count($edges);\n$maxDominoes = 21;\n$best = 0;\n\n$pow7 = [];\n$pow7[0] = 1;\nfor ($i = 1; $i < $n; $i++) $pow7[$i] = $pow7[$i-1]*7;\n\nfunction next_assignment($assign, $n) {\n    for ($i = 0; $i < $n; $i++) {\n        if ($assign[$i] < 6) {\n            $assign[$i]++;\n            for ($j = 0; $j < $i; $j++) $assign[$j] = 0;\n            return $assign;\n        }\n    }\n    return null;\n}\n\n$assign = array_fill(0, $n, 0);\nwhile (true) {\n    $used = array_fill(0, 7, array_fill(0, 7, false));\n    $cnt = 0;\n    $ok = true;\n    foreach ($edges as $e) {\n        $u = $e[0]; $v = $e[1];\n        $du = $assign[$u]+1;\n        $dv = $assign[$v]+1;\n        if ($du <= $dv) {\n            $a = $du; $b = $dv;\n        } else {\n            $a = $dv; $b = $du;\n        }\n        if ($used[$a][$b]) {\n            $ok = false;\n            break;\n        }\n        $used[$a][$b] = true;\n        $cnt++;\n    }\n    if ($ok) {\n        if ($cnt > $best) $best = $cnt;\n        if ($best == $maxDominoes) break;\n    }\n    $assign = next_assignment($assign, $n);\n    if ($assign === null) break;\n}\n\necho $best . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "<?php\nfscanf(STDIN, \"%d %d\", $n, $m);\n$edges = [];\nfor ($i = 0; $i < $m; $i++) {\n    fscanf(STDIN, \"%d %d\", $a, $b);\n    $a--; $b--;\n    $edges[] = [$a, $b];\n}\n\n$maxDominoes = 0;\n\n// Precompute all domino types (a,b) with 1<=a<=b<=6\n$dominoTypes = [];\nfor ($a = 1; $a <= 6; $a++) {\n    for ($b = $a; $b <= 6; $b++) {\n        $dominoTypes[] = [$a, $b];\n    }\n}\n$D = count($dominoTypes); // 21\n\n// For each assignment of dot counts to vertices (1..6)\n$colors = array_fill(0, $n, 1);\n\nfunction backtrackColors($idx, $n, &$colors, $edges, $dominoTypes, $D, &$maxDominoes) {\n    if ($idx == $n) {\n        // For this color assignment, compute max matching of edges to domino types\n        // Build bipartite graph: left = edges, right = domino types\n        $E = count($edges);\n        $adj = array_fill(0, $E, []);\n        for ($i = 0; $i < $E; $i++) {\n            [$u, $v] = $edges[$i];\n            $cu = $colors[$u];\n            $cv = $colors[$v];\n            for ($j = 0; $j < $D; $j++) {\n                [$a, $b] = $dominoTypes[$j];\n                if (($a == $cu && $b == $cv) || ($a == $cv && $b == $cu)) {\n                    $adj[$i][] = $j;\n                }\n            }\n        }\n\n        // Maximum bipartite matching using DFS (since sizes are small)\n        $matchR = array_fill(0, $D, -1);\n        $result = 0;\n\n        for ($u = 0; $u < $E; $u++) {\n            $seen = array_fill(0, $D, false);\n            if (dfsMatch($u, $adj, $seen, $matchR)) {\n                $result++;\n            }\n        }\n\n        if ($result > $maxDominoes) $maxDominoes = $result;\n        return;\n    }\n\n    for ($c = 1; $c <= 6; $c++) {\n        $colors[$idx] = $c;\n        backtrackColors($idx + 1, $n, $colors, $edges, $dominoTypes, $D, $maxDominoes);\n    }\n}\n\nfunction dfsMatch($u, &$adj, &$seen, &$matchR) {\n    foreach ($adj[$u] as $v) {\n        if (!$seen[$v]) {\n            $seen[$v] = true;\n            if ($matchR[$v] == -1 || dfsMatch($matchR[$v], $adj, $seen, $matchR)) {\n                $matchR[$v] = $u;\n                return true;\n            }\n        }\n    }\n    return false;\n}\n\nbacktrackColors(0, $n, $colors, $edges, $dominoTypes, $D, $maxDominoes);\n\necho $maxDominoes . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "<?php\nfscanf(STDIN, \"%d %d\", $n, $m);\n$edges = [];\nfor ($i = 0; $i < $m; $i++) {\n    fscanf(STDIN, \"%d %d\", $a, $b);\n    $a--; $b--;\n    $edges[] = [$a, $b];\n}\n\n$maxDominoes = 21;\n$best = 0;\n\n// Precompute all domino types (a,b) with 1<=a<=b<=6\n$dominos = [];\nfor ($a = 1; $a <= 6; $a++) {\n    for ($b = $a; $b <= 6; $b++) {\n        $dominos[] = [$a, $b];\n    }\n}\n$D = count($dominos); // 21\n\n// For each vertex, we assign a dot count 0..6 (0 means unused)\n$assign = array_fill(0, $n, 0);\n\nfunction backtrackVertex($v, $n, $edges, $dominos, $D, &$assign, &$best) {\n    if ($v == $n) {\n        // All vertices assigned, now compute maximum matching of edges with dominos\n        $usedDomino = array_fill(0, $D, false);\n        $edgeCount = count($edges);\n        $bestLocal = 0;\n\n        // Backtracking over edges\n        $edgeOrder = range(0, $edgeCount - 1);\n\n        $dfsEdges = function($idx, $placed) use (&$dfsEdges, $edgeCount, $edgeOrder, $edges, $assign, $dominos, $D, &$usedDomino, &$bestLocal, &$best) {\n            if ($idx == $edgeCount) {\n                if ($placed > $bestLocal) $bestLocal = $placed;\n                if ($placed > $best) $best = $placed;\n                return;\n            }\n            // Pruning\n            if ($placed + ($edgeCount - $idx) <= $bestLocal) return;\n\n            $eIdx = $edgeOrder[$idx];\n            [$u, $v] = $edges[$eIdx];\n            $du = $assign[$u];\n            $dv = $assign[$v];\n\n            // Option 1: skip this edge\n            $dfsEdges($idx + 1, $placed);\n\n            // Option 2: try to place a domino if both vertices used\n            if ($du != 0 && $dv != 0) {\n                for ($d = 0; $d < $D; $d++) {\n                    if ($usedDomino[$d]) continue;\n                    [$a, $b] = $dominos[$d];\n                    // Check if domino can be oriented to match du,dv\n                    if (($a == $du && $b == $dv) || ($a == $dv && $b == $du)) {\n                        $usedDomino[$d] = true;\n                        $dfsEdges($idx + 1, $placed + 1);\n                        $usedDomino[$d] = false;\n                    }\n                }\n            }\n        };\n\n        $dfsEdges(0, 0);\n        return;\n    }\n\n    // Try all dot counts 0..6 for vertex v\n    for ($d = 0; $d <= 6; $d++) {\n        $assign[$v] = $d;\n        backtrackVertex($v + 1, $n, $edges, $dominos, $D, $assign, $best);\n    }\n}\n\nbacktrackVertex(0, $n, $edges, $dominos, $D, $assign, $best);\necho $best . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "<?php\nfscanf(STDIN, \"%d %d\", $n, $m);\n$edges = [];\nfor ($i = 0; $i < $m; $i++) {\n    fscanf(STDIN, \"%d %d\", $a, $b);\n    $a--; $b--;\n    $edges[] = [$a, $b];\n}\n$maxDominoes = 0;\n$dominoCount = 21;\n$dominoes = [];\n$idx = 0;\nfor ($a = 1; $a <= 6; $a++) {\n    for ($b = $a; $b <= 6; $b++) {\n        $dominoes[$idx++] = [$a, $b];\n    }\n}\n$edgeCount = count($edges);\n$maxMask = 1 << $edgeCount;\n\nfor ($mask = 0; $mask < $maxMask; $mask++) {\n    $usedDomino = array_fill(0, $dominoCount, false);\n    $vertexDot = array_fill(0, $n, 0);\n    $ok = true;\n    $placed = 0;\n\n    for ($e = 0; $e < $edgeCount && $ok; $e++) {\n        if (!(($mask >> $e) & 1)) continue;\n        [$u, $v] = $edges[$e];\n        $assigned = false;\n\n        for ($d = 0; $d < $dominoCount; $d++) {\n            if ($usedDomino[$d]) continue;\n            [$x, $y] = $dominoes[$d];\n\n            // orientation u<-x, v<-y\n            $vu = $vertexDot[$u];\n            $vv = $vertexDot[$v];\n            if (($vu == 0 || $vu == $x) && ($vv == 0 || $vv == $y)) {\n                $assigned = true;\n                $usedDomino[$d] = true;\n                if ($vu == 0) $vertexDot[$u] = $x;\n                if ($vv == 0) $vertexDot[$v] = $y;\n                break;\n            }\n\n            // orientation u<-y, v<-x\n            if ($x != $y) {\n                if (($vu == 0 || $vu == $y) && ($vv == 0 || $vv == $x)) {\n                    $assigned = true;\n                    $usedDomino[$d] = true;\n                    if ($vu == 0) $vertexDot[$u] = $y;\n                    if ($vv == 0) $vertexDot[$v] = $x;\n                    break;\n                }\n            }\n        }\n\n        if (!$assigned) {\n            $ok = false;\n        } else {\n            $placed++;\n        }\n    }\n\n    if ($ok && $placed > $maxDominoes) {\n        $maxDominoes = $placed;\n    }\n}\n\necho $maxDominoes . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "<?php\nfscanf(STDIN, \"%d %d\", $n, $m);\n$edges = [];\nfor ($i = 0; $i < $m; $i++) {\n    fscanf(STDIN, \"%d %d\", $a, $b);\n    $a--; $b--;\n    $edges[] = [$a, $b];\n}\n$maxDominoes = 0;\n\n// Precompute all domino types (a,b) with 1<=a<=b<=6, total 21\n$dominos = [];\nfor ($a = 1; $a <= 6; $a++) {\n    for ($b = $a; $b <= 6; $b++) {\n        $dominos[] = [$a, $b];\n    }\n}\n$D = count($dominos); // 21\n\n// For each assignment of dot counts to vertices (1..6)\n$assignments = pow(6, $n);\nfor ($mask = 0; $mask < $assignments; $mask++) {\n    // Decode assignment: vertex i gets value in [1..6]\n    $val = [];\n    $tmp = $mask;\n    for ($i = 0; $i < $n; $i++) {\n        $val[$i] = ($tmp % 6) + 1;\n        $tmp = intdiv($tmp, 6);\n    }\n\n    // Build bipartite graph: edges side (0..m-1), dominoes side (0..D-1)\n    // adjacency list from edges to dominoes indices\n    $adj = array_fill(0, $m, []);\n    for ($ei = 0; $ei < $m; $ei++) {\n        [$u, $v] = $edges[$ei];\n        $vu = $val[$u];\n        $vv = $val[$v];\n        for ($di = 0; $di < $D; $di++) {\n            [$a, $b] = $dominos[$di];\n            if (($a == $vu && $b == $vv) || ($a == $vv && $b == $vu)) {\n                $adj[$ei][] = $di;\n            }\n        }\n    }\n\n    // Maximum bipartite matching: edges -> dominos (each domino at most once)\n    $matchDomino = array_fill(0, $D, -1);\n    $res = 0;\n\n    $seen = array_fill(0, $D, 0);\n    $seenMark = 1;\n\n    $dfs = function($u) use (&$dfs, &$adj, &$matchDomino, &$seen, &$seenMark) {\n        foreach ($adj[$u] as $v) {\n            if ($seen[$v] == $seenMark) continue;\n            $seen[$v] = $seenMark;\n            if ($matchDomino[$v] == -1 || $dfs($matchDomino[$v])) {\n                $matchDomino[$v] = $u;\n                return true;\n            }\n        }\n        return false;\n    };\n\n    for ($ei = 0; $ei < $m; $ei++) {\n        $seenMark++;\n        if ($dfs($ei)) $res++;\n    }\n\n    if ($res > $maxDominoes) $maxDominoes = $res;\n}\n\necho $maxDominoes . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "<?php\nfscanf(STDIN, \"%d %d\", $n, $m);\n$edges = [];\nfor ($i = 0; $i < $m; $i++) {\n    fscanf(STDIN, \"%d %d\", $a, $b);\n    $a--; $b--;\n    $edges[] = [$a, $b];\n}\n\n$maxDominoes = 0;\n\n// Precompute all domino types (a,b) with 1<=a<=b<=6\n$dominoTypes = [];\nfor ($a = 1; $a <= 6; $a++) {\n    for ($b = $a; $b <= 6; $b++) {\n        $dominoTypes[] = [$a, $b];\n    }\n}\n$D = count($dominoTypes); // 21\n\n// For each assignment of dot counts to vertices (1..6)\n$assignments = [];\nfunction genAssignments($pos, $n, &$cur, &$assignments) {\n    if ($pos == $n) {\n        $assignments[] = $cur;\n        return;\n    }\n    for ($d = 1; $d <= 6; $d++) {\n        $cur[$pos] = $d;\n        genAssignments($pos + 1, $n, $cur, $assignments);\n    }\n}\n$cur = array_fill(0, $n, 1);\ngenAssignments(0, $n, $cur, $assignments);\n\n// For each assignment, build bipartite graph and find maximum matching\nforeach ($assignments as $dots) {\n    // Build adjacency: edges -> domino types\n    $adj = [];\n    $degEdge = [];\n    for ($i = 0; $i < $m; $i++) {\n        $adj[$i] = [];\n        $degEdge[$i] = 0;\n    }\n\n    for ($i = 0; $i < $m; $i++) {\n        [$u, $v] = $edges[$i];\n        $du = $dots[$u];\n        $dv = $dots[$v];\n        for ($j = 0; $j < $D; $j++) {\n            [$a, $b] = $dominoTypes[$j];\n            if (($a == $du && $b == $dv) || ($a == $dv && $b == $du)) {\n                $adj[$i][] = $j;\n                $degEdge[$i]++;\n            }\n        }\n    }\n\n    // Simple pruning: if potential maximum <= current best, skip\n    $potential = 0;\n    for ($i = 0; $i < $m; $i++) {\n        if ($degEdge[$i] > 0) $potential++;\n    }\n    if ($potential <= $maxDominoes) continue;\n\n    // Maximum bipartite matching: edges (left) to domino types (right)\n    $matchR = array_fill(0, $D, -1);\n\n    $result = 0;\n    for ($u = 0; $u < $m; $u++) {\n        $seen = array_fill(0, $D, false);\n        if (dfsMatch($u, $adj, $seen, $matchR)) {\n            $result++;\n        }\n    }\n\n    if ($result > $maxDominoes) {\n        $maxDominoes = $result;\n    }\n}\n\necho $maxDominoes . PHP_EOL;\n\nfunction dfsMatch($u, &$adj, &$seen, &$matchR) {\n    foreach ($adj[$u] as $v) {\n        if (!$seen[$v]) {\n            $seen[$v] = true;\n            if ($matchR[$v] == -1 || dfsMatch($matchR[$v], $adj, $seen, $matchR)) {\n                $matchR[$v] = $u;\n                return true;\n            }\n        }\n    }\n    return false;\n}\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "<?php\nfscanf(STDIN, \"%d %d\", $n, $m);\n$edges = [];\nfor ($i = 0; $i < $m; $i++) {\n    fscanf(STDIN, \"%d %d\", $a, $b);\n    $a--; $b--;\n    $edges[] = [$a, $b];\n}\n$maxDominoes = 21;\n$maxDots = 6;\n$best = 0;\n\n$edgeCount = count($edges);\n$edgeU = [];\n$edgeV = [];\nfor ($i = 0; $i < $edgeCount; $i++) {\n    $edgeU[$i] = $edges[$i][0];\n    $edgeV[$i] = $edges[$i][1];\n}\n\n$domA = [];\n$domB = [];\n$domIndex = 0;\nfor ($a = 1; $a <= $maxDots; $a++) {\n    for ($b = $a; $b <= $maxDots; $b++) {\n        $domA[$domIndex] = $a;\n        $domB[$domIndex] = $b;\n        $domIndex++;\n    }\n}\n\n$maxMask = 1 << $maxDominoes;\nfor ($mask = 0; $mask < $maxMask; $mask++) {\n    $usedCount = 0;\n    for ($i = 0; $i < $maxDominoes; $i++) {\n        if ($mask & (1 << $i)) $usedCount++;\n    }\n    if ($usedCount <= $best) continue;\n\n    $vertexDots = array_fill(0, $n, 0);\n    $edgeUsed = array_fill(0, $edgeCount, false);\n\n    $ok = true;\n    for ($d = 0; $d < $maxDominoes && $ok; $d++) {\n        if (!($mask & (1 << $d))) continue;\n        $aDots = $domA[$d];\n        $bDots = $domB[$d];\n        $placed = false;\n\n        for ($e = 0; $e < $edgeCount && !$placed; $e++) {\n            if ($edgeUsed[$e]) continue;\n            $u = $edgeU[$e];\n            $v = $edgeV[$e];\n\n            // orientation: a->u, b->v\n            $du = $vertexDots[$u];\n            $dv = $vertexDots[$v];\n            $can1 = ($du == 0 || $du == $aDots) && ($dv == 0 || $dv == $bDots);\n\n            // orientation: b->u, a->v\n            $can2 = ($du == 0 || $du == $bDots) && ($dv == 0 || $dv == $aDots);\n\n            if ($can1 || $can2) {\n                $edgeUsed[$e] = true;\n                if ($can1) {\n                    if ($vertexDots[$u] == 0) $vertexDots[$u] = $aDots;\n                    if ($vertexDots[$v] == 0) $vertexDots[$v] = $bDots;\n                } else {\n                    if ($vertexDots[$u] == 0) $vertexDots[$u] = $bDots;\n                    if ($vertexDots[$v] == 0) $vertexDots[$v] = $aDots;\n                }\n                $placed = true;\n            }\n        }\n        if (!$placed) $ok = false;\n    }\n\n    if ($ok) {\n        if ($usedCount > $best) $best = $usedCount;\n    }\n}\n\necho $best . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 5912,
+            "prompt_tokens": 736,
+            "total_tokens": 6648,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 1,
+                "engine_ttft_ms": 61,
+                "engine_ttlt_ms": 5694,
+                "pre_inference_ms": 260,
+                "service_tbt_ms": 1,
+                "service_ttft_ms": 483,
+                "service_ttlt_ms": 6433,
+                "total_duration_ms": 6180,
+                "user_visible_ttft_ms": 223
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in PHP to solve this programming problem:\nDescription: Anadi has a set of dominoes. Every domino has two parts, and each part contains some dots. For every $$$a$$$ and $$$b$$$ such that $$$1 \\leq a \\leq b \\leq 6$$$, there is exactly one domino with $$$a$$$ dots on one half and $$$b$$$ dots on the other half. The set contains exactly $$$21$$$ dominoes. Here is an exact illustration of his set:  Also, Anadi has an undirected graph without self-loops and multiple edges. He wants to choose some dominoes and place them on the edges of this graph. He can use at most one domino of each type. Each edge can fit at most one domino. It's not necessary to place a domino on each edge of the graph.When placing a domino on an edge, he also chooses its direction. In other words, one half of any placed domino must be directed toward one of the endpoints of the edge and the other half must be directed toward the other endpoint. There's a catch: if there are multiple halves of dominoes directed toward the same vertex, each of these halves must contain the same number of dots.How many dominoes at most can Anadi place on the edges of his graph?\nInput Specification: The first line contains two integers $$$n$$$ and $$$m$$$ ($$$1 \\leq n \\leq 7$$$, $$$0 \\leq m \\leq \\frac{n\\cdot(n-1)}{2}$$$) \u2014 the number of vertices and the number of edges in the graph. The next $$$m$$$ lines contain two integers each. Integers in the $$$i$$$-th line are $$$a_i$$$ and $$$b_i$$$ ($$$1 \\leq a, b \\leq n$$$, $$$a \\neq b$$$) and denote that there is an edge which connects vertices $$$a_i$$$ and $$$b_i$$$. The graph might be disconnected. It's however guaranteed that the graph doesn't contain any self-loops, and that there is at most one edge between any pair of vertices.\nOutput Specification: Output one integer which denotes the maximum number of dominoes which Anadi can place on the edges of the graph.\n\nSample Input:\n4 4\n1 2\n2 3\n3 4\n4 1\nSample Output:\n4\n\nSample Input:\n7 0\nSample Output:\n0\n\nSample Input:\n3 1\n1 3\nSample Output:\n1\n\nSample Input:\n7 21\n1 2\n1 3\n1 4\n1 5\n1 6\n1 7\n2 3\n2 4\n2 5\n2 6\n2 7\n3 4\n3 5\n3 6\n3 7\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7\nSample Output:\n16\n\nNotes: NoteHere is an illustration of Anadi's graph from the first sample test:  And here is one of the ways to place a domino on each of its edges:  Note that each vertex is faced by the halves of dominoes with the same number of dots. For instance, all halves directed toward vertex $$$1$$$ have three dots.\nTake input from standard input and output to standard output\nProvide the PHP code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "11e6559cfb71b8f6ca88242094b17a2b",
+        "difficulty": 1700,
+        "prob_desc_sample_inputs": [
+            "4 4\n1 2\n2 3\n3 4\n4 1",
+            "7 0",
+            "3 1\n1 3",
+            "7 21\n1 2\n1 3\n1 4\n1 5\n1 6\n1 7\n2 3\n2 4\n2 5\n2 6\n2 7\n3 4\n3 5\n3 6\n3 7\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "brute force",
+            "graphs"
+        ],
+        "prob_desc_output_spec": "Output one integer which denotes the maximum number of dominoes which Anadi can place on the edges of the graph.",
+        "prob_desc_input_spec": "The first line contains two integers $$$n$$$ and $$$m$$$ ($$$1 \\leq n \\leq 7$$$, $$$0 \\leq m \\leq \\frac{n\\cdot(n-1)}{2}$$$) \u2014 the number of vertices and the number of edges in the graph. The next $$$m$$$ lines contain two integers each. Integers in the $$$i$$$-th line are $$$a_i$$$ and $$$b_i$$$ ($$$1 \\leq a, b \\leq n$$$, $$$a \\neq b$$$) and denote that there is an edge which connects vertices $$$a_i$$$ and $$$b_i$$$. The graph might be disconnected. It's however guaranteed that the graph doesn't contain any self-loops, and that there is at most one edge between any pair of vertices.",
+        "lang_cluster": "PHP",
+        "source_code": "",
+        "prob_desc_notes": "NoteHere is an illustration of Anadi's graph from the first sample test:  And here is one of the ways to place a domino on each of its edges:  Note that each vertex is faced by the halves of dominoes with the same number of dots. For instance, all halves directed toward vertex $$$1$$$ have three dots.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Anadi has a set of dominoes. Every domino has two parts, and each part contains some dots. For every $$$a$$$ and $$$b$$$ such that $$$1 \\leq a \\leq b \\leq 6$$$, there is exactly one domino with $$$a$$$ dots on one half and $$$b$$$ dots on the other half. The set contains exactly $$$21$$$ dominoes. Here is an exact illustration of his set:  Also, Anadi has an undirected graph without self-loops and multiple edges. He wants to choose some dominoes and place them on the edges of this graph. He can use at most one domino of each type. Each edge can fit at most one domino. It's not necessary to place a domino on each edge of the graph.When placing a domino on an edge, he also chooses its direction. In other words, one half of any placed domino must be directed toward one of the endpoints of the edge and the other half must be directed toward the other endpoint. There's a catch: if there are multiple halves of dominoes directed toward the same vertex, each of these halves must contain the same number of dots.How many dominoes at most can Anadi place on the edges of his graph?",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1569143100",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "4",
+            "0",
+            "1",
+            "16"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"4 4\\r\\n1 2\\r\\n2 3\\r\\n3 4\\r\\n4 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 1\\r\\n1 3\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 21\\r\\n1 2\\r\\n1 3\\r\\n1 4\\r\\n1 5\\r\\n1 6\\r\\n1 7\\r\\n2 3\\r\\n2 4\\r\\n2 5\\r\\n2 6\\r\\n2 7\\r\\n3 4\\r\\n3 5\\r\\n3 6\\r\\n3 7\\r\\n4 5\\r\\n4 6\\r\\n4 7\\r\\n5 6\\r\\n5 7\\r\\n6 7\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"4 4\\r\\n4 2\\r\\n2 3\\r\\n3 4\\r\\n2 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"5 7\\r\\n4 3\\r\\n3 2\\r\\n1 4\\r\\n5 3\\r\\n5 2\\r\\n4 5\\r\\n1 5\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"6 9\\r\\n2 5\\r\\n3 6\\r\\n1 2\\r\\n1 4\\r\\n2 6\\r\\n6 1\\r\\n3 4\\r\\n1 3\\r\\n5 3\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"7 5\\r\\n5 6\\r\\n3 7\\r\\n7 2\\r\\n4 2\\r\\n1 4\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"7 14\\r\\n7 3\\r\\n2 4\\r\\n2 1\\r\\n2 5\\r\\n5 3\\r\\n6 7\\r\\n4 7\\r\\n5 4\\r\\n7 5\\r\\n4 3\\r\\n4 1\\r\\n6 1\\r\\n6 3\\r\\n3 1\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 15\\r\\n4 6\\r\\n7 3\\r\\n3 1\\r\\n6 5\\r\\n2 7\\r\\n3 6\\r\\n7 6\\r\\n2 6\\r\\n7 5\\r\\n3 5\\r\\n5 4\\r\\n4 7\\r\\n2 1\\r\\n2 4\\r\\n2 3\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"7 18\\r\\n1 5\\r\\n5 7\\r\\n1 3\\r\\n1 6\\r\\n4 5\\r\\n3 7\\r\\n6 7\\r\\n4 7\\r\\n2 7\\r\\n1 2\\r\\n7 1\\r\\n5 6\\r\\n6 2\\r\\n4 2\\r\\n5 3\\r\\n3 6\\r\\n4 6\\r\\n4 3\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 14\\r\\n2 7\\r\\n5 7\\r\\n3 4\\r\\n4 2\\r\\n2 3\\r\\n4 1\\r\\n6 5\\r\\n4 7\\r\\n6 2\\r\\n6 1\\r\\n5 3\\r\\n5 1\\r\\n7 6\\r\\n3 1\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 11\\r\\n4 7\\r\\n6 4\\r\\n5 1\\r\\n1 4\\r\\n5 4\\r\\n1 2\\r\\n3 4\\r\\n4 2\\r\\n6 1\\r\\n3 1\\r\\n7 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"7 18\\r\\n3 2\\r\\n5 3\\r\\n6 7\\r\\n7 3\\r\\n5 4\\r\\n4 6\\r\\n2 4\\r\\n7 1\\r\\n5 6\\r\\n5 2\\r\\n5 1\\r\\n3 4\\r\\n7 4\\r\\n6 1\\r\\n3 6\\r\\n7 2\\r\\n1 3\\r\\n1 2\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 17\\r\\n1 7\\r\\n5 6\\r\\n6 3\\r\\n1 2\\r\\n1 6\\r\\n3 4\\r\\n6 7\\r\\n4 5\\r\\n1 3\\r\\n1 5\\r\\n4 1\\r\\n5 2\\r\\n3 5\\r\\n4 6\\r\\n7 5\\r\\n7 2\\r\\n6 2\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"7 10\\r\\n3 6\\r\\n6 1\\r\\n4 6\\r\\n1 7\\r\\n7 4\\r\\n5 3\\r\\n5 6\\r\\n6 7\\r\\n7 5\\r\\n5 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"1 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 1\\r\\n2 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"3 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 2\\r\\n2 3\\r\\n1 3\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"3 3\\r\\n1 2\\r\\n2 3\\r\\n1 3\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"4 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"4 2\\r\\n2 4\\r\\n1 3\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"4 6\\r\\n2 1\\r\\n1 4\\r\\n2 4\\r\\n3 1\\r\\n3 2\\r\\n3 4\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"5 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 3\\r\\n5 1\\r\\n1 4\\r\\n5 4\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"5 10\\r\\n1 2\\r\\n3 4\\r\\n1 3\\r\\n2 3\\r\\n5 4\\r\\n5 1\\r\\n4 1\\r\\n5 3\\r\\n5 2\\r\\n2 4\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"6 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6 3\\r\\n4 2\\r\\n5 4\\r\\n4 3\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"6 6\\r\\n4 3\\r\\n4 6\\r\\n1 2\\r\\n4 5\\r\\n6 3\\r\\n3 2\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"6 15\\r\\n4 3\\r\\n2 1\\r\\n3 6\\r\\n1 3\\r\\n4 1\\r\\n2 3\\r\\n3 5\\r\\n4 5\\r\\n6 1\\r\\n2 5\\r\\n1 5\\r\\n2 6\\r\\n6 4\\r\\n5 6\\r\\n4 2\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"6 12\\r\\n2 1\\r\\n4 3\\r\\n1 5\\r\\n6 4\\r\\n6 2\\r\\n3 6\\r\\n1 6\\r\\n2 4\\r\\n1 4\\r\\n2 5\\r\\n5 4\\r\\n1 3\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 1\\r\\n5 3\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 2\\r\\n5 1\\r\\n3 5\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"7 3\\r\\n1 5\\r\\n5 7\\r\\n2 7\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"7 4\\r\\n3 7\\r\\n7 5\\r\\n1 3\\r\\n1 6\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7 6\\r\\n3 5\\r\\n7 1\\r\\n3 7\\r\\n5 4\\r\\n7 4\\r\\n3 6\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"7 7\\r\\n2 5\\r\\n6 1\\r\\n5 4\\r\\n7 2\\r\\n3 2\\r\\n4 1\\r\\n7 3\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"7 8\\r\\n4 1\\r\\n5 7\\r\\n6 4\\r\\n7 1\\r\\n6 3\\r\\n3 4\\r\\n3 1\\r\\n6 7\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"7 9\\r\\n2 6\\r\\n7 4\\r\\n2 5\\r\\n2 7\\r\\n4 2\\r\\n3 5\\r\\n5 6\\r\\n6 7\\r\\n7 3\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"7 11\\r\\n2 4\\r\\n1 3\\r\\n5 2\\r\\n2 7\\r\\n1 4\\r\\n4 3\\r\\n2 1\\r\\n7 6\\r\\n3 2\\r\\n7 4\\r\\n4 5\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"7 12\\r\\n6 3\\r\\n3 5\\r\\n7 5\\r\\n1 5\\r\\n1 7\\r\\n7 6\\r\\n4 1\\r\\n2 1\\r\\n1 6\\r\\n5 6\\r\\n3 4\\r\\n4 2\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 13\\r\\n6 5\\r\\n5 7\\r\\n4 2\\r\\n7 2\\r\\n4 1\\r\\n6 7\\r\\n4 3\\r\\n1 6\\r\\n2 5\\r\\n5 4\\r\\n2 1\\r\\n6 4\\r\\n6 2\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 16\\r\\n3 5\\r\\n1 3\\r\\n3 7\\r\\n4 2\\r\\n1 4\\r\\n1 6\\r\\n7 6\\r\\n5 1\\r\\n7 2\\r\\n4 3\\r\\n3 6\\r\\n2 3\\r\\n2 5\\r\\n4 5\\r\\n2 6\\r\\n5 7\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 17\\r\\n4 6\\r\\n1 7\\r\\n7 5\\r\\n3 7\\r\\n7 2\\r\\n2 5\\r\\n6 7\\r\\n1 3\\r\\n5 1\\r\\n6 2\\r\\n4 2\\r\\n3 2\\r\\n1 2\\r\\n5 3\\r\\n4 5\\r\\n3 4\\r\\n1 6\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 19\\r\\n6 1\\r\\n6 4\\r\\n6 5\\r\\n1 7\\r\\n2 7\\r\\n3 5\\r\\n7 6\\r\\n2 4\\r\\n5 7\\r\\n3 4\\r\\n6 2\\r\\n4 1\\r\\n5 1\\r\\n4 7\\r\\n3 2\\r\\n4 5\\r\\n3 1\\r\\n2 5\\r\\n6 3\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 20\\r\\n4 7\\r\\n1 4\\r\\n2 3\\r\\n4 3\\r\\n3 7\\r\\n7 5\\r\\n4 5\\r\\n1 2\\r\\n6 7\\r\\n3 1\\r\\n3 5\\r\\n1 5\\r\\n1 7\\r\\n2 6\\r\\n6 4\\r\\n5 2\\r\\n5 6\\r\\n6 3\\r\\n1 6\\r\\n2 7\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 21\\r\\n3 5\\r\\n7 2\\r\\n2 3\\r\\n6 5\\r\\n5 2\\r\\n4 7\\r\\n2 6\\r\\n2 4\\r\\n6 7\\r\\n5 1\\r\\n1 4\\r\\n4 5\\r\\n5 7\\r\\n4 6\\r\\n3 1\\r\\n1 2\\r\\n3 4\\r\\n7 1\\r\\n3 7\\r\\n6 1\\r\\n3 6\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 12\\r\\n3 4\\r\\n5 4\\r\\n1 7\\r\\n7 3\\r\\n2 5\\r\\n3 2\\r\\n1 4\\r\\n5 6\\r\\n6 1\\r\\n6 3\\r\\n2 1\\r\\n5 7\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 7\\r\\n7 6\\r\\n4 2\\r\\n3 1\\r\\n4 7\\r\\n6 3\\r\\n2 5\\r\\n1 5\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"7 6\\r\\n7 5\\r\\n5 2\\r\\n1 5\\r\\n5 4\\r\\n3 5\\r\\n6 5\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"7 15\\r\\n5 1\\r\\n3 2\\r\\n2 5\\r\\n3 5\\r\\n6 1\\r\\n4 3\\r\\n6 2\\r\\n4 5\\r\\n7 5\\r\\n3 6\\r\\n3 1\\r\\n7 3\\r\\n4 6\\r\\n6 5\\r\\n6 7\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 18\\r\\n3 7\\r\\n3 2\\r\\n2 1\\r\\n1 7\\r\\n5 1\\r\\n3 4\\r\\n5 6\\r\\n4 2\\r\\n6 2\\r\\n1 4\\r\\n2 5\\r\\n6 3\\r\\n3 1\\r\\n6 7\\r\\n6 1\\r\\n7 2\\r\\n6 4\\r\\n3 5\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 19\\r\\n1 2\\r\\n7 3\\r\\n3 4\\r\\n4 7\\r\\n3 6\\r\\n7 5\\r\\n6 2\\r\\n4 6\\r\\n6 7\\r\\n5 2\\r\\n3 2\\r\\n6 5\\r\\n4 1\\r\\n2 4\\r\\n4 5\\r\\n6 1\\r\\n3 1\\r\\n1 7\\r\\n5 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 16\\r\\n3 2\\r\\n6 3\\r\\n6 1\\r\\n5 6\\r\\n7 5\\r\\n5 2\\r\\n6 2\\r\\n2 1\\r\\n5 4\\r\\n4 1\\r\\n7 2\\r\\n1 5\\r\\n2 4\\r\\n7 3\\r\\n1 7\\r\\n6 7\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 12\\r\\n4 1\\r\\n6 4\\r\\n3 4\\r\\n3 1\\r\\n2 4\\r\\n7 5\\r\\n5 4\\r\\n2 1\\r\\n6 7\\r\\n2 3\\r\\n7 4\\r\\n6 5\\r\\n\", \"output\": [\"11\"]}]"
+    }
+}

@@ -1,0 +1,390 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-834b2257854328a6",
+        "created": 1787084087,
+        "model": "qwen-nvfp4",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.27.1-d7a14dad",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "<?php\n$n = intval(trim(fgets(STDIN)));\n$line = trim(fgets(STDIN));\n$a = array_map('intval', explode(' ', $line));\n\n$ones = 0;\nforeach ($a as $val) {\n    if ($val == 1) $ones++;\n}\n\n// We need to choose a segment [i, j] to flip.\n// Flipping a segment changes:\n// - 1s in the segment to 0s (loss of 1s)\n// - 0s in the segment to 1s (gain of 1s)\n// Net change = (number of 0s in segment) - (number of 1s in segment)\n// We want to maximize the net change.\n// Let's transform the array: for each element, if it's 0, it contributes +1 to the net change if included; if it's 1, it contributes -1.\n// So we want to find the maximum subarray sum of the transformed array.\n// But note: we must flip exactly one segment. The segment can be of length 1.\n\n$transformed = array();\nfor ($i = 0; $i < n; $i++) {\n    if ($a[$i] == 0) {\n        $transformed[$i] = 1;\n    } else {\n        $transformed[$i] = -1;\n    }\n}\n\n// Find maximum subarray sum (Kadane's algorithm)\n$maxSum = $transformed[0];\n$currentSum = $transformed[0];\nfor ($i = 1; $i < n; $i++) {\n    $currentSum = max($transformed[$i], $currentSum + $transformed[$i]);\n    $maxSum = max($maxSum, $currentSum);\n}\n\n// The maximum number of ones = original ones + maxSum\n$result = $ones + $maxSum;\n\necho $result . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "<?php\n$data = explode(\"\\n\", trim(file_get_contents(\"php://stdin\")));\n$n = (int)trim($data[0]);\n$a = array_map('intval', explode(' ', trim($data[1])));\n\n// Count initial ones\n$ones = 0;\nforeach ($a as $val) {\n    if ($val == 1) $ones++;\n}\n\n// We need to choose a segment [i, j] to flip.\n// Flipping a segment changes 0s to 1s and 1s to 0s.\n// The change in the number of ones is: (number of 0s in segment) - (number of 1s in segment).\n// Let's define a new array b where:\n// b[k] = 1 if a[k] == 0 (flipping it adds a 1)\n// b[k] = -1 if a[k] == 1 (flipping it removes a 1)\n// We want to find the maximum sum of a contiguous subarray in b.\n// This is the classic Maximum Subarray Problem (Kadane's algorithm).\n\n$maxGain = 0;\n$currentGain = 0;\n\nfor ($i = 0; $i < $n; $i++) {\n    if ($a[$i] == 0) {\n        $currentGain += 1;\n    } else {\n        $currentGain -= 1;\n    }\n    \n    if ($currentGain > $maxGain) {\n        $maxGain = $currentGain;\n    }\n    \n    // If currentGain becomes negative, reset it to 0 because we can always choose an empty segment \n    // (though the problem requires i<=j, meaning at least one element, but if all gains are negative, \n    // we still have to pick one. However, Kadane's usually handles non-empty. \n    // Wait, the problem says \"exactly one move\" and \"chooses two indices i and j (1 <= i <= j <= n)\".\n    // So we must flip at least one element.\n    // If all elements are 1, flipping any single element reduces the count by 1.\n    // So maxGain would be -1 in that case.\n    // Standard Kadane's for non-empty subarray:\n    // If currentGain < 0, we reset to 0? No, that's for allowing empty subarray.\n    // For non-empty, if currentGain < 0, we start a new subarray at the next element.\n    // But we need to track the maximum gain.\n    \n    // Let's re-evaluate.\n    // We want max sum of b[i..j] for 1 <= i <= j <= n.\n    // If we reset currentGain to 0 when it goes negative, we are effectively allowing an empty subarray.\n    // But we cannot have an empty subarray.\n    // However, if the best subarray has a negative sum, we still have to pick it.\n    // Let's use a version of Kadane's that doesn't allow empty subarrays.\n    \n    // Actually, let's just track the max sum properly.\n    // If currentGain < 0, we set currentGain = 0? No.\n    // If we set currentGain = 0, then maxGain might stay 0 if all are negative.\n    // But if all are 1s, b is all -1s. The max sum is -1.\n    // If we use the \"reset to 0\" trick, maxGain would be 0, which is incorrect.\n    // So we should not reset to 0 if we are forced to pick at least one element.\n    \n    // Correct approach for non-empty:\n    // currentGain = max(b[i], currentGain + b[i])\n    // maxGain = max(maxGain, currentGain)\n    \n    // Let's restart the loop with this logic.\n}\n\n$maxGain = PHP_INT_MIN;\n$currentGain = 0;\n\nfor ($i = 0; $i < $n; $i++) {\n    $val = ($a[$i] == 0) ? 1 : -1;\n    \n    if ($i == 0) {\n        $currentGain = $val;\n    } else {\n        $currentGain = max($val, $currentGain + $val);\n    }\n    \n    if ($currentGain > $maxGain) {\n        $maxGain = $currentGain;\n    }\n}\n\n$result = $ones + $maxGain;\necho $result . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "<?php\n$n = (int)trim(fgets(STDIN));\n$line = trim(fgets(STDIN));\n$a = array_map('intval', explode(' ', $line));\n\n// Count initial ones\n$initialOnes = 0;\nfor ($i = 0; $i < $n; $i++) {\n    if ($a[$i] === 1) {\n        $initialOnes++;\n    }\n}\n\n// We need to choose a segment [i, j] to flip.\n// Flipping a segment changes:\n// - 1s in the segment become 0s (loss of ones)\n// - 0s in the segment become 1s (gain of ones)\n// Net change = (number of 0s in segment) - (number of 1s in segment)\n//            = (length of segment) - 2 * (number of 1s in segment)\n//\n// Alternatively, we can think of it as:\n// Let's assign a value to each element for the purpose of maximizing the gain.\n// If we flip a segment, the gain for an element at position k is:\n//   if a[k] == 0: gain = +1 (it becomes 1)\n//   if a[k] == 1: gain = -1 (it becomes 0)\n//\n// So we want to find a contiguous subarray that maximizes the sum of these gains.\n// This is the classic Maximum Subarray Problem (Kadane's algorithm).\n\n$gain = array();\nfor ($i = 0; $i < $n; $i++) {\n    if ($a[$i] === 0) {\n        $gain[$i] = 1;\n    } else {\n        $gain[$i] = -1;\n    }\n}\n\n// Find maximum subarray sum\n$maxGain = $gain[0];\n$currentMax = $gain[0];\nfor ($i = 1; $i < $n; $i++) {\n    $currentMax = max($gain[$i], $currentMax + $gain[$i]);\n    $maxGain = max($maxGain, $currentMax);\n}\n\n// The maximum number of ones is initialOnes + maxGain\n$result = $initialOnes + $maxGain;\n\necho $result . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "<?php\n$n = (int)trim(fgets(STDIN));\n$line = trim(fgets(STDIN));\n$a = array_map('intval', explode(' ', $line));\n\n// Count initial ones\n$ones = count(array_filter($a, function($x) { return $x === 1; }));\n\n// We need to find the maximum gain from flipping a subarray.\n// Flipping a subarray changes 0s to 1s (gain +1) and 1s to 0s (gain -1).\n// So we want to maximize the sum of (1 - 2*a[i]) over a subarray.\n// Let b[i] = 1 if a[i] == 0, -1 if a[i] == 1.\n// Then the gain is the sum of b[i] over the subarray.\n// We want the maximum subarray sum of b.\n\n$b = array();\nfor ($i = 0; $i < $n; $i++) {\n    if ($a[$i] === 0) {\n        $b[$i] = 1;\n    } else {\n        $b[$i] = -1;\n    }\n}\n\n// Kadane's algorithm for maximum subarray sum\n$maxSum = $b[0];\n$currentSum = $b[0];\nfor ($i = 1; $i < $n; $i++) {\n    $currentSum = max($b[$i], $currentSum + $b[$i]);\n    $maxSum = max($maxSum, $currentSum);\n}\n\n// The maximum number of ones is initial ones + max gain\n$result = $ones + $maxSum;\n\necho $result . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "<?php\n$input = trim(file_get_contents('php://stdin'));\n$lines = explode(\"\\n\", $input);\n$n = (int)trim($lines[0]);\n$arr = array_map('intval', explode(' ', trim($lines[1])));\n\n// Count initial ones\n$ones = 0;\nfor ($i = 0; $i < $n; $i++) {\n    if ($arr[$i] === 1) {\n        $ones++;\n    }\n}\n\n// If we flip a segment, the change in number of ones is:\n// (zeros in segment) - (ones in segment)\n// We want to maximize this change.\n// Let's transform the array: for each element, if it's 0, it contributes +1 to the gain if included in flip.\n// If it's 1, it contributes -1 to the gain if included in flip.\n// So we create an array b where b[i] = 1 if a[i] == 0, else -1.\n// We need to find the maximum subarray sum of b.\n// But note: we must flip exactly one segment, and the segment must be non-empty (i <= j).\n// However, it's possible that the best move is to flip a segment that doesn't improve the count, but we still have to do one move.\n// But actually, the problem says \"exactly one move\", so we must choose some i, j.\n// The gain can be negative, zero, or positive.\n// We want to maximize (ones + gain).\n\n// Use Kadane's algorithm for maximum subarray sum, but we must have at least one element.\n// However, note: if all gains are negative, we still have to pick the least negative (i.e., the maximum subarray sum which might be negative).\n\n$b = array();\nfor ($i = 0; $i < $n; $i++) {\n    if ($arr[$i] === 0) {\n        $b[] = 1;\n    } else {\n        $b[] = -1;\n    }\n}\n\n// Kadane's algorithm\n$maxEndingHere = $b[0];\n$maxSoFar = $b[0];\nfor ($i = 1; $i < $n; $i++) {\n    $maxEndingHere = max($b[$i], $maxEndingHere + $b[$i]);\n    $maxSoFar = max($maxSoFar, $maxEndingHere);\n}\n\n$result = $ones + $maxSoFar;\necho $result . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "<?php\n$input = trim(file_get_contents('php://stdin'));\n$lines = explode(\"\\n\", $input);\n$n = (int)trim($lines[0]);\n$a = array_map('intval', explode(' ', trim($lines[1])));\n\n// Count current ones\n$ones = count(array_filter($a));\n\n// We need to choose a segment [i, j] to flip.\n// Flipping a segment changes 0s to 1s and 1s to 0s.\n// The change in the number of ones is: (number of 0s in segment) - (number of 1s in segment)\n// We want to maximize this change.\n// This is equivalent to finding the maximum subarray sum where:\n// - 0 contributes +1 (because it becomes 1, increasing ones by 1)\n// - 1 contributes -1 (because it becomes 0, decreasing ones by 1)\n\n// So we create an array b where b[k] = 1 if a[k] == 0, else -1.\n$b = array();\nfor ($i = 0; $i < $n; $i++) {\n    if ($a[$i] == 0) {\n        $b[$i] = 1;\n    } else {\n        $b[$i] = -1;\n    }\n}\n\n// Find maximum subarray sum in b using Kadane's algorithm\n// But note: we must flip exactly one segment, so the segment must be non-empty.\n// Kadane's algorithm for maximum subarray sum (non-empty)\n\n$maxSum = $b[0];\n$currentSum = $b[0];\n\nfor ($i = 1; $i < $n; $i++) {\n    // Either extend the current subarray or start a new one\n    $currentSum = max($b[$i], $currentSum + $b[$i]);\n    $maxSum = max($maxSum, $currentSum);\n}\n\n// The maximum number of ones after flipping is:\n// current ones + maxSum\n$result = $ones + $maxSum;\n\necho $result . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "<?php\n$n = (int)trim(fgets(STDIN));\n$arr = array_map('intval', explode(' ', trim(fgets(STDIN))));\n\n// Count initial ones\n$ones = 0;\nfor ($i = 0; $i < $n; $i++) {\n    if ($arr[$i] === 1) {\n        $ones++;\n    }\n}\n\n// If we flip a segment, the change in number of ones is:\n// (number of zeros in segment) - (number of ones in segment)\n// We want to maximize this change.\n// Let's define a value for each element:\n// If element is 0, flipping it makes it 1, so gain +1.\n// If element is 1, flipping it makes it 0, so gain -1.\n// So we want to find a contiguous subarray with maximum sum of these gains.\n// This is the classic maximum subarray problem (Kadane's algorithm).\n\n$maxGain = 0; // We must do exactly one move, but the move can be of length 1.\n// However, if all gains are negative, we still have to pick the least negative one.\n// But note: the problem says \"exactly one move\". The move must be on a non-empty segment.\n// So we need to find the maximum subarray sum, but we are allowed to choose any non-empty subarray.\n\n$currentMax = 0;\n$bestGain = 0;\n\n// Initialize with the first element's gain\n$gain[0] = ($arr[0] === 0) ? 1 : -1;\n$bestGain = $gain[0];\n$currentMax = $gain[0];\n\nfor ($i = 1; $i < $n; $i++) {\n    $gain[$i] = ($arr[$i] === 0) ? 1 : -1;\n    \n    // Kadane's algorithm\n    $currentMax = max($gain[$i], $currentMax + $gain[$i]);\n    $bestGain = max($bestGain, $currentMax);\n}\n\n// The maximum number of ones after the move is initial ones + bestGain\n$result = $ones + $bestGain;\n\necho $result . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "<?php\n$data = stream_get_contents(STDIN);\n$lines = explode(\"\\n\", trim($data));\n$n = (int)trim($lines[0]);\n$arr = array_map('intval', explode(' ', trim($lines[1])));\n\n// Count initial ones\n$ones = 0;\nfor ($i = 0; $i < $n; $i++) {\n    if ($arr[$i] === 1) {\n        $ones++;\n    }\n}\n\n// If we flip a segment, the change in the number of ones is:\n// (number of zeros in segment) - (number of ones in segment)\n// We want to maximize this change.\n// Let's transform the array: \n// If arr[i] is 0, flipping it adds 1 to the count of ones -> value +1\n// If arr[i] is 1, flipping it subtracts 1 from the count of ones -> value -1\n// So we create an array b where b[i] = 1 if arr[i]==0 else -1.\n// We need to find the maximum subarray sum of b.\n// Then the answer is $ones + max_subarray_sum.\n\n$b = [];\nfor ($i = 0; $i < $n; $i++) {\n    if ($arr[$i] === 0) {\n        $b[$i] = 1;\n    } else {\n        $b[$i] = -1;\n    }\n}\n\n// Find maximum subarray sum using Kadane's algorithm\n$max_ending_here = 0;\n$max_so_far = 0;\n\nfor ($i = 0; $i < $n; $i++) {\n    $max_ending_here = max(0, $max_ending_here + $b[$i]);\n    $max_so_far = max($max_so_far, $max_ending_here);\n}\n\n// The problem states we must do exactly one move.\n// If the maximum subarray sum is 0, it means we should flip a segment that doesn't improve the count (or we can flip a segment of length 0? No, i<=j so length >=1).\n// Wait, if all elements are 1, flipping any segment will decrease the count. \n// But we MUST do exactly one move.\n// So we have to pick a segment. The best case is to pick a segment that minimizes the loss.\n// In the transformed array b, if all are -1, the max subarray sum is -1 (flipping a single element).\n// My Kadane's above allows empty subarray (sum 0). But we must pick a non-empty segment.\n// So we need to find the maximum subarray sum for non-empty subarrays.\n\n$max_ending_here = $b[0];\n$max_so_far = $b[0];\n\nfor ($i = 1; $i < $n; $i++) {\n    $max_ending_here = max($b[$i], $max_ending_here + $b[$i]);\n    $max_so_far = max($max_so_far, $max_ending_here);\n}\n\n$result = $ones + $max_so_far;\necho $result;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 8,
+                "message": {
+                    "content": "<?php\n$input = trim(file_get_contents('php://stdin'));\n$lines = explode(\"\\n\", $input);\n$n = (int)trim($lines[0]);\n$numbers = array_map('intval', explode(' ', trim($lines[1])));\n\n// Count initial ones\n$ones = 0;\nfor ($i = 0; $i < $n; $i++) {\n    if ($numbers[$i] === 1) {\n        $ones++;\n    }\n}\n\n// We need to find the maximum gain from flipping a contiguous subarray.\n// Flipping a 0 to 1 gives +1 gain.\n// Flipping a 1 to 0 gives -1 gain.\n// So we can transform the problem: create an array where 0 becomes 1 and 1 becomes -1.\n// Then find the maximum subarray sum (Kadane's algorithm).\n// The answer is initial_ones + max_subarray_sum.\n\n// But note: we must do exactly one move. The move can be of length 1 or more.\n// Kadane's algorithm finds the maximum subarray sum. If all values are negative, \n// the maximum subarray sum would be the least negative (or zero if we allow empty, but we can't have empty).\n// However, since we must flip at least one element, the subarray must be non-empty.\n\n// Let's create the transformed array\n$transformed = [];\nfor ($i = 0; $i < $n; $i++) {\n    if ($numbers[$i] === 0) {\n        $transformed[] = 1;\n    } else {\n        $transformed[] = -1;\n    }\n}\n\n// Kadane's algorithm for maximum subarray sum (non-empty)\n$maxEndingHere = $transformed[0];\n$maxSoFar = $transformed[0];\n\nfor ($i = 1; $i < $n; $i++) {\n    $maxEndingHere = max($transformed[$i], $maxEndingHere + $transformed[$i]);\n    if ($maxEndingHere > $maxSoFar) {\n        $maxSoFar = $maxEndingHere;\n    }\n}\n\n$result = $ones + $maxSoFar;\necho $result . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 9,
+                "message": {
+                    "content": "<?php\n$input = trim(file_get_contents('php://stdin'));\n$lines = explode(\"\\n\", $input);\n$n = (int)trim($lines[0]);\n$a = array_map('intval', explode(' ', trim($lines[1])));\n\n// Count initial ones\n$ones = 0;\nfor ($i = 0; $i < $n; $i++) {\n    if ($a[$i] === 1) {\n        $ones++;\n    }\n}\n\n// If we flip a segment, the change in number of ones is:\n// For each position in the segment:\n//   if a[i] == 0, it becomes 1 -> gain +1\n//   if a[i] == 1, it becomes 0 -> gain -1\n// So we want to find the subarray with maximum sum where 0 -> +1, 1 -> -1\n// This is equivalent to finding max subarray sum on transformed array b where b[i] = (a[i] == 0) ? 1 : -1\n\n// But note: we must do exactly one move, so we must flip at least one element.\n// However, if the best \"gain\" is negative, we still have to do the move.\n// But actually, we can always choose a segment of length 1. The minimum loss is -1 (flipping a single 1).\n// So the maximum number of ones after move is: ones + max(0, max_subarray_sum) ? \n// Wait: no. We must do exactly one move. So we cannot skip. But if all gains are negative, we pick the least negative.\n// Actually, the problem says \"exactly one move\", so we must flip some non-empty segment.\n// So we need the maximum over all non-empty contiguous subarrays of the sum of b[i] (where b[i] = 1 if a[i]==0, -1 if a[i]==1).\n// Then answer = ones + max_gain, where max_gain is the maximum subarray sum (Kadane's algorithm for non-empty).\n\n// However, note: if the entire array is already all ones, then flipping any segment will reduce the count.\n// But we still have to do one move. So we flip a single element (a 1), which reduces by 1.\n// So the answer would be n - 1.\n\n// Let's use Kadane's algorithm for maximum subarray sum (non-empty).\n\n$max_ending_here = $a[0] === 0 ? 1 : -1;\n$max_so_far = $max_ending_here;\n\nfor ($i = 1; $i < $n; $i++) {\n    $val = ($a[$i] === 0) ? 1 : -1;\n    $max_ending_here = max($val, $max_ending_here + $val);\n    if ($max_ending_here > $max_so_far) {\n        $max_so_far = $max_ending_here;\n    }\n}\n\n// The maximum gain we can get is $max_so_far.\n// But note: if $max_so_far is negative, we still have to take it because we must do one move.\n// So the answer is ones + $max_so_far.\n\n$result = $ones + $max_so_far;\n\necho $result . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 10,
+                "message": {
+                    "content": "<?php\n$input = trim(file_get_contents('php://stdin'));\n$lines = explode(\"\\n\", $input);\n$n = (int)trim($lines[0]);\n$numbers = array_map('intval', explode(' ', trim($lines[1])));\n\n// Count initial ones\n$initialOnes = 0;\nforeach ($numbers as $num) {\n    if ($num === 1) {\n        $initialOnes++;\n    }\n}\n\n// We need to find a subarray [i, j] such that flipping it maximizes the total ones.\n// Flipping a segment changes:\n// - 1s in the segment become 0s (loss of 1s)\n// - 0s in the segment become 1s (gain of 1s)\n// Net change = (number of 0s in segment) - (number of 1s in segment)\n// Total ones after flip = initialOnes + net change\n// So we want to maximize net change.\n\n// Let's transform the problem:\n// For each element, if it's 1, flipping it gives -1 change.\n// If it's 0, flipping it gives +1 change.\n// So we want to find the maximum subarray sum of the transformed array.\n\n$transformed = [];\nfor ($i = 0; $i < $n; $i++) {\n    if ($numbers[$i] === 1) {\n        $transformed[$i] = -1;\n    } else {\n        $transformed[$i] = 1;\n    }\n}\n\n// Use Kadane's algorithm to find maximum subarray sum\n$maxSum = $transformed[0];\n$currentSum = $transformed[0];\n\nfor ($i = 1; $i < $n; $i++) {\n    $currentSum = max($transformed[$i], $currentSum + $transformed[$i]);\n    $maxSum = max($maxSum, $currentSum);\n}\n\n// The maximum number of ones is initialOnes + maxSum\n// But note: we must do exactly one move. The move can be flipping a single element.\n// Kadane's algorithm handles this correctly.\n$result = $initialOnes + $maxSum;\n\necho $result . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 11,
+                "message": {
+                    "content": "<?php\n$n = (int)trim(fgets(STDIN));\n$line = trim(fgets(STDIN));\n$a = array_map('intval', explode(' ', $line));\n\n$totalOnes = 0;\nforeach ($a as $v) {\n    if ($v == 1) $totalOnes++;\n}\n\n// We need to find the maximum gain from flipping a contiguous subarray.\n// Flipping a 0 to 1 gives +1 gain.\n// Flipping a 1 to 0 gives -1 gain.\n// So we can transform the array to a \"gain\" array:\n// gain[i] = 1 if a[i] == 0, else -1.\n// Then we need to find the maximum subarray sum of the gain array.\n// The result will be totalOnes + maxGain.\n\n$gain = array();\nfor ($i = 0; $i < $n; $i++) {\n    if ($a[$i] == 0) {\n        $gain[$i] = 1;\n    } else {\n        $gain[$i] = -1;\n    }\n}\n\n// Kadane's algorithm to find maximum subarray sum\n$maxEndingHere = 0;\n$maxSoFar = 0; // Since we must flip at least one element, but the problem says exactly one move.\n// However, note that if all are 1s, flipping any single element will reduce the count.\n// But the problem asks for the maximum number of 1s after exactly one move.\n// If we are forced to flip, and all are 1s, we must flip at least one 1 to 0.\n// So the gain can be negative.\n// Let's adjust: maxSoFar should be initialized to a very small number or we handle the case where we must pick at least one element.\n// Actually, the standard Kadane's for \"maximum subarray sum\" usually allows empty subarray (sum 0).\n// But here, we must flip a non-empty segment [i, j] with i <= j.\n// So we need the maximum sum of a non-empty contiguous subarray.\n\n$maxEndingHere = $gain[0];\n$maxSoFar = $gain[0];\n\nfor ($i = 1; $i < $n; $i++) {\n    $maxEndingHere = max($gain[$i], $maxEndingHere + $gain[$i]);\n    $maxSoFar = max($maxSoFar, $maxEndingHere);\n}\n\n$result = $totalOnes + $maxSoFar;\necho $result . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 12,
+                "message": {
+                    "content": "<?php\n$n = (int)trim(fgets(STDIN));\n$arr = array_map('intval', explode(' ', trim(fgets(STDIN))));\n\n$ones = 0;\nforeach ($arr as $val) {\n    if ($val === 1) {\n        $ones++;\n    }\n}\n\n// Convert to gains: flipping a 0 gives +1, flipping a 1 gives -1\n$gains = array();\nfor ($i = 0; $i < $n; $i++) {\n    if ($arr[$i] === 0) {\n        $gains[$i] = 1;\n    } else {\n        $gains[$i] = -1;\n    }\n}\n\n// Find maximum subarray sum (Kadane's algorithm)\n// Since we must flip at least one element, the minimum gain is -1 (flipping a single 1)\n// But Kadane's finds the max subarray sum. If all are negative, the max is the least negative.\n$maxSum = $gains[0];\n$currentSum = $gains[0];\n\nfor ($i = 1; $i < $n; $i++) {\n    $currentSum = max($gains[$i], $currentSum + $gains[$i]);\n    if ($currentSum > $maxSum) {\n        $maxSum = $currentSum;\n    }\n}\n\n$result = $ones + $maxSum;\necho $result . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 13,
+                "message": {
+                    "content": "<?php\n$input = trim(file_get_contents('php://stdin'));\n$lines = explode(\"\\n\", $input);\n$n = (int)trim($lines[0]);\n$arr = array_map('intval', explode(' ', trim($lines[1])));\n\n$totalOnes = count(array_filter($arr, function($x) { return $x === 1; }));\n\n// We need to find a subarray [i, j] such that flipping it maximizes the number of ones.\n// Flipping a subarray changes 0s to 1s and 1s to 0s.\n// Let gain = (number of 0s in subarray) - (number of 1s in subarray).\n// New total ones = totalOnes + gain.\n// We want to maximize gain.\n// This is equivalent to finding the maximum subarray sum where:\n// - 0 contributes +1\n// - 1 contributes -1\n\n$bestGain = 0;\n$currentGain = 0;\n\nfor ($i = 0; $i < $n; $i++) {\n    if ($arr[$i] === 0) {\n        $currentGain += 1;\n    } else {\n        $currentGain -= 1;\n    }\n    \n    if ($currentGain < 0) {\n        $currentGain = 0;\n    }\n    \n    if ($currentGain > $bestGain) {\n        $bestGain = $currentGain;\n    }\n}\n\n// Note: The problem says \"exactly one move\". We must choose i and j with 1 <= i <= j <= n.\n// This means we cannot choose an empty subarray.\n// However, if all elements are 1, flipping any single element will reduce the count by 1.\n// But wait, the problem says we MUST do exactly one move.\n// So if bestGain is 0, it means we found a subarray with equal 0s and 1s, or we reset currentGain to 0.\n// Actually, Kadane's algorithm as written above allows an empty subarray (gain 0).\n// But we must pick a non-empty subarray.\n// Let's re-evaluate.\n// If we pick a subarray, the gain is sum of (1 if 0, -1 if 1).\n// We need the maximum sum over all non-empty subarrays.\n// If the maximum sum is negative, we still have to pick one (the least negative one).\n// But since we can always pick a single 0 (gain +1) if there's any 0, or a single 1 (gain -1) if all are 1.\n// Actually, if there is at least one 0, the max gain is at least 1.\n// If there are no 0s (all 1s), the max gain is -1 (flip a single 1).\n// So we need to find the max subarray sum for non-empty subarrays.\n\n$bestGain = -1000000; // Initialize to a very small number\n$currentGain = 0;\n\nfor ($i = 0; $i < $n; $i++) {\n    $val = ($arr[$i] === 0) ? 1 : -1;\n    if ($i === 0) {\n        $currentGain = $val;\n    } else {\n        $currentGain = max($val, $currentGain + $val);\n    }\n    if ($currentGain > $bestGain) {\n        $bestGain = $currentGain;\n    }\n}\n\n$result = $totalOnes + $bestGain;\necho $result . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 14,
+                "message": {
+                    "content": "<?php\n$input = trim(file_get_contents('php://stdin'));\n$lines = explode(\"\\n\", $input);\n$n = (int)trim($lines[0]);\n$a = array_map('intval', explode(' ', trim($lines[1])));\n\n// Count initial ones\n$ones = 0;\nfor ($i = 0; $i < $n; $i++) {\n    if ($a[$i] === 1) {\n        $ones++;\n    }\n}\n\n// If we flip a segment, the change in number of ones is:\n// (number of zeros in segment) - (number of ones in segment)\n// We want to maximize this change.\n\n// Let's transform the array: \n// If a[i] is 0, flipping it adds 1 to the count of ones -> contribution +1\n// If a[i] is 1, flipping it subtracts 1 from the count of ones -> contribution -1\n// So we create an array b where b[i] = 1 if a[i] == 0, else -1.\n// Then we need to find the maximum subarray sum in b.\n// The maximum number of ones after one flip = initial_ones + max_subarray_sum(b)\n\n$b = array();\nfor ($i = 0; $i < $n; $i++) {\n    if ($a[$i] === 0) {\n        $b[$i] = 1;\n    } else {\n        $b[$i] = -1;\n    }\n}\n\n// Find maximum subarray sum using Kadane's algorithm\n$max_ending_here = 0;\n$max_so_far = 0;\nfor ($i = 0; $i < $n; $i++) {\n    $max_ending_here = max(0, $max_ending_here + $b[$i]);\n    $max_so_far = max($max_so_far, $max_ending_here);\n}\n\n$result = $ones + $max_so_far;\necho $result . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 15,
+                "message": {
+                    "content": "<?php\n$n = (int)trim(fgets(STDIN));\n$arr = array_map('intval', explode(' ', trim(fgets(STDIN))));\n\n$ones = 0;\nforeach ($arr as $val) {\n    if ($val === 1) {\n        $ones++;\n    }\n}\n\n// We need to find the maximum gain from flipping a contiguous subarray.\n// Flipping a 0 to 1 gives +1.\n// Flipping a 1 to 0 gives -1.\n// So we transform the array: 0 -> 1, 1 -> -1.\n// Then find the maximum subarray sum (Kadane's algorithm).\n// The result is $ones + max_gain.\n\n$transformed = array();\nfor ($i = 0; $i < $n; $i++) {\n    if ($arr[$i] === 0) {\n        $transformed[$i] = 1;\n    } else {\n        $transformed[$i] = -1;\n    }\n}\n\n// Kadane's algorithm to find maximum subarray sum\n$maxEndingHere = 0;\n$maxSoFar = 0;\nfor ($i = 0; $i < $n; $i++) {\n    $maxEndingHere = max($transformed[$i], $maxEndingHere + $transformed[$i]);\n    $maxSoFar = max($maxSoFar, $maxEndingHere);\n}\n\n// Since we must perform exactly one move, and flipping a segment of length at least 1 is required.\n// If all are 1s, flipping any single element will reduce the count by 1.\n// But note: if maxSoFar is 0, it means no positive gain is possible (all 1s or mixed but best is 0).\n// However, if the array is all 1s, flipping one element gives -1 gain. But we must flip.\n// Actually, if all are 1s, the best we can do is flip a single element, so gain is -1.\n// But wait: if there is at least one 0, maxSoFar will be at least 1.\n// If there are no 0s (all 1s), then maxSoFar will be 0? No, because transformed values are all -1.\n// Let's check: if all 1s, transformed is all -1. Kadane's:\n// i=0: maxEndingHere = max(-1, 0 + -1) = -1, maxSoFar = max(0, -1) = 0\n// So maxSoFar remains 0.\n// But we must flip. So the gain is actually -1 in that case.\n// However, the problem says \"exactly one move\". So if all are 1s, we have to flip at least one, so we lose 1.\n// But our Kadane's gives 0. So we need to handle the case where maxSoFar is 0 but there are no 0s?\n// Actually, if there is at least one 0, maxSoFar >= 1.\n// If there are no 0s, then maxSoFar = 0, but the actual best gain is -1.\n// So: if maxSoFar == 0, it could mean either:\n//   - There are no 0s (all 1s) -> gain = -1\n//   - Or the best subarray sum is 0 (e.g., [1,0] -> transformed [-1,1], max subarray sum is 1, so not 0)\n// Let's think: when is maxSoFar 0?\n// Only if all transformed values are negative or zero? But transformed values are only 1 or -1.\n// So maxSoFar is 0 only if there is no positive subarray, i.e., no 1 in transformed, i.e., no 0 in original.\n// So if maxSoFar == 0, it means the original array has no 0s (all 1s).\n// In that case, we must flip at least one element, so the gain is -1.\n// Otherwise, gain = maxSoFar.\n\nif ($maxSoFar == 0) {\n    // This happens only when there are no 0s in the original array (all 1s)\n    $gain = -1;\n} else {\n    $gain = $maxSoFar;\n}\n\n$result = $ones + $gain;\necho $result . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 16,
+                "message": {
+                    "content": "```php\n<?php\n$n = (int)trim(fgets(STDIN));\n$line = trim(fgets(STDIN));\n$a = array_map('intval', explode(' ', $line));\n\n// Count initial ones\n$ones = 0;\nfor ($i = 0; $i < $n; $i++) {\n    if ($a[$i] == 1) $ones++;\n}\n\n// We need to find the best segment to flip.\n// Flipping a segment [i, j] changes:\n// - 1s in the segment become 0s (lose count)\n// - 0s in the segment become 1s (gain count)\n// Net change = (zeros in segment) - (ones in segment)\n// We want to maximize: ones + net_change\n// Equivalent to maximizing: (zeros - ones) over all segments\n// Let's define value: for each element, if it's 0, flipping gives +1; if it's 1, flipping gives -1.\n// So we want max subarray sum of array b where b[i] = (a[i]==0 ? 1 : -1)\n// But we must do exactly one move, so we must pick at least one element.\n\n// Use Kadane's algorithm to find max subarray sum\n$maxSum = -1000000;\n$currentSum = 0;\nfor ($i = 0; $i < $n; $i++) {\n    $val = ($a[$i] == 0) ? 1 : -1;\n    $currentSum += $val;\n    if ($currentSum > $maxSum) {\n        $maxSum = $currentSum;\n    }\n    if ($currentSum < 0) {\n        $currentSum = 0;\n    }\n}\n\n// The answer is ones + maxSum\necho $ones + $maxSum . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 17,
+                "message": {
+                    "content": "<?php\n$input = trim(file_get_contents('php://stdin'));\n$lines = explode(\"\\n\", $input);\n$n = (int)trim($lines[0]);\n$a = array_map('intval', explode(' ', trim($lines[1])));\n\n// Count initial ones\n$ones = 0;\nfor ($i = 0; $i < $n; $i++) {\n    if ($a[$i] === 1) {\n        $ones++;\n    }\n}\n\n// We need to find a segment [i, j] such that flipping it maximizes the number of ones.\n// Flipping a segment changes 0s to 1s and 1s to 0s.\n// Let gain = (number of 0s in segment) - (number of 1s in segment).\n// Total ones after flip = initial_ones + gain.\n// We want to maximize gain.\n// This is equivalent to finding the maximum subarray sum where:\n//   value = 1 if a[k] == 0 (since flipping 0 to 1 gives +1)\n//   value = -1 if a[k] == 1 (since flipping 1 to 0 gives -1)\n// But note: we must flip exactly one non-empty segment.\n\n// Use Kadane's algorithm to find maximum subarray sum on the transformed array.\n$best = -1000000;\n$current = 0;\nfor ($i = 0; $i < $n; $i++) {\n    $val = ($a[$i] === 0) ? 1 : -1;\n    $current = max($val, $current + $val);\n    $best = max($best, $current);\n}\n\n// It's possible that the best gain is negative, but we must do exactly one move.\n// However, since we can choose any segment, and if all are 1s, flipping any single element reduces ones by 1.\n// But the problem says \"exactly one move\", so we must flip at least one element.\n// The maximum gain could be negative, but we still have to do it.\n// However, note: if the array is all 1s, then flipping any segment of length L will reduce ones by L.\n// The best we can do is flip a segment of length 1, so gain = -1.\n// But our Kadane's algorithm above finds the maximum subarray sum, which in the all-1 case would be -1 (for a single element).\n// So $best will be at least -1.\n\n$result = $ones + $best;\necho $result . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 18,
+                "message": {
+                    "content": "```php\n<?php\n$n = (int)trim(fgets(STDIN));\n$line = trim(fgets(STDIN));\n$a = array_map('intval', explode(' ', $line));\n\n// Count initial ones\n$ones = count(array_filter($a, function($x) { return $x === 1; }));\n\n// We need to find the maximum gain from flipping a contiguous subarray.\n// Flipping a segment: 0s become 1s (gain +1 each), 1s become 0s (loss -1 each).\n// So the net change for a segment is (number of 0s) - (number of 1s) in that segment.\n// We want to maximize this net change, then add to initial ones.\n\n// Convert: treat 0 as +1, 1 as -1, then find max subarray sum.\n$transformed = array_map(function($x) { return $x === 0 ? 1 : -1; }, $a);\n\n// Kadane's algorithm for max subarray sum\n$maxEndingHere = 0;\n$maxSoFar = 0;\nfor ($i = 0; $i < $n; $i++) {\n    $maxEndingHere = max($transformed[$i], $maxEndingHere + $transformed[$i]);\n    $maxSoFar = max($maxSoFar, $maxEndingHere);\n}\n\n$result = $ones + $maxSoFar;\necho $result . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 19,
+                "message": {
+                    "content": "```php\n<?php\n$n = (int)trim(fgets(STDIN));\n$line = trim(fgets(STDIN));\n$a = array_map('intval', explode(' ', $line));\n\n// Count initial ones\n$ones = count(array_filter($a, function($x) { return $x === 1; }));\n\n// We need to find the maximum gain from flipping one contiguous segment.\n// Flipping a segment changes 0s to 1s and 1s to 0s.\n// The gain for a segment is: (number of 0s in segment) - (number of 1s in segment)\n// We want to maximize this gain.\n// This is equivalent to finding the maximum subarray sum where:\n// - 0 contributes +1 (flipping 0 to 1 gains 1)\n// - 1 contributes -1 (flipping 1 to 0 loses 1)\n\n// Use Kadane's algorithm to find maximum subarray sum\n$best = 0; // minimum gain could be negative, but we must flip exactly one segment\n$current = 0;\n\n// Actually, we must flip exactly one non-empty segment, so we need to track the best (possibly negative) gain\n// But since we can choose any i <= j, the segment must be non-empty.\n\n// Let's use Kadane's that allows negative values\n$bestGain = PHP_INT_MIN;\n$currentGain = 0;\n\nfor ($i = 0; $i < $n; $i++) {\n    $val = ($a[$i] === 0) ? 1 : -1;\n    if ($i === 0) {\n        $currentGain = $val;\n    } else {\n        $currentGain = max($val, $currentGain + $val);\n    }\n    if ($currentGain > $bestGain) {\n        $bestGain = $currentGain;\n    }\n}\n\n$result = $ones + $bestGain;\necho $result . \"\\n\";\n?>\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 11310,
+            "prompt_tokens": 491,
+            "total_tokens": 11801
+        },
+        "prompt": "Write a program in PHP to solve this programming problem:\nDescription: Iahub got bored, so he invented a game to be played on paper. He writes n integers a1,\u2009a2,\u2009...,\u2009an. Each of those integers can be either 0 or 1. He's allowed to do exactly one move: he chooses two indices i and j (1\u2009\u2264\u2009i\u2009\u2264\u2009j\u2009\u2264\u2009n) and flips all values ak for which their positions are in range [i,\u2009j] (that is i\u2009\u2264\u2009k\u2009\u2264\u2009j). Flip the value of x means to apply operation x\u2009=\u20091 - x.The goal of the game is that after exactly one move to obtain the maximum number of ones. Write a program to solve the little game of Iahub.\nInput Specification: The first line of the input contains an integer n (1\u2009\u2264\u2009n\u2009\u2264\u2009100). In the second line of the input there are n integers: a1,\u2009a2,\u2009...,\u2009an. It is guaranteed that each of those n values is either 0 or 1.\nOutput Specification: Print an integer \u2014 the maximal number of 1s that can be obtained after exactly one move. \n\nSample Input:\n5\n1 0 0 1 0\nSample Output:\n4\n\nSample Input:\n4\n1 0 0 1\nSample Output:\n4\n\nNotes: NoteIn the first case, flip the segment from 2 to 5 (i\u2009=\u20092,\u2009j\u2009=\u20095). That flip changes the sequence, it becomes: [1 1 1 0 1]. So, it contains four ones. There is no way to make the whole sequence equal to [1 1 1 1 1].In the second case, flipping only the second and the third element (i\u2009=\u20092,\u2009j\u2009=\u20093) will turn all numbers into 1.\nTake input from standard input and output to standard output\nProvide the PHP code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "9b543e07e805fe1dd8fa869d5d7c8b99",
+        "difficulty": 1200,
+        "prob_desc_sample_inputs": [
+            "5\n1 0 0 1 0",
+            "4\n1 0 0 1"
+        ],
+        "prob_desc_time_limit": "1 second",
+        "tags": [
+            "brute force",
+            "dp",
+            "implementation"
+        ],
+        "prob_desc_output_spec": "Print an integer \u2014 the maximal number of 1s that can be obtained after exactly one move. ",
+        "prob_desc_input_spec": "The first line of the input contains an integer n (1\u2009\u2264\u2009n\u2009\u2264\u2009100). In the second line of the input there are n integers: a1,\u2009a2,\u2009...,\u2009an. It is guaranteed that each of those n values is either 0 or 1.",
+        "lang_cluster": "PHP",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first case, flip the segment from 2 to 5 (i\u2009=\u20092,\u2009j\u2009=\u20095). That flip changes the sequence, it becomes: [1 1 1 0 1]. So, it contains four ones. There is no way to make the whole sequence equal to [1 1 1 1 1].In the second case, flipping only the second and the third element (i\u2009=\u20092,\u2009j\u2009=\u20093) will turn all numbers into 1.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Iahub got bored, so he invented a game to be played on paper. He writes n integers a1,\u2009a2,\u2009...,\u2009an. Each of those integers can be either 0 or 1. He's allowed to do exactly one move: he chooses two indices i and j (1\u2009\u2264\u2009i\u2009\u2264\u2009j\u2009\u2264\u2009n) and flips all values ak for which their positions are in range [i,\u2009j] (that is i\u2009\u2264\u2009k\u2009\u2264\u2009j). Flip the value of x means to apply operation x\u2009=\u20091 - x.The goal of the game is that after exactly one move to obtain the maximum number of ones. Write a program to solve the little game of Iahub.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1372941000",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "4",
+            "4"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"5\\r\\n1 0 0 1 0\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"4\\r\\n1 0 0 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"1\\r\\n1\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"1\\r\\n0\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"8\\r\\n1 0 0 0 1 0 0 0\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"18\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"23\\r\\n1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1\\r\\n\", \"output\": [\"22\"]}, {\"input\": \"100\\r\\n0 1 0 1 1 1 0 1 0 1 0 0 1 1 1 1 0 0 1 1 1 1 1 1 1 0 0 1 1 1 0 1 1 0 0 0 1 1 1 1 0 0 1 1 1 0 0 1 1 0 1 1 1 0 0 0 1 0 0 0 0 0 1 1 0 0 1 1 1 1 1 1 1 1 0 1 1 1 0 1 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 0 1\\r\\n\", \"output\": [\"70\"]}, {\"input\": \"100\\r\\n0 1 1 0 1 0 0 1 0 0 0 1 1 0 0 0 1 1 1 0 1 0 0 0 0 0 1 0 1 0 1 0 1 0 1 0 0 0 1 0 0 0 0 0 1 1 0 1 0 1 0 1 1 1 0 1 0 1 1 0 0 1 1 0 0 1 1 1 0 0 1 0 0 1 1 0 1 0 0 1 1 0 1 0 0 1 1 0 0 0 0 1 0 0 0 0 1 1 1 1\\r\\n\", \"output\": [\"60\"]}, {\"input\": \"18\\r\\n0 1 0 1 0 1 0 1 0 1 1 0 1 1 0 1 1 0\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"25\\r\\n0 1 0 0 0 0 0 1 0 1 0 1 0 0 0 0 1 1 1 0 0 1 1 0 1\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"55\\r\\n0 0 1 1 0 0 0 1 0 1 1 0 1 1 1 0 1 1 1 1 1 0 0 1 0 0 1 0 1 1 0 0 1 0 1 1 0 1 1 1 1 0 1 1 0 0 0 0 1 1 0 1 1 1 1\\r\\n\", \"output\": [\"36\"]}, {\"input\": \"75\\r\\n1 1 0 1 0 1 1 0 0 0 0 0 1 1 1 1 1 0 1 0 1 0 0 0 0 1 1 1 0 1 0 0 1 1 0 1 0 0 1 1 0 1 0 1 0 1 0 0 0 0 1 0 0 1 1 1 0 0 1 0 1 1 0 0 0 0 1 1 0 0 0 1 0 0 0\\r\\n\", \"output\": [\"44\"]}, {\"input\": \"100\\r\\n0 0 1 0 1 0 0 1 1 0 1 1 0 1 0 1 1 0 0 0 0 0 1 0 0 1 1 0 0 0 1 0 0 1 1 0 0 1 1 1 0 0 0 0 1 0 1 1 1 0 0 1 0 1 1 1 1 1 1 1 0 1 0 1 0 0 1 0 1 1 1 0 0 0 0 1 0 1 1 0 0 1 1 0 1 1 1 1 0 1 1 1 0 0 1 1 0 1 0 1\\r\\n\", \"output\": [\"61\"]}, {\"input\": \"100\\r\\n0 0 0 1 0 0 0 1 0 1 1 0 1 1 1 1 1 0 1 0 1 1 0 0 1 1 0 1 0 1 0 1 0 1 1 0 1 1 0 0 0 1 1 1 1 0 1 1 0 1 1 1 1 0 1 0 0 1 0 1 0 0 0 0 1 1 0 0 1 0 0 1 1 0 1 1 0 1 0 0 1 1 0 1 1 1 1 0 1 0 0 1 0 1 1 1 0 1 1 0\\r\\n\", \"output\": [\"61\"]}, {\"input\": \"100\\r\\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\\r\\n\", \"output\": [\"100\"]}, {\"input\": \"100\\r\\n1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1\\r\\n\", \"output\": [\"99\"]}, {\"input\": \"100\\r\\n0 0 1 1 1 0 1 1 0 0 1 0 1 0 1 0 0 1 0 1 1 0 0 1 1 1 1 1 1 0 1 0 0 1 0 0 0 0 1 1 1 0 1 1 1 0 1 1 1 0 0 1 0 0 1 1 0 0 0 1 1 1 0 1 1 0 0 0 0 1 0 0 1 0 1 0 0 0 0 0 0 1 1 1 0 1 1 1 0 1 1 1 1 1 0 0 0 0 1 0\\r\\n\", \"output\": [\"61\"]}, {\"input\": \"100\\r\\n0 1 1 1 1 1 1 0 0 0 1 1 0 0 0 1 0 0 0 0 0 0 1 1 1 0 0 0 1 1 1 0 1 0 0 1 1 0 0 0 1 1 1 1 1 1 1 1 1 1 0 0 1 0 1 0 0 0 0 1 0 1 0 1 0 0 1 0 1 0 1 1 0 0 0 0 0 1 1 1 0 1 1 0 1 1 0 0 0 1 0 1 1 0 0 0 0 0 0 1\\r\\n\", \"output\": [\"59\"]}, {\"input\": \"99\\r\\n1 1 0 0 0 1 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 0 1 1 0 0 0 0 0 0 1 1 0 0 1 0 1 1 1 0 0 0 0 0 1 0 0 0 0 0 0 1 0 1 1 0 1 0 0 1 1 0 1 0 0 0 1 1 1 1 0 1 1 1 0 0 1 1 0 0 0 0 1 0 0 0 0 0 1 0 1 1 1\\r\\n\", \"output\": [\"61\"]}, {\"input\": \"2\\r\\n1 1\\r\\n\", \"output\": [\"1\"]}]"
+    }
+}

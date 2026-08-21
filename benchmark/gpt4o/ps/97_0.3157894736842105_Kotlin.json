@@ -1,0 +1,350 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEIObjqk56gtloB9rsR6tEU8Ldy5Y",
+        "created": 1787076013,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val n = br.readLine().trim().toLong()\n\n    fun isUndoubtedlyLucky(x: Long): Boolean {\n        var num = x\n        var mask = 0\n        while (num > 0) {\n            val d = (num % 10).toInt()\n            mask = mask or (1 shl d)\n            if (mask.countOneBits() > 2) return false\n            num /= 10\n        }\n        return true\n    }\n\n    var count = 0L\n    var i = 1L\n    while (i <= n) {\n        if (isUndoubtedlyLucky(i)) count++\n        i++\n    }\n\n    println(count)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val n = br.readLine().trim().toLong()\n\n    val digits = n.toString().map { it - '0' }\n    val len = digits.size\n\n    // Precompute powers of 10 up to 10^10 (safe for n <= 1e9)\n    val pow10 = LongArray(11)\n    pow10[0] = 1L\n    for (i in 1..10) pow10[i] = pow10[i - 1] * 10L\n\n    var total = 0L\n\n    // Count numbers with only one distinct digit\n    fun countSingleDigit(): Long {\n        var res = 0L\n        for (d in 0..9) {\n            if (d == 0) continue\n            var cur = 0L\n            var mul = 1L\n            while (true) {\n                cur = cur * 10 + d\n                if (cur > n) break\n                res++\n            }\n        }\n        return res\n    }\n\n    // Count numbers with exactly two distinct digits x != y\n    fun countTwoDigits(): Long {\n        var res = 0L\n        for (x in 0..9) {\n            for (y in 0..9) {\n                if (x == y) continue\n                // For each length\n                for (L in 1..len) {\n                    // Leading digit cannot be 0\n                    val digitsSet = arrayOf(x, y)\n                    for (first in digitsSet) {\n                        if (first == 0) continue\n                        // DP[pos][mask]: count ways\n                        // mask: bit0 for x used, bit1 for y used\n                        val dp = Array(L + 1) { LongArray(4) }\n                        val maskFirst = (if (first == x) 1 else 2)\n                        dp[1][maskFirst] = 1L\n                        for (pos in 1 until L) {\n                            for (mask in 0..3) {\n                                val cur = dp[pos][mask]\n                                if (cur == 0L) continue\n                                for (d in digitsSet) {\n                                    val nmask = mask or (if (d == x) 1 else 2)\n                                    dp[pos + 1][nmask] += cur\n                                }\n                            }\n                        }\n                        val countAll = dp[L][3] // both digits used\n                        if (countAll == 0L) continue\n\n                        // Now we need to count only those <= n\n                        // For L < len, all are valid\n                        if (L < len) {\n                            res += countAll\n                        } else {\n                            // L == len: digit DP with upper bound\n                            res += countBounded(x, y, first, L, digits, n)\n                        }\n                    }\n                }\n            }\n        }\n        return res\n    }\n\n    // Count numbers of length L, using digits x and y, starting with 'first',\n    // using both digits at least once, and <= n\n    fun countBounded(\n        x: Int,\n        y: Int,\n        first: Int,\n        L: Int,\n        limitDigits: List<Int>,\n        nVal: Long\n    ): Long {\n        val digitsSet = arrayOf(x, y)\n        // dp[pos][mask][tight]\n        val dp = Array(L + 1) { Array(4) { LongArray(2) } }\n        val firstMask = if (first == x) 1 else 2\n        val firstLimit = limitDigits[0]\n        if (first > firstLimit) return 0L\n        val tightInit = if (first == firstLimit) 1 else 0\n        dp[1][firstMask][tightInit] = 1L\n\n        for (pos in 1 until L) {\n            val limitDigit = limitDigits[pos]\n            for (mask in 0..3) {\n                for (tight in 0..1) {\n                    val cur = dp[pos][mask][tight]\n                    if (cur == 0L) continue\n                    val maxDigit = if (tight == 1) limitDigit else 9\n                    for (d in digitsSet) {\n                        if (d > maxDigit) continue\n                        val nmask = mask or (if (d == x) 1 else 2)\n                        val ntight = if (tight == 1 && d == maxDigit) 1 else 0\n                        dp[pos + 1][nmask][ntight] += cur\n                    }\n                }\n            }\n        }\n        return dp[L][3][0] + dp[L][3][1]\n    }\n\n    // Simpler approach: generate all numbers with <= 2 distinct digits via DFS and check <= n\n    // Given constraints (n <= 1e9), this is easier and safe.\n    fun bruteForce(): Long {\n        val seen = HashSet<Long>()\n        fun dfs(cur: Long, usedMask: Int) {\n            if (cur > n) return\n            if (cur != 0L) {\n                // Check if usedMask has at most 2 bits set\n                if (Integer.bitCount(usedMask) <= 2) {\n                    seen.add(cur)\n                }\n            }\n            if (cur > 0 && cur > n / 10) return\n            for (d in 0..9) {\n                val next = cur * 10 + d\n                val nmask = if (cur == 0L && d == 0) usedMask else (usedMask or (1 shl d))\n                if (Integer.bitCount(nmask) > 2) continue\n                if (next == 0L) continue\n                dfs(next, nmask)\n            }\n        }\n        dfs(0L, 0)\n        return seen.size.toLong()\n    }\n\n    // Use brute force generation (simple and safe for n <= 1e9)\n    val answer = bruteForce()\n    println(answer)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "import java.util.StringTokenizer\n\nfun main() {\n    val n = readLine()!!.trim().toLong()\n    val s = n.toString()\n    val len = s.length\n\n    // Precompute combinations C[n][k] up to 10\n    val maxN = 10\n    val C = Array(maxN + 1) { LongArray(maxN + 1) }\n    for (i in 0..maxN) {\n        C[i][0] = 1\n        C[i][i] = 1\n        for (j in 1 until i) {\n            C[i][j] = C[i - 1][j - 1] + C[i - 1][j]\n        }\n    }\n\n    var ans = 0L\n\n    // Count numbers with fewer digits\n    for (d in 1 until len) {\n        val total = 9L * (1L shl (d - 1)) + 1L\n        ans += total\n    }\n\n    // Count numbers with same length using digit DP\n    // dp[pos][state]: state 0..2 (0: one digit, 1: two digits, 2: >2 digits)\n    val dp = Array(len + 1) { LongArray(3) }\n    dp[0][0] = 1L\n\n    for (pos in 0 until len) {\n        val curDigit = s[pos] - '0'\n        for (state in 0..2) {\n            val curVal = dp[pos][state]\n            if (curVal == 0L) continue\n            for (d in 0..9) {\n                if (pos == 0 && d == 0) continue\n                if (d > curDigit) continue\n                val nextState = when (state) {\n                    0 -> 0 // first digit, still one distinct digit\n                    1 -> 1 // two distinct digits\n                    else -> 2\n                }\n                var ns = nextState\n                if (pos == 0) {\n                    // first digit always starts with one distinct digit\n                    ns = 0\n                } else {\n                    // track distinct digits count implicitly:\n                    // we don't know actual digits, but we only care if count >2\n                    // However, we can't track exact digits, so we use combinatorial count instead.\n                    // This DP is only to count numbers with at most 2 distinct digits.\n                    // To do that, we must track actual digits; but since digits are 0..9, we use combinatorics instead.\n                }\n            }\n        }\n    }\n\n    // The above DP approach is complex; instead, use combinatorics directly.\n\n    // Count numbers of length len with at most 2 distinct digits and <= n\n    // Enumerate all unordered pairs (x,y) with 0<=x<=y<=9, and also single-digit case (x=y).\n    fun countForPair(x: Int, y: Int): Long {\n        // Count numbers of length len, digits only x,y, no leading zero, <= n\n        // Use DFS by positions.\n        var res = 0L\n        fun dfs(pos: Int, tight: Boolean, started: Boolean) {\n            if (pos == len) {\n                if (started) res++\n                return\n            }\n            val limit = if (tight) s[pos] - '0' else 9\n            val digits = intArrayOf(x, y).distinct().sorted()\n            for (d in digits) {\n                if (!started && d == 0) continue\n                if (d > limit) continue\n                val ntight = tight && (d == limit)\n                dfs(pos + 1, ntight, started || d != 0)\n            }\n        }\n        dfs(0, true, false)\n        return res\n    }\n\n    var totalSameLen = 0L\n    for (x in 0..9) {\n        for (y in x..9) {\n            totalSameLen += countForPair(x, y)\n        }\n    }\n\n    ans += totalSameLen\n    println(ans)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val n = br.readLine().trim().toLong()\n\n    var count = 0L\n\n    for (a in 0..9) {\n        for (b in a..9) {\n            if (a == 0 && b == 0) continue\n            var num = 0L\n            var pow10 = 1L\n            while (pow10 <= n * 10) {\n                for (mask in 0 until pow10.toInt()) {\n                    num = 0L\n                    var tempMask = mask\n                    var curPow = 1L\n                    var ok = true\n                    while (curPow <= pow10) {\n                        val digit = if (tempMask % 2 == 0) a else b\n                        tempMask /= 2\n                        if (digit == 0 && curPow == pow10 && pow10 > 1L) {\n                            ok = false\n                            break\n                        }\n                        num += digit * curPow\n                        curPow *= 10\n                    }\n                    if (!ok) continue\n                    if (num in 1..n) count++\n                }\n                pow10 *= 10\n            }\n        }\n    }\n\n    println(count)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val n = br.readLine().trim().toLong()\n\n    var count = 0L\n    for (a in 0..9) {\n        for (b in a..9) {\n            if (a == 0 && b == 0) continue\n            count += countNumbersWithDigits(a, b, n)\n        }\n    }\n    println(count)\n}\n\nfun countNumbersWithDigits(a: Int, b: Int, n: Long): Long {\n    if (a == b) {\n        // Only one digit allowed\n        if (a == 0) return 0\n        var cur = a.toLong()\n        var res = 0L\n        while (cur <= n) {\n            res++\n            cur = cur * 10 + a\n        }\n        return res\n    }\n\n    val digits = mutableListOf<Int>()\n    var temp = n\n    while (temp > 0) {\n        digits.add((temp % 10).toInt())\n        temp /= 10\n    }\n    digits.reverse()\n\n    val memo = Array(digits.size + 1) { Array(2) { LongArray(2) { -1L } } }\n\n    fun dfs(pos: Int, tight: Int, started: Int): Long {\n        if (pos == digits.size) {\n            return if (started == 1) 1L else 0L\n        }\n        val cached = memo[pos][tight][started]\n        if (cached != -1L) return cached\n\n        var res = 0L\n        val limit = if (tight == 1) digits[pos] else 9\n\n        if (started == 0) {\n            // Option to not start yet (place 0)\n            res += dfs(pos + 1, if (tight == 1 && 0 == limit) 1 else 0, 0)\n            // Start with a or b if allowed\n            if (a != 0 && a <= limit) {\n                res += dfs(pos + 1, if (tight == 1 && a == limit) 1 else 0, 1)\n            }\n            if (b != 0 && b != a && b <= limit) {\n                res += dfs(pos + 1, if (tight == 1 && b == limit) 1 else 0, 1)\n            }\n        } else {\n            // Already started, can place only a or b\n            if (a <= limit) {\n                res += dfs(pos + 1, if (tight == 1 && a == limit) 1 else 0, 1)\n            }\n            if (b != a && b <= limit) {\n                res += dfs(pos + 1, if (tight == 1 && b == limit) 1 else 0, 1)\n            }\n        }\n\n        memo[pos][tight][started] = res\n        return res\n    }\n\n    return dfs(0, 1, 0)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "import java.util.*\n\nfun main() {\n    val scanner = Scanner(System.`in`)\n    val n = scanner.nextLong()\n\n    fun isUndoubtedlyLucky(x: Long): Boolean {\n        var num = x\n        val digits = BooleanArray(10)\n        while (num > 0) {\n            val d = (num % 10).toInt()\n            digits[d] = true\n            num /= 10\n        }\n        var count = 0\n        for (i in 0..9) {\n            if (digits[i]) count++\n        }\n        return count <= 2\n    }\n\n    var count = 0L\n    for (i in 1..n) {\n        if (isUndoubtedlyLucky(i)) count++\n    }\n\n    println(count)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "import java.io.BufferedReader\nimport java.io.InputStreamReader\nimport java.util.StringTokenizer\n\nfun main() {\n    val br = BufferedReader(InputStreamReader(System.`in`))\n    val n = br.readLine().trim().toLong()\n\n    var count = 0L\n    for (a in 1..n) {\n        if (isUndoubtedlyLucky(a)) count++\n    }\n    println(count)\n}\n\nfun isUndoubtedlyLucky(a: Long): Boolean {\n    var num = a\n    val digits = mutableSetOf<Int>()\n    while (num > 0) {\n        digits.add((num % 10).toInt())\n        if (digits.size > 2) return false\n        num /= 10\n    }\n    return true\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "import java.util.*\n\nfun main() {\n    val scanner = Scanner(System.`in`)\n    val n = scanner.nextLong()\n    var count = 0L\n\n    fun isUndoubtedlyLucky(x: Long): Boolean {\n        var num = x\n        if (num == 0L) return true\n        val digits = mutableSetOf<Int>()\n        while (num > 0) {\n            digits.add((num % 10).toInt())\n            if (digits.size > 2) return false\n            num /= 10\n        }\n        return true\n    }\n\n    var i = 1L\n    while (i <= n) {\n        if (isUndoubtedlyLucky(i)) count++\n        i++\n    }\n\n    println(count)\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 3874,
+            "prompt_tokens": 322,
+            "total_tokens": 4196,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 5,
+                "engine_ttft_ms": 308,
+                "engine_ttlt_ms": 21200,
+                "pre_inference_ms": 154,
+                "service_tbt_ms": 5,
+                "service_ttft_ms": 547,
+                "service_ttlt_ms": 21434,
+                "total_duration_ms": 21289,
+                "user_visible_ttft_ms": 393
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Kotlin to solve this programming problem:\nDescription: Polycarpus loves lucky numbers. Everybody knows that lucky numbers are positive integers, whose decimal representation (without leading zeroes) contain only the lucky digits x and y. For example, if x\u2009=\u20094, and y\u2009=\u20097, then numbers 47, 744, 4 are lucky.Let's call a positive integer a undoubtedly lucky, if there are such digits x and y (0\u2009\u2264\u2009x,\u2009y\u2009\u2264\u20099), that the decimal representation of number a (without leading zeroes) contains only digits x and y.Polycarpus has integer n. He wants to know how many positive integers that do not exceed n, are undoubtedly lucky. Help him, count this number.\nInput Specification: The first line contains a single integer n (1\u2009\u2264\u2009n\u2009\u2264\u2009109) \u2014 Polycarpus's number.\nOutput Specification: Print a single integer that says, how many positive integers that do not exceed n are undoubtedly lucky.\n\nSample Input:\n10\nSample Output:\n10\n\nSample Input:\n123\nSample Output:\n113\n\nNotes: NoteIn the first test sample all numbers that do not exceed 10 are undoubtedly lucky.In the second sample numbers 102, 103, 104, 105, 106, 107, 108, 109, 120, 123 are not undoubtedly lucky.\nTake input from standard input and output to standard output\nProvide the Kotlin code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "0f7f10557602c8c2f2eb80762709ffc4",
+        "difficulty": 1600,
+        "prob_desc_sample_inputs": [
+            "10",
+            "123"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "brute force",
+            "bitmasks",
+            "dfs and similar"
+        ],
+        "prob_desc_output_spec": "Print a single integer that says, how many positive integers that do not exceed n are undoubtedly lucky.",
+        "prob_desc_input_spec": "The first line contains a single integer n (1\u2009\u2264\u2009n\u2009\u2264\u2009109) \u2014 Polycarpus's number.",
+        "lang_cluster": "Kotlin",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first test sample all numbers that do not exceed 10 are undoubtedly lucky.In the second sample numbers 102, 103, 104, 105, 106, 107, 108, 109, 120, 123 are not undoubtedly lucky.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Polycarpus loves lucky numbers. Everybody knows that lucky numbers are positive integers, whose decimal representation (without leading zeroes) contain only the lucky digits x and y. For example, if x\u2009=\u20094, and y\u2009=\u20097, then numbers 47, 744, 4 are lucky.Let's call a positive integer a undoubtedly lucky, if there are such digits x and y (0\u2009\u2264\u2009x,\u2009y\u2009\u2264\u20099), that the decimal representation of number a (without leading zeroes) contains only digits x and y.Polycarpus has integer n. He wants to know how many positive integers that do not exceed n, are undoubtedly lucky. Help him, count this number.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1353079800",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "10",
+            "113"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"10\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"123\\r\\n\", \"output\": [\"113\"]}, {\"input\": \"1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"2\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"1000\\r\\n\", \"output\": [\"352\"]}, {\"input\": \"1000000000\\r\\n\", \"output\": [\"40744\"]}, {\"input\": \"999999999\\r\\n\", \"output\": [\"40743\"]}, {\"input\": \"999999998\\r\\n\", \"output\": [\"40742\"]}, {\"input\": \"999999997\\r\\n\", \"output\": [\"40741\"]}, {\"input\": \"909090901\\r\\n\", \"output\": [\"38532\"]}, {\"input\": \"142498040\\r\\n\", \"output\": [\"21671\"]}, {\"input\": \"603356456\\r\\n\", \"output\": [\"31623\"]}, {\"input\": \"64214872\\r\\n\", \"output\": [\"15759\"]}, {\"input\": \"820040584\\r\\n\", \"output\": [\"36407\"]}, {\"input\": \"442198\\r\\n\", \"output\": [\"3071\"]}, {\"input\": \"784262\\r\\n\", \"output\": [\"4079\"]}, {\"input\": \"642678\\r\\n\", \"output\": [\"3615\"]}, {\"input\": \"468390\\r\\n\", \"output\": [\"3223\"]}, {\"input\": \"326806\\r\\n\", \"output\": [\"2759\"]}, {\"input\": \"940\\r\\n\", \"output\": [\"331\"]}, {\"input\": \"356\\r\\n\", \"output\": [\"175\"]}, {\"input\": \"68\\r\\n\", \"output\": [\"68\"]}, {\"input\": \"132\\r\\n\", \"output\": [\"114\"]}, {\"input\": \"72\\r\\n\", \"output\": [\"72\"]}, {\"input\": \"89\\r\\n\", \"output\": [\"89\"]}, {\"input\": \"3\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"4\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"5\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"6\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"7\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"8\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"9\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"101\\r\\n\", \"output\": [\"101\"]}, {\"input\": \"102\\r\\n\", \"output\": [\"101\"]}]"
+    }
+}

@@ -1,0 +1,390 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-bb9023504290d148",
+        "created": 1787075967,
+        "model": "laguna-nvfp4",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.27.1-tp2-af6339fc",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```java\nimport java.util.*;\nimport java.io.*;\n\npublic class Main {\n    static long max = 0;\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        String[] s = br.readLine().split(\" \");\n        int n = Integer.parseInt(s[0]);\n        long m = Long.parseLong(s[1]);\n        long[] a = new long[n];\n        s = br.readLine().split(\" \");\n        for (int i = 0; i < n; i++) a[i] = Long.parseLong(s[i]);\n        for (int i = 0; i < n; i++) a[i] %= m;\n        solve(a, m, 0, 0);\n        System.out.println(max);\n    }\n    static void solve(long[] a, long m, int idx, long sum) {\n        if (sum > max) max = sum;\n        if (idx >= a.length) return;\n        for (int i = idx; i < a.length; i++) {\n            long newSum = (sum + a[i]) % m;\n            if (newSum > max) max = newSum;\n            solve(a, m, i + 1, newSum);\n        }\n    }\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "length",
+                "index": 1,
+                "message": {
+                    "content": "```java\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        long m = sc.nextLong();\n        long[] a = new long[n];\n        for (int i = 0; i < n; i++) {\n            a[i] = sc.nextLong();\n        }\n        \n        int half = n / 2;\n        List<Long> left = new ArrayList<>();\n        List<Long> right = new ArrayList<>();\n        \n        // Generate all subset sums for the left half\n        generateSubsetSums(a, 0, half, 0, left);\n        // Generate all subset sums for the right half\n        generateSubsetSums(a, half, n, 0, right);\n        \n        // Sort the right half subset sums\n        Collections.sort(right);\n        \n        long max = 0;\n        for (long sum : left) {\n            long target = (m - 1 - sum) % m;\n            if (target < 0) target += m;\n            \n            // Find the largest element in right that is <= target\n            int idx = Collections.binarySearch(right, target);\n            if (idx < 0) idx = -idx - 2;\n            \n            if (idx >= 0) {\n                long combined = (sum + right.get(idx)) % m;\n                if (combined > max) max = combined;\n            }\n            \n            // Also check the last element (largest) in right\n            if (!right.isEmpty()) {\n                long combined = (sum + right.get(right.size() - 1)) % m;\n                if (combined > max) max = combined;\n            }\n        }\n        \n        System.out.println(max);\n    }\n    \n    private static void generateSubsetSums(long[] a, int start, int end, long currentSum, List<Long> result) {\n        if (start == end) {\n            result.add(currentSum % (1000000000000000000L)); // To prevent overflow, but since m can be up to 1e9, we can mod by m here\n            return;\n        }\n        generateSubsetSums(a, start + 1, end, currentSum, result);\n        generateSubsetSums(a, start + 1, end, currentSum + a[start], result);\n    }\n}\n```\n\nWait, I think there's a mistake in the code. The subset sums should be computed modulo m to prevent overflow and to handle the problem correctly. Let me correct that.\n\nActually, looking at the problem again, the sum can be very large (up to 35 * 1e9 = 3.5e10), which fits in a long. But when we take modulo m, we need to handle it properly. Let me revise the code.\n\nAlso, the way we're generating subset sums and combining them needs to be adjusted. The key insight is that for each sum in the left half, we want to find a sum in the right half such that their combined sum modulo m is maximized. This means we want to find the largest possible (left_sum + right_sum) % m.\n\nLet me rewrite the solution properly.\n\n```java\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        long m = sc.nextLong();\n        long[] a = new long[n];\n        for (int i = 0; i < n; i++) {\n            a[i] = sc.nextLong();\n        }\n        \n        int half = n / 2;\n        List<Long> left = new ArrayList<>();\n        List<Long> right = new ArrayList<>();\n        \n        // Generate all subset sums for the left half\n        generateSubsetSums(a, 0, half, 0, left);\n        // Generate all subset sums for the right half\n        generateSubsetSums(a, half, n, 0, right);\n        \n        // Sort the right half subset sums\n        Collections.sort(right);\n        \n        long max = 0;\n        for (long sum : left) {\n            // We want to find right_sum such that (sum + right_sum) % m is maximized\n            // This is equivalent to finding right_sum such that right_sum % m is as close as possible to (m - 1 - sum % m) % m\n            long target = (m - 1 - (sum % m)) % m;\n            if (target < 0) target += m;\n            \n            // Find the largest element in right that is <= target (considering modulo)\n            // Since right is sorted, we can use binary search\n            int idx = Collections.binarySearch(right, target);\n            if (idx < 0) idx = -idx - 2;\n            \n            if (idx >= 0) {\n                long combined = (sum + right.get(idx)) % m;\n                if (combined > max) max = combined;\n            }\n            \n            // Also check the last element (largest) in right\n            if (!right.isEmpty()) {\n                long combined = (sum + right.get(right.size() - 1)) % m;\n                if (combined > max) max = combined;\n            }\n        }\n        \n        System.out.println(max);\n    }\n    \n    private static void generateSubsetSums(long[] a, int start, int end, long currentSum, List<Long> result) {\n        if (start == end) {\n            result.add(currentSum);\n            return;\n        }\n        generateSubsetSums(a, start + 1, end, currentSum, result);\n        generateSubsetSums(a, start + 1, end, currentSum + a[start], result);\n    }\n}\n```\n\nHmm, I'm still not handling the modulo correctly. The issue is that when we're looking for the best right_sum to pair with a given left_sum, we need to consider the values modulo m. Let me think about this more carefully.\n\nFor a given left_sum, we want to find right_sum such that (left_sum + right_sum) % m is maximized. This is equivalent to finding right_sum such that right_sum % m is as close as possible to (m - 1 - left_sum % m) % m, but we also need to consider that right_sum could be larger than m.\n\nActually, the correct approach is:\n1. For each left_sum, compute target = (m - 1 - left_sum % m) % m\n2. Find the largest right_sum % m that is <= target\n3. Also consider the largest right_sum % m overall (which might give a better result when wrapped around)\n\nBut since we're dealing with actual sums (not modulo), we need to be more careful. Let me reconsider.\n\nThe correct approach is:\n1. Generate all subset sums for left and right halves\n2. For each left_sum, we want to find right_sum such that (left_sum + right_sum) % m is maximized\n3. This means we want (left_sum + right_sum) to be as close as possible to m-1, 2m-1, 3m-1, etc.\n4. For a given left_sum, the best right_sum would be one where right_sum % m is close to (m - 1 - left_sum % m) % m\n\nLet me rewrite this properly:\n\n```java\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        long m = sc.nextLong();\n        long[] a = new long[n];\n        for (int i = 0; i < n; i++) {\n            a[i] = sc.nextLong();\n        }\n        \n        int half = n / 2;\n        List<Long> left = new ArrayList<>();\n        List<Long> right = new ArrayList<>();\n        \n        generateSubsetSums(a, 0, half, 0, left);\n        generateSubsetSums(a, half, n, 0, right);\n        \n        Collections.sort(right);\n        \n        long max = 0;\n        for (long sum : left) {\n            long target = (m - 1 - (sum % m)) % m;\n            if (target < 0) target += m;\n            \n            int idx = Collections.binarySearch(right, target);\n            if (idx < 0) idx = -idx - 2;\n            \n            if (idx >= 0) {\n                long combined = (sum + right.get(idx)) % m;\n                if (combined > max) max = combined;\n            }\n            \n            if (!right.isEmpty()) {\n                long combined = (sum + right.get(right.size() - 1)) % m;\n                if (combined > max) max = combined;\n            }\n        }\n        \n        System.out.println(max);\n    }\n    \n    private static void generateSubsetSums(long[] a, int start, int end, long currentSum, List<Long> result) {\n        if (start == end) {\n            result.add(currentSum);\n            return;\n        }\n        generateSubsetSums(a, start + 1, end, currentSum, result);\n        generateSubsetSums(a, start + 1, end, currentSum + a[start], result);\n    }\n}\n```\n\nWait, I think the issue is that when we do binary search for target, we're searching in the actual right sums, not their modulo values. But we want to find right_sum such that right_sum % m is close to target. This is more complex.\n\nLet me think about this differently. Since all values are positive and m can be up to 1e9, and the sums can be up to 35 * 1e9 = 3.5e10, we need to handle this carefully.\n\nActually, I think the approach should be:\n1. For each left_sum, compute target = (m - 1 - left_sum % m) % m\n2. We want to find right_sum such that right_sum % m is as close to target as possible (from below)\n3. But since right_sum can be larger than m, we need to consider right_sum values that are target, target + m, target + 2m, etc.\n\nThis is getting complex. Let me simplify by just storing right_sum % m values and sorting those.\n\nActually, let me reconsider the problem. We want to maximize (left_sum + right_sum) % m. \n\nFor a given left_sum, let's say left_sum % m = L. We want to find right_sum such that (L + right_sum % m) % m is maximized. This means we want right_sum % m to be as close to (m - 1 - L) as possible.\n\nSo the approach should be:\n1. Generate all subset sums for left and right\n2. For right, compute all right_sum % m values and sort them\n3. For each left_sum, compute L = left_sum % m, target = (m - 1 - L) % m\n4. Find the largest value in the sorted right_mod_m list that is <= target\n5. Also consider the largest value in the list (which might give a better result when wrapped around)\n\nLet me rewrite:\n\n```java\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        long m = sc.nextLong();\n        long[] a = new long[n];\n        for (int i = 0; i < n; i++) {\n            a[i] = sc.nextLong();\n        }\n        \n        int half = n / 2;\n        List<Long> left = new ArrayList<>();\n        List<Long> right = new ArrayList<>();\n        \n        generateSubsetSums(a, 0, half, 0, left);\n        generateSubsetSums(a, half, n, 0, right);\n        \n        // Create sorted list of right_sum % m values\n        List<Long> rightMod = new ArrayList<>();\n        for (long sum : right) {\n            rightMod.add(sum % m);\n        }\n        Collections.sort(rightMod);\n        \n        long max = 0;\n        for (long sum : left) {\n            long L = sum % m;\n            long target = (m - 1 - L) % m;\n            if (target < 0) target += m;\n            \n            // Find the largest value in rightMod that is <= target\n            int idx = Collections.binarySearch(rightMod, target);\n            if (idx < 0) idx = -idx - 2;\n            \n            if (idx >= 0) {\n                long combined = (L + rightMod.get(idx)) % m;\n                if (combined > max) max = combined;\n            }\n            \n            // Also check the largest value in rightMod (wrapping around)\n            if (!rightMod.isEmpty()) {\n                long combined = (L + rightMod.get(rightMod.size() - 1)) % m;\n                if (combined > max) max = combined;\n            }\n        }\n        \n        System.out.println(max);\n    }\n    \n    private static void generateSubsetSums(long[] a, int start, int end, long currentSum, List<Long> result) {\n        if (start == end) {\n            result.add(currentSum);\n            return;\n        }\n        generateSubsetSums(a, start + 1, end, currentSum, result);\n        generateSubsetSums(a, start + 1, end, currentSum + a[start], result);\n    }\n}\n```\n\nThis should work correctly now. Let me verify with the sample inputs.\n\nSample 1: n=4, m=4, a=[5,2,4,1]\nLeft half: [5,2], right half: [4,1]\nLeft subset sums: 0, 5, 2, 7\nRight subset sums: 0, 4, 1, 5\nRight mod m: 0, 0, 1, 1\nSorted right mod: 0, 0, 1, 1\n\nFor left_sum=0 (L=0): target=3, no element <= 3 in rightMod except 1. Combined = 1. Also check largest (1). Combined = 1.\nFor left_sum=5 (L=1): target=2, largest <= 2 is 1. Combined = 2. Also check largest (1). Combined = 2.\nFor left_sum=2 (L=2): target=1, largest <= 1 is 1. Combined = 3. Also check largest (1). Combined = 3.\nFor left_sum=7 (L=3): target=0, largest <= 0 is 0. Combined = 3. Also check largest (1). Combined = 0.\n\nMax is 3. Correct!\n\nSample 2: n=3, m=20, a=[199,41,299]\nLeft half: [199], right half: [41,299]\nLeft subset sums: 0, 199\nRight subset sums: 0, 41, 299, 340\nRight mod m: 0, 1, 9, 0\nSorted right mod: 0, 0, 1, 9\n\nFor left_sum=0 (L=0): target=19, largest <= 19 is 9. Combined = 9. Also check largest (9). Combined = 9.\nFor left_sum=199 (L=19): target=0, largest <= 0 is 0. Combined = 19. Also check largest (9). Combined = 8.\n\nMax is 19. Correct!\n\nThe code looks correct now. But wait, I need to also consider the case where we only take elements from one half. The current approach handles this because the empty subset (sum=0) is included in both halves.\n\nActually, let me double-check. When we take only elements from the left half, the right_sum would be 0 (empty subset), which is included in rightMod. Similarly for only right half. So the code should handle all cases correctly.\n\nBut there's one more thing - we should also consider the case where we take elements from neither half (empty sequence), which gives sum=0, and 0 % m = 0. This is already handled since 0 is in both left and right subset sums.\n\nThe code looks correct. But I realize there might be an issue with the binary search when target is not found. Let me trace through more carefully.\n\nWhen we do `Collections.binarySearch(rightMod, target)` and it returns a negative value, it means the element was not found, and the return value is `-(insertion point) - 1`. So `-idx - 2` gives us the index of the largest element that is less than target.\n\nWait, let me re-check. If binarySearch returns -1, it means the element should be inserted at index 0, so there's no element less than target. In this case, idx = -(-1) - 2 = 1 - 2 = -1, which is < 0, so we skip the first check. Then we check the largest element.\n\nIf binarySearch returns -2, it means the element should be inserted at index 1, so the largest element less than target is at index 0. idx = -(-2) - 2 = 2 - 2 = 0. We check rightMod.get(0).\n\nThis seems correct.\n\nActually, I just realized there's a potential issue. When target is 0 and there are elements equal to 0 in rightMod, binarySearch will find them. But when target is 0",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```java\nimport java.util.*;\n\npublic class Main {\n    static long max = 0;\n    static int m;\n    static int[] a;\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        m = sc.nextInt();\n        a = new int[n];\n        for (int i = 0; i < n; i++) {\n            a[i] = sc.nextInt();\n        }\n        generate(0, 0);\n        System.out.println(max);\n    }\n\n    static void generate(int index, long currentSum) {\n        if (index == a.length) {\n            long mod = currentSum % m;\n            if (mod > max) {\n                max = mod;\n            }\n            return;\n        }\n        generate(index + 1, currentSum);\n        generate(index + 1, currentSum + a[index]);\n    }\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```java\nimport java.io.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        String[] parts = br.readLine().split(\" \");\n        int n = Integer.parseInt(parts[0]);\n        long m = Long.parseLong(parts[1]);\n        long[] a = new long[n];\n        parts = br.readLine().split(\" \");\n        for (int i = 0; i < n; i++) {\n            a[i] = Long.parseLong(parts[i]);\n        }\n\n        int half = n / 2;\n        long[] left = Arrays.copyOfRange(a, 0, half);\n        long[] right = Arrays.copyOfRange(a, half, n);\n\n        List<Long> leftSums = generateSubsetSums(left, m);\n        List<Long> rightSums = generateSubsetSums(right, m);\n\n        Collections.sort(rightSums);\n\n        long max = 0;\n        for (long s : leftSums) {\n            long target = (m - s) % m;\n            if (target < 0) target += m;\n            int idx = binarySearch(rightSums, target);\n            if (idx < rightSums.size()) {\n                long sum = (s + rightSums.get(idx)) % m;\n                if (sum > max) max = sum;\n            }\n            if (idx > 0) {\n                long sum = (s + rightSums.get(idx - 1)) % m;\n                if (sum > max) max = sum;\n            }\n        }\n        System.out.println(max);\n    }\n\n    private static List<Long> generateSubsetSums(long[] arr, long m) {\n        List<Long> sums = new ArrayList<>();\n        sums.add(0L);\n        for (long num : arr) {\n            int size = sums.size();\n            for (int i = 0; i < size; i++) {\n                long newSum = (sums.get(i) + num) % m;\n                sums.add(newSum);\n            }\n        }\n        return sums;\n    }\n\n    private static int binarySearch(List<Long> list, long target) {\n        int low = 0, high = list.size() - 1;\n        int res = list.size();\n        while (low <= high) {\n            int mid = (low + high) >>> 1;\n            if (list.get(mid) >= target) {\n                res = mid;\n                high = mid - 1;\n            } else {\n                low = mid + 1;\n            }\n        }\n        return res;\n    }\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```java\nimport java.io.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        String[] parts = br.readLine().split(\" \");\n        int n = Integer.parseInt(parts[0]);\n        int m = Integer.parseInt(parts[1]);\n        int[] a = new int[n];\n        parts = br.readLine().split(\" \");\n        for (int i = 0; i < n; i++) {\n            a[i] = Integer.parseInt(parts[i]);\n        }\n        List<Integer> left = new ArrayList<>();\n        List<Integer> right = new ArrayList<>();\n        int mid = n / 2;\n        for (int i = 0; i < mid; i++) left.add(a[i]);\n        for (int i = mid; i < n; i++) right.add(a[i]);\n        List<Long> leftSums = generateSubsets(left);\n        List<Long> rightSums = generateSubsets(right);\n        TreeSet<Long> rightSet = new TreeSet<>();\n        for (long s : rightSums) {\n            rightSet.add(s % m);\n        }\n        long max = 0;\n        for (long s : leftSums) {\n            long rem = s % m;\n            max = Math.max(max, rem);\n            long target = (m - rem) % m;\n            Long candidate = rightSet.lower(target);\n            if (candidate != null) {\n                max = Math.max(max, (rem + candidate) % m);\n            }\n        }\n        System.out.println(max);\n    }\n    private static List<Long> generateSubsets(List<Integer> list) {\n        List<Long> sums = new ArrayList<>();\n        int size = list.size();\n        for (int mask = 0; mask < (1 << size); mask++) {\n            long sum = 0;\n            for (int i = 0; i < size; i++) {\n                if ((mask & (1 << i)) != 0) {\n                    sum += list.get(i);\n                }\n            }\n            sums.add(sum);\n        }\n        return sums;\n    }\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "```java\nimport java.util.*;\nimport java.io.*;\n\npublic class Main {\n    static int n;\n    static long m;\n    static long[] a;\n    static long ans = 0;\n\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        n = Integer.parseInt(st.nextToken());\n        m = Long.parseLong(st.nextToken());\n        a = new long[n];\n        st = new StringTokenizer(br.readLine());\n        for (int i = 0; i < n; i++) {\n            a[i] = Long.parseLong(st.nextToken());\n        }\n        dfs(0, 0);\n        System.out.println(ans);\n    }\n\n    static void dfs(int idx, long sum) {\n        if (idx == n) {\n            ans = Math.max(ans, sum % m);\n            return;\n        }\n        dfs(idx + 1, sum);\n        dfs(idx + 1, sum + a[idx]);\n    }\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "```java\nimport java.util.*;\nimport java.io.*;\n\npublic class Main {\n    static long n, m;\n    static long[] a;\n    static long ans;\n\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        String[] s = br.readLine().split(\" \");\n        n = Long.parseLong(s[0]);\n        m = Long.parseLong(s[1]);\n        a = new long[(int) n];\n        String[] t = br.readLine().split(\" \");\n        for (int i = 0; i < n; i++) {\n            a[i] = Long.parseLong(t[i]);\n        }\n        ans = 0;\n        dfs(0, 0);\n        System.out.println(ans);\n    }\n\n    static void dfs(int index, long sum) {\n        if (index == n) {\n            ans = Math.max(ans, sum % m);\n            return;\n        }\n        dfs(index + 1, sum);\n        dfs(index + 1, sum + a[index]);\n    }\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "```java\nimport java.util.*;\nimport java.io.*;\n\npublic class Main {\n    static long n, m;\n    static long[] a;\n    static long ans = 0;\n\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        n = Long.parseLong(st.nextToken());\n        m = Long.parseLong(st.nextToken());\n        a = new long[(int)n];\n        st = new StringTokenizer(br.readLine());\n        for (int i = 0; i < n; i++) {\n            a[i] = Long.parseLong(st.nextToken());\n        }\n        solve(0, 0);\n        System.out.println(ans);\n    }\n\n    static void solve(int idx, long sum) {\n        if (idx == n) {\n            ans = Math.max(ans, sum % m);\n            return;\n        }\n        solve(idx + 1, sum);\n        solve(idx + 1, sum + a[idx]);\n    }\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 8,
+                "message": {
+                    "content": "```java\nimport java.util.*;\nimport java.io.*;\n\npublic class Main {\n    static long max = 0;\n    static int n, m;\n    static int[] a;\n\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        n = Integer.parseInt(st.nextToken());\n        m = Integer.parseInt(st.nextToken());\n        a = new int[n];\n        st = new StringTokenizer(br.readLine());\n        for (int i = 0; i < n; i++) {\n            a[i] = Integer.parseInt(st.nextToken());\n        }\n        dfs(0, 0);\n        System.out.println(max);\n    }\n\n    static void dfs(int index, long sum) {\n        if (index == n) {\n            max = Math.max(max, sum % m);\n            return;\n        }\n        dfs(index + 1, sum);\n        dfs(index + 1, sum + a[index]);\n    }\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 9,
+                "message": {
+                    "content": "```java\nimport java.util.*;\nimport java.io.*;\n\npublic class Main {\n    static long n, m;\n    static long[] a;\n    static long ans = 0;\n\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        String[] s = br.readLine().split(\" \");\n        n = Long.parseLong(s[0]);\n        m = Long.parseLong(s[1]);\n        a = new long[(int)n];\n        s = br.readLine().split(\" \");\n        for (int i = 0; i < n; i++) {\n            a[i] = Long.parseLong(s[i]);\n        }\n        solve(0, 0);\n        System.out.println(ans);\n    }\n\n    static void solve(int idx, long sum) {\n        if (idx == n) {\n            ans = Math.max(ans, sum % m);\n            return;\n        }\n        solve(idx + 1, sum);\n        solve(idx + 1, sum + a[idx]);\n    }\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 10,
+                "message": {
+                    "content": "```java\nimport java.util.*;\nimport java.io.*;\n\npublic class Main {\n    static long n, m;\n    static long[] a;\n    static long ans = 0;\n\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        n = Long.parseLong(st.nextToken());\n        m = Long.parseLong(st.nextToken());\n        a = new long[(int)n];\n        st = new StringTokenizer(br.readLine());\n        for (int i = 0; i < n; i++) {\n            a[i] = Long.parseLong(st.nextToken());\n        }\n        solve(0, 0);\n        System.out.println(ans);\n    }\n\n    static void solve(int idx, long sum) {\n        if (idx == n) {\n            ans = Math.max(ans, sum % m);\n            return;\n        }\n        solve(idx + 1, sum);\n        solve(idx + 1, sum + a[idx]);\n    }\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 11,
+                "message": {
+                    "content": "```java\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        long m = sc.nextLong();\n        long[] a = new long[n];\n        for (int i = 0; i < n; i++) {\n            a[i] = sc.nextLong();\n        }\n        \n        int half = n / 2;\n        List<Long> left = new ArrayList<>();\n        List<Long> right = new ArrayList<>();\n        \n        // Generate all subset sums for the left half\n        for (int mask = 0; mask < (1 << half); mask++) {\n            long sum = 0;\n            for (int i = 0; i < half; i++) {\n                if ((mask & (1 << i)) != 0) {\n                    sum += a[i];\n                }\n            }\n            left.add(sum);\n        }\n        \n        // Generate all subset sums for the right half\n        int rightSize = n - half;\n        for (int mask = 0; mask < (1 << rightSize); mask++) {\n            long sum = 0;\n            for (int i = 0; i < rightSize; i++) {\n                if ((mask & (1 << i)) != 0) {\n                    sum += a[half + i];\n                }\n            }\n            right.add(sum);\n        }\n        \n        // Sort the right half subset sums\n        Collections.sort(right);\n        \n        long maxMod = 0;\n        \n        // For each sum in the left half, find the best match in the right half\n        for (long l : left) {\n            long target = m - 1 - l;\n            int idx = Collections.binarySearch(right, target);\n            if (idx < 0) {\n                idx = -idx - 2;\n            }\n            if (idx >= 0) {\n                long sum = l + right.get(idx);\n                maxMod = Math.max(maxMod, sum % m);\n            }\n            if (idx + 1 < right.size()) {\n                long sum = l + right.get(idx + 1);\n                maxMod = Math.max(maxMod, sum % m);\n            }\n        }\n        \n        System.out.println(maxMod);\n    }\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 12,
+                "message": {
+                    "content": "```java\nimport java.util.*;\nimport java.io.*;\n\npublic class Main {\n    static long[][] subsets;\n    static long[] left;\n    static long[] right;\n    static long m;\n    static long max = 0;\n\n    public static void main(String[] args) {\n        FastScanner sc = new FastScanner();\n        int n = sc.nextInt();\n        m = sc.nextLong();\n        long[] a = new long[n];\n        for (int i = 0; i < n; i++) {\n            a[i] = sc.nextLong();\n        }\n        int mid = n / 2;\n        left = new long[1 << mid];\n        right = new long[1 << (n - mid)];\n        for (int i = 0; i < (1 << mid); i++) {\n            long sum = 0;\n            for (int j = 0; j < mid; j++) {\n                if ((i & (1 << j)) != 0) {\n                    sum += a[j];\n                }\n            }\n            left[i] = sum % m;\n        }\n        for (int i = 0; i < (1 << (n - mid)); i++) {\n            long sum = 0;\n            for (int j = 0; j < (n - mid); j++) {\n                if ((i & (1 << j)) != 0) {\n                    sum += a[mid + j];\n                }\n            }\n            right[i] = sum % m;\n        }\n        Arrays.sort(left);\n        Arrays.sort(right);\n        for (long x : left) {\n            max = Math.max(max, x);\n        }\n        for (long x : right) {\n            max = Math.max(max, x);\n        }\n        for (long x : left) {\n            int lo = 0, hi = right.length - 1;\n            while (lo <= hi) {\n                int mid2 = (lo + hi) / 2;\n                if (x + right[mid2] < m) {\n                    max = Math.max(max, x + right[mid2]);\n                    lo = mid2 + 1;\n                } else {\n                    hi = mid2 - 1;\n                }\n            }\n        }\n        System.out.println(max);\n    }\n\n    static class FastScanner {\n        BufferedReader br;\n        StringTokenizer st;\n\n        public FastScanner() {\n            br = new BufferedReader(new InputStreamReader(System.in));\n        }\n\n        String next() {\n            while (st == null || !st.hasMoreElement()) {\n                try {\n                    st = new StringTokenizer(br.readLine());\n                } catch (IOException e) {\n                    e.printStackTrace();\n                }\n            }\n            return st.nextToken();\n        }\n\n        int nextInt() {\n            return Integer.parseInt(next());\n        }\n\n        long nextLong() {\n            return Long.parseLong(next());\n        }\n    }\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 13,
+                "message": {
+                    "content": "```java\nimport java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static long n, m;\n    static long[] a;\n    static long ans = 0;\n\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        n = Long.parseLong(st.nextToken());\n        m = Long.parseLong(st.nextToken());\n        a = new long[(int) n];\n        st = new StringTokenizer(br.readLine());\n        for (int i = 0; i < n; i++) {\n            a[i] = Long.parseLong(st.nextToken());\n        }\n        // Split the array into two halves\n        int mid = (int) (n / 2);\n        long[] firstHalf = new long[mid];\n        long[] secondHalf = new long[(int) (n - mid)];\n        for (int i = 0; i < mid; i++) {\n            firstHalf[i] = a[i];\n        }\n        for (int i = mid; i < n; i++) {\n            secondHalf[i - mid] = a[i];\n        }\n        // Generate all possible subset sums for both halves\n        List<Long> firstSubsets = generateSubsets(firstHalf);\n        List<Long> secondSubsets = generateSubsets(secondHalf);\n        // Sort the second half subsets\n        Collections.sort(secondSubsets);\n        // For each subset sum in the first half, find the best possible in the second half\n        for (long sum : firstSubsets) {\n            long remainder = sum % m;\n            long target = (m - 1 - remainder) % m;\n            // Binary search for the largest value <= target in secondSubsets\n            int left = 0, right = secondSubsets.size() - 1;\n            long best = 0;\n            while (left <= right) {\n                int midIdx = (left + right) / 2;\n                if (secondSubsets.get(midIdx) <= target) {\n                    best = secondSubsets.get(midIdx);\n                    left = midIdx + 1;\n                } else {\n                    right = midIdx - 1;\n                }\n            }\n            long current = (remainder + best) % m;\n            if (current > ans) {\n                ans = current;\n            }\n            // Also consider the case where we don't take anything from the second half\n            if (remainder > ans) {\n                ans = remainder;\n            }\n        }\n        // Also check subsets from the second half alone\n        for (long sum : secondSubsets) {\n            long remainder = sum % m;\n            if (remainder > ans) {\n                ans = remainder;\n            }\n        }\n        System.out.println(ans);\n    }\n\n    private static List<Long> generateSubsets(long[] arr) {\n        List<Long> subsets = new ArrayList<>();\n        subsets.add(0L);\n        for (long num : arr) {\n            int size = subsets.size();\n            for (int i = 0; i < size; i++) {\n                subsets.add(subsets.get(i) + num);\n            }\n        }\n        return subsets;\n    }\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 14,
+                "message": {
+                    "content": "```java\nimport java.util.ArrayList;\nimport java.util.List;\nimport java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        int m = sc.nextInt();\n        int[] a = new int[n];\n        for (int i = 0; i < n; i++) {\n            a[i] = sc.nextInt();\n        }\n\n        int half = n / 2;\n        List<Long> left = generateSubsetSums(a, 0, half);\n        List<Long> right = generateSubsetSums(a, half, n);\n\n        long max = 0;\n        for (long l : left) {\n            for (long r : right) {\n                long sum = (l + r) % m;\n                if (sum > max) {\n                    max = sum;\n                }\n            }\n        }\n        System.out.println(max);\n    }\n\n    private static List<Long> generateSubsetSums(int[] a, int start, int end) {\n        List<Long> sums = new ArrayList<>();\n        sums.add(0L);\n        for (int i = start; i < end; i++) {\n            int size = sums.size();\n            for (int j = 0; j < size; j++) {\n                sums.add(sums.get(j) + a[i]);\n            }\n        }\n        return sums;\n    }\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 15,
+                "message": {
+                    "content": "```java\nimport java.io.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        String[] parts = br.readLine().split(\" \");\n        int n = Integer.parseInt(parts[0]);\n        long m = Long.parseLong(parts[1]);\n        long[] a = new long[n];\n        parts = br.readLine().split(\" \");\n        for (int i = 0; i < n; i++) {\n            a[i] = Long.parseLong(parts[i]);\n        }\n\n        int half = n / 2;\n        int rem = n - half;\n\n        long[] left = new long[1 << half];\n        for (int mask = 0; mask < (1 << half); mask++) {\n            long sum = 0;\n            for (int i = 0; i < half; i++) {\n                if ((mask & (1 << i)) != 0) {\n                    sum += a[i];\n                }\n            }\n            left[mask] = sum % m;\n        }\n\n        long[] right = new long[1 << rem];\n        for (int mask = 0; mask < (1 << rem); mask++) {\n            long sum = 0;\n            for (int i = 0; i < rem; i++) {\n                if ((mask & (1 << i)) != 0) {\n                    sum += a[half + i];\n                }\n            }\n            right[mask] = sum % m;\n        }\n\n        Arrays.sort(right);\n\n        long max = 0;\n        for (long l : left) {\n            long target = (m - 1 - l) % m;\n            if (target < 0) target += m;\n            int idx = Arrays.binarySearch(right, target);\n            if (idx < 0) idx = -idx - 2;\n            if (idx >= 0 && idx < right.length) {\n                long sum = (l + right[idx]) % m;\n                if (sum > max) max = sum;\n            }\n            if (idx + 1 < right.length) {\n                long sum = (l + right[idx + 1]) % m;\n                if (sum > max) max = sum;\n            }\n        }\n\n        System.out.println(max);\n    }\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 16,
+                "message": {
+                    "content": "```java\nimport java.util.*;\n\npublic class Main {\n    static long max = 0;\n    static int m;\n    static int[] a;\n    static int n;\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        n = sc.nextInt();\n        m = sc.nextInt();\n        a = new int[n];\n        for (int i = 0; i < n; i++) {\n            a[i] = sc.nextInt();\n        }\n        dfs(0, 0);\n        System.out.println(max);\n    }\n\n    static void dfs(int index, long sum) {\n        if (index == n) {\n            max = Math.max(max, sum % m);\n            return;\n        }\n        dfs(index + 1, sum);\n        dfs(index + 1, sum + a[index]);\n    }\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 17,
+                "message": {
+                    "content": "```java\nimport java.util.*;\nimport java.io.*;\n\npublic class Main {\n    static long[][] dp;\n    static int n, m;\n    static int[] a;\n\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        n = Integer.parseInt(st.nextToken());\n        m = Integer.parseInt(st.nextToken());\n        a = new int[n];\n        st = new StringTokenizer(br.readLine());\n        for (int i = 0; i < n; i++) {\n            a[i] = Integer.parseInt(st.nextToken());\n        }\n\n        // Initialize DP table\n        dp = new long[n + 1][m];\n        for (int i = 0; i <= n; i++) {\n            Arrays.fill(dp[i], -1);\n        }\n        dp[0][0] = 0;\n\n        for (int i = 0; i < n; i++) {\n            for (int j = 0; j < m; j++) {\n                if (dp[i][j] != -1) {\n                    // Don't take the current element\n                    if (dp[i + 1][j] == -1 || dp[i + 1][j] < dp[i][j]) {\n                        dp[i + 1][j] = dp[i][j];\n                    }\n                    // Take the current element\n                    int newRem = (int) ((j + a[i]) % m);\n                    long newVal = dp[i][j] + a[i];\n                    if (dp[i + 1][newRem] == -1 || dp[i + 1][newRem] < newVal) {\n                        dp[i + 1][newRem] = newVal;\n                    }\n                }\n            }\n        }\n\n        long ans = 0;\n        for (int j = 0; j < m; j++) {\n            if (dp[n][j] != -1) {\n                ans = Math.max(ans, dp[n][j] % m);\n            }\n        }\n        System.out.println(ans);\n    }\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 18,
+                "message": {
+                    "content": "```java\nimport java.util.*;\nimport java.io.*;\n\npublic class Main {\n    static long max = 0;\n    static int n, m;\n    static int[] a;\n    \n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        n = Integer.parseInt(st.nextToken());\n        m = Integer.parseInt(st.nextToken());\n        a = new int[n];\n        st = new StringTokenizer(br.readLine());\n        for (int i = 0; i < n; i++) {\n            a[i] = Integer.parseInt(st.nextToken());\n        }\n        solve(0, 0);\n        System.out.println(max);\n    }\n    \n    static void solve(int idx, long sum) {\n        if (idx == n) {\n            max = Math.max(max, sum % m);\n            return;\n        }\n        solve(idx + 1, sum);\n        solve(idx + 1, sum + a[idx]);\n    }\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 19,
+                "message": {
+                    "content": "```java\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        long m = sc.nextLong();\n        long[] a = new long[n];\n        for (int i = 0; i < n; i++) {\n            a[i] = sc.nextLong();\n        }\n        System.out.println(solve(a, m));\n    }\n\n    private static long solve(long[] a, long m) {\n        int n = a.length;\n        int half = n / 2;\n        long[] left = new long[1 << half];\n        for (int mask = 0; mask < (1 << half); mask++) {\n            long sum = 0;\n            for (int i = 0; i < half; i++) {\n                if ((mask & (1 << i)) != 0) {\n                    sum += a[i];\n                }\n            }\n            left[mask] = sum % m;\n        }\n        Arrays.sort(left);\n        long[] right = new long[1 << (n - half)];\n        for (int mask = 0; mask < (1 << (n - half)); mask++) {\n            long sum = 0;\n            for (int i = 0; i < (n - half); i++) {\n                if ((mask & (1 << i)) != 0) {\n                    sum += a[half + i];\n                }\n            }\n            right[mask] = sum % m;\n        }\n        Arrays.sort(right);\n        long max = 0;\n        for (long val : left) {\n            max = Math.max(max, val);\n        }\n        for (long val : right) {\n            max = Math.max(max, val);\n        }\n        for (long val : left) {\n            long target = (m - val) % m;\n            int idx = Arrays.binarySearch(right, target);\n            if (idx < 0) {\n                idx = -idx - 1;\n            }\n            if (idx > 0) {\n                long candidate = (val + right[idx - 1]) % m;\n                max = Math.max(max, candidate);\n            }\n            if (idx < right.length) {\n                long candidate = (val + right[idx]) % m;\n                max = Math.max(max, candidate);\n            }\n        }\n        return max;\n    }\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": 24,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 11393,
+            "prompt_tokens": 357,
+            "total_tokens": 11750
+        },
+        "prompt": "Write a program in Java to solve this programming problem:\nDescription: You are given an array a consisting of n integers, and additionally an integer m. You have to choose some sequence of indices b1,\u2009b2,\u2009...,\u2009bk (1\u2009\u2264\u2009b1\u2009&lt;\u2009b2\u2009&lt;\u2009...\u2009&lt;\u2009bk\u2009\u2264\u2009n) in such a way that the value of  is maximized. Chosen sequence can be empty.Print the maximum possible value of .\nInput Specification: The first line contains two integers n and m (1\u2009\u2264\u2009n\u2009\u2264\u200935, 1\u2009\u2264\u2009m\u2009\u2264\u2009109). The second line contains n integers a1, a2, ..., an (1\u2009\u2264\u2009ai\u2009\u2264\u2009109).\nOutput Specification: Print the maximum possible value of .\n\nSample Input:\n4 4\n5 2 4 1\nSample Output:\n3\n\nSample Input:\n3 20\n199 41 299\nSample Output:\n19\n\nNotes: NoteIn the first example you can choose a sequence b\u2009=\u2009{1,\u20092}, so the sum  is equal to 7 (and that's 3 after taking it modulo 4).In the second example you can choose a sequence b\u2009=\u2009{3}.\nTake input from standard input and output to standard output\nProvide the Java code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "d3a8a3e69a55936ee33aedd66e5b7f4a",
+        "difficulty": 1800,
+        "prob_desc_sample_inputs": [
+            "4 4\n5 2 4 1",
+            "3 20\n199 41 299"
+        ],
+        "prob_desc_time_limit": "1 second",
+        "tags": [
+            "bitmasks",
+            "meet-in-the-middle",
+            "divide and conquer"
+        ],
+        "prob_desc_output_spec": "Print the maximum possible value of .",
+        "prob_desc_input_spec": "The first line contains two integers n and m (1\u2009\u2264\u2009n\u2009\u2264\u200935, 1\u2009\u2264\u2009m\u2009\u2264\u2009109). The second line contains n integers a1, a2, ..., an (1\u2009\u2264\u2009ai\u2009\u2264\u2009109).",
+        "lang_cluster": "Java",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first example you can choose a sequence b\u2009=\u2009{1,\u20092}, so the sum  is equal to 7 (and that's 3 after taking it modulo 4).In the second example you can choose a sequence b\u2009=\u2009{3}.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "You are given an array a consisting of n integers, and additionally an integer m. You have to choose some sequence of indices b1,\u2009b2,\u2009...,\u2009bk (1\u2009\u2264\u2009b1\u2009&lt;\u2009b2\u2009&lt;\u2009...\u2009&lt;\u2009bk\u2009\u2264\u2009n) in such a way that the value of  is maximized. Chosen sequence can be empty.Print the maximum possible value of .",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1510239900",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "3",
+            "19"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"4 4\\r\\n5 2 4 1\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"3 20\\r\\n199 41 299\\r\\n\", \"output\": [\"19\"]}, {\"input\": \"5 10\\r\\n47 100 49 2 56\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"5 1000\\r\\n38361 75847 14913 11499 8297\\r\\n\", \"output\": [\"917\"]}, {\"input\": \"10 10\\r\\n48 33 96 77 67 59 35 15 14 86\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"10 1000\\r\\n16140 63909 7177 99953 35627 40994 29288 7324 44476 36738\\r\\n\", \"output\": [\"999\"]}, {\"input\": \"30 10\\r\\n99 44 42 36 43 82 99 99 10 79 97 84 5 78 37 45 87 87 11 11 79 66 47 100 8 50 27 98 32 27\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"30 1000\\r\\n81021 18939 94456 90340 76840 78808 27921 71826 99382 1237 93435 35153 71691 25508 96732 23778 49073 60025 95231 88719 61650 50925 34416 73600 7295 14654 78340 72871 17324 77484\\r\\n\", \"output\": [\"999\"]}, {\"input\": \"35 10\\r\\n86 66 98 91 61 71 14 58 49 92 13 97 13 22 98 83 85 29 85 41 51 16 76 17 75 25 71 10 87 11 9 34 3 6 4\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"35 1000\\r\\n33689 27239 14396 26525 30455 13710 37039 80789 26268 1236 89916 87557 90571 13710 59152 99417 39577 40675 25931 14900 86611 46223 7105 64074 41238 59169 81308 70534 99894 10332 72983 85414 73848 68378 98404\\r\\n\", \"output\": [\"999\"]}, {\"input\": \"35 1000000000\\r\\n723631245 190720106 931659134 503095294 874181352 712517040 800614682 904895364 256863800 39366772 763190862 770183843 774794919 55669976 329106527 513566505 207828535 258356470 816288168 657823769 5223226 865258331 655737365 278677545 880429272 718852999 810522025 229560899 544602508 195068526 878937336 739178504 474601895 54057210 432282541\\r\\n\", \"output\": [\"999999999\"]}, {\"input\": \"35 982451653\\r\\n27540278 680344696 757828533 487257472 581415866 897315944 104006244 109795853 24393319 840585536 643747159 864374693 675946278 27492061 172462571 484550119 801174500 94160579 818984382 53253720 966692115 811281559 154162995 890236127 799613478 611617443 787587569 606421577 91876376 464150101 671199076 108388038 342311910 974681791 862530363\\r\\n\", \"output\": [\"982451652\"]}, {\"input\": \"15 982451653\\r\\n384052103 7482105 882228352 582828798 992251028 892163214 687253903 951043841 277531875 402248542 499362766 919046434 350763964 288775999 982610665\\r\\n\", \"output\": [\"982368704\"]}, {\"input\": \"35 1000000000\\r\\n513 9778 5859 8149 297 7965 7152 917 243 4353 7248 4913 9403 6199 2930 7461 3888 1898 3222 9424 3960 1902 2933 5268 2650 1687 5319 5065 8450 141 4219 2586 2176 1118 9635\\r\\n\", \"output\": [\"158921\"]}, {\"input\": \"35 982451653\\r\\n5253 7912 3641 7428 6138 9613 9059 6352 9070 89 9030 1686 3098 7852 3316 8158 7497 5804 130 6201 235 64 3451 6104 4148 3446 6059 6802 7466 8781 1636 8291 8874 8924 5997\\r\\n\", \"output\": [\"197605\"]}, {\"input\": \"15 982451653\\r\\n7975 7526 1213 2318 209 7815 4153 1853 6651 2880 4535 587 8022 3365 5491\\r\\n\", \"output\": [\"64593\"]}, {\"input\": \"35 1730970\\r\\n141538 131452 93552 3046 119468 8282 166088 33782 36462 25246 178798 81434 180900 15102 175898 157782 155254 166352 60772 75162 102326 104854 181138 58618 123800 54458 157516 20658 25084 155276 194920 16680 15148 188292 88802\\r\\n\", \"output\": [\"1730968\"]}, {\"input\": \"35 346194136\\r\\n89792 283104 58936 184528 194768 253076 304368 140216 220836 69196 274604 68988 300412 242588 25328 183488 81712 374964 377696 317872 146208 147400 346276 14356 90432 347556 35452 119348 311320 126112 113200 98936 189500 363424 320164\\r\\n\", \"output\": [\"6816156\"]}, {\"input\": \"35 129822795\\r\\n379185 168630 1047420 892020 180690 1438200 168330 1328610 933930 936360 1065225 351990 1079190 681510 1336020 814590 365820 1493580 495825 809745 309585 190320 1148640 146790 1008900 365655 947265 1314060 1048770 1463535 1233420 969330 1324530 944130 1457160\\r\\n\", \"output\": [\"29838960\"]}, {\"input\": \"35 106920170\\r\\n36941450 53002950 90488020 66086895 77577045 16147985 26130825 84977690 87374560 59007480 61416705 100977415 43291920 56833000 12676230 50531950 5325005 54745005 105536410 76922230 9031505 121004870 104634495 16271535 55819890 47603815 85830185 65938635 33074335 40289655 889560 19829775 31653510 120671285 37843365\\r\\n\", \"output\": [\"106907815\"]}, {\"input\": \"35 200000000\\r\\n75420000 93400000 70560000 93860000 183600000 143600000 61780000 145000000 99360000 14560000 109280000 22040000 141220000 14360000 55140000 78580000 96940000 62400000 173220000 40420000 139600000 30100000 141640000 64780000 186080000 159220000 137780000 133640000 83560000 51280000 139100000 133020000 99460000 35900000 78980000\\r\\n\", \"output\": [\"199980000\"]}, {\"input\": \"4 1\\r\\n435 124 324 2\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"1 12\\r\\n13\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"1 1000000000\\r\\n1000000000\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"7 19\\r\\n8 1 4 8 8 7 3\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"6 7\\r\\n1 1 1 1 1 6\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"3 5\\r\\n1 2 3\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"4 36\\r\\n22 9 24 27\\r\\n\", \"output\": [\"33\"]}, {\"input\": \"2 8\\r\\n7 1\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"2 12\\r\\n8 7\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"4 10\\r\\n11 31 12 3\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"2 8\\r\\n2 7\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"4 19\\r\\n16 20 19 21\\r\\n\", \"output\": [\"18\"]}, {\"input\": \"3 4\\r\\n9 16 11\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"2 3\\r\\n3 7\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"2 20\\r\\n4 3\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"3 299\\r\\n100 100 200\\r\\n\", \"output\": [\"200\"]}]"
+    }
+}

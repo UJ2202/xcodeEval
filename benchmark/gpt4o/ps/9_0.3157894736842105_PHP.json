@@ -1,0 +1,353 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEI6nRYCzqMeETDZ4x2PYsAi9xKOY",
+        "created": 1787074909,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "<?php\n// Problem solution in PHP\n\nconst MOD = 1000000007;\n\n// fast power mod\nfunction mod_pow($a, $e) {\n    $res = 1;\n    $a %= MOD;\n    while ($e > 0) {\n        if ($e & 1) $res = ($res * $a) % MOD;\n        $a = ($a * $a) % MOD;\n        $e >>= 1;\n    }\n    return $res;\n}\n\nfunction mod_inv($a) {\n    return mod_pow($a, MOD - 2);\n}\n\n// read input\n$line = trim(fgets(STDIN));\nlist($n, $k) = array_map('intval', explode(' ', $line));\n\n// factorize n (n <= 1e15)\n$primes = [];\n$exps = [];\n$tmp = $n;\nfor ($p = 2; (int)$p * $p <= $tmp; $p += ($p == 2 ? 1 : 2)) {\n    if ($tmp % $p == 0) {\n        $cnt = 0;\n        while ($tmp % $p == 0) {\n            $tmp /= $p;\n            $cnt++;\n        }\n        $primes[] = $p;\n        $exps[] = $cnt;\n    }\n}\nif ($tmp > 1) {\n    $primes[] = $tmp;\n    $exps[] = 1;\n}\n\n$m = count($primes);\nif ($m == 0) {\n    // n == 1\n    echo \"1\\n\";\n    exit;\n}\n\n// Precompute factorials up to max exponent (<= log2(1e15) ~ 50)\n$maxE = max($exps);\n$fact = [1];\n$invfact = [1];\nfor ($i = 1; $i <= $maxE; $i++) {\n    $fact[$i] = ($fact[$i-1] * $i) % MOD;\n}\n$invfact[$maxE] = mod_inv($fact[$maxE]);\nfor ($i = $maxE; $i > 0; $i--) {\n    $invfact[$i-1] = ($invfact[$i] * $i) % MOD;\n}\n\n// DP for each prime\n$ans = 1;\nfor ($idx = 0; $idx < $m; $idx++) {\n    $p = $primes[$idx];\n    $e = $exps[$idx];\n\n    // dp[step][exp] but we only keep current row\n    $dp = array_fill(0, $e + 1, 0);\n    $dp[$e] = 1; // start with exponent e\n\n    // precompute inverse of (j+1) for j=0..e\n    $inv = [];\n    for ($j = 0; $j <= $e; $j++) {\n        $inv[$j] = mod_inv($j + 1);\n    }\n\n    for ($step = 0; $step < $k; $step++) {\n        $next = array_fill(0, $e + 1, 0);\n        for ($j = 0; $j <= $e; $j++) {\n            if ($dp[$j] == 0) continue;\n            $coef = $dp[$j] * $inv[$j] % MOD;\n            // distribute uniformly to 0..j\n            // next[i] += coef for i=0..j\n            // we do simple loop since e <= ~50\n            for ($i = 0; $i <= $j; $i++) {\n                $next[$i] += $coef;\n                if ($next[$i] >= MOD) $next[$i] -= MOD;\n            }\n        }\n        $dp = $next;\n    }\n\n    // expected p^exp = sum_j dp[j] * p^j\n    $pow = 1;\n    $exp_val = 0;\n    for ($j = 0; $j <= $e; $j++) {\n        $exp_val = ($exp_val + $dp[$j] * $pow) % MOD;\n        $pow = ($pow * $p) % MOD;\n    }\n    $ans = ($ans * $exp_val) % MOD;\n}\n\necho $ans . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "<?php\n// Expected Value after random divisor process\n// Constraints: n <= 1e15, k <= 1e4\n\nconst MOD = 1000000007;\n\n// fast power mod\nfunction mod_pow($a, $e) {\n    $res = 1;\n    $a %= MOD;\n    while ($e > 0) {\n        if ($e & 1) $res = ($res * $a) % MOD;\n        $a = ($a * $a) % MOD;\n        $e >>= 1;\n    }\n    return $res;\n}\n\nfunction mod_inv($a) {\n    return mod_pow($a, MOD - 2);\n}\n\n// read input\n$line = trim(fgets(STDIN));\nlist($n, $k) = array_map('intval', explode(' ', $line));\n\n// factorize n (n <= 1e15)\n$primes = [];\n$exps = [];\n\n$nn = $n;\nfor ($p = 2; (int)$p * $p <= $nn; $p += ($p == 2 ? 1 : 2)) {\n    if ($nn % $p == 0) {\n        $cnt = 0;\n        while ($nn % $p == 0) {\n            $nn /= $p;\n            $cnt++;\n        }\n        $primes[] = $p;\n        $exps[] = $cnt;\n    }\n}\nif ($nn > 1) {\n    $primes[] = $nn;\n    $exps[] = 1;\n}\n\n$m = count($primes);\nif ($m == 0) { // n == 1\n    echo \"1\\n\";\n    exit;\n}\n\n// precompute factorials and inverse factorials up to max exponent\n$maxE = max($exps);\n$fact = array_fill(0, $maxE + 1, 1);\n$ifact = array_fill(0, $maxE + 1, 1);\nfor ($i = 1; $i <= $maxE; $i++) {\n    $fact[$i] = ($fact[$i - 1] * $i) % MOD;\n}\n$ifact[$maxE] = mod_inv($fact[$maxE]);\nfor ($i = $maxE; $i > 0; $i--) {\n    $ifact[$i - 1] = ($ifact[$i] * $i) % MOD;\n}\n\n// function to compute C(n,k) mod\nfunction comb($n, $k, $fact, $ifact) {\n    if ($k < 0 || $k > $n) return 0;\n    return ($fact[$n] * $ifact[$k] % MOD) * $ifact[$n - $k] % MOD;\n}\n\n// For each prime factor, compute expected value of p^{e_k} after k steps\n$ans = 1;\n\nfor ($idx = 0; $idx < $m; $idx++) {\n    $p = $primes[$idx];\n    $e0 = $exps[$idx];\n\n    // dp[t][j]: probability that exponent = j after t steps\n    // store as modular value (since all probabilities are rational with denom power of something)\n    $dp = array_fill(0, $e0 + 1, 0);\n    $dp[$e0] = 1;\n\n    // Precompute inverse of (i+1) for i up to e0\n    $inv = array_fill(0, $e0 + 1, 1);\n    for ($i = 1; $i <= $e0 + 1; $i++) {\n        $inv[$i] = mod_inv($i);\n    }\n\n    for ($step = 0; $step < $k; $step++) {\n        $ndp = array_fill(0, $e0 + 1, 0);\n        for ($i = 0; $i <= $e0; $i++) {\n            if ($dp[$i] == 0) continue;\n            // from exponent i, choose new exponent j in [0..i] uniformly\n            // probability 1/(i+1) each\n            $coef = $dp[$i] * $inv[$i + 1] % MOD;\n            for ($j = 0; $j <= $i; $j++) {\n                $ndp[$j] += $coef;\n                if ($ndp[$j] >= MOD) $ndp[$j] -= MOD;\n            }\n        }\n        $dp = $ndp;\n    }\n\n    // expected value of p^{e_k} = sum_j dp[j] * p^j\n    $pe = 1;\n    $exp_val = 0;\n    for ($j = 0; $j <= $e0; $j++) {\n        $exp_val = ($exp_val + $dp[$j] * $pe) % MOD;\n        $pe = ($pe * $p) % MOD;\n    }\n\n    $ans = ($ans * $exp_val) % MOD;\n}\n\necho $ans . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "<?php\n// Constants\nconst MOD = 1000000007;\n\n// Fast modular exponentiation\nfunction mod_pow($a, $e) {\n    $a %= MOD;\n    $res = 1;\n    while ($e > 0) {\n        if ($e & 1) $res = ($res * $a) % MOD;\n        $a = ($a * $a) % MOD;\n        $e >>= 1;\n    }\n    return $res;\n}\n\n// Modular inverse\nfunction mod_inv($a) {\n    return mod_pow($a, MOD - 2);\n}\n\n// Read input\nlist($n_str, $k_str) = array_map('trim', explode(' ', trim(fgets(STDIN))));\n$n = intval($n_str);\n$k = intval($k_str);\n\n// Factorize n (n <= 1e15)\n$primes = [];\n$exps = [];\n$nn = $n;\nfor ($p = 2; (int)$p * (int)$p <= $nn; $p += ($p == 2 ? 1 : 2)) {\n    if ($nn % $p == 0) {\n        $cnt = 0;\n        while ($nn % $p == 0) {\n            $nn /= $p;\n            $cnt++;\n        }\n        $primes[] = $p;\n        $exps[] = $cnt;\n    }\n}\nif ($nn > 1) {\n    $primes[] = $nn;\n    $exps[] = 1;\n}\n\n$m = count($primes);\nif ($m == 0) {\n    // n == 1\n    echo \"1\\n\";\n    exit;\n}\n\n// Precompute factorials and inverse factorials up to max exponent\n$maxE = max($exps);\n$fact = array_fill(0, $maxE + 1, 1);\n$ifact = array_fill(0, $maxE + 1, 1);\nfor ($i = 1; $i <= $maxE; $i++) $fact[$i] = ($fact[$i - 1] * $i) % MOD;\n$ifact[$maxE] = mod_inv($fact[$maxE]);\nfor ($i = $maxE; $i > 0; $i--) {\n    $ifact[$i - 1] = ($ifact[$i] * $i) % MOD;\n}\n\n// Precompute binomial coefficients C[e][j] for each exponent e\n$C = [];\nfor ($idx = 0; $idx < $m; $idx++) {\n    $e = $exps[$idx];\n    $row = [];\n    for ($j = 0; $j <= $e; $j++) {\n        $row[$j] = ($fact[$e] * $ifact[$j] % MOD) * $ifact[$e - $j] % MOD;\n    }\n    $C[$idx] = $row;\n}\n\n// For each prime factor, compute DP for exponents\n$expected = 1;\nfor ($idx = 0; $idx < $m; $idx++) {\n    $p = $primes[$idx] % MOD;\n    $e = $exps[$idx];\n\n    // dp[step][exp] but we only need current and next\n    $dp = array_fill(0, $e + 1, 0);\n    $dp[$e] = 1; // start with exponent e\n\n    // Precompute inverse of (i+1) for i up to e\n    $inv = array_fill(0, $e + 1, 1);\n    for ($i = 1; $i <= $e + 1; $i++) $inv[$i] = mod_inv($i);\n\n    for ($step = 0; $step < $k; $step++) {\n        $ndp = array_fill(0, $e + 1, 0);\n        for ($i = 0; $i <= $e; $i++) {\n            if ($dp[$i] == 0) continue;\n            $coef = $dp[$i] * $inv[$i + 1] % MOD;\n            // distribute to j = 0..i\n            $Ci = $C[$idx];\n            for ($j = 0; $j <= $i; $j++) {\n                $ndp[$j] = ($ndp[$j] + $coef * $Ci[$j]) % MOD;\n            }\n        }\n        $dp = $ndp;\n    }\n\n    // Expected value of p^{exp} = sum dp[exp] * p^{exp}\n    $pow = 1;\n    $exp_val = 0;\n    for ($exp = 0; $exp <= $e; $exp++) {\n        $exp_val = ($exp_val + $dp[$exp] * $pow) % MOD;\n        $pow = ($pow * $p) % MOD;\n    }\n    $expected = ($expected * $exp_val) % MOD;\n}\n\necho $expected . \"\\n\";\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "<?php\n// Expected Value after k random divisor steps\n// Solution based on prime factor independence and DP over exponents.\n\nconst MOD = 1000000007;\n\nfscanf(STDIN, \"%d %d\", $n, $k);\n\n// Fast power mod\nfunction mod_pow($a, $e) {\n    $mod = MOD;\n    $res = 1;\n    $a %= $mod;\n    while ($e > 0) {\n        if ($e & 1) $res = ($res * $a) % $mod;\n        $a = ($a * $a) % $mod;\n        $e >>= 1;\n    }\n    return $res;\n}\n\n// Factorize n (n <= 1e15)\n$primes = [];\n$tmp = $n;\nfor ($p = 2; (int)$p * $p <= $tmp; $p += ($p == 2 ? 1 : 2)) {\n    if ($tmp % $p == 0) {\n        $cnt = 0;\n        while ($tmp % $p == 0) {\n            $tmp /= $p;\n            $cnt++;\n        }\n        $primes[] = [$p, $cnt];\n    }\n}\nif ($tmp > 1) $primes[] = [$tmp, 1];\n\n// Precompute factorials and inverse factorials up to k\n$fact = array_fill(0, $k + 1, 1);\n$ifact = array_fill(0, $k + 1, 1);\nfor ($i = 1; $i <= $k; $i++) $fact[$i] = ($fact[$i - 1] * $i) % MOD;\n$ifact[$k] = mod_pow($fact[$k], MOD - 2);\nfor ($i = $k; $i > 0; $i--) $ifact[$i - 1] = ($ifact[$i] * $i) % MOD;\n\n// Precompute Stirling numbers of the second kind S(k, j) for j=0..k\n// Using recurrence: S(n,k) = S(n-1,k-1) + k*S(n-1,k)\n$S = array_fill(0, $k + 1, 0);\n$S[0] = 1;\nfor ($nstep = 1; $nstep <= $k; $nstep++) {\n    $prev = $S;\n    $S = array_fill(0, $k + 1, 0);\n    for ($j = 1; $j <= $nstep; $j++) {\n        $S[$j] = ($prev[$j - 1] + $j * $prev[$j]) % MOD;\n    }\n}\n\n// Precompute inverse powers of integers 1..k+1\n$inv = array_fill(0, $k + 2, 0);\nfor ($i = 1; $i <= $k + 1; $i++) {\n    $inv[$i] = mod_pow($i, MOD - 2);\n}\n\n// For each prime factor p^e, compute expected value contribution\n$answer = 1;\n\nforeach ($primes as $pe) {\n    $p = $pe[0];\n    $e = $pe[1];\n\n    // Precompute p^i mod MOD\n    $powp = array_fill(0, $e + 1, 1);\n    for ($i = 1; $i <= $e; $i++) {\n        $powp[$i] = ($powp[$i - 1] * ($p % MOD)) % MOD;\n    }\n\n    // Precompute f_k(i) for i=0..e using formula:\n    // f_k(i) = sum_{j=0..k} S(k,j) * (sum_{t=0..i} t^j) / (i+1)^k\n    // sum_{t=0..i} t^j via Faulhaber's formula with Bernoulli numbers:\n    // sum_{t=0..i} t^j = 1/(j+1) * sum_{m=0..j} (-1)^m * C(j+1,m) * B_m * i^{j+1-m}\n    // But computing Bernoulli numbers is heavy; instead we use DP on exponents directly.\n\n    // We instead do DP on exponents: dp[step][exp]\n    // dp[0][i] = 1 if i==e else 0\n    // dp[step+1][j] = sum_{i=j..e} dp[step][i] / (i+1)\n    // We'll compute only dp[k][i] for i=0..e\n    $dp = array_fill(0, $e + 1, 0);\n    $dp[$e] = 1;\n\n    for ($step = 0; $step < $k; $step++) {\n        $prefix = array_fill(0, $e + 2, 0);\n        // prefix sums of dp[i]/(i+1)\n        for ($i = 0; $i <= $e; $i++) {\n            $val = $dp[$i] * $inv[$i + 1] % MOD;\n            $prefix[$i + 1] = ($prefix[$i] + $val) % MOD;\n        }\n        $ndp = array_fill(0, $e + 1, 0);\n        for ($j = 0; $j <= $e; $j++) {\n            // sum_{i=j..e} dp[i]/(i+1) = prefix[e+1]-prefix[j]\n            $ndp[$j] = ($prefix[$e + 1] - $prefix[$j]) % MOD;\n            if ($ndp[$j] < 0) $ndp[$j] += MOD;\n        }\n        $dp = $ndp;\n    }\n\n    // Expected value for this prime factor: sum_i dp[i] * p^i\n    $ev = 0;\n    for ($i = 0; $i <= $e; $i++) {\n        $ev = ($ev + $dp[$i] * $powp[$i]) % MOD;\n    }\n\n    $answer = ($answer * $ev) % MOD;\n}\n\necho $answer . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "<?php\n// Expected Value after k random divisor steps\n// PHP 8 compatible\n\nconst MOD = 1000000007;\n\nfscanf(STDIN, \"%d %d\", $n, $k);\n\n// fast power mod\nfunction mod_pow($a, $e) {\n    $res = 1;\n    $a %= MOD;\n    while ($e > 0) {\n        if ($e & 1) $res = ($res * $a) % MOD;\n        $a = ($a * $a) % MOD;\n        $e >>= 1;\n    }\n    return $res;\n}\n\n// modular inverse\nfunction mod_inv($a) {\n    return mod_pow($a, MOD - 2);\n}\n\n// factorize n (n <= 1e15)\nfunction factorize($n) {\n    $res = [];\n    $x = $n;\n    for ($p = 2; (int)$p * $p <= $x; $p += ($p == 2 ? 1 : 2)) {\n        if ($x % $p == 0) {\n            $cnt = 0;\n            while ($x % $p == 0) {\n                $x /= $p;\n                $cnt++;\n            }\n            $res[] = [$p, $cnt];\n        }\n    }\n    if ($x > 1) $res[] = [$x, 1];\n    return $res;\n}\n\n$fac = factorize($n);\n\n// Precompute factorials up to max exponent (<= 50)\n$maxE = 0;\nforeach ($fac as $f) $maxE = max($maxE, $f[1]);\n$maxN = $maxE;\n$fact = array_fill(0, $maxN + 1, 1);\n$invfact = array_fill(0, $maxN + 1, 1);\nfor ($i = 1; $i <= $maxN; $i++) $fact[$i] = ($fact[$i - 1] * $i) % MOD;\n$invfact[$maxN] = mod_inv($fact[$maxN]);\nfor ($i = $maxN; $i > 0; $i--) {\n    $invfact[$i - 1] = ($invfact[$i] * $i) % MOD;\n}\n\n// combination C(n,k)\nfunction comb($n, $k, $fact, $invfact) {\n    if ($k < 0 || $k > $n) return 0;\n    return ($fact[$n] * $invfact[$k] % MOD) * $invfact[$n - $k] % MOD;\n}\n\n// For each prime factor p^e, compute expected value contribution\n$answer = 1;\n\nforeach ($fac as $f) {\n    $p = $f[0];\n    $e = $f[1];\n\n    // dp[t][j]: probability that exponent becomes j after t steps\n    // store as modular numbers (probabilities as P * inv(Q))\n    $dp = array_fill(0, $k + 1, array_fill(0, $e + 1, 0));\n    $dp[0][$e] = 1;\n\n    // Precompute inverse of (i+1) for i=0..e\n    $inv = [];\n    for ($i = 0; $i <= $e; $i++) $inv[$i] = mod_inv($i + 1);\n\n    for ($t = 0; $t < $k; $t++) {\n        for ($i = 0; $i <= $e; $i++) {\n            $cur = $dp[$t][$i];\n            if ($cur == 0) continue;\n            $coef = $cur * $inv[$i] % MOD;\n            for ($j = 0; $j <= $i; $j++) {\n                $dp[$t + 1][$j] = ($dp[$t + 1][$j] + $coef) % MOD;\n            }\n        }\n    }\n\n    // Expected value of p^{exponent} after k steps:\n    // E = sum_j dp[k][j] * p^j\n    $pk = 1;\n    $sum = 0;\n    for ($j = 0; $j <= $e; $j++) {\n        if ($j == 0) $pk = 1;\n        elseif ($j == 1) $pk = $p % MOD;\n        else $pk = ($pk * ($p % MOD)) % MOD;\n        $sum = ($sum + $dp[$k][$j] * $pk) % MOD;\n    }\n\n    $answer = ($answer * $sum) % MOD;\n}\n\necho $answer . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "<?php\n// Expected Value after k random divisor steps\n// Solution based on prime factor independence and DP over exponents\n\nconst MOD = 1000000007;\n\nfscanf(STDIN, \"%d %d\", $n, $k);\n\n// fast pow mod\nfunction mod_pow($a, $e) {\n    $res = 1;\n    $a %= MOD;\n    while ($e > 0) {\n        if ($e & 1) $res = ($res * $a) % MOD;\n        $a = ($a * $a) % MOD;\n        $e >>= 1;\n    }\n    return $res;\n}\n\n// modular inverse\nfunction mod_inv($a) {\n    return mod_pow($a, MOD - 2);\n}\n\n// factorize n (n <= 1e15)\n$primes = [];\n$exps = [];\n$nn = $n;\nfor ($p = 2; (int)$p * $p <= $nn; $p += ($p == 2 ? 1 : 2)) {\n    if ($nn % $p == 0) {\n        $cnt = 0;\n        while ($nn % $p == 0) {\n            $nn /= $p;\n            $cnt++;\n        }\n        $primes[] = $p;\n        $exps[] = $cnt;\n    }\n}\nif ($nn > 1) {\n    $primes[] = $nn;\n    $exps[] = 1;\n}\n\n$m = count($primes);\nif ($m == 0) { // n == 1\n    echo \"1\\n\";\n    exit;\n}\n\n// Precompute factorials up to max exponent\n$maxe = 0;\nforeach ($exps as $e) if ($e > $maxe) $maxe = $e;\n$fact = [1];\n$invfact = [1];\nfor ($i = 1; $i <= $maxe; $i++) {\n    $fact[$i] = ($fact[$i-1] * $i) % MOD;\n}\n$invfact[$maxe] = mod_inv($fact[$maxe]);\nfor ($i = $maxe; $i > 0; $i--) {\n    $invfact[$i-1] = ($invfact[$i] * $i) % MOD;\n}\n\n// DP for each prime exponent\n$dp = [];\n$dp_prev = [];\n$dp_curr = [];\n$inv = [];\n$inv[1] = 1;\nfor ($i = 2; $i <= $maxe + 1; $i++) {\n    $inv[$i] = MOD - (int)(MOD / $i) * $inv[MOD % $i] % MOD;\n}\n\nfor ($idx = 0; $idx < $m; $idx++) {\n    $e = $exps[$idx];\n    $dp_prev = array_fill(0, $e + 1, 0);\n    $dp_prev[$e] = 1; // start at exponent e\n\n    for ($step = 0; $step < $k; $step++) {\n        $dp_curr = array_fill(0, $e + 1, 0);\n        // prefix sums of dp_prev\n        $pref = 0;\n        for ($j = 0; $j <= $e; $j++) {\n            $pref += $dp_prev[$j];\n            if ($pref >= MOD) $pref -= MOD;\n            $dp_curr[$j] = (int)($pref * $inv[$j + 1] % MOD);\n        }\n        $dp_prev = $dp_curr;\n    }\n    $dp[$idx] = $dp_prev;\n}\n\n// Combine primes\n$ans = 1;\nfor ($idx = 0; $idx < $m; $idx++) {\n    $p = $primes[$idx] % MOD;\n    $e = $exps[$idx];\n    $sum = 0;\n    $pow = 1; // p^0\n    for ($j = 0; $j <= $e; $j++) {\n        $sum = ($sum + $dp[$idx][$j] * $pow) % MOD;\n        $pow = ($pow * $p) % MOD;\n    }\n    $ans = ($ans * $sum) % MOD;\n}\n\necho $ans . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "<?php\n// Problem solution in PHP\n\nconst MOD = 1000000007;\n\n// fast power mod\nfunction mod_pow($a, $e) {\n    $res = 1;\n    $a %= MOD;\n    while ($e > 0) {\n        if ($e & 1) $res = ($res * $a) % MOD;\n        $a = ($a * $a) % MOD;\n        $e >>= 1;\n    }\n    return $res;\n}\n\nfunction mod_inv($a) {\n    return mod_pow($a, MOD - 2);\n}\n\n// read input\nlist($n_str, $k_str) = array_map('trim', explode(' ', trim(fgets(STDIN))));\n$n = intval($n_str);\n$k = intval($k_str);\n\n// factorize n (n <= 1e15)\n$primes = [];\n$exps = [];\n$tmp = $n;\nfor ($p = 2; (int)$p * (int)$p <= $tmp; $p += ($p == 2 ? 1 : 2)) {\n    if ($tmp % $p == 0) {\n        $cnt = 0;\n        while ($tmp % $p == 0) {\n            $tmp /= $p;\n            $cnt++;\n        }\n        $primes[] = $p;\n        $exps[] = $cnt;\n    }\n}\nif ($tmp > 1) {\n    $primes[] = $tmp;\n    $exps[] = 1;\n}\n\n$m = count($primes);\n\n// precompute factorials up to max exponent\n$maxe = 0;\nforeach ($exps as $e) if ($e > $maxe) $maxe = $e;\n$fact = [1];\n$invfact = [1];\nfor ($i = 1; $i <= $maxe; $i++) {\n    $fact[$i] = ($fact[$i-1] * $i) % MOD;\n}\n$invfact[$maxe] = mod_inv($fact[$maxe]);\nfor ($i = $maxe; $i > 0; $i--) {\n    $invfact[$i-1] = ($invfact[$i] * $i) % MOD;\n}\n\n// precompute binomial C(e, j)\n$C = [];\nfor ($idx = 0; $idx < $m; $idx++) {\n    $e = $exps[$idx];\n    $C[$idx] = [];\n    for ($j = 0; $j <= $e; $j++) {\n        $C[$idx][$j] = ($fact[$e] * $invfact[$j] % MOD) * $invfact[$e - $j] % MOD;\n    }\n}\n\n// dp for each prime exponent\n// dp[t][i] = probability exponent = i after t steps\n$dp = [];\n$ans = 1;\n\nfor ($idx = 0; $idx < $m; $idx++) {\n    $e = $exps[$idx];\n    $dp = array_fill(0, $k + 1, array_fill(0, $e + 1, 0));\n    $dp[0][$e] = 1;\n\n    // precompute inv(i+1)\n    $inv = [];\n    for ($i = 0; $i <= $e; $i++) {\n        $inv[$i] = mod_inv($i + 1);\n    }\n\n    for ($t = 0; $t < $k; $t++) {\n        $cur = $dp[$t];\n        $next = array_fill(0, $e + 1, 0);\n        for ($i = 0; $i <= $e; $i++) {\n            if ($cur[$i] == 0) continue;\n            $coef = $cur[$i] * $inv[$i] % MOD;\n            for ($j = 0; $j <= $i; $j++) {\n                $next[$j] = ($next[$j] + $coef * $C[$idx][$j]) % MOD;\n            }\n        }\n        $dp[$t+1] = $next;\n    }\n\n    // expected value of p^{exp} after k steps\n    $pk = 0;\n    $p_mod = $primes[$idx] % MOD;\n    $pow = 1; // p^0\n    for ($i = 0; $i <= $e; $i++) {\n        $pk = ($pk + $dp[$k][$i] * $pow) % MOD;\n        $pow = ($pow * $p_mod) % MOD;\n    }\n    $ans = ($ans * $pk) % MOD;\n}\n\necho $ans . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "<?php\n// Constants\nconst MOD = 1000000007;\n\n// Fast exponentiation modulo MOD\nfunction mod_pow($a, $e) {\n    $res = 1;\n    $a %= MOD;\n    while ($e > 0) {\n        if ($e & 1) $res = ($res * $a) % MOD;\n        $a = ($a * $a) % MOD;\n        $e >>= 1;\n    }\n    return $res;\n}\n\n// Modular inverse modulo MOD\nfunction mod_inv($a) {\n    return mod_pow($a, MOD - 2);\n}\n\n// Read input\nlist($n_str, $k_str) = array_map('trim', explode(' ', trim(fgets(STDIN))));\n$n = intval($n_str);\n$k = intval($k_str);\n\n// Factorize n (n <= 1e15)\n$primes = [];\n$exps = [];\n$tmp = $n;\nfor ($p = 2; (int)$p * $p <= $tmp; $p += ($p == 2 ? 1 : 2)) {\n    if ($tmp % $p == 0) {\n        $cnt = 0;\n        while ($tmp % $p == 0) {\n            $tmp /= $p;\n            $cnt++;\n        }\n        $primes[] = $p;\n        $exps[] = $cnt;\n    }\n}\nif ($tmp > 1) {\n    $primes[] = $tmp;\n    $exps[] = 1;\n}\n\n$m = count($primes);\n$maxE = max($exps);\n\n// Precompute factorials and inverse factorials up to maxE\n$fact = array_fill(0, $maxE + 1, 1);\n$ifact = array_fill(0, $maxE + 1, 1);\nfor ($i = 1; $i <= $maxE; $i++) {\n    $fact[$i] = ($fact[$i - 1] * $i) % MOD;\n}\n$ifact[$maxE] = mod_inv($fact[$maxE]);\nfor ($i = $maxE; $i > 0; $i--) {\n    $ifact[$i - 1] = ($ifact[$i] * $i) % MOD;\n}\n\n// Precompute binomial coefficients C[e][j]\n$C = [];\nfor ($e = 0; $e <= $maxE; $e++) {\n    $C[$e] = [];\n    for ($j = 0; $j <= $e; $j++) {\n        $C[$e][$j] = ($fact[$e] * $ifact[$j] % MOD) * $ifact[$e - $j] % MOD;\n    }\n}\n\n// Precompute DP for each exponent e: dp_e[0..e][0..k]\n$dp_all = [];\nfor ($idx = 0; $idx < $m; $idx++) {\n    $e = $exps[$idx];\n    $dp = array_fill(0, $e + 1, array_fill(0, $k + 1, 0));\n    for ($i = 0; $i <= $e; $i++) {\n        $dp[$i][0] = ($i == $e) ? 1 : 0;\n    }\n    for ($step = 1; $step <= $k; $step++) {\n        for ($i = 0; $i <= $e; $i++) {\n            $sum = 0;\n            for ($j = 0; $j <= $i; $j++) {\n                $sum += $dp[$j][$step - 1];\n                if ($sum >= MOD) $sum -= MOD;\n            }\n            $dp[$i][$step] = $sum * mod_inv($i + 1) % MOD;\n        }\n    }\n    $dp_all[$idx] = $dp;\n}\n\n// Combine expectations\n$ans = 1;\nfor ($idx = 0; $idx < $m; $idx++) {\n    $p = $primes[$idx] % MOD;\n    $e = $exps[$idx];\n    $dp = $dp_all[$idx];\n    $sum = 0;\n    $p_pow = 1;\n    for ($i = 0; $i <= $e; $i++) {\n        $coef = $dp[$i][$k];\n        if ($coef) {\n            $sum = ($sum + $coef * $p_pow) % MOD;\n        }\n        $p_pow = ($p_pow * $p) % MOD;\n    }\n    $ans = ($ans * $sum) % MOD;\n}\n\necho $ans . PHP_EOL;\n?>",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 8443,
+            "prompt_tokens": 552,
+            "total_tokens": 8995,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 3,
+                "engine_ttft_ms": 313,
+                "engine_ttlt_ms": 25196,
+                "pre_inference_ms": 197,
+                "service_tbt_ms": 3,
+                "service_ttft_ms": 652,
+                "service_ttlt_ms": 25499,
+                "total_duration_ms": 25320,
+                "user_visible_ttft_ms": 456
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in PHP to solve this programming problem:\nDescription: Makoto has a big blackboard with a positive integer $$$n$$$ written on it. He will perform the following action exactly $$$k$$$ times:Suppose the number currently written on the blackboard is $$$v$$$. He will randomly pick one of the divisors of $$$v$$$ (possibly $$$1$$$ and $$$v$$$) and replace $$$v$$$ with this divisor. As Makoto uses his famous random number generator (RNG) and as he always uses $$$58$$$ as his generator seed, each divisor is guaranteed to be chosen with equal probability.He now wonders what is the expected value of the number written on the blackboard after $$$k$$$ steps.It can be shown that this value can be represented as $$$\\frac{P}{Q}$$$ where $$$P$$$ and $$$Q$$$ are coprime integers and $$$Q \\not\\equiv 0 \\pmod{10^9+7}$$$. Print the value of $$$P \\cdot Q^{-1}$$$ modulo $$$10^9+7$$$.\nInput Specification: The only line of the input contains two integers $$$n$$$ and $$$k$$$ ($$$1 \\leq n \\leq 10^{15}$$$, $$$1 \\leq k \\leq 10^4$$$).\nOutput Specification: Print a single integer \u2014 the expected value of the number on the blackboard after $$$k$$$ steps as $$$P \\cdot Q^{-1} \\pmod{10^9+7}$$$ for $$$P$$$, $$$Q$$$ defined above.\n\nSample Input:\n6 1\nSample Output:\n3\n\nSample Input:\n6 2\nSample Output:\n875000008\n\nSample Input:\n60 5\nSample Output:\n237178099\n\nNotes: NoteIn the first example, after one step, the number written on the blackboard is $$$1$$$, $$$2$$$, $$$3$$$ or $$$6$$$ \u2014 each occurring with equal probability. Hence, the answer is $$$\\frac{1+2+3+6}{4}=3$$$.In the second example, the answer is equal to $$$1 \\cdot \\frac{9}{16}+2 \\cdot \\frac{3}{16}+3 \\cdot \\frac{3}{16}+6 \\cdot \\frac{1}{16}=\\frac{15}{8}$$$.\nTake input from standard input and output to standard output\nProvide the PHP code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "dc466d9c24b7dcb37c0e99337b4124d2",
+        "difficulty": 2200,
+        "prob_desc_sample_inputs": [
+            "6 1",
+            "6 2",
+            "60 5"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "math",
+            "number theory",
+            "probabilities",
+            "dp"
+        ],
+        "prob_desc_output_spec": "Print a single integer \u2014 the expected value of the number on the blackboard after $$$k$$$ steps as $$$P \\cdot Q^{-1} \\pmod{10^9+7}$$$ for $$$P$$$, $$$Q$$$ defined above.",
+        "prob_desc_input_spec": "The only line of the input contains two integers $$$n$$$ and $$$k$$$ ($$$1 \\leq n \\leq 10^{15}$$$, $$$1 \\leq k \\leq 10^4$$$).",
+        "lang_cluster": "PHP",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first example, after one step, the number written on the blackboard is $$$1$$$, $$$2$$$, $$$3$$$ or $$$6$$$ \u2014 each occurring with equal probability. Hence, the answer is $$$\\frac{1+2+3+6}{4}=3$$$.In the second example, the answer is equal to $$$1 \\cdot \\frac{9}{16}+2 \\cdot \\frac{3}{16}+3 \\cdot \\frac{3}{16}+6 \\cdot \\frac{1}{16}=\\frac{15}{8}$$$.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Makoto has a big blackboard with a positive integer $$$n$$$ written on it. He will perform the following action exactly $$$k$$$ times:Suppose the number currently written on the blackboard is $$$v$$$. He will randomly pick one of the divisors of $$$v$$$ (possibly $$$1$$$ and $$$v$$$) and replace $$$v$$$ with this divisor. As Makoto uses his famous random number generator (RNG) and as he always uses $$$58$$$ as his generator seed, each divisor is guaranteed to be chosen with equal probability.He now wonders what is the expected value of the number written on the blackboard after $$$k$$$ steps.It can be shown that this value can be represented as $$$\\frac{P}{Q}$$$ where $$$P$$$ and $$$Q$$$ are coprime integers and $$$Q \\not\\equiv 0 \\pmod{10^9+7}$$$. Print the value of $$$P \\cdot Q^{-1}$$$ modulo $$$10^9+7$$$.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1546613100",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "3",
+            "875000008",
+            "237178099"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"6 1\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"6 2\\r\\n\", \"output\": [\"875000008\"]}, {\"input\": \"60 5\\r\\n\", \"output\": [\"237178099\"]}, {\"input\": \"2 4\\r\\n\", \"output\": [\"562500005\"]}, {\"input\": \"12 3\\r\\n\", \"output\": [\"775462970\"]}, {\"input\": \"55 5\\r\\n\", \"output\": [\"789062507\"]}, {\"input\": \"935 9\\r\\n\", \"output\": [\"658825880\"]}, {\"input\": \"1 10000\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"120 1\\r\\n\", \"output\": [\"500000026\"]}, {\"input\": \"1000000000000000 10000\\r\\n\", \"output\": [\"215514159\"]}, {\"input\": \"671058194037157 8673\\r\\n\", \"output\": [\"298638658\"]}, {\"input\": \"900018062553298 4801\\r\\n\", \"output\": [\"345432320\"]}, {\"input\": \"128973636102142 5521\\r\\n\", \"output\": [\"99152648\"]}, {\"input\": \"999999999999993 8123\\r\\n\", \"output\": [\"868053217\"]}, {\"input\": \"260858031033600 9696\\r\\n\", \"output\": [\"692221824\"]}, {\"input\": \"562949953421312 9779\\r\\n\", \"output\": [\"98057767\"]}, {\"input\": \"357933504618282 1649\\r\\n\", \"output\": [\"197730476\"]}, {\"input\": \"586884783199831 5073\\r\\n\", \"output\": [\"883678085\"]}, {\"input\": \"187877211524483 8497\\r\\n\", \"output\": [\"562808746\"]}, {\"input\": \"866421317361600 10000\\r\\n\", \"output\": [\"82212846\"]}, {\"input\": \"782574093100800 9999\\r\\n\", \"output\": [\"293217028\"]}, {\"input\": \"577614211574400 9998\\r\\n\", \"output\": [\"681915605\"]}, {\"input\": \"65214507758400 9997\\r\\n\", \"output\": [\"677959603\"]}, {\"input\": \"963761198400 9996\\r\\n\", \"output\": [\"669401143\"]}, {\"input\": \"5587021440 9995\\r\\n\", \"output\": [\"360750834\"]}, {\"input\": \"17297280 9994\\r\\n\", \"output\": [\"94383698\"]}, {\"input\": \"7560 9993\\r\\n\", \"output\": [\"412712546\"]}, {\"input\": \"120 9992\\r\\n\", \"output\": [\"167656619\"]}, {\"input\": \"1 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"609359740010496 1337\\r\\n\", \"output\": [\"263703037\"]}, {\"input\": \"912750790581630 9876\\r\\n\", \"output\": [\"291557094\"]}, {\"input\": \"617673396283947 7777\\r\\n\", \"output\": [\"488769014\"]}, {\"input\": \"890604418498560 9119\\r\\n\", \"output\": [\"185509970\"]}, {\"input\": \"524288004718592 8888\\r\\n\", \"output\": [\"851726115\"]}, {\"input\": \"999999999999989 8998\\r\\n\", \"output\": [\"391873310\"]}, {\"input\": \"999999999999999 8123\\r\\n\", \"output\": [\"41003922\"]}, {\"input\": \"817237005720659 4233\\r\\n\", \"output\": [\"533017938\"]}, {\"input\": \"1000000007 1\\r\\n\", \"output\": [\"500000004\"]}, {\"input\": \"1000000007 2\\r\\n\", \"output\": [\"750000006\"]}, {\"input\": \"999999999999970 8998\\r\\n\", \"output\": [\"939941657\"]}, {\"input\": \"900000060000001 8123\\r\\n\", \"output\": [\"865356488\"]}, {\"input\": \"999011322032079 4233\\r\\n\", \"output\": [\"546309400\"]}, {\"input\": \"999005327998113 9119\\r\\n\", \"output\": [\"106270540\"]}, {\"input\": \"900000720000023 9876\\r\\n\", \"output\": [\"511266473\"]}]"
+    }
+}

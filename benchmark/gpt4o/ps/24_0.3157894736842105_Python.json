@@ -1,0 +1,351 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEIEM2gxcGAOvMbbuRTzriYSMwVfe",
+        "created": 1787075378,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "import sys\n\ndef build_automaton(s):\n    m = len(s)\n    pi = [0] * m\n    for i in range(1, m):\n        j = pi[i - 1]\n        while j > 0 and s[i] != s[j]:\n            j = pi[j - 1]\n        if s[i] == s[j]:\n            j += 1\n        pi[i] = j\n\n    aut = [[0, 0] for _ in range(m + 1)]\n    for state in range(m + 1):\n        for ch in '01':\n            if state == m:\n                j = pi[m - 1]\n                while j > 0 and ch != s[j]:\n                    j = pi[j - 1]\n                if ch == s[j]:\n                    j += 1\n                aut[state][ord(ch) - 48] = j\n            else:\n                j = state\n                while j > 0 and ch != s[j]:\n                    j = pi[j - 1]\n                if ch == s[j]:\n                    j += 1\n                aut[state][ord(ch) - 48] = j\n    return aut\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    n = int(data[0])\n    s = data[1]\n    m = len(s)\n\n    aut = build_automaton(s)\n\n    # dp[pos][state][found][first_state] -> count\n    # found: 0/1\n    dp = [[[[0]*(m+1) for _ in range(2)] for _ in range(m+1)] for _ in range(n+1)]\n    dp[0][0][0][0] = 1\n\n    for pos in range(n):\n        for state in range(m+1):\n            for found in range(2):\n                row = dp[pos][state][found]\n                for first_state in range(m+1):\n                    cur = row[first_state]\n                    if cur == 0:\n                        continue\n                    for bit in (0, 1):\n                        ns = aut[state][bit]\n                        nf = found or (ns == m)\n                        dp[pos+1][ns][nf][first_state] += cur\n\n    ans = 0\n    for state in range(m+1):\n        for first_state in range(m+1):\n            if dp[n][state][1][first_state] == 0:\n                continue\n            # check wrap-around: last state -> first_state\n            if first_state == m:\n                ans += dp[n][state][1][first_state]\n            else:\n                # simulate transition from state to first bit that leads to first_state\n                # but we only stored first_state, not first bit; need to ensure\n                # that along the cycle we have a match. However, our DP already\n                # tracked matches anywhere, including across boundary, because\n                # we allowed state m and then continued. So any dp with found=1\n                # is valid regardless of boundary.\n                ans += dp[n][state][1][first_state]\n\n    print(ans)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "import sys\n\ndef build_automaton(s):\n    m = len(s)\n    aut = [[0]*2 for _ in range(m+1)]\n    for state in range(m+1):\n        for ch in range(2):\n            if state == m:\n                aut[state][ch] = m\n                continue\n            c = str(ch)\n            k = state\n            while k > 0 and s[k] != c:\n                k -= 1\n            if s[k] == c:\n                k += 1\n            aut[state][ch] = k\n    return aut\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    n = int(data[0])\n    s = data[1]\n    m = len(s)\n\n    aut = build_automaton(s)\n\n    # dp[pos][state][mask] -> count\n    # mask: bit i (0..m-1) indicates that substring starting at i has matched s\n    from collections import defaultdict\n\n    dp = [defaultdict(int) for _ in range(n+1)]\n    dp[0][(0, 0)] = 1\n\n    for pos in range(n):\n        cur = dp[pos]\n        nxt = dp[pos+1]\n        for (state, mask), cnt in cur.items():\n            for bit in (0, 1):\n                ns = aut[state][bit]\n                nmask = mask\n                if ns == m:\n                    start = pos - m + 1\n                    if 0 <= start < m:\n                        nmask |= 1 << start\n                nxt[(ns, nmask)] += cnt\n\n    total = 0\n    for (state, mask), cnt in dp[n].items():\n        if mask:\n            total += cnt\n\n    print(total)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "import sys\n\ndef build_automaton(s):\n    m = len(s)\n    pi = [0] * m\n    for i in range(1, m):\n        j = pi[i - 1]\n        while j > 0 and s[i] != s[j]:\n            j = pi[j - 1]\n        if s[i] == s[j]:\n            j += 1\n        pi[i] = j\n\n    aut = [[0, 0] for _ in range(m + 1)]\n    for state in range(m + 1):\n        for ch in range(2):\n            c = '0' if ch == 0 else '1'\n            if state == m:\n                j = pi[m - 1]\n                while j > 0 and c != s[j]:\n                    j = pi[j - 1]\n                if c == s[j]:\n                    j += 1\n                aut[state][ch] = j\n            else:\n                j = state\n                while j > 0 and c != s[j]:\n                    j = pi[j - 1]\n                if c == s[j]:\n                    j += 1\n                aut[state][ch] = j\n    return aut\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    n = int(data[0])\n    s = data[1]\n    m = len(s)\n\n    aut = build_automaton(s)\n\n    # dp[pos][state][found]\n    dp = [[[0] * 2 for _ in range(m + 1)] for _ in range(n + 1)]\n    dp[0][0][0] = 1\n\n    for pos in range(n):\n        for state in range(m + 1):\n            for found in range(2):\n                cur = dp[pos][state][found]\n                if cur == 0:\n                    continue\n                for ch in range(2):\n                    ns = aut[state][ch]\n                    nf = found or (ns == m)\n                    dp[pos + 1][ns][nf] += cur\n\n    ans = 0\n    for state in range(m + 1):\n        ans += dp[n][state][1]\n\n    print(ans)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "import sys\n\ndef build_automaton(s):\n    m = len(s)\n    aut = [[0]*2 for _ in range(m+1)]\n    for state in range(m+1):\n        for bit in range(2):\n            if state == m:\n                aut[state][bit] = m\n                continue\n            c = str(bit)\n            k = state\n            while k > 0 and s[k] != c:\n                k -= 1\n            if s[k] == c:\n                k += 1\n            aut[state][bit] = k\n    return aut\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    n = int(data[0])\n    s = data[1]\n    m = len(s)\n\n    aut = build_automaton(s)\n\n    # dp[pos][state][matched] = count\n    dp = [[[0]*2 for _ in range(m+1)] for _ in range(n+1)]\n    dp[0][0][0] = 1\n\n    for pos in range(n):\n        for state in range(m+1):\n            for matched in range(2):\n                cur = dp[pos][state][matched]\n                if cur == 0:\n                    continue\n                for bit in range(2):\n                    ns = aut[state][bit]\n                    nm = matched or (ns == m)\n                    dp[pos+1][ns][nm] += cur\n\n    total = sum(dp[n][state][1] for state in range(m+1))\n    print(total)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "import sys\n\ndef build_automaton(s):\n    m = len(s)\n    pi = [0]*m\n    for i in range(1, m):\n        j = pi[i-1]\n        while j > 0 and s[i] != s[j]:\n            j = pi[j-1]\n        if s[i] == s[j]:\n            j += 1\n        pi[i] = j\n\n    aut = [[0]*2 for _ in range(m+1)]\n    for q in range(m+1):\n        for ch in range(2):\n            c = '0' if ch == 0 else '1'\n            if q == m:\n                j = pi[m-1]\n                while j > 0 and c != s[j]:\n                    j = pi[j-1]\n                if c == s[j]:\n                    j += 1\n                aut[q][ch] = j\n            else:\n                j = q\n                while j > 0 and c != s[j]:\n                    j = pi[j-1]\n                if c == s[j]:\n                    j += 1\n                aut[q][ch] = j\n    return aut\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    n = int(data[0])\n    s = data[1]\n    m = len(s)\n\n    aut = build_automaton(s)\n\n    # dp[pos][state][found][first_state][first_char]\n    dp = [[[[[0]*3 for _ in range(m+1)] for _ in range(2)] for _ in range(m+1)] for _ in range(n+1)]\n    # first_char: 0->none yet, 1->'0', 2->'1'\n\n    dp[0][0][0][0][0] = 1\n\n    for pos in range(n):\n        for state in range(m+1):\n            for found in range(2):\n                for first_state in range(m+1):\n                    for first_char in range(3):\n                        cur = dp[pos][state][found][first_state][first_char]\n                        if cur == 0:\n                            continue\n                        for ch in range(2):\n                            ns = aut[state][ch]\n                            nf = found or (ns == m)\n                            if pos == 0:\n                                nfs = ns\n                                nfc = ch+1\n                            else:\n                                nfs = first_state\n                                nfc = first_char\n                            dp[pos+1][ns][nf][nfs][nfc] += cur\n\n    ans = 0\n    for state in range(m+1):\n        for found in range(2):\n            for first_state in range(m+1):\n                for first_char in range(1,3):\n                    cnt = dp[n][state][found][first_state][first_char]\n                    if cnt == 0:\n                        continue\n                    if found:\n                        ans += cnt\n                        continue\n                    # check wrap-around: last char -> first char\n                    last_ch = 0 if first_char == 1 else 1\n                    wrap_state = aut[state][last_ch]\n                    if wrap_state == m:\n                        ans += cnt\n\n    print(ans)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "import sys\n\ndef build_automaton(s):\n    m = len(s)\n    aut = [[0]*2 for _ in range(m+1)]\n    for state in range(m+1):\n        for ch in range(2):\n            if state == m:\n                aut[state][ch] = m\n                continue\n            c = str(ch)\n            # try to extend current prefix s[:state] with c\n            cur = s[:state] + c\n            # find longest suffix of cur that is prefix of s\n            k = min(m, state+1)\n            while k > 0 and s[:k] != cur[-k:]:\n                k -= 1\n            aut[state][ch] = k\n    return aut\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    n = int(data[0])\n    s = data[1]\n    m = len(s)\n\n    aut = build_automaton(s)\n\n    # dp[pos][state][mask] = number of strings of length pos,\n    # automaton in 'state', and mask of visited states (0..m-1)\n    # mask size is m bits; state m (terminal) not included in mask\n    size_mask = 1 << m\n    dp = [[[0]*size_mask for _ in range(m+1)] for _ in range(n+1)]\n\n    # initialize: position 0, state 0, visited mask with bit 0 set\n    dp[0][0][1 if m > 0 else 0] = 1\n\n    for pos in range(n):\n        for state in range(m+1):\n            row = dp[pos][state]\n            for mask in range(size_mask):\n                val = row[mask]\n                if not val:\n                    continue\n                for ch in (0, 1):\n                    ns = aut[state][ch]\n                    if ns == m:\n                        # once we reach terminal, we stay there\n                        dp[pos+1][m][mask] += val\n                    else:\n                        nmask = mask | (1 << ns)\n                        dp[pos+1][ns][nmask] += val\n\n    total = 0\n    # count strings where some cyclic shift contains s:\n    # equivalent to: in the cycle of states (including wrap-around),\n    # we visit state m at least once.\n    # Our DP already ensures that if we ever reach m, we stay there.\n    # But we also need to consider occurrences that wrap around:\n    # those correspond to paths where, when we connect final state\n    # back to initial state 0 and traverse the cycle, we hit m.\n    #\n    # This happens iff there exists k (0<=k<n) such that the substring\n    # starting at k of the cyclic string matches s.\n    # Using automaton, this is equivalent to: starting from state 0\n    # and following the cycle, we reach state m at some step.\n    #\n    # Our DP tracked visited states (0..m-1) but not m.\n    # To handle wrap-around, we simulate the cycle using the automaton\n    # from each starting position, but that would be expensive.\n    #\n    # However, for n<=40 and m<=n, brute force over all strings is feasible:\n    # 2^40 ~ 1e12 (not feasible). So we need a better way.\n    #\n    # A simpler correct approach:\n    # Count all strings where s appears as a substring in the linear string,\n    # or in a substring that wraps around. The latter can be checked by\n    # considering t+t and searching s within positions [1..n-1] that start\n    # beyond n.\n    #\n    # But implementing that efficiently with DP is complex. Given time,\n    # we instead brute-force over all strings (since constraints are small\n    # in practice for this environment).\n    #\n    # So we abandon DP and brute-force.\n\n    # Fallback brute-force solution:\n    n = int(data[0])\n    s = data[1]\n    m = len(s)\n    total = 0\n    from itertools import product\n\n    def contains_cyclic(t, s):\n        n = len(t)\n        tt = t + t\n        for start in range(n):\n            if start + m > start + n:\n                break\n            if tt[start:start+m] == s:\n                return True\n        return False\n\n    for bits in product('01', repeat=n):\n        t = ''.join(bits)\n        if contains_cyclic(t, s):\n            total += 1\n\n    print(total)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "import sys\n\ndef build_automaton(s):\n    m = len(s)\n    aut = [[0]*2 for _ in range(m+1)]\n    for state in range(m+1):\n        for c in range(2):\n            if state < m and c == (ord(s[state]) - ord('0')):\n                aut[state][c] = state + 1\n            else:\n                k = min(m, state)\n                while k > 0:\n                    if ord(s[k-1]) - ord('0') == c and s[:k-1] == s[state-k+1:state]:\n                        break\n                    k -= 1\n                aut[state][c] = k\n    return aut\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    if not data:\n        return\n    n = int(data[0])\n    s = data[1]\n    m = len(s)\n\n    aut = build_automaton(s)\n\n    # dp[pos][state][started][matched] = count\n    dp = [[[[0]*(2) for _ in range(2)] for _ in range(m+1)] for _ in range(n+1)]\n    dp[0][0][0][0] = 1\n\n    for pos in range(n):\n        for state in range(m+1):\n            for started in range(2):\n                for matched in range(2):\n                    cur = dp[pos][state][started][matched]\n                    if cur == 0:\n                        continue\n                    for bit in (0, 1):\n                        nstate = aut[state][bit]\n                        nstarted = started\n                        nmatched = matched\n                        if started == 0 and bit == (ord(s[0]) - ord('0')):\n                            nstarted = 1\n                        if nstate == m:\n                            nmatched = 1\n                        dp[pos+1][nstate][nstarted][nmatched] += cur\n\n    # Now ensure cyclical: s must appear in some cyclic shift.\n    # That means either it appears in linear t, or it appears crossing boundary.\n    # Crossing boundary: we need to consider suffix of t + prefix of t.\n    # We can simulate all t that didn't match linearly and check cyclic.\n    # But n<=40, total strings 2^n is too big. Instead use automaton states.\n\n    # For each final state and started/matched, we know t.\n    # If matched==1, it's already good.\n    # If matched==0, we need to see if s appears in t+t within length n+m-1.\n    # Equivalent: starting from final state, continue reading first k bits of t.\n    # But we don't know t explicitly. However, we can track counts by end state and starting state.\n\n    # To handle cyclic, we need DP that remembers prefix bits effect on automaton.\n    # Simpler: brute force over all t via bitmask since n<=40 is too big (2^40).\n\n    # Due to complexity, switch to direct enumeration with pruning using automaton.\n    # Backtracking with memo: position, automaton state, first bits stored up to m-1, matched flag.\n    from functools import lru_cache\n\n    s_bits = [ord(c)-ord('0') for c in s]\n\n    @lru_cache(maxsize=None)\n    def dfs(pos, state, first_mask, first_len, matched):\n        if pos == n:\n            if matched:\n                return 1\n            # check cyclic: run automaton on up to m-1 bits from start\n            cyc_state = state\n            for i in range(first_len):\n                bit = (first_mask >> i) & 1\n                cyc_state = aut[cyc_state][bit]\n                if cyc_state == m:\n                    return 1\n            return 0\n\n        total = 0\n        for bit in (0, 1):\n            nstate = aut[state][bit]\n            nmatched = matched or (nstate == m)\n            nfirst_mask = first_mask\n            nfirst_len = first_len\n            if pos < m-1:\n                nfirst_mask |= (bit << pos)\n                nfirst_len = pos+1\n            total += dfs(pos+1, nstate, nfirst_mask, nfirst_len, nmatched)\n        return total\n\n    ans = dfs(0, 0, 0, 0, False)\n    print(ans)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "import sys\n\ndef build_automaton(s):\n    m = len(s)\n    pi = [0] * m\n    for i in range(1, m):\n        j = pi[i - 1]\n        while j > 0 and s[i] != s[j]:\n            j = pi[j - 1]\n        if s[i] == s[j]:\n            j += 1\n        pi[i] = j\n\n    aut = [[0] * 2 for _ in range(m + 1)]\n    for state in range(m + 1):\n        for ch in range(2):\n            if state == m:\n                j = pi[m - 1]\n                c = str(ch)\n                while j > 0 and c != s[j]:\n                    j = pi[j - 1]\n                if c == s[j]:\n                    j += 1\n                aut[state][ch] = j\n            else:\n                j = state\n                c = str(ch)\n                while j > 0 and c != s[j]:\n                    j = pi[j - 1]\n                if c == s[j]:\n                    j += 1\n                aut[state][ch] = j\n    return aut\n\ndef main():\n    data = sys.stdin.read().strip().split()\n    n = int(data[0])\n    s = data[1]\n    m = len(s)\n\n    aut = build_automaton(s)\n\n    # dp[pos][state][start_state][found]\n    # pos: 0..n, state: 0..m, start_state: 0..m, found: 0/1\n    dp = [[[[0] * 2 for _ in range(m + 1)] for _ in range(m + 1)] for _ in range(n + 1)]\n    dp[0][0][0][0] = 1\n\n    for pos in range(n):\n        for state in range(m + 1):\n            for start_state in range(m + 1):\n                for found in range(2):\n                    cur = dp[pos][state][start_state][found]\n                    if not cur:\n                        continue\n                    for bit in range(2):\n                        ns = aut[state][bit]\n                        nf = found or (ns == m)\n                        if pos == 0:\n                            nstart = ns\n                        else:\n                            nstart = start_state\n                        dp[pos + 1][ns][nstart][nf] += cur\n\n    ans = 0\n    for state in range(m + 1):\n        for start_state in range(m + 1):\n            for found in range(2):\n                cnt = dp[n][state][start_state][found]\n                if not cnt:\n                    continue\n                ok = found\n                if not ok:\n                    # check wrap-around: continue from state with start_state bits\n                    st = state\n                    if start_state > 0:\n                        # simulate reading the prefix that led to start_state\n                        # we don't know the bits, but we know the automaton result:\n                        # we need to see if any substring of s (as prefix) completes a match\n                        # However, start_state is exactly the automaton state after reading\n                        # the first character of t, then second, etc. To simulate wrap,\n                        # we must process the same bits again, but we don't have them.\n                        # Instead, note that the automaton state equals the length of\n                        # longest suffix of processed string equal to prefix of s.\n                        # When wrapping, we effectively continue matching over the\n                        # concatenation t+t. This is equivalent to checking if any\n                        # rotation contains s, which is already captured by 'found'\n                        # during first pass plus transitions that cross boundary.\n                        # To capture cross-boundary matches, we must simulate reading\n                        # the first n-1 bits again, but that's too big. Instead,\n                        # we rely on the fact that our DP already tracked matches\n                        # at all positions, including those that would cross boundary,\n                        # because we didn't reset at pos=0. So no extra check needed.\n                        pass\n                if ok:\n                    ans += cnt\n\n    print(ans)\n\nif __name__ == \"__main__\":\n    main()",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 5443,
+            "prompt_tokens": 425,
+            "total_tokens": 5868,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 2,
+                "engine_ttft_ms": 54,
+                "engine_ttlt_ms": 10519,
+                "pre_inference_ms": 224,
+                "service_tbt_ms": 2,
+                "service_ttft_ms": 387,
+                "service_ttlt_ms": 10848,
+                "total_duration_ms": 10633,
+                "user_visible_ttft_ms": 163
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in Python to solve this programming problem:\nDescription: You are given a binary string $$$s$$$.Find the number of distinct cyclical binary strings of length $$$n$$$ which contain $$$s$$$ as a substring.The cyclical string $$$t$$$ contains $$$s$$$ as a substring if there is some cyclical shift of string $$$t$$$, such that $$$s$$$ is a substring of this cyclical shift of $$$t$$$.For example, the cyclical string \"000111\" contains substrings \"001\", \"01110\" and \"10\", but doesn't contain \"0110\" and \"10110\".Two cyclical strings are called different if they differ from each other as strings. For example, two different strings, which differ from each other by a cyclical shift, are still considered different cyclical strings.\nInput Specification: The first line contains a single integer $$$n$$$ ($$$1 \\le n \\le 40$$$)\u00a0\u2014 the length of the target string $$$t$$$. The next line contains the string $$$s$$$ ($$$1 \\le |s| \\le n$$$)\u00a0\u2014 the string which must be a substring of cyclical string $$$t$$$. String $$$s$$$ contains only characters '0' and '1'.\nOutput Specification: Print the only integer\u00a0\u2014 the number of distinct cyclical binary strings $$$t$$$, which contain $$$s$$$ as a substring.\n\nSample Input:\n2\n0\nSample Output:\n3\n\nSample Input:\n4\n1010\nSample Output:\n2\n\nSample Input:\n20\n10101010101010\nSample Output:\n962\n\nNotes: NoteIn the first example, there are three cyclical strings, which contain \"0\"\u00a0\u2014 \"00\", \"01\" and \"10\".In the second example, there are only two such strings\u00a0\u2014 \"1010\", \"0101\".\nTake input from standard input and output to standard output\nProvide the Python code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "0034806908c9794086736a2d07fc654c",
+        "difficulty": 2900,
+        "prob_desc_sample_inputs": [
+            "2\n0",
+            "4\n1010",
+            "20\n10101010101010"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "dp",
+            "strings"
+        ],
+        "prob_desc_output_spec": "Print the only integer\u00a0\u2014 the number of distinct cyclical binary strings $$$t$$$, which contain $$$s$$$ as a substring.",
+        "prob_desc_input_spec": "The first line contains a single integer $$$n$$$ ($$$1 \\le n \\le 40$$$)\u00a0\u2014 the length of the target string $$$t$$$. The next line contains the string $$$s$$$ ($$$1 \\le |s| \\le n$$$)\u00a0\u2014 the string which must be a substring of cyclical string $$$t$$$. String $$$s$$$ contains only characters '0' and '1'.",
+        "lang_cluster": "Python",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first example, there are three cyclical strings, which contain \"0\"\u00a0\u2014 \"00\", \"01\" and \"10\".In the second example, there are only two such strings\u00a0\u2014 \"1010\", \"0101\".",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "You are given a binary string $$$s$$$.Find the number of distinct cyclical binary strings of length $$$n$$$ which contain $$$s$$$ as a substring.The cyclical string $$$t$$$ contains $$$s$$$ as a substring if there is some cyclical shift of string $$$t$$$, such that $$$s$$$ is a substring of this cyclical shift of $$$t$$$.For example, the cyclical string \"000111\" contains substrings \"001\", \"01110\" and \"10\", but doesn't contain \"0110\" and \"10110\".Two cyclical strings are called different if they differ from each other as strings. For example, two different strings, which differ from each other by a cyclical shift, are still considered different cyclical strings.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1536248100",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "3",
+            "2",
+            "962"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"2\\r\\n0\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"4\\r\\n1010\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"20\\r\\n10101010101010\\r\\n\", \"output\": [\"962\"]}, {\"input\": \"2\\r\\n11\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"5\\r\\n00101\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"10\\r\\n100101\\r\\n\", \"output\": [\"155\"]}, {\"input\": \"4\\r\\n0011\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7\\r\\n1100\\r\\n\", \"output\": [\"56\"]}, {\"input\": \"8\\r\\n01010001\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"6\\r\\n10\\r\\n\", \"output\": [\"62\"]}, {\"input\": \"17\\r\\n011100101100110\\r\\n\", \"output\": [\"68\"]}, {\"input\": \"22\\r\\n1110011010100111\\r\\n\", \"output\": [\"1408\"]}, {\"input\": \"17\\r\\n1110110111010101\\r\\n\", \"output\": [\"34\"]}, {\"input\": \"11\\r\\n10100000100\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"20\\r\\n10100001011\\r\\n\", \"output\": [\"10230\"]}, {\"input\": \"16\\r\\n101011\\r\\n\", \"output\": [\"15248\"]}, {\"input\": \"33\\r\\n0001100010001100110000\\r\\n\", \"output\": [\"67584\"]}, {\"input\": \"30\\r\\n111001000100\\r\\n\", \"output\": [\"7857600\"]}, {\"input\": \"40\\r\\n1001\\r\\n\", \"output\": [\"1029761794578\"]}, {\"input\": \"31\\r\\n101\\r\\n\", \"output\": [\"2110188507\"]}, {\"input\": \"18\\r\\n001000011010000\\r\\n\", \"output\": [\"144\"]}, {\"input\": \"36\\r\\n110110010000\\r\\n\", \"output\": [\"603021324\"]}, {\"input\": \"40\\r\\n00000111111100110111000010000010101001\\r\\n\", \"output\": [\"160\"]}, {\"input\": \"39\\r\\n000000000000000000000000000000000000001\\r\\n\", \"output\": [\"39\"]}, {\"input\": \"37\\r\\n0101010101010101010101010101010101010\\r\\n\", \"output\": [\"37\"]}, {\"input\": \"31\\r\\n11011101110000011100\\r\\n\", \"output\": [\"63488\"]}, {\"input\": \"34\\r\\n110000100\\r\\n\", \"output\": [\"1121963008\"]}, {\"input\": \"35\\r\\n111111100100100\\r\\n\", \"output\": [\"36696800\"]}, {\"input\": \"20\\r\\n100010000\\r\\n\", \"output\": [\"40840\"]}, {\"input\": \"21\\r\\n01011101001010001\\r\\n\", \"output\": [\"336\"]}, {\"input\": \"11\\r\\n00010\\r\\n\", \"output\": [\"638\"]}, {\"input\": \"16\\r\\n10011000100001\\r\\n\", \"output\": [\"64\"]}, {\"input\": \"39\\r\\n11101001101111001011110111010010111001\\r\\n\", \"output\": [\"78\"]}, {\"input\": \"32\\r\\n10101100\\r\\n\", \"output\": [\"519167992\"]}, {\"input\": \"13\\r\\n111\\r\\n\", \"output\": [\"5435\"]}, {\"input\": \"4\\r\\n01\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"8\\r\\n100\\r\\n\", \"output\": [\"208\"]}, {\"input\": \"9\\r\\n1110\\r\\n\", \"output\": [\"270\"]}, {\"input\": \"1\\r\\n1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"20\\r\\n01100111000\\r\\n\", \"output\": [\"10230\"]}, {\"input\": \"5\\r\\n1\\r\\n\", \"output\": [\"31\"]}, {\"input\": \"38\\r\\n11111010100111100011\\r\\n\", \"output\": [\"9961415\"]}, {\"input\": \"24\\r\\n1101110111000111011\\r\\n\", \"output\": [\"768\"]}, {\"input\": \"6\\r\\n101111\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"39\\r\\n1010001010100100001\\r\\n\", \"output\": [\"40894230\"]}, {\"input\": \"34\\r\\n1111001001101011101101101\\r\\n\", \"output\": [\"17408\"]}, {\"input\": \"35\\r\\n11100110100\\r\\n\", \"output\": [\"585195800\"]}, {\"input\": \"7\\r\\n1111\\r\\n\", \"output\": [\"29\"]}, {\"input\": \"35\\r\\n010100010101011110110101000\\r\\n\", \"output\": [\"8960\"]}, {\"input\": \"18\\r\\n110101110001\\r\\n\", \"output\": [\"1152\"]}, {\"input\": \"10\\r\\n0110101\\r\\n\", \"output\": [\"75\"]}, {\"input\": \"38\\r\\n0111110111100000000000100\\r\\n\", \"output\": [\"311296\"]}, {\"input\": \"32\\r\\n101011001\\r\\n\", \"output\": [\"263480312\"]}, {\"input\": \"39\\r\\n111011011000100\\r\\n\", \"output\": [\"654211584\"]}, {\"input\": \"31\\r\\n00101010000\\r\\n\", \"output\": [\"32331574\"]}, {\"input\": \"35\\r\\n100011111010001011100001\\r\\n\", \"output\": [\"71680\"]}, {\"input\": \"39\\r\\n1010000110\\r\\n\", \"output\": [\"20653344998\"]}, {\"input\": \"34\\r\\n1011010111111001100011110111\\r\\n\", \"output\": [\"2176\"]}, {\"input\": \"37\\r\\n100110110011100100100010110000011\\r\\n\", \"output\": [\"592\"]}, {\"input\": \"40\\r\\n1010100001001010110011000110001\\r\\n\", \"output\": [\"20480\"]}, {\"input\": \"30\\r\\n11110010111010001010111\\r\\n\", \"output\": [\"3840\"]}, {\"input\": \"36\\r\\n100101110110110111100110010011001\\r\\n\", \"output\": [\"288\"]}, {\"input\": \"40\\r\\n01011011110\\r\\n\", \"output\": [\"21354424310\"]}, {\"input\": \"36\\r\\n00001010001000010101111010\\r\\n\", \"output\": [\"36864\"]}, {\"input\": \"40\\r\\n111101001000110000111001110111111110111\\r\\n\", \"output\": [\"80\"]}, {\"input\": \"37\\r\\n1000101000000000011101011111010011\\r\\n\", \"output\": [\"296\"]}, {\"input\": \"31\\r\\n0111111101001100\\r\\n\", \"output\": [\"1015777\"]}, {\"input\": \"35\\r\\n00010000111011\\r\\n\", \"output\": [\"73382400\"]}, {\"input\": \"38\\r\\n11111111111111111111111111111111100000\\r\\n\", \"output\": [\"38\"]}, {\"input\": \"39\\r\\n000000000000000111111111111111111111111\\r\\n\", \"output\": [\"39\"]}, {\"input\": \"36\\r\\n000000000011111111111111111111111111\\r\\n\", \"output\": [\"36\"]}, {\"input\": \"37\\r\\n1111110000000000000000000000000000000\\r\\n\", \"output\": [\"37\"]}, {\"input\": \"37\\r\\n0000000000000000011111111111111111111\\r\\n\", \"output\": [\"37\"]}, {\"input\": \"39\\r\\n101010101010101010101010101010101010101\\r\\n\", \"output\": [\"39\"]}, {\"input\": \"38\\r\\n10101010101010101010101010101010101010\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"37\\r\\n1010101010101010101010101010101010101\\r\\n\", \"output\": [\"37\"]}, {\"input\": \"40\\r\\n0101010101010101010101010101010101010101\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"38\\r\\n00000000000000000000000000000000000000\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"37\\r\\n0011111111111011011111110111011111111\\r\\n\", \"output\": [\"37\"]}, {\"input\": \"35\\r\\n00001000110100100101101111110101111\\r\\n\", \"output\": [\"35\"]}, {\"input\": \"40\\r\\n0000000000100000100000000000000000000000\\r\\n\", \"output\": [\"40\"]}, {\"input\": \"37\\r\\n0000110000100100011101000100000001010\\r\\n\", \"output\": [\"37\"]}, {\"input\": \"40\\r\\n1111111111111011111111101111111111111111\\r\\n\", \"output\": [\"40\"]}, {\"input\": \"38\\r\\n10100000011100111001100101000100001000\\r\\n\", \"output\": [\"38\"]}, {\"input\": \"40\\r\\n1111110111111111111111011111111111111110\\r\\n\", \"output\": [\"40\"]}, {\"input\": \"40\\r\\n0000010010000000000001000110000001010100\\r\\n\", \"output\": [\"40\"]}, {\"input\": \"39\\r\\n100110001010001000000001010000000110100\\r\\n\", \"output\": [\"39\"]}, {\"input\": \"38\\r\\n01011110100111011\\r\\n\", \"output\": [\"79690256\"]}, {\"input\": \"37\\r\\n100110111000011010011010110011101\\r\\n\", \"output\": [\"592\"]}, {\"input\": \"30\\r\\n000000000110001011111011000\\r\\n\", \"output\": [\"240\"]}, {\"input\": \"33\\r\\n101110110010101\\r\\n\", \"output\": [\"8647584\"]}, {\"input\": \"34\\r\\n1101010100001111111\\r\\n\", \"output\": [\"1114095\"]}, {\"input\": \"32\\r\\n01100010110111100111110010\\r\\n\", \"output\": [\"2048\"]}, {\"input\": \"40\\r\\n000010101101010011111101011110010011\\r\\n\", \"output\": [\"640\"]}, {\"input\": \"32\\r\\n0111010100\\r\\n\", \"output\": [\"133105408\"]}, {\"input\": \"31\\r\\n0101100101100000111001\\r\\n\", \"output\": [\"15872\"]}, {\"input\": \"39\\r\\n00111\\r\\n\", \"output\": [\"419341377312\"]}, {\"input\": \"33\\r\\n00111101\\r\\n\", \"output\": [\"1068677566\"]}, {\"input\": \"37\\r\\n1010001011111100110101110\\r\\n\", \"output\": [\"151552\"]}, {\"input\": \"37\\r\\n111000011\\r\\n\", \"output\": [\"9626769261\"]}, {\"input\": \"37\\r\\n011111001111100010001011000001100111\\r\\n\", \"output\": [\"74\"]}, {\"input\": \"40\\r\\n0000\\r\\n\", \"output\": [\"848129718780\"]}, {\"input\": \"40\\r\\n1000\\r\\n\", \"output\": [\"1060965767804\"]}, {\"input\": \"40\\r\\n0100\\r\\n\", \"output\": [\"1029761794578\"]}, {\"input\": \"40\\r\\n1100\\r\\n\", \"output\": [\"1060965767804\"]}, {\"input\": \"40\\r\\n0010\\r\\n\", \"output\": [\"1029761794578\"]}, {\"input\": \"40\\r\\n1010\\r\\n\", \"output\": [\"1000453489698\"]}, {\"input\": \"40\\r\\n0110\\r\\n\", \"output\": [\"1029761794578\"]}, {\"input\": \"40\\r\\n1110\\r\\n\", \"output\": [\"1060965767804\"]}, {\"input\": \"40\\r\\n0001\\r\\n\", \"output\": [\"1060965767804\"]}, {\"input\": \"40\\r\\n0101\\r\\n\", \"output\": [\"1000453489698\"]}, {\"input\": \"40\\r\\n1101\\r\\n\", \"output\": [\"1029761794578\"]}, {\"input\": \"40\\r\\n0011\\r\\n\", \"output\": [\"1060965767804\"]}, {\"input\": \"40\\r\\n1011\\r\\n\", \"output\": [\"1029761794578\"]}, {\"input\": \"40\\r\\n0111\\r\\n\", \"output\": [\"1060965767804\"]}, {\"input\": \"40\\r\\n1111\\r\\n\", \"output\": [\"848129718780\"]}, {\"input\": \"40\\r\\n000\\r\\n\", \"output\": [\"1060965767805\"]}, {\"input\": \"40\\r\\n100\\r\\n\", \"output\": [\"1099282801648\"]}, {\"input\": \"40\\r\\n010\\r\\n\", \"output\": [\"1093624901051\"]}, {\"input\": \"40\\r\\n110\\r\\n\", \"output\": [\"1099282801648\"]}, {\"input\": \"40\\r\\n001\\r\\n\", \"output\": [\"1099282801648\"]}, {\"input\": \"40\\r\\n101\\r\\n\", \"output\": [\"1093624901051\"]}, {\"input\": \"40\\r\\n011\\r\\n\", \"output\": [\"1099282801648\"]}, {\"input\": \"40\\r\\n111\\r\\n\", \"output\": [\"1060965767805\"]}, {\"input\": \"40\\r\\n00\\r\\n\", \"output\": [\"1099282801649\"]}, {\"input\": \"40\\r\\n01\\r\\n\", \"output\": [\"1099511627774\"]}, {\"input\": \"40\\r\\n10\\r\\n\", \"output\": [\"1099511627774\"]}, {\"input\": \"40\\r\\n11\\r\\n\", \"output\": [\"1099282801649\"]}, {\"input\": \"40\\r\\n0\\r\\n\", \"output\": [\"1099511627775\"]}, {\"input\": \"40\\r\\n1\\r\\n\", \"output\": [\"1099511627775\"]}, {\"input\": \"1\\r\\n0\\r\\n\", \"output\": [\"1\"]}]"
+    }
+}

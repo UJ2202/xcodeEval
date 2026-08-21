@@ -1,0 +1,138 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-b0b06246fd55fa81",
+        "created": 1787214576,
+        "model": "nvidia/nemotron-3-ultra-550b-a55b",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.26.0-tp8-6b7faac2",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "```cpp\n#include <bits/stdc++.h>\nusing namespace std;\n\nusing int64 = long long;\nconst int MOD = 1000000007;\n\nint64 mod_pow(int64 a, int64 e = MOD - 2) {\n    int64 r = 1;\n    while (e) {\n        if (e & 1) r = r * a % MOD;\n        a = a * a % MOD;\n        e >>= 1;\n    }\n    return r;\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    \n    int64 n;\n    int k;\n    if (!(cin >> n >> k)) return 0;\n    \n    // Factorize n\n    vector<pair<int64, int>> factors;\n    int64 temp = n;\n    for (int64 p = 2; p * p <= temp; ++p) {\n        if (temp % p == 0) {\n            int cnt = 0;\n            while (temp % p == 0) {\n                temp /= p;\n                ++cnt;\n            }\n            factors.emplace_back(p, cnt);\n        }\n    }\n    if (temp > 1) factors.emplace_back(temp, 1);\n    \n    int64 ans = 1;\n    \n    for (auto [prime, exp] : factors) {\n        int e = exp;\n        vector<vector<int64>> dp(k + 1, vector<int64>(e + 1));\n        // dp[step][current_exponent]\n        // base: step 0, we start at exponent 'e', value = p^e\n        for (int x = 0; x <= e; ++x) {\n            dp[0][x] = mod_pow(prime, x);\n        }\n        // Precompute modular inverses of 1..(e+1)\n        vector<int64> inv(e + 2);\n        for (int i = 1; i <= e + 1; ++i) inv[i] = mod_pow(i);\n        \n        for (int step = 1; step <= k; ++step) {\n            vector<int64> prefix(e + 1);\n            prefix[0] = dp[step - 1][0];\n            for (int x = 1; x <= e; ++x) {\n                prefix[x] = (prefix[x - 1] + dp[step - 1][x]) % MOD;\n            }\n            for (int x = 0; x <= e; ++x) {\n                dp[step][x] = prefix[x] * inv[x + 1] % MOD;\n            }\n        }\n        ans = ans * dp[k][e] % MOD;\n    }\n    \n    cout << ans << \"\\n\";\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nconst long long MOD = 1000000007LL;\n\nlong long modpow(long long a, long long e) {\n    long long res = 1 % MOD;\n    a %= MOD;\n    while (e > 0) {\n        if (e & 1) res = res * a % MOD;\n        a = a * a % MOD;\n        e >>= 1;\n    }\n    return res;\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    \n    long long n;\n    int k;\n    if(!(cin >> n >> k)) return 0;\n\n    // 1. Factorize n\n    vector<pair<long long, int>> factors;\n    long long temp_n = n;\n    for (long long p = 2; p * p <= temp_n; ++p) {\n        if (temp_n % p == 0) {\n            int cnt = 0;\n            while (temp_n % p == 0) {\n                temp_n /= p;\n                cnt++;\n            }\n            factors.push_back({p, cnt});\n        }\n    }\n    if (temp_n > 1) {\n        factors.push_back({temp_n, 1});\n    }\n\n    // 2. Precompute inverses up to max_e + 1 (max exponent is <= 50)\n    int max_e = 0;\n    for (auto &f : factors) max_e = max(max_e, f.second);\n    vector<long long> inv(max_e + 2);\n    for (int i = 1; i <= max_e + 1; ++i) {\n        inv[i] = modpow(i, MOD - 2);\n    }\n\n    long long ans = 1;\n\n    // 3. Process each prime factor independently\n    for (auto &f : factors) {\n        long long p = f.first;\n        int e = f.second; // max exponent\n        \n        // dp[j] = expected value of p^j after current number of steps? \n        // No, dp[j] is the probability of being at exponent j?\n        // Let's define val[j] = p^j mod MOD.\n        // The transition for exponents: from e, go to any x in [0, e] uniformly.\n        // Expected value of p^x. \n        // Let F_k(e) be expected value of p^X after k steps starting from exponent e.\n        // F_0(e) = p^e.\n        // F_k(e) = (1/(e+1)) * sum_{x=0}^e F_{k-1}(x).\n        \n        vector<long long> dp(e + 1);\n        // Base case: step 0\n        long long p_mod = p % MOD;\n        long long cur_pow = 1;\n        for (int j = 0; j <= e; ++j) {\n            dp[j] = cur_pow;\n            cur_pow = cur_pow * p_mod % MOD;\n        }\n\n        // Iterate k times\n        for (int step = 0; step < k; ++step) {\n            vector<long long> prefix(e + 1);\n            prefix[0] = dp[0];\n            for (int j = 1; j <= e; ++j) {\n                prefix[j] = (prefix[j-1] + dp[j]) % MOD;\n            }\n            vector<long long> new_dp(e + 1);\n            for (int j = 0; j <= e; ++j) {\n                // new_dp[j] = average of dp[0..j]\n                new_dp[j] = prefix[j] * inv[j + 1] % MOD;\n            }\n            dp.swap(new_dp);\n        }\n        \n        // The contribution of this prime is dp[e] (starting from exponent e)\n        ans = ans * dp[e] % MOD;\n    }\n\n    cout << ans << \"\\n\";\n    return 0;\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "```cpp\n#include <iostream>\n#include <vector>\n#include <map>\n#include <algorithm>\nusing namespace std;\n\nconst long long MOD = 1000000007LL;\n\nlong long modpow(long long a, long long e) {\n    long long res = 1 % MOD;\n    a %= MOD;\n    while (e > 0) {\n        if (e & 1) res = res * a % MOD;\n        a = a * a % MOD;\n        e >>= 1;\n    }\n    return res;\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    \n    long long n;\n    int k;\n    if (!(cin >> n >> k)) return 0;\n    \n    // Factorize n\n    vector<pair<long long, int>> factors;\n    long long temp = n;\n    for (long long p = 2; p * p <= temp; ++p) {\n        if (temp % p == 0) {\n            int cnt = 0;\n            while (temp % p == 0) {\n                temp /= p;\n                ++cnt;\n            }\n            factors.emplace_back(p, cnt);\n        }\n    }\n    if (temp > 1) factors.emplace_back(temp, 1);\n    \n    long long ans = 1;\n    for (auto [p, e] : factors) {\n        // dp[i] = expected value of p^i after current steps? Actually we track expected value of the exponent part.\n        // We need expected value of p^x after k steps starting from x = e.\n        // The process: from current exponent x, choose uniformly a divisor of p^x, i.e., choose y uniformly from 0..x.\n        // So new exponent is uniformly random in [0, x].\n        // We want E[p^{X_k}].\n        // We can compute DP over steps for the distribution of exponent, or directly compute expected value.\n        // Let dp[t][i] = probability that exponent is i after t steps.\n        // But k <= 10000, e <= log_2(1e15) ~ 50, so we can do DP on exponent values.\n        \n        vector<long long> dp(e + 1, 0);\n        dp[e] = 1;\n        for (int step = 0; step < k; ++step) {\n            vector<long long> ndp(e + 1, 0);\n            for (int i = 0; i <= e; ++i) {\n                if (dp[i] == 0) continue;\n                // from i, choose uniformly among 0..i\n                long long inv = modpow(i + 1, MOD - 2);\n                for (int j = 0; j <= i; ++j) {\n                    ndp[j] = (ndp[j] + dp[i] * inv) % MOD;\n                }\n            }\n            dp.swap(ndp);\n        }\n        long long exp_val = 0;\n        long long p_pow = 1;\n        for (int i = 0; i <= e; ++i) {\n            exp_val = (exp_val + p_pow * dp[i]) % MOD;\n            p_pow = p_pow * (p % MOD) % MOD;\n        }\n        ans = ans * exp_val % MOD;\n    }\n    \n    cout << ans << \"\\n\";\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "```cpp\n#include <bits/stdc++.h>\nusing namespace std;\ntypedef long long ll;\nconst int MOD = 1000000007;\n\nll modpow(ll a, ll e) {\n    ll res = 1;\n    while (e) {\n        if (e & 1) res = res * a % MOD;\n        a = a * a % MOD;\n        e >>= 1;\n    }\n    return res;\n}\nll modinv(ll a) {\n    return modpow(a, MOD - 2);\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    \n    long long n;\n    int k;\n    if (!(cin >> n >> k)) return 0;\n\n    vector<pair<ll, int>> fac;\n    ll temp = n;\n    for (ll p = 2; p * p <= temp; ++p) {\n        if (temp % p == 0) {\n            int cnt = 0;\n            while (temp % p == 0) {\n                temp /= p;\n                ++cnt;\n            }\n            fac.emplace_back(p, cnt);\n        }\n    }\n    if (temp > 1) fac.emplace_back(temp, 1);\n\n    ll ans = 1;\n    for (auto [p, e] : fac) {\n        vector<vector<ll>> dp(k + 1, vector<ll>(e + 1, 0));\n        // initialize dp[0][j] = p^j\n        ll pw = 1;\n        for (int j = 0; j <= e; ++j) {\n            dp[0][j] = pw;\n            pw = pw * p % MOD;\n        }\n        // Precompute modular inverses of 1..(e+1)\n        vector<ll> inv(e + 2);\n        for (int i = 1; i <= e + 1; ++i) inv[i] = modinv(i);\n\n        for (int step = 1; step <= k; ++step) {\n            vector<ll> pref(e + 1, 0);\n            pref[0] = dp[step - 1][0];\n            for (int j = 1; j <= e; ++j) {\n                pref[j] = (pref[j - 1] + dp[step - 1][j]) % MOD;\n            }\n            for (int j = 0; j <= e; ++j) {\n                dp[step][j] = pref[j] * inv[j + 1] % MOD;\n            }\n        }\n        ans = ans * dp[k][e] % MOD;\n    }\n    cout << ans << \"\\n\";\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "```cpp\n#include <bits/stdc++.h>\nusing namespace std;\n\nconst long long MOD = 1000000007LL;\n\nlong long mod_pow(long long a, long long e = MOD - 2) {\n    long long r = 1;\n    a %= MOD;\n    while (e) {\n        if (e & 1) r = r * a % MOD;\n        a = a * a % MOD;\n        e >>= 1;\n    }\n    return r;\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    \n    long long n;\n    int k;\n    if (!(cin >> n >> k)) return 0;\n\n    // Factorize n\n    vector<pair<long long, int>> factors;\n    long long temp = n;\n    for (long long p = 2; p * p <= temp; ++p) {\n        if (temp % p == 0) {\n            int cnt = 0;\n            while (temp % p == 0) {\n                temp /= p;\n                ++cnt;\n            }\n            factors.emplace_back(p, cnt);\n        }\n    }\n    if (temp > 1) {\n        factors.emplace_back(temp, 1);\n    }\n\n    long long ans = 1;\n    for (auto &fac : factors) {\n        long long p = fac.first;\n        int E = fac.second;\n        \n        // dp[e] = expected value of p^e after current step\n        vector<long long> dp(E + 1);\n        long long p_mod = p % MOD;\n        long long cur = 1;\n        for (int e = 0; e <= E; ++e) {\n            dp[e] = cur;\n            cur = cur * p_mod % MOD;\n        }\n\n        // Precompute modular inverses\n        vector<long long> inv(E + 2);\n        for (int i = 1; i <= E + 1; ++i) {\n            inv[i] = mod_pow(i);\n        }\n\n        for (int step = 0; step < k; ++step) {\n            // prefix sums of dp\n            vector<long long> pref(E + 1);\n            pref[0] = dp[0];\n            for (int e = 1; e <= E; ++e) {\n                pref[e] = (pref[e - 1] + dp[e]) % MOD;\n            }\n            // new dp values\n            vector<long long> ndp(E + 1);\n            for (int e = 0; e <= E; ++e) {\n                ndp[e] = pref[e] * inv[e + 1] % MOD;\n            }\n            dp.swap(ndp);\n        }\n\n        ans = ans * dp[E] % MOD;\n    }\n\n    cout << ans << '\\n';\n    return 0;\n}\n```",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null,
+                        "reasoning": null
+                    }
+                },
+                "provider_specific_fields": {
+                    "stop_reason": null,
+                    "token_ids": null,
+                    "routed_experts": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 3436,
+            "prompt_tokens": 592,
+            "total_tokens": 4028
+        },
+        "prompt": "Write a program in C++ to solve this programming problem:\nDescription: Makoto has a big blackboard with a positive integer $$$n$$$ written on it. He will perform the following action exactly $$$k$$$ times:Suppose the number currently written on the blackboard is $$$v$$$. He will randomly pick one of the divisors of $$$v$$$ (possibly $$$1$$$ and $$$v$$$) and replace $$$v$$$ with this divisor. As Makoto uses his famous random number generator (RNG) and as he always uses $$$58$$$ as his generator seed, each divisor is guaranteed to be chosen with equal probability.He now wonders what is the expected value of the number written on the blackboard after $$$k$$$ steps.It can be shown that this value can be represented as $$$\\frac{P}{Q}$$$ where $$$P$$$ and $$$Q$$$ are coprime integers and $$$Q \\not\\equiv 0 \\pmod{10^9+7}$$$. Print the value of $$$P \\cdot Q^{-1}$$$ modulo $$$10^9+7$$$.\nInput Specification: The only line of the input contains two integers $$$n$$$ and $$$k$$$ ($$$1 \\leq n \\leq 10^{15}$$$, $$$1 \\leq k \\leq 10^4$$$).\nOutput Specification: Print a single integer \u2014 the expected value of the number on the blackboard after $$$k$$$ steps as $$$P \\cdot Q^{-1} \\pmod{10^9+7}$$$ for $$$P$$$, $$$Q$$$ defined above.\n\nSample Input:\n6 1\nSample Output:\n3\n\nSample Input:\n6 2\nSample Output:\n875000008\n\nSample Input:\n60 5\nSample Output:\n237178099\n\nNotes: NoteIn the first example, after one step, the number written on the blackboard is $$$1$$$, $$$2$$$, $$$3$$$ or $$$6$$$ \u2014 each occurring with equal probability. Hence, the answer is $$$\\frac{1+2+3+6}{4}=3$$$.In the second example, the answer is equal to $$$1 \\cdot \\frac{9}{16}+2 \\cdot \\frac{3}{16}+3 \\cdot \\frac{3}{16}+6 \\cdot \\frac{1}{16}=\\frac{15}{8}$$$.\nTake input from standard input and output to standard output\nProvide the C++ code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "dc466d9c24b7dcb37c0e99337b4124d2",
+        "difficulty": 2200,
+        "prob_desc_sample_inputs": [
+            "6 1",
+            "6 2",
+            "60 5"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "math",
+            "number theory",
+            "probabilities",
+            "dp"
+        ],
+        "prob_desc_output_spec": "Print a single integer \u2014 the expected value of the number on the blackboard after $$$k$$$ steps as $$$P \\cdot Q^{-1} \\pmod{10^9+7}$$$ for $$$P$$$, $$$Q$$$ defined above.",
+        "prob_desc_input_spec": "The only line of the input contains two integers $$$n$$$ and $$$k$$$ ($$$1 \\leq n \\leq 10^{15}$$$, $$$1 \\leq k \\leq 10^4$$$).",
+        "lang_cluster": "C++",
+        "source_code": "",
+        "prob_desc_notes": "NoteIn the first example, after one step, the number written on the blackboard is $$$1$$$, $$$2$$$, $$$3$$$ or $$$6$$$ \u2014 each occurring with equal probability. Hence, the answer is $$$\\frac{1+2+3+6}{4}=3$$$.In the second example, the answer is equal to $$$1 \\cdot \\frac{9}{16}+2 \\cdot \\frac{3}{16}+3 \\cdot \\frac{3}{16}+6 \\cdot \\frac{1}{16}=\\frac{15}{8}$$$.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Makoto has a big blackboard with a positive integer $$$n$$$ written on it. He will perform the following action exactly $$$k$$$ times:Suppose the number currently written on the blackboard is $$$v$$$. He will randomly pick one of the divisors of $$$v$$$ (possibly $$$1$$$ and $$$v$$$) and replace $$$v$$$ with this divisor. As Makoto uses his famous random number generator (RNG) and as he always uses $$$58$$$ as his generator seed, each divisor is guaranteed to be chosen with equal probability.He now wonders what is the expected value of the number written on the blackboard after $$$k$$$ steps.It can be shown that this value can be represented as $$$\\frac{P}{Q}$$$ where $$$P$$$ and $$$Q$$$ are coprime integers and $$$Q \\not\\equiv 0 \\pmod{10^9+7}$$$. Print the value of $$$P \\cdot Q^{-1}$$$ modulo $$$10^9+7$$$.",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1546613100",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "3",
+            "875000008",
+            "237178099"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"6 1\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"6 2\\r\\n\", \"output\": [\"875000008\"]}, {\"input\": \"60 5\\r\\n\", \"output\": [\"237178099\"]}, {\"input\": \"2 4\\r\\n\", \"output\": [\"562500005\"]}, {\"input\": \"12 3\\r\\n\", \"output\": [\"775462970\"]}, {\"input\": \"55 5\\r\\n\", \"output\": [\"789062507\"]}, {\"input\": \"935 9\\r\\n\", \"output\": [\"658825880\"]}, {\"input\": \"1 10000\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"120 1\\r\\n\", \"output\": [\"500000026\"]}, {\"input\": \"1000000000000000 10000\\r\\n\", \"output\": [\"215514159\"]}, {\"input\": \"671058194037157 8673\\r\\n\", \"output\": [\"298638658\"]}, {\"input\": \"900018062553298 4801\\r\\n\", \"output\": [\"345432320\"]}, {\"input\": \"128973636102142 5521\\r\\n\", \"output\": [\"99152648\"]}, {\"input\": \"999999999999993 8123\\r\\n\", \"output\": [\"868053217\"]}, {\"input\": \"260858031033600 9696\\r\\n\", \"output\": [\"692221824\"]}, {\"input\": \"562949953421312 9779\\r\\n\", \"output\": [\"98057767\"]}, {\"input\": \"357933504618282 1649\\r\\n\", \"output\": [\"197730476\"]}, {\"input\": \"586884783199831 5073\\r\\n\", \"output\": [\"883678085\"]}, {\"input\": \"187877211524483 8497\\r\\n\", \"output\": [\"562808746\"]}, {\"input\": \"866421317361600 10000\\r\\n\", \"output\": [\"82212846\"]}, {\"input\": \"782574093100800 9999\\r\\n\", \"output\": [\"293217028\"]}, {\"input\": \"577614211574400 9998\\r\\n\", \"output\": [\"681915605\"]}, {\"input\": \"65214507758400 9997\\r\\n\", \"output\": [\"677959603\"]}, {\"input\": \"963761198400 9996\\r\\n\", \"output\": [\"669401143\"]}, {\"input\": \"5587021440 9995\\r\\n\", \"output\": [\"360750834\"]}, {\"input\": \"17297280 9994\\r\\n\", \"output\": [\"94383698\"]}, {\"input\": \"7560 9993\\r\\n\", \"output\": [\"412712546\"]}, {\"input\": \"120 9992\\r\\n\", \"output\": [\"167656619\"]}, {\"input\": \"1 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"609359740010496 1337\\r\\n\", \"output\": [\"263703037\"]}, {\"input\": \"912750790581630 9876\\r\\n\", \"output\": [\"291557094\"]}, {\"input\": \"617673396283947 7777\\r\\n\", \"output\": [\"488769014\"]}, {\"input\": \"890604418498560 9119\\r\\n\", \"output\": [\"185509970\"]}, {\"input\": \"524288004718592 8888\\r\\n\", \"output\": [\"851726115\"]}, {\"input\": \"999999999999989 8998\\r\\n\", \"output\": [\"391873310\"]}, {\"input\": \"999999999999999 8123\\r\\n\", \"output\": [\"41003922\"]}, {\"input\": \"817237005720659 4233\\r\\n\", \"output\": [\"533017938\"]}, {\"input\": \"1000000007 1\\r\\n\", \"output\": [\"500000004\"]}, {\"input\": \"1000000007 2\\r\\n\", \"output\": [\"750000006\"]}, {\"input\": \"999999999999970 8998\\r\\n\", \"output\": [\"939941657\"]}, {\"input\": \"900000060000001 8123\\r\\n\", \"output\": [\"865356488\"]}, {\"input\": \"999011322032079 4233\\r\\n\", \"output\": [\"546309400\"]}, {\"input\": \"999005327998113 9119\\r\\n\", \"output\": [\"106270540\"]}, {\"input\": \"900000720000023 9876\\r\\n\", \"output\": [\"511266473\"]}]"
+    }
+}

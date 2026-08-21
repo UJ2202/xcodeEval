@@ -1,0 +1,353 @@
+{
+    "oai_response": {
+        "id": "chatcmpl-EEHc55GRYwiC4WLNI1TlBJEcIk0Kj",
+        "created": 1787073005,
+        "model": "gpt4o",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n, m;\n    if (!(cin >> n >> m)) return 0;\n\n    vector<pair<int,int>> edges(m);\n    for (int i = 0; i < m; ++i) {\n        int a, b;\n        cin >> a >> b;\n        --a; --b;\n        edges[i] = {a, b};\n    }\n\n    // Precompute all 21 domino types (a <= b, 1..6)\n    vector<pair<int,int>> dom;\n    for (int a = 1; a <= 6; ++a)\n        for (int b = a; b <= 6; ++b)\n            dom.push_back({a, b});\n    int D = dom.size(); // 21\n\n    int best = 0;\n\n    // For each assignment of labels (1..6) to vertices\n    int totalAssignments = 1;\n    for (int i = 0; i < n; ++i) totalAssignments *= 6;\n\n    for (int mask = 0; mask < totalAssignments; ++mask) {\n        int tmp = mask;\n        int label[7];\n        for (int i = 0; i < n; ++i) {\n            label[i] = (tmp % 6) + 1;\n            tmp /= 6;\n        }\n\n        // Build list of candidate domino indices for each edge\n        vector<vector<int>> edgeDom(m);\n        bool ok = true;\n        for (int i = 0; i < m; ++i) {\n            int u = edges[i].first;\n            int v = edges[i].second;\n            int lu = label[u], lv = label[v];\n            bool found = false;\n            for (int d = 0; d < D; ++d) {\n                int a = dom[d].first, b = dom[d].second;\n                if ((a == lu && b == lv) || (a == lv && b == lu)) {\n                    edgeDom[i].push_back(d);\n                    found = true;\n                }\n            }\n            if (!found) {\n                ok = false;\n                break;\n            }\n        }\n        if (!ok) continue;\n\n        // DP over edges with bitmask of used dominoes\n        int maxMask = 1 << D;\n        const int NEG_INF = -1000000;\n        vector<int> dp(maxMask, NEG_INF), ndp(maxMask, NEG_INF);\n        dp[0] = 0;\n\n        for (int i = 0; i < m; ++i) {\n            fill(ndp.begin(), ndp.end(), NEG_INF);\n            for (int maskD = 0; maskD < maxMask; ++maskD) {\n                if (dp[maskD] < 0) continue;\n                // skip this edge\n                ndp[maskD] = max(ndp[maskD], dp[maskD]);\n                // try placing a domino\n                for (int d : edgeDom[i]) {\n                    if (!(maskD & (1 << d))) {\n                        int nmask = maskD | (1 << d);\n                        ndp[nmask] = max(ndp[nmask], dp[maskD] + 1);\n                    }\n                }\n            }\n            dp.swap(ndp);\n        }\n\n        int curBest = 0;\n        for (int maskD = 0; maskD < maxMask; ++maskD)\n            curBest = max(curBest, dp[maskD]);\n        best = max(best, curBest);\n    }\n\n    cout << best << '\\n';\n    return 0;\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 1,
+                "message": {
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n, m;\n    if (!(cin >> n >> m)) return 0;\n    vector<pair<int,int>> edges(m);\n    for (int i = 0; i < m; ++i) {\n        int a, b;\n        cin >> a >> b;\n        --a; --b;\n        edges[i] = {a, b};\n    }\n\n    int best = 0;\n\n    // Precompute all domino types (a,b) with 1<=a<=b<=6\n    vector<pair<int,int>> dom;\n    for (int a = 1; a <= 6; ++a)\n        for (int b = a; b <= 6; ++b)\n            dom.push_back({a, b});\n    int D = dom.size(); // 21\n\n    // For each assignment of colors (1..6) to vertices\n    int maxMask = 1;\n    for (int i = 0; i < n; ++i) maxMask *= 6; // 6^n\n\n    for (int mask = 0; mask < maxMask; ++mask) {\n        int tmp = mask;\n        int color[7];\n        for (int i = 0; i < n; ++i) {\n            color[i] = (tmp % 6) + 1;\n            tmp /= 6;\n        }\n\n        // For each edge, determine required domino type (c[u], c[v]) sorted\n        vector<int> edgeType(m);\n        for (int i = 0; i < m; ++i) {\n            int u = edges[i].first;\n            int v = edges[i].second;\n            int a = color[u], b = color[v];\n            if (a > b) swap(a, b);\n            // map (a,b) to index in dom\n            int idx = 0;\n            for (int j = 0; j < D; ++j) {\n                if (dom[j].first == a && dom[j].second == b) {\n                    idx = j;\n                    break;\n                }\n            }\n            edgeType[i] = idx;\n        }\n\n        // Count edges per domino type\n        int cnt[21] = {0};\n        for (int i = 0; i < m; ++i) cnt[edgeType[i]]++;\n\n        int used = 0;\n        for (int i = 0; i < D; ++i)\n            if (cnt[i] > 0) used++;\n\n        if (used > best) best = used;\n    }\n\n    cout << best << '\\n';\n    return 0;\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 2,
+                "message": {
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n, m;\n    if (!(cin >> n >> m)) return 0;\n\n    vector<pair<int,int>> edges(m);\n    for (int i = 0; i < m; ++i) {\n        int a, b;\n        cin >> a >> b;\n        --a; --b;\n        edges[i] = {a, b};\n    }\n\n    // Precompute all 21 domino types (a,b) with 1<=a<=b<=6\n    vector<pair<int,int>> dom;\n    for (int a = 1; a <= 6; ++a)\n        for (int b = a; b <= 6; ++b)\n            dom.push_back({a, b});\n    int D = dom.size(); // 21\n\n    int best = 0;\n\n    // For each assignment of labels 1..6 to vertices (0..n-1)\n    // labels[v] in [1..6]\n    vector<int> labels(n);\n    int totalAssignments = 1;\n    for (int i = 0; i < n; ++i) totalAssignments *= 6;\n\n    for (int mask = 0; mask < totalAssignments; ++mask) {\n        int tmp = mask;\n        for (int v = 0; v < n; ++v) {\n            labels[v] = (tmp % 6) + 1;\n            tmp /= 6;\n        }\n\n        // For this labeling, build list of usable domino types and edges\n        // A domino (a,b) can be used on an edge (u,v) if {labels[u],labels[v]} = {a,b}\n        // We will build bipartite graph: left = domino types [0..D-1], right = edges [0..m-1]\n        // edge between d and e if compatible.\n        vector<vector<int>> adj(D);\n        for (int e = 0; e < m; ++e) {\n            int u = edges[e].first;\n            int v = edges[e].second;\n            int x = labels[u], y = labels[v];\n            if (x > y) swap(x, y);\n            // find domino index for (x,y)\n            // since dom is small, linear search is fine\n            for (int d = 0; d < D; ++d) {\n                if (dom[d].first == x && dom[d].second == y) {\n                    adj[d].push_back(e);\n                    break;\n                }\n            }\n        }\n\n        // Maximum bipartite matching: left size D, right size m\n        vector<int> matchR(m, -1);\n        int matchCount = 0;\n\n        function<bool(int, vector<int>&)> dfs = [&](int u, vector<int>& vis) {\n            for (int v : adj[u]) {\n                if (vis[v]) continue;\n                vis[v] = 1;\n                if (matchR[v] == -1 || dfs(matchR[v], vis)) {\n                    matchR[v] = u;\n                    return true;\n                }\n            }\n            return false;\n        };\n\n        for (int u = 0; u < D; ++u) {\n            vector<int> vis(m, 0);\n            if (dfs(u, vis)) ++matchCount;\n        }\n\n        if (matchCount > best) best = matchCount;\n    }\n\n    cout << best << '\\n';\n    return 0;\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 3,
+                "message": {
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    \n    int n, m;\n    if (!(cin >> n >> m)) return 0;\n    vector<pair<int,int>> edges(m);\n    for (int i = 0; i < m; ++i) {\n        int a, b;\n        cin >> a >> b;\n        --a; --b;\n        edges[i] = {a, b};\n    }\n\n    // Precompute all 21 domino types (a,b) with 1<=a<=b<=6\n    vector<pair<int,int>> dom;\n    for (int a = 1; a <= 6; ++a)\n        for (int b = a; b <= 6; ++b)\n            dom.push_back({a, b});\n    int D = dom.size(); // 21\n\n    int best = 0;\n\n    // For each assignment of dot value (0..6) to each vertex\n    // 0 means no domino incident, 1..6 is dot count\n    int totalStates = 1;\n    for (int i = 0; i < n; ++i) totalStates *= 7;\n\n    for (int mask = 0; mask < totalStates; ++mask) {\n        int tmp = mask;\n        int vdot[7];\n        for (int i = 0; i < n; ++i) {\n            vdot[i] = tmp % 7;\n            tmp /= 7;\n        }\n\n        // Build bipartite graph between edges and domino types\n        // Left side: edges 0..m-1\n        // Right side: domino types 0..D-1\n        vector<vector<int>> g(m);\n        for (int i = 0; i < m; ++i) {\n            int u = edges[i].first;\n            int v = edges[i].second;\n            int du = vdot[u];\n            int dv = vdot[v];\n            if (du == 0 || dv == 0) continue;\n            for (int j = 0; j < D; ++j) {\n                int a = dom[j].first;\n                int b = dom[j].second;\n                if ((a == du && b == dv) || (a == dv && b == du))\n                    g[i].push_back(j);\n            }\n        }\n\n        // Maximum bipartite matching: edges -> domino types\n        vector<int> matchR(D, -1);\n        int matchCount = 0;\n\n        function<bool(int, vector<int>&)> dfs = [&](int u, vector<int>& seen) {\n            for (int v : g[u]) {\n                if (seen[v]) continue;\n                seen[v] = 1;\n                if (matchR[v] == -1 || dfs(matchR[v], seen)) {\n                    matchR[v] = u;\n                    return true;\n                }\n            }\n            return false;\n        };\n\n        for (int i = 0; i < m; ++i) {\n            vector<int> seen(D, 0);\n            if (dfs(i, seen)) ++matchCount;\n        }\n\n        if (matchCount > best) best = matchCount;\n    }\n\n    cout << best << '\\n';\n    return 0;\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 4,
+                "message": {
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n, m;\n    if (!(cin >> n >> m)) return 0;\n\n    vector<pair<int,int>> edges(m);\n    for (int i = 0; i < m; ++i) {\n        int a, b;\n        cin >> a >> b;\n        --a; --b;\n        edges[i] = {a, b};\n    }\n\n    // Precompute all 21 domino types (a,b) with 1<=a<=b<=6\n    vector<pair<int,int>> dom;\n    for (int a = 1; a <= 6; ++a)\n        for (int b = a; b <= 6; ++b)\n            dom.push_back({a, b});\n    int D = dom.size(); // 21\n\n    int best = 0;\n\n    // For each assignment of dot count to vertices: 7^n possibilities\n    int maxState = 1;\n    for (int i = 0; i < n; ++i) maxState *= 7; // 7^n\n\n    for (int mask = 0; mask < maxState; ++mask) {\n        // decode base-7 digits: 0..6 -> dot count 0..6 (0 means no domino incident)\n        int tmp = mask;\n        int dots[7];\n        for (int v = 0; v < n; ++v) {\n            dots[v] = tmp % 7;\n            tmp /= 7;\n        }\n\n        // Build list of candidate edges that can host a domino under this assignment\n        // and the required (a,b) for that edge\n        vector<pair<int,int>> need; // (a,b) with a<=b\n        need.reserve(m);\n        for (auto &e : edges) {\n            int u = e.first, v = e.second;\n            int du = dots[u], dv = dots[v];\n            if (du == 0 || dv == 0) continue; // no domino can be placed\n            int a = du, b = dv;\n            if (a > b) swap(a, b);\n            need.push_back({a, b});\n        }\n        if (need.empty()) continue;\n\n        // For each domino type, count how many edges need it\n        int cnt[7][7];\n        memset(cnt, 0, sizeof(cnt));\n        for (auto &p : need) cnt[p.first][p.second]++;\n\n        // Sum min(count,1) over all types (since only one domino per type)\n        int used = 0;\n        for (int a = 1; a <= 6; ++a)\n            for (int b = a; b <= 6; ++b)\n                if (cnt[a][b] > 0) used++;\n\n        if (used > best) best = used;\n    }\n\n    cout << best << '\\n';\n    return 0;\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 5,
+                "message": {
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n, m;\n    if (!(cin >> n >> m)) return 0;\n\n    vector<pair<int,int>> edges(m);\n    for (int i = 0; i < m; ++i) {\n        int a, b;\n        cin >> a >> b;\n        --a; --b;\n        edges[i] = {a, b};\n    }\n\n    // Precompute all 21 domino types (a <= b, 1..6)\n    vector<pair<int,int>> dom;\n    for (int a = 1; a <= 6; ++a)\n        for (int b = a; b <= 6; ++b)\n            dom.push_back({a, b});\n    int D = dom.size(); // 21\n\n    int best = 0;\n\n    // For each assignment of dot value (0..6) to each vertex (0 = unused)\n    int totalStates = 1;\n    for (int i = 0; i < n; ++i) totalStates *= 7;\n\n    for (int mask = 0; mask < totalStates; ++mask) {\n        int tmp = mask;\n        int vdot[7];\n        bool usedVertex[7];\n        for (int i = 0; i < n; ++i) {\n            vdot[i] = tmp % 7;\n            tmp /= 7;\n            usedVertex[i] = (vdot[i] != 0);\n        }\n\n        // Collect edges whose both endpoints are used\n        vector<pair<int,int>> E;\n        for (auto &e : edges) {\n            int u = e.first, v = e.second;\n            if (usedVertex[u] && usedVertex[v]) {\n                int x = vdot[u], y = vdot[v];\n                if (x == 0 || y == 0) continue;\n                // oriented pair (x,y)\n                E.push_back({x, y});\n            }\n        }\n        if (E.empty()) continue;\n\n        // For each domino type, we can use at most one.\n        // For each oriented edge (x,y), we can use domino (min(x,y), max(x,y)) if exists.\n        // But we must ensure no domino type used more than once.\n        // This is maximum matching in a simple graph where each edge corresponds to a domino type.\n        // However, multiple graph edges may correspond to same domino type; we can pick at most one.\n        // So the answer is simply the number of distinct domino types present in E, capped by 21.\n\n        bool present[7][7] = {};\n        for (auto &p : E) {\n            int x = p.first, y = p.second;\n            int a = min(x, y), b = max(x, y);\n            present[a][b] = true;\n        }\n        int cnt = 0;\n        for (int a = 1; a <= 6; ++a)\n            for (int b = a; b <= 6; ++b)\n                if (present[a][b]) ++cnt;\n\n        if (cnt > best) best = cnt;\n    }\n\n    cout << best << '\\n';\n    return 0;\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 6,
+                "message": {
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n, m;\n    if (!(cin >> n >> m)) return 0;\n    vector<pair<int,int>> edges(m);\n    for (int i = 0; i < m; ++i) {\n        int a, b;\n        cin >> a >> b;\n        --a; --b;\n        edges[i] = {a, b};\n    }\n\n    // Precompute all 21 domino types (a,b) with 1<=a<=b<=6\n    vector<pair<int,int>> dom;\n    for (int a = 1; a <= 6; ++a)\n        for (int b = a; b <= 6; ++b)\n            dom.push_back({a,b});\n    int D = dom.size(); // 21\n\n    int best = 0;\n\n    // For each assignment of labels (1..6) to vertices\n    // labels[v] in [1..6]\n    vector<int> labels(n);\n    int totalAssignments = 1;\n    for (int i = 0; i < n; ++i) totalAssignments *= 6;\n\n    for (int mask = 0; mask < totalAssignments; ++mask) {\n        int tmp = mask;\n        for (int i = 0; i < n; ++i) {\n            labels[i] = (tmp % 6) + 1;\n            tmp /= 6;\n        }\n\n        // For each edge, determine required domino type (min,max)\n        // and count multiplicity\n        map<pair<int,int>, int> need;\n        for (auto &e : edges) {\n            int u = e.first, v = e.second;\n            int x = labels[u], y = labels[v];\n            int a = min(x,y), b = max(x,y);\n            need[{a,b}]++;\n        }\n\n        int used = 0;\n        for (auto &p : need) {\n            // We have at most one domino of each type\n            used += min(1, p.second);\n        }\n        if (used > best) best = used;\n    }\n\n    cout << best << '\\n';\n    return 0;\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            },
+            {
+                "finish_reason": "stop",
+                "index": 7,
+                "message": {
+                    "content": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n, m;\n    if (!(cin >> n >> m)) return 0;\n\n    vector<pair<int,int>> edges(m);\n    for (int i = 0; i < m; ++i) {\n        int a, b;\n        cin >> a >> b;\n        --a; --b;\n        if (a > b) swap(a, b);\n        edges[i] = {a, b};\n    }\n\n    int best = 0;\n\n    // Precompute all domino types (a,b) with 1<=a<=b<=6\n    vector<pair<int,int>> dominos;\n    for (int a = 1; a <= 6; ++a)\n        for (int b = a; b <= 6; ++b)\n            dominos.push_back({a, b});\n    int D = dominos.size(); // 21\n\n    // For each assignment of dot count (0..6) to each vertex\n    // 0 means no incident domino allowed at that vertex\n    int totalAssignments = 1;\n    for (int i = 0; i < n; ++i) totalAssignments *= 7;\n\n    for (int mask = 0; mask < totalAssignments; ++mask) {\n        int tmp = mask;\n        int c[7];\n        for (int i = 0; i < n; ++i) {\n            c[i] = tmp % 7;\n            tmp /= 7;\n        }\n\n        // For each edge, determine if it can host a domino and what type\n        // Also ensure no vertex with c[v]==0 has incident edge with c[u]!=0\n        bool ok = true;\n        vector<int> edgeType(m, -1); // index of domino type\n        for (int i = 0; i < m && ok; ++i) {\n            int u = edges[i].first;\n            int v = edges[i].second;\n            int cu = c[u];\n            int cv = c[v];\n            if (cu == 0 && cv == 0) {\n                edgeType[i] = -1; // cannot place any domino\n            } else if (cu == 0 || cv == 0) {\n                ok = false;\n                break;\n            } else {\n                int a = cu, b = cv;\n                if (a > b) swap(a, b);\n                int idx = -1;\n                // map (a,b) to index in dominos\n                // since D is small, linear search is fine\n                for (int k = 0; k < D; ++k) {\n                    if (dominos[k].first == a && dominos[k].second == b) {\n                        idx = k;\n                        break;\n                    }\n                }\n                edgeType[i] = idx;\n            }\n        }\n        if (!ok) continue;\n\n        // Build bipartite graph: left = edges, right = domino types\n        // edge exists if edgeType[i] == k\n        vector<vector<int>> adj(m);\n        for (int i = 0; i < m; ++i) {\n            if (edgeType[i] != -1) {\n                adj[i].push_back(edgeType[i]);\n            }\n        }\n\n        // Maximum bipartite matching (edges -> dominos)\n        vector<int> matchR(D, -1);\n        int matchCount = 0;\n\n        function<bool(int, vector<int>&)> dfs = [&](int u, vector<int> &vis) {\n            for (int v : adj[u]) {\n                if (vis[v]) continue;\n                vis[v] = 1;\n                if (matchR[v] == -1 || dfs(matchR[v], vis)) {\n                    matchR[v] = u;\n                    return true;\n                }\n            }\n            return false;\n        };\n\n        for (int i = 0; i < m; ++i) {\n            if (edgeType[i] == -1) continue;\n            vector<int> vis(D, 0);\n            if (dfs(i, vis)) ++matchCount;\n        }\n\n        if (matchCount > best) best = matchCount;\n    }\n\n    cout << best << '\\n';\n    return 0;\n}",
+                    "role": "assistant",
+                    "provider_specific_fields": {
+                        "refusal": null
+                    },
+                    "annotations": []
+                },
+                "provider_specific_fields": {
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 5612,
+            "prompt_tokens": 738,
+            "total_tokens": 6350,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": 0,
+                "audio_tokens": 0,
+                "reasoning_tokens": 0,
+                "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": 0,
+                "cached_tokens": 0
+            },
+            "latency_checkpoint": {
+                "engine_tbt_ms": 3,
+                "engine_ttft_ms": 317,
+                "engine_ttlt_ms": 15779,
+                "pre_inference_ms": 192,
+                "service_tbt_ms": 3,
+                "service_ttft_ms": 613,
+                "service_ttlt_ms": 16068,
+                "total_duration_ms": 15886,
+                "user_visible_ttft_ms": 421
+            }
+        },
+        "service_tier": "default",
+        "prompt_filter_results": [
+            {
+                "prompt_index": 0,
+                "content_filter_results": {
+                    "hate": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "self_harm": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "sexual": {
+                        "filtered": false,
+                        "severity": "safe"
+                    },
+                    "violence": {
+                        "filtered": false,
+                        "severity": "safe"
+                    }
+                }
+            }
+        ],
+        "prompt": "Write a program in C++ to solve this programming problem:\nDescription: Anadi has a set of dominoes. Every domino has two parts, and each part contains some dots. For every $$$a$$$ and $$$b$$$ such that $$$1 \\leq a \\leq b \\leq 6$$$, there is exactly one domino with $$$a$$$ dots on one half and $$$b$$$ dots on the other half. The set contains exactly $$$21$$$ dominoes. Here is an exact illustration of his set:  Also, Anadi has an undirected graph without self-loops and multiple edges. He wants to choose some dominoes and place them on the edges of this graph. He can use at most one domino of each type. Each edge can fit at most one domino. It's not necessary to place a domino on each edge of the graph.When placing a domino on an edge, he also chooses its direction. In other words, one half of any placed domino must be directed toward one of the endpoints of the edge and the other half must be directed toward the other endpoint. There's a catch: if there are multiple halves of dominoes directed toward the same vertex, each of these halves must contain the same number of dots.How many dominoes at most can Anadi place on the edges of his graph?\nInput Specification: The first line contains two integers $$$n$$$ and $$$m$$$ ($$$1 \\leq n \\leq 7$$$, $$$0 \\leq m \\leq \\frac{n\\cdot(n-1)}{2}$$$) \u2014 the number of vertices and the number of edges in the graph. The next $$$m$$$ lines contain two integers each. Integers in the $$$i$$$-th line are $$$a_i$$$ and $$$b_i$$$ ($$$1 \\leq a, b \\leq n$$$, $$$a \\neq b$$$) and denote that there is an edge which connects vertices $$$a_i$$$ and $$$b_i$$$. The graph might be disconnected. It's however guaranteed that the graph doesn't contain any self-loops, and that there is at most one edge between any pair of vertices.\nOutput Specification: Output one integer which denotes the maximum number of dominoes which Anadi can place on the edges of the graph.\n\nSample Input:\n4 4\n1 2\n2 3\n3 4\n4 1\nSample Output:\n4\n\nSample Input:\n7 0\nSample Output:\n0\n\nSample Input:\n3 1\n1 3\nSample Output:\n1\n\nSample Input:\n7 21\n1 2\n1 3\n1 4\n1 5\n1 6\n1 7\n2 3\n2 4\n2 5\n2 6\n2 7\n3 4\n3 5\n3 6\n3 7\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7\nSample Output:\n16\n\nNotes: NoteHere is an illustration of Anadi's graph from the first sample test:  And here is one of the ways to place a domino on each of its edges:  Note that each vertex is faced by the halves of dominoes with the same number of dots. For instance, all halves directed toward vertex $$$1$$$ have three dots.\nTake input from standard input and output to standard output\nProvide the C++ code without any extra description or tokens. Target code:"
+    },
+    "source_data": {
+        "prob_desc_input_from": "standard input",
+        "lang": "",
+        "src_uid": "11e6559cfb71b8f6ca88242094b17a2b",
+        "difficulty": 1700,
+        "prob_desc_sample_inputs": [
+            "4 4\n1 2\n2 3\n3 4\n4 1",
+            "7 0",
+            "3 1\n1 3",
+            "7 21\n1 2\n1 3\n1 4\n1 5\n1 6\n1 7\n2 3\n2 4\n2 5\n2 6\n2 7\n3 4\n3 5\n3 6\n3 7\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7"
+        ],
+        "prob_desc_time_limit": "2 seconds",
+        "tags": [
+            "brute force",
+            "graphs"
+        ],
+        "prob_desc_output_spec": "Output one integer which denotes the maximum number of dominoes which Anadi can place on the edges of the graph.",
+        "prob_desc_input_spec": "The first line contains two integers $$$n$$$ and $$$m$$$ ($$$1 \\leq n \\leq 7$$$, $$$0 \\leq m \\leq \\frac{n\\cdot(n-1)}{2}$$$) \u2014 the number of vertices and the number of edges in the graph. The next $$$m$$$ lines contain two integers each. Integers in the $$$i$$$-th line are $$$a_i$$$ and $$$b_i$$$ ($$$1 \\leq a, b \\leq n$$$, $$$a \\neq b$$$) and denote that there is an edge which connects vertices $$$a_i$$$ and $$$b_i$$$. The graph might be disconnected. It's however guaranteed that the graph doesn't contain any self-loops, and that there is at most one edge between any pair of vertices.",
+        "lang_cluster": "C++",
+        "source_code": "",
+        "prob_desc_notes": "NoteHere is an illustration of Anadi's graph from the first sample test:  And here is one of the ways to place a domino on each of its edges:  Note that each vertex is faced by the halves of dominoes with the same number of dots. For instance, all halves directed toward vertex $$$1$$$ have three dots.",
+        "prob_desc_memory_limit": "256 megabytes",
+        "file_name": "f4ed0b00bb6e7ee08ac776c854815632126f0d5842ed19563ab75f1660d87635",
+        "code_uid": "",
+        "prob_desc_description": "Anadi has a set of dominoes. Every domino has two parts, and each part contains some dots. For every $$$a$$$ and $$$b$$$ such that $$$1 \\leq a \\leq b \\leq 6$$$, there is exactly one domino with $$$a$$$ dots on one half and $$$b$$$ dots on the other half. The set contains exactly $$$21$$$ dominoes. Here is an exact illustration of his set:  Also, Anadi has an undirected graph without self-loops and multiple edges. He wants to choose some dominoes and place them on the edges of this graph. He can use at most one domino of each type. Each edge can fit at most one domino. It's not necessary to place a domino on each edge of the graph.When placing a domino on an edge, he also chooses its direction. In other words, one half of any placed domino must be directed toward one of the endpoints of the edge and the other half must be directed toward the other endpoint. There's a catch: if there are multiple halves of dominoes directed toward the same vertex, each of these halves must contain the same number of dots.How many dominoes at most can Anadi place on the edges of his graph?",
+        "prob_desc_output_to": "standard output",
+        "prob_desc_created_at": "1569143100",
+        "exec_outcome": "",
+        "prob_desc_sample_outputs": [
+            "4",
+            "0",
+            "1",
+            "16"
+        ],
+        "hidden_unit_tests": "[{\"input\": \"4 4\\r\\n1 2\\r\\n2 3\\r\\n3 4\\r\\n4 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 1\\r\\n1 3\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 21\\r\\n1 2\\r\\n1 3\\r\\n1 4\\r\\n1 5\\r\\n1 6\\r\\n1 7\\r\\n2 3\\r\\n2 4\\r\\n2 5\\r\\n2 6\\r\\n2 7\\r\\n3 4\\r\\n3 5\\r\\n3 6\\r\\n3 7\\r\\n4 5\\r\\n4 6\\r\\n4 7\\r\\n5 6\\r\\n5 7\\r\\n6 7\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"4 4\\r\\n4 2\\r\\n2 3\\r\\n3 4\\r\\n2 1\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"5 7\\r\\n4 3\\r\\n3 2\\r\\n1 4\\r\\n5 3\\r\\n5 2\\r\\n4 5\\r\\n1 5\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"6 9\\r\\n2 5\\r\\n3 6\\r\\n1 2\\r\\n1 4\\r\\n2 6\\r\\n6 1\\r\\n3 4\\r\\n1 3\\r\\n5 3\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"7 5\\r\\n5 6\\r\\n3 7\\r\\n7 2\\r\\n4 2\\r\\n1 4\\r\\n\", \"output\": [\"5\"]}, {\"input\": \"7 14\\r\\n7 3\\r\\n2 4\\r\\n2 1\\r\\n2 5\\r\\n5 3\\r\\n6 7\\r\\n4 7\\r\\n5 4\\r\\n7 5\\r\\n4 3\\r\\n4 1\\r\\n6 1\\r\\n6 3\\r\\n3 1\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 15\\r\\n4 6\\r\\n7 3\\r\\n3 1\\r\\n6 5\\r\\n2 7\\r\\n3 6\\r\\n7 6\\r\\n2 6\\r\\n7 5\\r\\n3 5\\r\\n5 4\\r\\n4 7\\r\\n2 1\\r\\n2 4\\r\\n2 3\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"7 18\\r\\n1 5\\r\\n5 7\\r\\n1 3\\r\\n1 6\\r\\n4 5\\r\\n3 7\\r\\n6 7\\r\\n4 7\\r\\n2 7\\r\\n1 2\\r\\n7 1\\r\\n5 6\\r\\n6 2\\r\\n4 2\\r\\n5 3\\r\\n3 6\\r\\n4 6\\r\\n4 3\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 14\\r\\n2 7\\r\\n5 7\\r\\n3 4\\r\\n4 2\\r\\n2 3\\r\\n4 1\\r\\n6 5\\r\\n4 7\\r\\n6 2\\r\\n6 1\\r\\n5 3\\r\\n5 1\\r\\n7 6\\r\\n3 1\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 11\\r\\n4 7\\r\\n6 4\\r\\n5 1\\r\\n1 4\\r\\n5 4\\r\\n1 2\\r\\n3 4\\r\\n4 2\\r\\n6 1\\r\\n3 1\\r\\n7 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"7 18\\r\\n3 2\\r\\n5 3\\r\\n6 7\\r\\n7 3\\r\\n5 4\\r\\n4 6\\r\\n2 4\\r\\n7 1\\r\\n5 6\\r\\n5 2\\r\\n5 1\\r\\n3 4\\r\\n7 4\\r\\n6 1\\r\\n3 6\\r\\n7 2\\r\\n1 3\\r\\n1 2\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 17\\r\\n1 7\\r\\n5 6\\r\\n6 3\\r\\n1 2\\r\\n1 6\\r\\n3 4\\r\\n6 7\\r\\n4 5\\r\\n1 3\\r\\n1 5\\r\\n4 1\\r\\n5 2\\r\\n3 5\\r\\n4 6\\r\\n7 5\\r\\n7 2\\r\\n6 2\\r\\n\", \"output\": [\"14\"]}, {\"input\": \"7 10\\r\\n3 6\\r\\n6 1\\r\\n4 6\\r\\n1 7\\r\\n7 4\\r\\n5 3\\r\\n5 6\\r\\n6 7\\r\\n7 5\\r\\n5 1\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"1 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"2 1\\r\\n2 1\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"3 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"3 2\\r\\n2 3\\r\\n1 3\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"3 3\\r\\n1 2\\r\\n2 3\\r\\n1 3\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"4 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"4 2\\r\\n2 4\\r\\n1 3\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"4 6\\r\\n2 1\\r\\n1 4\\r\\n2 4\\r\\n3 1\\r\\n3 2\\r\\n3 4\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"5 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"5 3\\r\\n5 1\\r\\n1 4\\r\\n5 4\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"5 10\\r\\n1 2\\r\\n3 4\\r\\n1 3\\r\\n2 3\\r\\n5 4\\r\\n5 1\\r\\n4 1\\r\\n5 3\\r\\n5 2\\r\\n2 4\\r\\n\", \"output\": [\"10\"]}, {\"input\": \"6 0\\r\\n\", \"output\": [\"0\"]}, {\"input\": \"6 3\\r\\n4 2\\r\\n5 4\\r\\n4 3\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"6 6\\r\\n4 3\\r\\n4 6\\r\\n1 2\\r\\n4 5\\r\\n6 3\\r\\n3 2\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"6 15\\r\\n4 3\\r\\n2 1\\r\\n3 6\\r\\n1 3\\r\\n4 1\\r\\n2 3\\r\\n3 5\\r\\n4 5\\r\\n6 1\\r\\n2 5\\r\\n1 5\\r\\n2 6\\r\\n6 4\\r\\n5 6\\r\\n4 2\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"6 12\\r\\n2 1\\r\\n4 3\\r\\n1 5\\r\\n6 4\\r\\n6 2\\r\\n3 6\\r\\n1 6\\r\\n2 4\\r\\n1 4\\r\\n2 5\\r\\n5 4\\r\\n1 3\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 1\\r\\n5 3\\r\\n\", \"output\": [\"1\"]}, {\"input\": \"7 2\\r\\n5 1\\r\\n3 5\\r\\n\", \"output\": [\"2\"]}, {\"input\": \"7 3\\r\\n1 5\\r\\n5 7\\r\\n2 7\\r\\n\", \"output\": [\"3\"]}, {\"input\": \"7 4\\r\\n3 7\\r\\n7 5\\r\\n1 3\\r\\n1 6\\r\\n\", \"output\": [\"4\"]}, {\"input\": \"7 6\\r\\n3 5\\r\\n7 1\\r\\n3 7\\r\\n5 4\\r\\n7 4\\r\\n3 6\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"7 7\\r\\n2 5\\r\\n6 1\\r\\n5 4\\r\\n7 2\\r\\n3 2\\r\\n4 1\\r\\n7 3\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"7 8\\r\\n4 1\\r\\n5 7\\r\\n6 4\\r\\n7 1\\r\\n6 3\\r\\n3 4\\r\\n3 1\\r\\n6 7\\r\\n\", \"output\": [\"8\"]}, {\"input\": \"7 9\\r\\n2 6\\r\\n7 4\\r\\n2 5\\r\\n2 7\\r\\n4 2\\r\\n3 5\\r\\n5 6\\r\\n6 7\\r\\n7 3\\r\\n\", \"output\": [\"9\"]}, {\"input\": \"7 11\\r\\n2 4\\r\\n1 3\\r\\n5 2\\r\\n2 7\\r\\n1 4\\r\\n4 3\\r\\n2 1\\r\\n7 6\\r\\n3 2\\r\\n7 4\\r\\n4 5\\r\\n\", \"output\": [\"11\"]}, {\"input\": \"7 12\\r\\n6 3\\r\\n3 5\\r\\n7 5\\r\\n1 5\\r\\n1 7\\r\\n7 6\\r\\n4 1\\r\\n2 1\\r\\n1 6\\r\\n5 6\\r\\n3 4\\r\\n4 2\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 13\\r\\n6 5\\r\\n5 7\\r\\n4 2\\r\\n7 2\\r\\n4 1\\r\\n6 7\\r\\n4 3\\r\\n1 6\\r\\n2 5\\r\\n5 4\\r\\n2 1\\r\\n6 4\\r\\n6 2\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 16\\r\\n3 5\\r\\n1 3\\r\\n3 7\\r\\n4 2\\r\\n1 4\\r\\n1 6\\r\\n7 6\\r\\n5 1\\r\\n7 2\\r\\n4 3\\r\\n3 6\\r\\n2 3\\r\\n2 5\\r\\n4 5\\r\\n2 6\\r\\n5 7\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 17\\r\\n4 6\\r\\n1 7\\r\\n7 5\\r\\n3 7\\r\\n7 2\\r\\n2 5\\r\\n6 7\\r\\n1 3\\r\\n5 1\\r\\n6 2\\r\\n4 2\\r\\n3 2\\r\\n1 2\\r\\n5 3\\r\\n4 5\\r\\n3 4\\r\\n1 6\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 19\\r\\n6 1\\r\\n6 4\\r\\n6 5\\r\\n1 7\\r\\n2 7\\r\\n3 5\\r\\n7 6\\r\\n2 4\\r\\n5 7\\r\\n3 4\\r\\n6 2\\r\\n4 1\\r\\n5 1\\r\\n4 7\\r\\n3 2\\r\\n4 5\\r\\n3 1\\r\\n2 5\\r\\n6 3\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 20\\r\\n4 7\\r\\n1 4\\r\\n2 3\\r\\n4 3\\r\\n3 7\\r\\n7 5\\r\\n4 5\\r\\n1 2\\r\\n6 7\\r\\n3 1\\r\\n3 5\\r\\n1 5\\r\\n1 7\\r\\n2 6\\r\\n6 4\\r\\n5 2\\r\\n5 6\\r\\n6 3\\r\\n1 6\\r\\n2 7\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 21\\r\\n3 5\\r\\n7 2\\r\\n2 3\\r\\n6 5\\r\\n5 2\\r\\n4 7\\r\\n2 6\\r\\n2 4\\r\\n6 7\\r\\n5 1\\r\\n1 4\\r\\n4 5\\r\\n5 7\\r\\n4 6\\r\\n3 1\\r\\n1 2\\r\\n3 4\\r\\n7 1\\r\\n3 7\\r\\n6 1\\r\\n3 6\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 12\\r\\n3 4\\r\\n5 4\\r\\n1 7\\r\\n7 3\\r\\n2 5\\r\\n3 2\\r\\n1 4\\r\\n5 6\\r\\n6 1\\r\\n6 3\\r\\n2 1\\r\\n5 7\\r\\n\", \"output\": [\"12\"]}, {\"input\": \"7 7\\r\\n7 6\\r\\n4 2\\r\\n3 1\\r\\n4 7\\r\\n6 3\\r\\n2 5\\r\\n1 5\\r\\n\", \"output\": [\"7\"]}, {\"input\": \"7 6\\r\\n7 5\\r\\n5 2\\r\\n1 5\\r\\n5 4\\r\\n3 5\\r\\n6 5\\r\\n\", \"output\": [\"6\"]}, {\"input\": \"7 15\\r\\n5 1\\r\\n3 2\\r\\n2 5\\r\\n3 5\\r\\n6 1\\r\\n4 3\\r\\n6 2\\r\\n4 5\\r\\n7 5\\r\\n3 6\\r\\n3 1\\r\\n7 3\\r\\n4 6\\r\\n6 5\\r\\n6 7\\r\\n\", \"output\": [\"13\"]}, {\"input\": \"7 18\\r\\n3 7\\r\\n3 2\\r\\n2 1\\r\\n1 7\\r\\n5 1\\r\\n3 4\\r\\n5 6\\r\\n4 2\\r\\n6 2\\r\\n1 4\\r\\n2 5\\r\\n6 3\\r\\n3 1\\r\\n6 7\\r\\n6 1\\r\\n7 2\\r\\n6 4\\r\\n3 5\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 19\\r\\n1 2\\r\\n7 3\\r\\n3 4\\r\\n4 7\\r\\n3 6\\r\\n7 5\\r\\n6 2\\r\\n4 6\\r\\n6 7\\r\\n5 2\\r\\n3 2\\r\\n6 5\\r\\n4 1\\r\\n2 4\\r\\n4 5\\r\\n6 1\\r\\n3 1\\r\\n1 7\\r\\n5 1\\r\\n\", \"output\": [\"16\"]}, {\"input\": \"7 16\\r\\n3 2\\r\\n6 3\\r\\n6 1\\r\\n5 6\\r\\n7 5\\r\\n5 2\\r\\n6 2\\r\\n2 1\\r\\n5 4\\r\\n4 1\\r\\n7 2\\r\\n1 5\\r\\n2 4\\r\\n7 3\\r\\n1 7\\r\\n6 7\\r\\n\", \"output\": [\"15\"]}, {\"input\": \"7 12\\r\\n4 1\\r\\n6 4\\r\\n3 4\\r\\n3 1\\r\\n2 4\\r\\n7 5\\r\\n5 4\\r\\n2 1\\r\\n6 7\\r\\n2 3\\r\\n7 4\\r\\n6 5\\r\\n\", \"output\": [\"11\"]}]"
+    }
+}
